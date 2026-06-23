@@ -1,0 +1,35 @@
+{
+  "plugins": {
+    "mdx": true
+  },
+  "filters": {
+    "comments": true
+  },
+  "rules": {
+    "preset-ja-technical-writing": {
+      "sentence-length": {
+        "max": 120
+      },
+      "max-ten": {
+        "max": 4
+      },
+      "max-kanji-continuous-len": {
+        "max": 7
+      },
+      "no-exclamation-question-mark": false,
+      "ja-no-weak-phrase": false,
+      "ja-no-redundant-expression": false,
+      "ja-no-successive-word": false,
+      "ja-no-mixed-period": false,
+      "no-mix-dearu-desumasu": {
+        "preferInBody": "である",
+        "preferInList": "である",
+        "strict": false
+      }
+    },
+    "preset-ja-spacing": {
+      "ja-space-between-half-and-full-width": false,
+      "ja-space-around-strong": false
+    }
+  }
+}

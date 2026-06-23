@@ -1,0 +1,7 @@
+# Build output and generated files.
+node_modules/
+dist/
+.astro/
+
+# Tool-generated planning artifacts (English prose), not site documentation.
+docs/superpowers/**

@@ -1,0 +1,9 @@
+# Git hooks managed by lefthook.
+# `lefthook install` (wired into the `prepare` npm script) enables the hooks.
+pre-commit:
+  parallel: true
+  jobs:
+    # Lint staged Markdown/MDX with textlint. A non-zero exit aborts the commit.
+    - name: textlint
+      glob: "*.{md,mdx}"
+      run: pnpm exec textlint {staged_files}
