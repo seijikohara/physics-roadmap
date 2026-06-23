@@ -6,6 +6,7 @@ description: 数式・図・グラフ表現の動作確認ページ
 import FunctionPlot from '../../components/FunctionPlot';
 import InteractivePlot from '../../components/InteractivePlot';
 import VectorFieldPlot from '../../components/VectorFieldPlot';
+import DataChart from '../../components/DataChart';
 
 このページは導入した各種表現の動作確認を兼ねたサンプルです。
 
@@ -52,3 +53,17 @@ graph LR
 点をドラッグして動かせます:
 
 <VectorFieldPlot client:visible />
+
+## データのグラフ (Chart.js)
+
+export const chartData = {
+  labels: ['1月', '2月', '3月', '4月', '5月'],
+  datasets: [
+    {
+      label: '測定値',
+      data: [12, 19, 3, 5, 14],
+    },
+  ],
+};
+
+<DataChart client:visible type="line" data={chartData} />
