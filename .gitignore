@@ -19,3 +19,6 @@ yarn-error.log*
 
 # macOS
 .DS_Store
+
+# Playwright MCP output (local verification artifacts)
+.playwright-mcp/

@@ -26,14 +26,33 @@ interface DataChartProps {
   // Chart.js data/options are plain objects, so they cross the island boundary.
   data: object;
   options?: object;
+  // Container height in pixels. Chart.js fills the sized wrapper below.
+  height?: number;
 }
 
-export default function DataChart({ type, data, options }: DataChartProps): React.JSX.Element {
-  if (type === 'bar') {
-    return <Bar data={data as never} options={options as never} />;
-  }
-  if (type === 'scatter') {
-    return <Scatter data={data as never} options={options as never} />;
-  }
-  return <Line data={data as never} options={options as never} />;
+export default function DataChart({
+  type,
+  data,
+  options,
+  height = 400,
+}: DataChartProps): React.JSX.Element {
+  // The astro-island wrapper uses `display: contents`, which has no box, so
+  // Chart.js cannot read a size from it. Wrap the chart in a sized, relatively
+  // positioned container and disable the aspect ratio so it fills that box.
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    ...options,
+  };
+
+  const chart =
+    type === 'bar' ? (
+      <Bar data={data as never} options={chartOptions as never} />
+    ) : type === 'scatter' ? (
+      <Scatter data={data as never} options={chartOptions as never} />
+    ) : (
+      <Line data={data as never} options={chartOptions as never} />
+    );
+
+  return <div style={{ position: 'relative', height: `${height}px` }}>{chart}</div>;
 }
