@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import mermaid from 'astro-mermaid';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
@@ -13,6 +14,8 @@ export default defineConfig({
     rehypePlugins: [rehypeKatex],
   },
   integrations: [
+    // astro-mermaid must come BEFORE starlight so it can transform code blocks.
+    mermaid({ autoTheme: true }),
     starlight({
       title: 'Physics Roadmap',
       customCss: ['./src/styles/global.css'],
