@@ -1,0 +1,69 @@
+---
+title: Showcase
+description: 数式・図・グラフ表現の動作確認ページ
+---
+
+import FunctionPlot from '../../components/FunctionPlot';
+import InteractivePlot from '../../components/InteractivePlot';
+import VectorFieldPlot from '../../components/VectorFieldPlot';
+import DataChart from '../../components/DataChart';
+
+このページは導入した各種表現の動作確認を兼ねたサンプルです。
+
+## 数式 (KaTeX)
+
+インラインの数式: 質量とエネルギーの関係は $E = mc^2$ で表される。
+
+ブロックの数式:
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} \, dx = \sqrt{\pi}
+$$
+
+行列:
+
+$$
+\begin{pmatrix} a & b \\ c & d \end{pmatrix}
+$$
+
+## 概念図 (Mermaid)
+
+```mermaid
+graph LR
+  A[観測] --> B[仮説]
+  B --> C[実験]
+  C --> D[検証]
+  D --> A
+```
+
+## 関数グラフ (Mafs)
+
+静的な関数プロット ($y = \sin x$):
+
+<FunctionPlot client:visible />
+
+### スライダーで操作する例
+
+スライダーを動かすと振幅が変化します:
+
+<InteractivePlot client:visible />
+
+### ベクトル場とドラッグ可能な点
+
+点をドラッグして動かせます:
+
+<VectorFieldPlot client:visible />
+
+## データのグラフ (Chart.js)
+
+export const chartData = {
+  labels: ['1月', '2月', '3月', '4月', '5月'],
+  datasets: [
+    {
+      label: '測定値',
+      data: [12, 19, 3, 5, 14],
+    },
+  ],
+};
+
+<DataChart client:visible type="line" data={chartData} />

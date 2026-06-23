@@ -1,0 +1,6 @@
+/* KaTeX stylesheet for build-time math rendering. */
+@import 'katex/dist/katex.min.css';
+
+/* Mafs styles for interactive math plots. */
+@import 'mafs/core.css';
+@import 'mafs/font.css';
