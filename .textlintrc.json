@@ -16,10 +16,7 @@
       "max-kanji-continuous-len": {
         "max": 7
       },
-      "no-exclamation-question-mark": false,
-      "ja-no-weak-phrase": false,
       "ja-no-redundant-expression": false,
-      "ja-no-successive-word": false,
       "ja-no-mixed-period": false,
       "no-mix-dearu-desumasu": {
         "preferInBody": "である",
