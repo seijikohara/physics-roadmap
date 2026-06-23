@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import react from '@astrojs/react';
 import mermaid from 'astro-mermaid';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -14,6 +15,7 @@ export default defineConfig({
     rehypePlugins: [rehypeKatex],
   },
   integrations: [
+    react(),
     // astro-mermaid must come BEFORE starlight so it can transform code blocks.
     mermaid({ autoTheme: true }),
     starlight({

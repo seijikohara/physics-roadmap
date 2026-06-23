@@ -3,6 +3,8 @@ title: Showcase
 description: 数式・図・グラフ表現の動作確認ページ
 ---
 
+import FunctionPlot from '../../components/FunctionPlot';
+
 このページは導入した各種表現の動作確認を兼ねたサンプルです。
 
 ## 数式 (KaTeX)
@@ -30,3 +32,9 @@ graph LR
   C --> D[検証]
   D --> A
 ```
+
+## 関数グラフ (Mafs)
+
+静的な関数プロット ($y = \sin x$):
+
+<FunctionPlot client:visible />
