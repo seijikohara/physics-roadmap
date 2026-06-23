@@ -1,0 +1,10 @@
+# Dependency build-script policy (pnpm 11 `allowBuilds`).
+# esbuild and sharp ship prebuilt binaries, so their install scripts are not
+# needed. Listing them as reviewed keeps `pnpm install` deterministic in CI,
+# where `strictDepBuilds` defaults to true and would otherwise fail the build.
+allowBuilds:
+  esbuild: false
+  sharp: false
+minimumReleaseAgeExclude:
+  - '@astrojs/markdown-satteri@0.3.1'
+  - astro@7.0.0
