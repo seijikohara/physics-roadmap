@@ -2,9 +2,12 @@
 # esbuild and sharp ship prebuilt binaries, so their install scripts are not
 # needed. Listing them as reviewed keeps `pnpm install` deterministic in CI,
 # where `strictDepBuilds` defaults to true and would otherwise fail the build.
+# lefthook is set to `true` because its install script wires the Git hooks
+# into `.git/hooks`; without the build it cannot enforce the pre-commit lint.
 allowBuilds:
   esbuild: false
   sharp: false
+  lefthook: true
 minimumReleaseAgeExclude:
   - '@astrojs/markdown-satteri@0.3.1'
   - astro@7.0.0
