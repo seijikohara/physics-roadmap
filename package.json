@@ -9,7 +9,7 @@
     "preview": "astro preview",
     "lint": "oxlint --deny-warnings",
     "lint:fix": "oxlint --deny-warnings --fix",
-    "format": "oxfmt",
+    "format": "oxfmt --write",
     "format:check": "oxfmt --check",
     "lint:text": "textlint \"**/*.{md,mdx}\"",
     "lint:text:fix": "textlint --fix \"**/*.{md,mdx}\"",
