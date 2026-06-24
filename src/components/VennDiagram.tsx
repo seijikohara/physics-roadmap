@@ -2,19 +2,19 @@ import { useId } from "react";
 import type { ReactNode } from "react";
 
 /**
- * Static, build-time Venn diagram rendered as inline SVG.
+ * インライン SVG として描く、ビルド時生成の静的なベン図。
  *
- * Each `variant` shades the region that names a single set operation or
- * relation, so the figure carries its own legend instead of relying on
- * interaction. The component ships no client JavaScript: Astro renders it to
- * HTML at build time (no client directive, no hydration). Colors and text read
- * on both light and dark themes — labels follow the theme text color and the
- * KaTeX math font through CSS (see .venn-figure in src/styles/global.css).
+ * 各 `variant` は、1 つの集合演算または関係を表す領域を塗り分ける。図は双方向性に
+ * 頼らず、自身で凡例を備える。本コンポーネントはクライアント JavaScript を一切載せ
+ * ない。Astro がビルド時に HTML へ描画する（クライアントディレクティブなし、ハイド
+ * レーションなし）。色と文字は light/dark の両テーマで読める。ラベルは CSS を介して
+ * テーマの文字色と KaTeX の数式フォントに追従する（src/styles/global.css の
+ * .venn-figure を参照）。
  */
 
 type Variant =
-  | "plain" // two labeled circles in U, no shading or region labels
-  | "regions" // base diagram: the four regions of two overlapping sets
+  | "plain" // U の中にラベル付きの 2 円。塗りも領域ラベルもなし
+  | "regions" // 基本図。重なる 2 集合がつくる 4 領域
   | "intersection" // A∩B
   | "union" // A∪B
   | "complement" // Ā
@@ -23,13 +23,13 @@ type Variant =
   | "equal" // A=B
   | "universal" // A=U
   | "nonempty" // A≠∅
-  | "subset-complement"; // B̄⊂Ā (the contrapositive side of A⊂B)
+  | "subset-complement"; // B̄⊂Ā（A⊂B の対偶側）
 
 type VennDiagramProps = {
   variant: Variant;
-  /** Accessible description read by assistive technology. */
+  /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
-  /** Single-character set names. Defaults to 'A' and 'B'. */
+  /** 1 文字の集合名。既定は 'A' と 'B'。 */
   labels?: { a?: string; b?: string };
 };
 
@@ -38,20 +38,20 @@ const STROKE_B = "#ef4444";
 const HIGHLIGHT = "#f59e0b";
 const FRAME = "#94a3b8";
 
-// Two overlapping circles inside the universal-set rectangle. Radii and centers
-// leave a clear margin to the frame on every side. Shared by every variant
-// except `subset` and `disjoint`, which use their own geometry.
+// 全体集合の矩形の中に置く、重なる 2 つの円。半径と中心は、四方どの辺に対しても枠と
+// の余白を確保する。独自の配置を使う `subset` と `disjoint` を除く、すべての variant
+// で共有する。
 const U = { x: 10, y: 8, w: 300, h: 184 };
 const A = { cx: 128, cy: 104, r: 58 };
 const B = { cx: 192, cy: 104, r: 58 };
 
-/** Render text with an overline, the notation for a complement (e.g. B̄). */
+/** 補集合の記法である上線付きの文字（例: B̄）を描く。 */
 function Ov({ children }: { children: string }) {
   return <tspan style={{ textDecoration: "overline" }}>{children}</tspan>;
 }
 
-// Centered SVG text helpers. Kept at module scope: they capture no component
-// state, so they are defined once instead of on every render.
+// 中央寄せの SVG テキスト用ヘルパ。コンポーネントの状態を捕捉しないため、描画ごとで
+// はなく一度だけ定義するようモジュールスコープに置く。
 const label = (cls: string, x: number, y: number, text: ReactNode) => (
   <text className={cls} x={x} y={y} textAnchor="middle" dominantBaseline="central">
     {text}
@@ -66,7 +66,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
   const maskNotA = `vennMaskNotA-${uid}`;
   const maskNotB = `vennMaskNotB-${uid}`;
 
-  // Set names. Default to A/B to preserve backward compatibility.
+  // 集合名。後方互換のため既定は A/B とする。
   const a = labels?.a ?? "A";
   const b = labels?.b ?? "B";
 
@@ -202,7 +202,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
         );
       }
       case "equal":
-        // Two nearly coincident circles: the sets share every element (A=B).
+        // ほぼ重なる 2 円。2 集合はすべての要素を共有する（A=B）。
         return (
           <>
             <circle cx={160} cy={104} r={60} fill={HIGHLIGHT} fillOpacity={0.12} />
@@ -212,7 +212,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
           </>
         );
       case "universal":
-        // The set fills the whole universal set (A=U): shade U entirely.
+        // 集合が全体集合をすべて満たす（A=U）。U の全体を塗る。
         return (
           <>
             <rect
@@ -228,7 +228,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
           </>
         );
       case "nonempty": {
-        // A single set holding at least one element (A≠∅): one dot marks an element.
+        // 要素を少なくとも 1 つ持つ単一の集合（A≠∅）。点 1 つが要素を表す。
         const an = { cx: 160, cy: 104, r: 58 };
         return (
           <>
@@ -248,8 +248,8 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
         );
       }
       case "subset-complement": {
-        // Contrapositive of A⊂B: the outside of B sits inside the outside of A
-        // (B̄⊂Ā). Same nested geometry as `subset`; shade B's exterior via a mask.
+        // A⊂B の対偶。B の外側は A の外側の内に収まる（B̄⊂Ā）。`subset` と同じ入れ子
+        // の配置を使い、マスクで B の外側を塗る。
         const bb = { cx: 176, cy: 104, r: 72 };
         const aa = { cx: 150, cy: 104, r: 32 };
         return (

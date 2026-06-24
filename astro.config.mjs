@@ -11,12 +11,12 @@ export default defineConfig({
   site: "https://seijikohara.github.io",
   base: "/physics-roadmap",
   markdown: {
-    // GFM and SmartyPants stay enabled by default; custom plugins are appended.
+    // GFM と SmartyPants は既定で有効のまま、独自プラグインを追記する。
     remarkPlugins: [remarkMath],
     rehypePlugins: [rehypeKatex],
-    // Localize the auto-generated GFM footnotes heading and back-link to Japanese.
-    // footnoteBackContent forces a text-presentation arrow (U+FE0E) so it does not
-    // render as a color emoji like the default "↩".
+    // GFM が自動生成する脚注の見出しと戻りリンクを日本語へ差し替える。
+    // footnoteBackContent は字形表示の矢印（U+FE0E）を強制し、既定の "↩" のように
+    // カラー絵文字として描画されるのを防ぐ。
     remarkRehype: {
       footnoteLabel: "脚注",
       footnoteBackLabel: "本文へ戻る",
@@ -25,22 +25,22 @@ export default defineConfig({
   },
   integrations: [
     react(),
-    // astro-mermaid must come BEFORE starlight so it can transform code blocks.
+    // astro-mermaid はコードブロックを変換するため、starlight より前に置く。
     mermaid({ autoTheme: true }),
     starlight({
       title: "Physics Roadmap",
       customCss: ["./src/styles/global.css"],
-      // Monolingual Japanese site: override the default English root locale.
+      // 日本語モノリンガルのサイト。既定の英語ルートロケールを上書きする。
       locales: {
         root: {
           label: "日本語",
           lang: "ja",
         },
       },
-      // Explicit Japanese sidebar grouped by track > category.
-      // Each category points at its content directory; add entries as chapters land.
+      // トラック > カテゴリの階層で構成する日本語サイドバー。
+      // 各カテゴリは対応するコンテンツディレクトリを指す。章の追加に合わせて項目を増やす。
       sidebar: [
-        // Single top-level link; label defaults to the page title.
+        // 単一のトップレベルリンク。ラベルはページタイトルを既定で使う。
         { slug: "prerequisites/knowledge" },
         {
           label: "数学",

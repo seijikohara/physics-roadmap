@@ -1,7 +1,7 @@
-/* KaTeX stylesheet for build-time math rendering. */
+/* ビルド時に数式を描画するための KaTeX スタイルシート。 */
 @import "katex/dist/katex.min.css";
 
-/* Static Venn diagrams (inline SVG, see src/components/VennDiagram.tsx). */
+/* 静的なベン図（インライン SVG。src/components/VennDiagram.tsx を参照）。 */
 .venn-figure {
   display: block;
   width: 100%;
@@ -11,9 +11,9 @@
 }
 
 /*
- * Labels follow the current theme text color and match the KaTeX math font used
- * by inline `$...$` math. KaTeX_Math carries the italic Latin letters (A, B, U);
- * operators (∩, ∪, =) and ∅ fall back to KaTeX_Main / KaTeX_AMS, then serif.
+ * ラベルは現在のテーマの文字色に追従し、インライン数式 `$...$` が使う KaTeX の数式
+ * フォントに合わせる。KaTeX_Math はイタリックのラテン文字（A・B・U）を担い、演算子
+ * （∩・∪・=）と ∅ は KaTeX_Main / KaTeX_AMS、さらに serif へフォールバックする。
  */
 .venn-figure text {
   fill: currentColor;

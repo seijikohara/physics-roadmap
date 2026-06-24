@@ -1,7 +1,14 @@
 # Design: Math and rich visualization support
 
 Date: 2026-06-23
-Status: Approved
+Status: Superseded by [2026-06-24-visualization-stack-design.md](./2026-06-24-visualization-stack-design.md) (2026-06-24)
+
+> **Note**: This document is a point-in-time record of the original decision. The
+> 2D visualization standard later moved from Mafs/Chart.js to build-time static
+> SVG with D3 (see the superseding document). The Mafs/Chart.js choices and the
+> `FunctionPlot`/`InteractivePlot`/`VectorFieldPlot`/`DataChart` components and
+> `showcase.mdx` described below have since been removed. The text is kept
+> unchanged as history.
 
 ## Goal
 
