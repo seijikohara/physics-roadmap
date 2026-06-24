@@ -1,4 +1,4 @@
-name: textlint
+name: lint
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 jobs:
-  textlint:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
@@ -24,5 +24,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run textlint
+      # Verify formatting first; oxfmt covers JS/TS and the Markdown/MDX, CSS,
+      # JSON, and YAML sources before the linters run.
+      - name: Check formatting (oxfmt)
+        run: pnpm run format:check
+
+      # Type-aware lint via oxlint + oxlint-tsgolint (TypeScript native engine).
+      - name: Lint JS/TS (oxlint)
+        run: pnpm run lint
+
+      - name: Proofread Markdown/MDX (textlint)
         run: pnpm run lint:text

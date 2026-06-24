@@ -1,9 +1,22 @@
-# Git hooks managed by lefthook.
-# `lefthook install` (wired into the `prepare` npm script) enables the hooks.
+# lefthook で管理する Git フック。
+# `lefthook install`（`prepare` npm スクリプトに連動）でフックを有効化する。
 pre-commit:
-  parallel: true
+  # oxfmt が整形してからリンタが検査するよう、ジョブを順番に実行する。
+  # いずれかのジョブが非ゼロで終了するとコミットを中断する。
+  piped: true
   jobs:
-    # Lint staged Markdown/MDX with textlint. A non-zero exit aborts the commit.
+    # 1. ステージ済みのコードとドキュメントを oxfmt で整形し、整形後に再ステージする。
+    - name: oxfmt
+      glob: "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts,md,mdx,css,json,jsonc,yaml,yml}"
+      run: pnpm exec oxfmt --write {staged_files}
+      stage_fixed: true
+    # 2. JS/TS を oxlint で検証する（型認識・警告をエラー扱い。`lint` スクリプト経由）。
+    #    ファイル横断で型情報を解決するためプロジェクト全体を対象にし、
+    #    ステージ済みの JS/TS 変更を契機に起動する。
+    - name: oxlint
+      glob: "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"
+      run: pnpm run lint
+    # 3. oxfmt の整形後、ステージ済みの Markdown/MDX を textlint で校正する。
     - name: textlint
       glob: "*.{md,mdx}"
       run: pnpm exec textlint {staged_files}

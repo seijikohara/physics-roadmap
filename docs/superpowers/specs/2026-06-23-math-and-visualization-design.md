@@ -1,7 +1,14 @@
 # Design: Math and rich visualization support
 
 Date: 2026-06-23
-Status: Approved
+Status: Superseded by [2026-06-24-visualization-stack-design.md](./2026-06-24-visualization-stack-design.md) (2026-06-24)
+
+> **Note**: This document is a point-in-time record of the original decision. The
+> 2D visualization standard later moved from Mafs/Chart.js to build-time static
+> SVG with D3 (see the superseding document). The Mafs/Chart.js choices and the
+> `FunctionPlot`/`InteractivePlot`/`VectorFieldPlot`/`DataChart` components and
+> `showcase.mdx` described below have since been removed. The text is kept
+> unchanged as history.
 
 ## Goal
 
@@ -20,13 +27,13 @@ contradicted by this working install and is rejected.
 
 ## Decisions
 
-| Purpose | Package(s) | Notes |
-| --- | --- | --- |
-| React integration | `@astrojs/react`@6, `react`@19, `react-dom`@19, `@types/react`@19, `@types/react-dom`@19 | Requires Node >= 22.12 (CI Node 24, local Node 26 satisfy it). |
-| Math | `remark-math`@6, `rehype-katex`@7, `katex` | Build-time rendering. KaTeX CSS loaded globally. |
-| Diagrams | `astro-mermaid`@2, `mermaid`@11, `@mermaid-js/layout-elk`@0.2 | Client-side render, light/dark theme follow. Must be listed before `starlight` in `integrations`. |
-| Function plots / geometry / vector fields | `mafs`@0.21 | React island. Peer `react >=18`, works with React 19. |
-| Data charts | `react-chartjs-2`@5, `chart.js`@4 | React island. Lightweight canvas charts. |
+| Purpose                                   | Package(s)                                                                               | Notes                                                                                             |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| React integration                         | `@astrojs/react`@6, `react`@19, `react-dom`@19, `@types/react`@19, `@types/react-dom`@19 | Requires Node >= 22.12 (CI Node 24, local Node 26 satisfy it).                                    |
+| Math                                      | `remark-math`@6, `rehype-katex`@7, `katex`                                               | Build-time rendering. KaTeX CSS loaded globally.                                                  |
+| Diagrams                                  | `astro-mermaid`@2, `mermaid`@11, `@mermaid-js/layout-elk`@0.2                            | Client-side render, light/dark theme follow. Must be listed before `starlight` in `integrations`. |
+| Function plots / geometry / vector fields | `mafs`@0.21                                                                              | React island. Peer `react >=18`, works with React 19.                                             |
+| Data charts                               | `react-chartjs-2`@5, `chart.js`@4                                                        | React island. Lightweight canvas charts.                                                          |
 
 Exact patch versions are resolved at install time; the major/minor pins above
 are the compatibility floor. KaTeX's exact version is whatever `rehype-katex`@7

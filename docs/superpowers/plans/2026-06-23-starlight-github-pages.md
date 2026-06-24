@@ -22,6 +22,7 @@
 ### Task 1: Scaffold a buildable Starlight site
 
 **Files:**
+
 - Create: `package.json`
 - Create: `.gitignore`
 - Create: `.nvmrc`
@@ -31,6 +32,7 @@
 - Create: `src/content/docs/index.mdx`
 
 **Interfaces:**
+
 - Consumes: nothing (first task; empty repository with only the committed spec).
 - Produces: a project that builds with `pnpm build`, emitting static HTML to `dist/`. Produces a committed `pnpm-lock.yaml` that Task 2's CI relies on for pnpm detection. Defines npm scripts `dev`, `build`, `preview`.
 
@@ -102,21 +104,21 @@ yarn-error.log*
 
 ```js
 // @ts-check
-import { defineConfig } from 'astro/config';
-import starlight from '@astrojs/starlight';
+import { defineConfig } from "astro/config";
+import starlight from "@astrojs/starlight";
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://seijikohara.github.io',
-  base: '/physics-roadmap',
+  site: "https://seijikohara.github.io",
+  base: "/physics-roadmap",
   integrations: [
     starlight({
-      title: 'Physics Roadmap',
+      title: "Physics Roadmap",
       // Monolingual Japanese site: override the default English root locale.
       locales: {
         root: {
-          label: '日本語',
-          lang: 'ja',
+          label: "日本語",
+          lang: "ja",
         },
       },
     }),
@@ -127,9 +129,9 @@ export default defineConfig({
 - [ ] **Step 6: Create `src/content.config.ts`**
 
 ```ts
-import { defineCollection } from 'astro:content';
-import { docsLoader } from '@astrojs/starlight/loaders';
-import { docsSchema } from '@astrojs/starlight/schema';
+import { defineCollection } from "astro:content";
+import { docsLoader } from "@astrojs/starlight/loaders";
+import { docsSchema } from "@astrojs/starlight/schema";
 
 export const collections = {
   docs: defineCollection({ loader: docsLoader(), schema: docsSchema() }),
@@ -175,9 +177,11 @@ git commit -m "feat: scaffold minimal Astro Starlight site"
 ### Task 2: Add GitHub Actions deployment workflow
 
 **Files:**
+
 - Create: `.github/workflows/deploy.yml`
 
 **Interfaces:**
+
 - Consumes: `pnpm-lock.yaml` and the buildable project from Task 1 (`withastro/action` runs `pnpm install` and `pnpm build`).
 - Produces: a workflow that, on push to `main`, builds the site and deploys it to GitHub Pages.
 
@@ -251,6 +255,7 @@ Expected: a run appears. Wait for it to finish with `gh run watch` and confirm `
 ## Self-Review
 
 **Spec coverage:**
+
 - Astro + Starlight, pnpm, Node 24, Japanese, GitHub Actions, project-page URL — Task 1 (scaffold/config) + Task 2 (workflow). ✓
 - Repository layout from the spec — all listed files are created across Task 1 and Task 2. ✓
 - `site`/`base` for the project page — Task 1 Step 5. ✓
