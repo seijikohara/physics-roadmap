@@ -23,12 +23,14 @@
 ### Task 1: KaTeX math rendering + showcase page
 
 **Files:**
+
 - Modify: `package.json` (add deps via pnpm)
 - Modify: `astro.config.mjs`
 - Create: `src/styles/global.css`
 - Create: `src/content/docs/showcase.mdx`
 
 **Interfaces:**
+
 - Consumes: nothing new.
 - Produces: a `showcase.mdx` page (title "Showcase") that later tasks append to; a `src/styles/global.css` loaded via Starlight `customCss` that later tasks add more `@import`s to.
 
@@ -41,35 +43,35 @@ Expected: install succeeds, exit 0. If `ERR_PNPM_IGNORED_BUILDS` appears, follow
 
 ```css
 /* KaTeX stylesheet for build-time math rendering. */
-@import 'katex/dist/katex.min.css';
+@import "katex/dist/katex.min.css";
 ```
 
 - [ ] **Step 3: Update `astro.config.mjs` to enable math and load the stylesheet**
 
 ```js
 // @ts-check
-import { defineConfig } from 'astro/config';
-import starlight from '@astrojs/starlight';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import { defineConfig } from "astro/config";
+import starlight from "@astrojs/starlight";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://seijikohara.github.io',
-  base: '/physics-roadmap',
+  site: "https://seijikohara.github.io",
+  base: "/physics-roadmap",
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [rehypeKatex],
   },
   integrations: [
     starlight({
-      title: 'Physics Roadmap',
-      customCss: ['./src/styles/global.css'],
+      title: "Physics Roadmap",
+      customCss: ["./src/styles/global.css"],
       // Monolingual Japanese site: override the default English root locale.
       locales: {
         root: {
-          label: '日本語',
-          lang: 'ja',
+          label: "日本語",
+          lang: "ja",
         },
       },
     }),
@@ -124,11 +126,13 @@ git commit -m "feat: add KaTeX math rendering and showcase page"
 ### Task 2: Mermaid diagrams
 
 **Files:**
+
 - Modify: `package.json` (add deps via pnpm)
 - Modify: `astro.config.mjs`
 - Modify: `src/content/docs/showcase.mdx` (append diagram section)
 
 **Interfaces:**
+
 - Consumes: `showcase.mdx` and `astro.config.mjs` from Task 1.
 - Produces: client-side Mermaid rendering for mermaid fenced code blocks site-wide.
 
@@ -141,16 +145,16 @@ Expected: install succeeds, exit 0. Apply the `ERR_PNPM_IGNORED_BUILDS` note if 
 
 ```js
 // @ts-check
-import { defineConfig } from 'astro/config';
-import starlight from '@astrojs/starlight';
-import mermaid from 'astro-mermaid';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import { defineConfig } from "astro/config";
+import starlight from "@astrojs/starlight";
+import mermaid from "astro-mermaid";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://seijikohara.github.io',
-  base: '/physics-roadmap',
+  site: "https://seijikohara.github.io",
+  base: "/physics-roadmap",
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [rehypeKatex],
@@ -159,12 +163,12 @@ export default defineConfig({
     // astro-mermaid must come BEFORE starlight so it can transform code blocks.
     mermaid({ autoTheme: true }),
     starlight({
-      title: 'Physics Roadmap',
-      customCss: ['./src/styles/global.css'],
+      title: "Physics Roadmap",
+      customCss: ["./src/styles/global.css"],
       locales: {
         root: {
-          label: '日本語',
-          lang: 'ja',
+          label: "日本語",
+          lang: "ja",
         },
       },
     }),
@@ -206,6 +210,7 @@ git commit -m "feat: add client-side Mermaid diagram rendering"
 ### Task 3: React + Mafs setup and a static function plot
 
 **Files:**
+
 - Modify: `package.json` (add deps via pnpm)
 - Modify: `astro.config.mjs`
 - Modify: `tsconfig.json`
@@ -214,6 +219,7 @@ git commit -m "feat: add client-side Mermaid diagram rendering"
 - Modify: `src/content/docs/showcase.mdx` (append function-plot section)
 
 **Interfaces:**
+
 - Consumes: `astro.config.mjs`, `global.css`, `showcase.mdx` from earlier tasks.
 - Produces: a working React island toolchain and `FunctionPlot` (default export, no props) — a self-contained Mafs plot of `y = sin(x)` that authors copy/edit for new static plots.
 
@@ -240,17 +246,17 @@ Expected: install succeeds, exit 0. Apply the `ERR_PNPM_IGNORED_BUILDS` note if 
 
 ```js
 // @ts-check
-import { defineConfig } from 'astro/config';
-import starlight from '@astrojs/starlight';
-import react from '@astrojs/react';
-import mermaid from 'astro-mermaid';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import { defineConfig } from "astro/config";
+import starlight from "@astrojs/starlight";
+import react from "@astrojs/react";
+import mermaid from "astro-mermaid";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://seijikohara.github.io',
-  base: '/physics-roadmap',
+  site: "https://seijikohara.github.io",
+  base: "/physics-roadmap",
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [rehypeKatex],
@@ -260,12 +266,12 @@ export default defineConfig({
     // astro-mermaid must come BEFORE starlight so it can transform code blocks.
     mermaid({ autoTheme: true }),
     starlight({
-      title: 'Physics Roadmap',
-      customCss: ['./src/styles/global.css'],
+      title: "Physics Roadmap",
+      customCss: ["./src/styles/global.css"],
       locales: {
         root: {
-          label: '日本語',
-          lang: 'ja',
+          label: "日本語",
+          lang: "ja",
         },
       },
     }),
@@ -277,17 +283,17 @@ export default defineConfig({
 
 ```css
 /* KaTeX stylesheet for build-time math rendering. */
-@import 'katex/dist/katex.min.css';
+@import "katex/dist/katex.min.css";
 
 /* Mafs styles for interactive math plots. */
-@import 'mafs/core.css';
-@import 'mafs/font.css';
+@import "mafs/core.css";
+@import "mafs/font.css";
 ```
 
 - [ ] **Step 5: Create `src/components/FunctionPlot.tsx`**
 
 ```tsx
-import { Mafs, Coordinates, Plot } from 'mafs';
+import { Mafs, Coordinates, Plot } from "mafs";
 
 // Static function plot template. Island props cannot be functions, so the
 // plotted function lives here. Copy this file and edit `f` for a new plot.
@@ -306,7 +312,7 @@ export default function FunctionPlot(): React.JSX.Element {
 - [ ] **Step 6: Append the function-plot section to `src/content/docs/showcase.mdx`**
 
 ```mdx
-import FunctionPlot from '../../components/FunctionPlot';
+import FunctionPlot from "../../components/FunctionPlot";
 
 ## 関数グラフ (Mafs)
 
@@ -335,19 +341,21 @@ git commit -m "feat: add React islands and a Mafs function plot"
 ### Task 4: Interactive Mafs components (slider + vector field)
 
 **Files:**
+
 - Create: `src/components/InteractivePlot.tsx`
 - Create: `src/components/VectorFieldPlot.tsx`
 - Modify: `src/content/docs/showcase.mdx` (append interactive sections)
 
 **Interfaces:**
+
 - Consumes: the React + Mafs toolchain from Task 3.
 - Produces: `InteractivePlot` (default export, no props) — a sine plot whose amplitude is driven by a range slider; `VectorFieldPlot` (default export, no props) — a vector field with a draggable point.
 
 - [ ] **Step 1: Create `src/components/InteractivePlot.tsx`**
 
 ```tsx
-import { useState } from 'react';
-import { Mafs, Coordinates, Plot } from 'mafs';
+import { useState } from "react";
+import { Mafs, Coordinates, Plot } from "mafs";
 
 // Mafs has no built-in slider, so use a plain range input + React state and
 // feed the value into the plotted function.
@@ -357,7 +365,7 @@ export default function InteractivePlot(): React.JSX.Element {
   return (
     <div>
       <label>
-        振幅: {amplitude.toFixed(1)}{' '}
+        振幅: {amplitude.toFixed(1)}{" "}
         <input
           type="range"
           min={0}
@@ -379,7 +387,7 @@ export default function InteractivePlot(): React.JSX.Element {
 - [ ] **Step 2: Create `src/components/VectorFieldPlot.tsx`**
 
 ```tsx
-import { Mafs, Coordinates, Plot, Vector, useMovablePoint } from 'mafs';
+import { Mafs, Coordinates, Plot, Vector, useMovablePoint } from "mafs";
 
 // Vector field with a draggable point. `useMovablePoint` returns the current
 // position (`.point`) and the draggable handle element (`.element`).
@@ -400,8 +408,8 @@ export default function VectorFieldPlot(): React.JSX.Element {
 - [ ] **Step 3: Append the interactive sections to `src/content/docs/showcase.mdx`**
 
 ```mdx
-import InteractivePlot from '../../components/InteractivePlot';
-import VectorFieldPlot from '../../components/VectorFieldPlot';
+import InteractivePlot from "../../components/InteractivePlot";
+import VectorFieldPlot from "../../components/VectorFieldPlot";
 
 ### スライダーで操作する例
 
@@ -436,11 +444,13 @@ git commit -m "feat: add interactive Mafs slider and vector field plots"
 ### Task 5: Data charts (Chart.js)
 
 **Files:**
+
 - Modify: `package.json` (add deps via pnpm)
 - Create: `src/components/DataChart.tsx`
 - Modify: `src/content/docs/showcase.mdx` (append data-chart section)
 
 **Interfaces:**
+
 - Consumes: the React toolchain from Task 3.
 - Produces: `DataChart` — a default-export React component with serializable props `type: 'line' | 'bar' | 'scatter'`, `data: object`, `options?: object`, rendering the matching react-chartjs-2 chart.
 
@@ -461,8 +471,8 @@ import {
   BarElement,
   Tooltip,
   Legend,
-} from 'chart.js';
-import { Line, Bar, Scatter } from 'react-chartjs-2';
+} from "chart.js";
+import { Line, Bar, Scatter } from "react-chartjs-2";
 
 // Register the Chart.js pieces used by line/bar/scatter charts once.
 ChartJS.register(
@@ -476,17 +486,17 @@ ChartJS.register(
 );
 
 interface DataChartProps {
-  type: 'line' | 'bar' | 'scatter';
+  type: "line" | "bar" | "scatter";
   // Chart.js data/options are plain objects, so they cross the island boundary.
   data: object;
   options?: object;
 }
 
 export default function DataChart({ type, data, options }: DataChartProps): React.JSX.Element {
-  if (type === 'bar') {
+  if (type === "bar") {
     return <Bar data={data as never} options={options as never} />;
   }
-  if (type === 'scatter') {
+  if (type === "scatter") {
     return <Scatter data={data as never} options={options as never} />;
   }
   return <Line data={data as never} options={options as never} />;
@@ -496,15 +506,15 @@ export default function DataChart({ type, data, options }: DataChartProps): Reac
 - [ ] **Step 3: Append the data-chart section to `src/content/docs/showcase.mdx`**
 
 ```mdx
-import DataChart from '../../components/DataChart';
+import DataChart from "../../components/DataChart";
 
 ## データのグラフ (Chart.js)
 
 export const chartData = {
-  labels: ['1月', '2月', '3月', '4月', '5月'],
+  labels: ["1月", "2月", "3月", "4月", "5月"],
   datasets: [
     {
-      label: '測定値',
+      label: "測定値",
       data: [12, 19, 3, 5, 14],
     },
   ],
@@ -535,6 +545,7 @@ git commit -m "feat: add Chart.js data charts"
 **Files:** none (verification only).
 
 **Interfaces:**
+
 - Consumes: everything from Tasks 1-5.
 - Produces: confirmation that the full build emits every feature marker.
 
@@ -546,12 +557,14 @@ Expected: build completes with "Complete!", exit 0.
 - [ ] **Step 2: Verify all feature markers**
 
 Run:
+
 ```bash
 f=dist/showcase/index.html
 echo "katex: $(grep -c 'class=\"katex\"' "$f")"
 echo "mermaid: $(grep -ci 'mermaid' "$f")"
 echo "islands: $(grep -c '<astro-island' "$f")"
 ```
+
 Expected: `katex` > 0, `mermaid` > 0, `islands` >= 4.
 
 - [ ] **Step 3: Manual preview check**
@@ -567,6 +580,7 @@ Then open the showcase page at the printed local URL (path `/physics-roadmap/sho
 ## Self-Review
 
 **Spec coverage:**
+
 - Math (KaTeX, remark-math + rehype-katex, global CSS) — Task 1.
 - Diagrams (astro-mermaid before starlight, mermaid 11, layout-elk) — Task 2.
 - React integration (@astrojs/react, react 19, tsconfig jsx) — Task 3.

@@ -11,14 +11,14 @@ a working CI deployment of a minimal site, not the documentation content itself.
 
 ## Decisions
 
-| Topic | Choice |
-| --- | --- |
-| Framework | Astro + Starlight (latest) |
-| Package manager | pnpm |
-| Node version | 24 (default of `withastro/action`) |
-| Documentation language | Japanese only (`lang: 'ja'`) |
-| Deployment | GitHub Actions (official `withastro/action`) |
-| Public URL | `https://seijikohara.github.io/physics-roadmap/` |
+| Topic                  | Choice                                           |
+| ---------------------- | ------------------------------------------------ |
+| Framework              | Astro + Starlight (latest)                       |
+| Package manager        | pnpm                                             |
+| Node version           | 24 (default of `withastro/action`)               |
+| Documentation language | Japanese only (`lang: 'ja'`)                     |
+| Deployment             | GitHub Actions (official `withastro/action`)     |
+| Public URL             | `https://seijikohara.github.io/physics-roadmap/` |
 
 ## Repository layout (minimal scaffold)
 

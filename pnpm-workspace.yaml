@@ -9,6 +9,6 @@ allowBuilds:
   sharp: false
   lefthook: true
 minimumReleaseAgeExclude:
-  - '@astrojs/markdown-satteri@0.3.1'
+  - "@astrojs/markdown-satteri@0.3.1"
   - astro@7.0.0
-  - '@astrojs/react@6.0.0'
+  - "@astrojs/react@6.0.0"

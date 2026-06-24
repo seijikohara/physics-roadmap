@@ -1,6 +1,33 @@
 /* KaTeX stylesheet for build-time math rendering. */
-@import 'katex/dist/katex.min.css';
+@import "katex/dist/katex.min.css";
 
-/* Mafs styles for interactive math plots. */
-@import 'mafs/core.css';
-@import 'mafs/font.css';
+/* Static Venn diagrams (inline SVG, see src/components/VennDiagram.tsx). */
+.venn-figure {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 16 / 10;
+  margin: 1rem auto;
+}
+
+/*
+ * Labels follow the current theme text color and match the KaTeX math font used
+ * by inline `$...$` math. KaTeX_Math carries the italic Latin letters (A, B, U);
+ * operators (∩, ∪, =) and ∅ fall back to KaTeX_Main / KaTeX_AMS, then serif.
+ */
+.venn-figure text {
+  fill: currentColor;
+  font-family: "KaTeX_Math", "KaTeX_Main", "KaTeX_AMS", serif;
+}
+
+.venn-figure .venn-name {
+  font-size: 16px;
+}
+
+.venn-figure .venn-region {
+  font-size: 12px;
+}
+
+.venn-figure .venn-u {
+  font-size: 14px;
+}
