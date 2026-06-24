@@ -41,11 +41,6 @@
   margin: 1rem auto;
 }
 
-/* 軸上の点は文字色に追従する（強調点はコンポーネントが色を指定する）。 */
-.number-line .number-line-dot {
-  fill: currentColor;
-}
-
 /*
  * 区間の開いた端点（白丸）は、ページ背景色で塗り抜く。プレゼンテーション属性 fill より
  * CSS が優先されるため、light/dark の両テーマで中抜きに見える。

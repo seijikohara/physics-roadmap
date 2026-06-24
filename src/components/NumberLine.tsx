@@ -47,7 +47,7 @@ type NumberLineProps = {
   min: number;
   /** 軸の最大値。 */
   max: number;
-  /** 目盛り。省略時は整数位置を自動で振らず、軸の両端のみ描く。 */
+  /** 目盛り。省略時は目盛りを描かない（軸線と矢印だけを描く）。 */
   ticks?: Tick[];
   /** 軸上に置く点。 */
   points?: Point[];
@@ -58,7 +58,6 @@ type NumberLineProps = {
 };
 
 const AXIS = "#94a3b8";
-const MARK = "#1f2937";
 const HIGHLIGHT = "#f59e0b";
 
 // 描画領域。viewBox は VennDiagram と同じ 320×（縦は数直線向けに低め）に合わせる。
@@ -178,10 +177,12 @@ export default function NumberLine({
       {/* 軸上の点。 */}
       {points.map((p, i) => {
         const px = x(p.value);
-        const color = p.highlight ? HIGHLIGHT : MARK;
+        // 通常点はテーマの文字色に追従させ、強調点は強調色で固定する。CSS による上書きを
+        // 避け、プレゼンテーション属性 fill で色を確定する。
+        const color = p.highlight ? HIGHLIGHT : "currentColor";
         return (
           <g key={`pt-${i}`}>
-            <circle cx={px} cy={AXIS_Y} r={4} fill={color} className="number-line-dot" />
+            <circle cx={px} cy={AXIS_Y} r={4} fill={color} />
             {p.label !== undefined && (
               <KatexLabel tex={p.label} x={px} y={AXIS_Y - 14} fontSize={13} />
             )}

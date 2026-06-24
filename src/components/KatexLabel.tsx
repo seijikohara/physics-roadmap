@@ -37,7 +37,13 @@ export default function KatexLabel({
   height = 24,
   fontSize = 14,
 }: KatexLabelProps) {
-  const html = renderToString(tex, { throwOnError: false, displayMode: false });
+  // trust: false（既定）を明示する。\href や \htmlClass など、HTML を注入しうる
+  // コマンドを無効に保ち、dangerouslySetInnerHTML へ渡す HTML を安全側に倒す。
+  const html = renderToString(tex, {
+    throwOnError: false,
+    displayMode: false,
+    trust: false,
+  });
   return (
     <foreignObject
       x={x - width / 2}
