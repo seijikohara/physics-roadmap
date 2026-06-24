@@ -26,7 +26,19 @@ export default defineConfig({
   integrations: [
     react(),
     // astro-mermaid はコードブロックを変換するため、starlight より前に置く。
-    mermaid({ autoTheme: true }),
+    // forceLegacyMathML: true で、図中の `$$...$$` 数式を KaTeX で描く。既定の MathML
+    // 任せは OS・ブラウザ間で字形が不安定なため、KaTeX 組版に固定して本文の数式と字形を
+    // そろえる。KaTeX のスタイルは global.css の `@import "katex/dist/katex.min.css"` が供給する。
+    mermaid({
+      autoTheme: true,
+      mermaidConfig: {
+        forceLegacyMathML: true,
+        // 図中の地の文（ラベルの日本語）を、サイト本文と同じシステムフォントで描く。
+        // Mermaid の既定（trebuchet）は本文と字形が異なるため、本文のフォントスタックに合わせる。
+        fontFamily:
+          '-apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif',
+      },
+    }),
     starlight({
       title: "Physics Roadmap",
       customCss: ["./src/styles/global.css"],
