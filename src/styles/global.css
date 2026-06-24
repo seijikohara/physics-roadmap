@@ -31,3 +31,29 @@
 .venn-figure .venn-u {
   font-size: 14px;
 }
+
+/* 静的な数直線（インライン SVG。src/components/NumberLine.tsx を参照）。 */
+.number-line {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  aspect-ratio: 320 / 96;
+  margin: 1rem auto;
+}
+
+/*
+ * 区間の開いた端点（白丸）は、ページ背景色で塗り抜く。プレゼンテーション属性 fill より
+ * CSS が優先されるため、light/dark の両テーマで中抜きに見える。
+ */
+.number-line .number-line-open {
+  fill: var(--sl-color-bg, #fff);
+}
+
+/* 静的な面積図（インライン SVG。src/components/AreaModel.tsx を参照）。 */
+.area-model {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  aspect-ratio: 320 / 240;
+  margin: 1rem auto;
+}
