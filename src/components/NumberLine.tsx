@@ -202,7 +202,7 @@ function endpoint(key: string, cx: number, closed: boolean): ReactNode {
       cy={AXIS_Y}
       r={4.5}
       className={closed ? "number-line-closed" : "number-line-open"}
-      fill={closed ? HIGHLIGHT : "var(--nl-bg, #fff)"}
+      fill={closed ? HIGHLIGHT : "var(--sl-color-bg, #fff)"}
       stroke={HIGHLIGHT}
       strokeWidth={1.8}
     />
