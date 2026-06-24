@@ -5,6 +5,8 @@ sidebar:
   order: 5
 ---
 
+import AreaModel from "../../../../components/AreaModel";
+
 ## 前提
 
 本章の前提は、最初の章[前提とする知識](../../../prerequisites/knowledge/)である。文字式の足し算・引き算・掛け算と、累乗の表記 $a^2 = a \times a$ を使う。
@@ -141,23 +143,25 @@ $$
 a(b + c) = ab + ac
 $$
 
-分配法則は、長方形の面積で理解できる。下の図は、縦 $a$・横 $b + c$ の長方形を、横の長さ $b$ と $c$ で左右 2 つに分けた図である。図の上の段は縦の長さ $a$ を表し、下の段は分けた領域を表す。
+分配法則は、長方形の面積で理解できる。図 1 は、縦 $a$・横 $b + c$ の長方形を、横の長さ $b$ と $c$ で左右 2 つに分けた図である。左の辺は縦の長さ $a$ を表し、上の辺は横を $b$ と $c$ に分けた区切りを表す。
 
-```mermaid
-block-beta
-  columns 2
-  H["縦 a"]:2
-  block:row1:2
-    AB["面積 ab"]
-    AC["面積 ac"]
-  end
-  W1["横 b"]
-  W2["横 c"]
-```
-
-<p style="text-align:center">
-  <em>図 1. 分配法則 $a(b + c) = ab + ac$ を表す長方形の面積分割。</em>
-</p>
+<figure style="text-align:center">
+  <AreaModel
+    rows={[{ length: 2, label: "a" }]}
+    columns={[
+      { length: 2, label: "b" },
+      { length: 1.5, label: "c" },
+    ]}
+    cells={[
+      { col: 0, row: 0, label: "ab" },
+      { col: 1, row: 0, label: "ac" },
+    ]}
+    ariaLabel="縦 a・横 b+c の長方形を、横の長さ b と c で左右 2 つに分けた面積図。左の面積は ab、右の面積は ac。"
+  />
+  <figcaption>
+    <em>図 1. 分配法則 $a(b + c) = ab + ac$ を表す長方形の面積分割。</em>
+  </figcaption>
+</figure>
 
 長方形全体の面積は、縦 $a$ と横 $b + c$ の積 $a(b + c)$ である。同じ長方形を縦線で 2 つに分けると、縦 $a$・横 $b$ で面積 $ab$ の長方形と、縦 $a$・横 $c$ で面積 $ac$ の長方形になる。2 つの面積の和は全体の面積に等しい。よって $a(b + c) = ab + ac$ が成り立つ。
 
@@ -242,26 +246,33 @@ $$
 
 公式 (1) と公式 (2) の違いは、中央の項の符号だけである。和の平方では $+2ab$、差の平方では $-2ab$ となる。
 
-公式 (1) も、正方形の面積で理解できる。下の図 2 は、1 辺 $a + b$ の正方形を、縦横とも $a$ と $b$ で分けた図である。
+公式 (1) も、正方形の面積で理解できる。下の図 2 は、1 辺 $a + b$ の正方形を、縦横とも $a$ と $b$ で分けた図である。縦横の長さはともに $a + b$ で等しく、図全体は正方形になる。図では $a$ を $b$ より長くとり、$a^2 > ab > b^2$ の面積差が見えるようにする。
 
-```mermaid
-block-beta
-  columns 2
-  block:top:2
-    AA["面積 a²"]
-    AB1["面積 ab"]
-  end
-  block:bottom:2
-    AB2["面積 ab"]
-    BB["面積 b²"]
-  end
-```
+<figure style="text-align:center">
+  <AreaModel
+    equalScale
+    rows={[
+      { length: 2, label: "a" },
+      { length: 1, label: "b" },
+    ]}
+    columns={[
+      { length: 2, label: "a" },
+      { length: 1, label: "b" },
+    ]}
+    cells={[
+      { col: 0, row: 0, label: "a^2", highlight: true },
+      { col: 1, row: 0, label: "ab" },
+      { col: 0, row: 1, label: "ab" },
+      { col: 1, row: 1, label: "b^2", highlight: true },
+    ]}
+    ariaLabel="1 辺 a+b の正方形を、縦横とも a と b で分けた面積図。左上は面積 a²、右下は面積 b²、残る 2 つは面積 ab。"
+  />
+  <figcaption>
+    <em>図 2. 公式 (1) $(a + b)^2 = a^2 + 2ab + b^2$ を表す正方形の面積分割。</em>
+  </figcaption>
+</figure>
 
-<p style="text-align:center">
-  <em>図 2. 公式 (1) $(a + b)^2 = a^2 + 2ab + b^2$ を表す正方形の面積分割。</em>
-</p>
-
-下の図は、1 辺 $a + b$ の正方形を縦横とも $a$ と $b$ で分け、4 つの長方形に区切った図である。左上は 1 辺 $a$ の正方形で面積 $a^2$、右下は 1 辺 $b$ の正方形で面積 $b^2$ になる。残る 2 つは縦 $a$・横 $b$ の長方形で、面積はともに $ab$ である。4 つの和は $a^2 + 2ab + b^2$ となり、公式 (1) と一致する。
+正方形を縦横とも $a$ と $b$ で分けると、4 つの長方形に区切れる。左上は 1 辺 $a$ の正方形で面積 $a^2$、右下は 1 辺 $b$ の正方形で面積 $b^2$ になる。残る 2 つは縦 $a$・横 $b$ の長方形で、面積はともに $ab$ である。4 つの和は $a^2 + 2ab + b^2$ となり、公式 (1) と一致する。
 
 ### 公式 (3)：和と差の積
 

@@ -5,6 +5,8 @@ sidebar:
   order: 10
 ---
 
+import NumberLine from "../../../../components/NumberLine";
+
 ## 前提
 
 本章の前提は、次の 2 つの章である。
@@ -48,12 +50,19 @@ sidebar:
 
 下の数直線は、$a < b$ の関係を表す。点 $a$ は点 $b$ より左にある。
 
-```mermaid
-flowchart LR
-  A["a"] -- "左ほど小さい" --- B["b"]
-```
-
-<figcaption>$a < b$ のとき、点 $a$ は点 $b$ より左にある。数直線は右へ進むほど値が大きくなる。</figcaption>
+<figure>
+  <NumberLine
+    min={-4}
+    max={4}
+    ticks={[{ value: 0 }]}
+    points={[
+      { value: -1, label: "a" },
+      { value: 2, label: "b" },
+    ]}
+    ariaLabel="数直線。左に点 a、右に点 b があり、点 a は点 b より左にある。"
+  />
+  <figcaption>$a < b$ のとき、点 $a$ は点 $b$ より左にある。数直線は右へ進むほど値が大きくなる。</figcaption>
+</figure>
 
 例として $-3$ と $2$ を比べる。点 $-3$ は点 $2$ より左にある。よって $-3 < 2$ である。負の数どうしでは、原点に近いほうが大きい。例えば $-3 < -1$ である。点 $-3$ は点 $-1$ より左にあるからである。
 
@@ -251,23 +260,37 @@ $$
 
 解 $x > 2$ を数直線で表す。端点 $2$ は含まないので白丸とし、$2$ より右の範囲を解とする。
 
-```mermaid
-flowchart LR
-  L["小さい側"] -- "解でない" --- T["2（白丸）"] -- "2 より右が解 →" --- R["大きい側"]
-```
-
-<figcaption>解 $x > 2$ の数直線表示。端点 $2$ を白丸で表し含めない。$2$ より右の範囲を解とする。</figcaption>
+<figure>
+  <NumberLine
+    min={-2}
+    max={6}
+    ticks={[
+      { value: -2 },
+      { value: 0 },
+      { value: 2 },
+      { value: 4 },
+      { value: 6 },
+    ]}
+    intervals={[{ from: 2, fromClosed: false }]}
+    ariaLabel="数直線。点 2 が白丸で、2 より右の範囲を太い帯で塗ってある。"
+  />
+  <figcaption>解 $x > 2$ の数直線表示。端点 $2$ を白丸で表し含めない。$2$ より右の範囲を解とする。</figcaption>
+</figure>
 
 解 $x \ge 4$ を数直線で表す。端点 $4$ は含むので黒丸とし、$4$ より右の範囲を解とする。
 
-```mermaid
-flowchart LR
-  L["小さい側"] -- "解でない" --- T["4（黒丸）"] -- "4 以上が解 →" --- R["大きい側"]
-```
-
-<figcaption>
-  解 $x \ge 4$ の数直線表示。端点 $4$ を黒丸で表し含める。$4$ 以上の範囲を解とする。
-</figcaption>
+<figure>
+  <NumberLine
+    min={0}
+    max={8}
+    ticks={[{ value: 0 }, { value: 2 }, { value: 4 }, { value: 6 }, { value: 8 }]}
+    intervals={[{ from: 4, fromClosed: true }]}
+    ariaLabel="数直線。点 4 が黒丸で、4 より右の範囲を太い帯で塗ってある。"
+  />
+  <figcaption>
+    解 $x \ge 4$ の数直線表示。端点 $4$ を黒丸で表し含める。$4$ 以上の範囲を解とする。
+  </figcaption>
+</figure>
 
 端点の開閉は、解の範囲を正しく伝えるために欠かせない。$x > 2$ と $x \ge 2$ は、端点 $2$ を含むかどうかだけが異なる。白丸と黒丸の区別で、違いを図に表す。
 
@@ -312,20 +335,32 @@ $1 < x < 5$ は、$1 < x$ と $x < 5$ を 1 つにまとめた表記である。
 
 数直線で共通部分を読み取る。第 1 式の解 $x > 1$ は $1$ より右、第 2 式の解 $x < 5$ は $5$ より左である。両方が重なる範囲は、$1$ と $5$ の間になる。
 
-```mermaid
-flowchart LR
-  subgraph S1["第 1 式の解: x > 1"]
-    A1["1（白丸）"] -- "1 より右が解 →" --- A2["大きい側"]
-  end
-  subgraph S2["第 2 式の解: x < 5"]
-    B1["小さい側"] -- "← 5 より左が解" --- B2["5（白丸）"]
-  end
-  subgraph S3["共通部分: 1 < x < 5"]
-    C1["1（白丸）"] -- "1 と 5 の間が解" --- C2["5（白丸）"]
-  end
-```
-
-<figcaption>連立一次不等式の解は、各不等式の解の範囲が重なる共通部分である。$x > 1$ と $x < 5$ の共通部分は $1 < x < 5$ になる。</figcaption>
+<figure>
+  <NumberLine
+    min={-1}
+    max={7}
+    ticks={[{ value: 0 }, { value: 1 }, { value: 3 }, { value: 5 }]}
+    intervals={[{ from: 1, fromClosed: false }]}
+    ariaLabel="第 1 式の解。数直線で点 1 が白丸、1 より右の範囲を塗ってある。x は 1 より大きい。"
+  />
+  <NumberLine
+    min={-1}
+    max={7}
+    ticks={[{ value: 0 }, { value: 1 }, { value: 3 }, { value: 5 }]}
+    intervals={[{ to: 5, toClosed: false }]}
+    ariaLabel="第 2 式の解。数直線で点 5 が白丸、5 より左の範囲を塗ってある。x は 5 より小さい。"
+  />
+  <NumberLine
+    min={-1}
+    max={7}
+    ticks={[{ value: 0 }, { value: 1 }, { value: 3 }, { value: 5 }]}
+    intervals={[{ from: 1, to: 5, fromClosed: false, toClosed: false }]}
+    ariaLabel="共通部分。数直線で点 1 と点 5 がともに白丸、1 と 5 の間の範囲を塗ってある。"
+  />
+  <figcaption>
+    連立一次不等式の解は、各不等式の解の範囲が重なる共通部分である。上から順に、第 1 式の解 $x > 1$、第 2 式の解 $x < 5$、共通部分 $1 < x < 5$ を表す。端点 $1$ と $5$ はともに含まない。
+  </figcaption>
+</figure>
 
 ### 共通部分が空になる場合
 
@@ -365,12 +400,16 @@ $$
 
 数直線で確かめる。原点から距離 $a$ の点は、右に $a$、左に $-a$ の 2 点である。距離が $a$ 未満の点は、2 点の間にある。端点 $-a$ と $a$ は距離がちょうど $a$ なので、$<$ では含まない。
 
-```mermaid
-flowchart LR
-  L["−a（白丸）"] -- "−a と a の間が解" --- O["0"] -- "原点も解に含む" --- R["a（白丸）"]
-```
-
-<figcaption>$\lvert x \rvert < a$ の解は、原点からの距離が $a$ 未満の範囲、すなわち $-a < x < a$ である。端点 $-a$ と $a$ は含まない。</figcaption>
+<figure>
+  <NumberLine
+    min={-5}
+    max={5}
+    ticks={[{ value: -3 }, { value: 0 }, { value: 3 }]}
+    intervals={[{ from: -3, to: 3, fromClosed: false, toClosed: false }]}
+    ariaLabel="数直線。点 −3 と点 3 がともに白丸で、−3 と 3 の間の範囲を塗ってある。塗った範囲は原点をまたぐ。"
+  />
+  <figcaption>$\lvert x \rvert < a$ の解は、原点からの距離が $a$ 未満の範囲、すなわち $-a < x < a$ である。図は $a = 3$ の場合で、解は $-3 < x < 3$ になる。端点 $-3$ と $3$ は含まない。</figcaption>
+</figure>
 
 ### $\lvert x \rvert > a$ の解
 
@@ -384,12 +423,19 @@ $\lvert x \rvert < a$ の解が 1 つの範囲だったのに対し、$\lvert x 
 
 数直線で確かめる。距離が $a$ を超える点は、$-a$ より左の範囲と、$a$ より右の範囲の 2 か所に分かれる。端点 $-a$ と $a$ は距離がちょうど $a$ なので、$>$ では含まない。
 
-```mermaid
-flowchart LR
-  LL["小さい側"] -- "← −a より左が解" --- L["−a（白丸）"] -- "−a と a の間は解でない" --- R["a（白丸）"] -- "a より右が解 →" --- RR["大きい側"]
-```
-
-<figcaption>$\lvert x \rvert > a$ の解は、原点からの距離が $a$ を超える範囲、すなわち $x < -a$ または $x > a$ である。離れた 2 つの範囲になる。</figcaption>
+<figure>
+  <NumberLine
+    min={-5}
+    max={5}
+    ticks={[{ value: -3 }, { value: 0 }, { value: 3 }]}
+    intervals={[
+      { to: -3, toClosed: false },
+      { from: 3, fromClosed: false },
+    ]}
+    ariaLabel="数直線。点 −3 より左の範囲と、点 3 より右の範囲を塗ってある。点 −3 と点 3 はともに白丸で、間は塗らない。"
+  />
+  <figcaption>$\lvert x \rvert > a$ の解は、原点からの距離が $a$ を超える範囲、すなわち $x < -a$ または $x > a$ である。図は $a = 3$ の場合で、解は $x < -3$ または $x > 3$ になる。離れた 2 つの範囲になる。</figcaption>
+</figure>
 
 ### 不等号に等号を含む場合
 

@@ -5,6 +5,8 @@ sidebar:
   order: 2
 ---
 
+import NumberLine from "../../../../components/NumberLine";
+
 ## 前提
 
 本章の前提は、同じ代数カテゴリの章[実数と数の体系](../real-number-system/)である。実数・有理数・無理数・数直線・大小関係の知識を前提とする。
@@ -52,15 +54,22 @@ $a > 0$ のとき平方根は 2 個ある。2 個のうち正のほうを記号 
 
 下の数直線は、$\sqrt{a}$ が原点の右側（正の側）にあり、もう一方の平方根 $-\sqrt{a}$ が原点について対称な左側にある関係を表す。
 
-```mermaid
-flowchart LR
-  N["−√a"] -- "距離 √a" --- O["0"] -- "距離 √a" --- P["√a"]
-```
-
-<figcaption>
-  $\sqrt{a}$ は原点の右側、$-\sqrt{a}$ は原点について対称な左側にある。両者は原点から等しい距離
-  $\sqrt{a}$ にある。
-</figcaption>
+<figure>
+  <NumberLine
+    min={-3}
+    max={3}
+    ticks={[{ value: 0 }]}
+    points={[
+      { value: -1.7, label: "-\\sqrt{a}", highlight: true },
+      { value: 1.7, label: "\\sqrt{a}", highlight: true },
+    ]}
+    ariaLabel="数直線。原点 0 の右側に √a、左側に対称な −√a がある。両点は原点から等しい距離にある。"
+  />
+  <figcaption>
+    $\sqrt{a}$ は原点 $0$ の右側、$-\sqrt{a}$
+    は原点について対称な左側にある。両点は原点から等しい距離 $\sqrt{a}$ にあり、符号だけが異なる。
+  </figcaption>
+</figure>
 
 ### 平方根の基本性質
 
@@ -107,15 +116,22 @@ $$
 
 下の数直線は、$a = 3$ と $a = -3$ が、ともに原点から距離 $3$ の位置にある関係を表す。$\lvert 3 \rvert = 3$ と $\lvert -3 \rvert = 3$ は、原点からの距離が等しいことに対応する。
 
-```mermaid
-flowchart LR
-  A["−3"] -- "距離 3" --- O["0"] -- "距離 3" --- B["3"]
-```
-
-<figcaption>
-  $\lvert 3 \rvert = \lvert -3 \rvert = 3$ は、点 $3$ と点 $-3$ がともに原点から距離 $3$
-  にあることを表す。
-</figcaption>
+<figure>
+  <NumberLine
+    min={-4}
+    max={4}
+    ticks={[{ value: -3 }, { value: 0 }, { value: 3 }]}
+    points={[
+      { value: -3, label: "-3", highlight: true },
+      { value: 3, label: "3", highlight: true },
+    ]}
+    ariaLabel="数直線。点 3 と点 −3 がともに原点 0 から距離 3 の位置にある。"
+  />
+  <figcaption>
+    $\lvert 3 \rvert = \lvert -3 \rvert = 3$ は、点 $3$ と点 $-3$ がともに原点から距離 $3$
+    にあることを表す。両点は原点について対称である。
+  </figcaption>
+</figure>
 
 絶対値を距離として捉えると、後の章で扱う絶対値を含む方程式や不等式を、数直線上の距離の問題として読み替えられる。
 
