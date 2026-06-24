@@ -49,6 +49,10 @@ export default defineConfig({
               label: "数学の言葉",
               items: [{ autogenerate: { directory: "math/set" } }],
             },
+            {
+              label: "代数",
+              items: [{ autogenerate: { directory: "math/algebra" } }],
+            },
           ],
         },
       ],
