@@ -1,6 +1,16 @@
 /* ビルド時に数式を描画するための KaTeX スタイルシート。 */
 @import "katex/dist/katex.min.css";
 
+/*
+ * Mermaid 図中の数式（forceLegacyMathML による KaTeX 組版）で、根号やオーバーブレースなどの
+ * 伸縮グリフが消える問題を直す。KaTeX はそれらを高さ指定付きの親（.hide-tail・.brace-* など）の
+ * 中の SVG で描くが、katex 0.17 では foreignObject 内で SVG が高さ 0 に潰れる。SVG に親の高さを
+ * 継がせて復元する。`.mermaid` 配下に限定し、本文の数式には影響しない。
+ */
+.mermaid .katex svg {
+  height: 100%;
+}
+
 /* 静的なベン図（インライン SVG。src/components/VennDiagram.tsx を参照）。 */
 .venn-figure {
   display: block;
