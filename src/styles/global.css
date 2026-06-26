@@ -97,6 +97,20 @@
 }
 
 /*
+ * 固定幅アクセント（\vec・\hat・\dot・\bar など）の矢印・記号が本文中で消える問題を直す。
+ *
+ * KaTeX はアクセントの記号を `.accent-body > .overlay` 内のインライン SVG で描く。SVG は
+ * `position: absolute; width: 100%`（katex.css）で、本来は親 `.overlay` を基準に幅を取る。
+ * ところが `.overlay` の position が static のままだと、絶対配置の基準が幅 0 の
+ * `.accent-body`（`.accent-body:not(.accent-full)` に `width: 0`）へ移り、SVG 幅が 0 に
+ * 潰れて矢印が描かれない（例: $\vec{a}$ が「a」に見える）。`.overlay` を相対配置にして
+ * 基準を取り戻す。伸縮アクセント（\overrightarrow など）は `.stretchy` 配下のため影響しない。
+ */
+.katex .overlay {
+  position: relative;
+}
+
+/*
  * 図コンポーネント共通の補助線の色（グリッド・軸・円・補助線）。淡色のため、暗テーマでは
  * 背景に対して明るすぎ、主役の曲線・図形より目立つ。テーマごとに色を切り替えて沈める。
  * 各コンポーネントはプレゼンテーション属性 stroke に変数を渡す（src/components/ を参照）。
