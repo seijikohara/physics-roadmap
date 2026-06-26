@@ -67,8 +67,8 @@
  * `.cjk_fallback` で描き、既定では `KaTeX_Main, "Times New Roman", serif` にフォール
  * バックする。一方 FlowChart の地の文は foreignObject で本文フォントを継ぐ。両者を放置
  * すると、同じ図群の中で日本語が別フォントに割れる。CJK フォールバックを本文フォント
- * （--sl-font ＝ Noto Serif JP）に上書きし、全図の日本語を本文とそろえる。ラテン文字・
- * 数式記号は KaTeX のままにする。
+ * スタック（--sl-font）に上書きする。和文には Noto Serif JP が当たるため、全図の日本語が
+ * 本文とそろう。ラテン文字・数式記号は KaTeX のままにする。
  */
 .katex .cjk_fallback {
   font-family: var(--sl-font, var(--__sl-font, sans-serif));
