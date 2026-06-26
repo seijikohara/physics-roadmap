@@ -428,15 +428,19 @@ export default function SpaceVectorDiagram({
         const ang = Math.atan2(toP.sy - fromP.sy, toP.sx - fromP.sx);
         const cos = Math.cos(ang);
         const sin = Math.sin(ang);
-        const base = { sx: toP.sx - HEAD_LEN * cos, sy: toP.sy - HEAD_LEN * sin };
-        const left = { sx: base.sx - HEAD_HALF * sin, sy: base.sy + HEAD_HALF * cos };
-        const right = { sx: base.sx + HEAD_HALF * sin, sy: base.sy - HEAD_HALF * cos };
+        const len = Math.hypot(toP.sx - fromP.sx, toP.sy - fromP.sy) || 1;
+        // 矢じり長はベクトルのスクリーン長を超えないよう上限を付ける。短いベクトルで base が
+        // 始点を越えて描画が崩れるのを防ぐ。半幅も同じ比率で縮め、矢じりの形を保つ。
+        const hl = Math.min(HEAD_LEN, len * 0.8);
+        const hh = HEAD_HALF * (hl / HEAD_LEN);
+        const base = { sx: toP.sx - hl * cos, sy: toP.sy - hl * sin };
+        const left = { sx: base.sx - hh * sin, sy: base.sy + hh * cos };
+        const right = { sx: base.sx + hh * sin, sy: base.sy - hh * cos };
         // ラベルは線分の中点を基準に、直交方向へ逃がしつつ線に沿って前後へもずらす。長い
         // ベクトル（縦に伸びる外積など）は、中点で隣のラベルと衝突しても、矢印に沿って先端側へ
         // 滑らせれば空きが見つかる。直交のみだと幅の広いラベルが逃げ切れない。
         const mx = (fromP.sx + toP.sx) / 2;
         const my = (fromP.sy + toP.sy) / 2;
-        const len = Math.hypot(toP.sx - fromP.sx, toP.sy - fromP.sy) || 1;
         const perpX = -(toP.sy - fromP.sy) / len;
         const perpY = (toP.sx - fromP.sx) / len;
         const alongX = (toP.sx - fromP.sx) / len;

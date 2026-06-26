@@ -626,11 +626,16 @@ export default function FunctionGraph({
           const ang = Math.atan2(toP.y - fromP.y, toP.x - fromP.x);
           const cos = Math.cos(ang);
           const sin = Math.sin(ang);
+          // 矢じり長はベクトルのスクリーン長を超えないよう上限を付ける。短いベクトルで base が
+          // 始点を越えて描画が崩れるのを防ぐ。半幅も同じ比率で縮め、矢じりの形を保つ。
+          const vlen = Math.hypot(toP.x - fromP.x, toP.y - fromP.y);
+          const hl = Math.min(HEAD_LEN, vlen * 0.8);
+          const hh = HEAD_HALF * (hl / HEAD_LEN);
           // 矢じりの根元まで線を引き、矢じりと線を重ねない。
-          const base = { x: toP.x - HEAD_LEN * cos, y: toP.y - HEAD_LEN * sin };
+          const base = { x: toP.x - hl * cos, y: toP.y - hl * sin };
           // 矢じりの底辺の 2 端（進行方向に直交する向きへ半幅だけ広げる）。
-          const left = { x: base.x - HEAD_HALF * sin, y: base.y + HEAD_HALF * cos };
-          const right = { x: base.x + HEAD_HALF * sin, y: base.y - HEAD_HALF * cos };
+          const left = { x: base.x - hh * sin, y: base.y + hh * cos };
+          const right = { x: base.x + hh * sin, y: base.y - hh * cos };
           const vp = vectorLabelPos[i];
           return (
             <g key={`vec-${i}`}>
