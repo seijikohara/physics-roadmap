@@ -5,6 +5,8 @@ sidebar:
   order: 7
 ---
 
+import FlowChart from "../../../../components/FlowChart";
+
 ## 前提
 
 本章の前提は、前の章[多項式の展開](../polynomial-expansion/)である。単項式・多項式・項・係数・定数項・次数の用語を使う。分配法則 $a(b + c) = ab + ac$ と乗法公式も使う。
@@ -54,14 +56,25 @@ sidebar:
 
 下の図は、等式を恒等式と方程式に分類する流れである。
 
-```mermaid
-flowchart TD
-  A["文字を含む等式"] --> B{"どの値を代入しても<br/>両辺が等しいか"}
-  B -->|はい| C["恒等式"]
-  B -->|いいえ| D["方程式"]
-  C --> E["例: $$2x + 3x = 5x$$"]
-  D --> F["例: $$2x + 3 = 7$$"]
-```
+<FlowChart
+  direction="TD"
+  ariaLabel="文字を含む等式が、どの値を代入しても両辺が等しいかで恒等式と方程式に分かれる分類図。恒等式の例は 2x+3x=5x、方程式の例は 2x+3=7。"
+  nodes={[
+    { id: "A", label: "文字を含む等式" },
+    { id: "B", shape: "diamond", label: "どの値を代入しても\n両辺が等しいか" },
+    { id: "C", label: "恒等式" },
+    { id: "D", label: "方程式" },
+    { id: "E", label: "例: $2x + 3x = 5x$" },
+    { id: "F", label: "例: $2x + 3 = 7$" },
+  ]}
+  edges={[
+    { from: "A", to: "B" },
+    { from: "B", to: "C", label: "はい" },
+    { from: "B", to: "D", label: "いいえ" },
+    { from: "C", to: "E" },
+    { from: "D", to: "F" },
+  ]}
+/>
 
 <p style="text-align:center">
   <em>図 1. 等式を恒等式と方程式に分類する流れ。</em>

@@ -26,13 +26,22 @@ importers:
       '@visx/axis':
         specifier: ^4.0.0
         version: 4.0.0(@types/react@19.2.17)(react@19.2.7)
+      '@visx/clip-path':
+        specifier: ^4.0.0
+        version: 4.0.0(@types/react@19.2.17)(react@19.2.7)
       '@visx/curve':
         specifier: ^4.0.0
         version: 4.0.0
+      '@visx/glyph':
+        specifier: ^4.0.0
+        version: 4.0.0(@types/react@19.2.17)(react@19.2.7)
       '@visx/grid':
         specifier: ^4.0.0
         version: 4.0.0(@types/react@19.2.17)(react@19.2.7)
       '@visx/group':
+        specifier: ^4.0.0
+        version: 4.0.0(@types/react@19.2.17)(react@19.2.7)
+      '@visx/hierarchy':
         specifier: ^4.0.0
         version: 4.0.0(@types/react@19.2.17)(react@19.2.7)
       '@visx/marker':
@@ -1593,6 +1602,9 @@ packages:
   '@types/d3-geo@3.1.0':
     resolution: {integrity: sha512-856sckF0oP/diXtS4jNsiQw/UuK5fQG8l/a9VVLeSouf1/PPbBE1i1W852zVwKwYCBkFJJB7nCFTbk6UMEXBOQ==}
 
+  '@types/d3-hierarchy@1.1.11':
+    resolution: {integrity: sha512-lnQiU7jV+Gyk9oQYk0GGYccuexmQPTp08E0+4BidgFdiJivjEvf+esPSdZqCZ2C7UwTWejWpqetVaU8A+eX3FA==}
+
   '@types/d3-hierarchy@3.1.7':
     resolution: {integrity: sha512-tJFtNoYBtRtkNysX1Xq4sxtjK8YgoWUNpIiUee0/jHGRwqvzYxkq0hGVbbOGSz+JgFxxRu4K8nb3YpG3CMARtg==}
 
@@ -1742,6 +1754,15 @@ packages:
       '@types/react':
         optional: true
 
+  '@visx/clip-path@4.0.0':
+    resolution: {integrity: sha512-xc8HWuuff3WJeOF/rPxcDFOalh1kMzebt/UvmCYC1RMZAMCN/nlhuSj+r7kz6OCdjRVq5NHm/D8S+2Ju+/eFmQ==}
+    peerDependencies:
+      '@types/react': ^18.0.0 || ^19.0.0
+      react: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
   '@visx/curve@4.0.0':
     resolution: {integrity: sha512-bXrOSd2BzVCxR7kBE7gPTSU4plxzYN75w7erdHYabwn3vzP+xFk1o0gg3NOHEPJzt5tXqf0Ecm5YqHACOnipTA==}
 
@@ -1763,6 +1784,15 @@ packages:
       '@types/react':
         optional: true
 
+  '@visx/glyph@4.0.0':
+    resolution: {integrity: sha512-MAj+nKCVQKoWGVo5p/8dDCPrjwZNL2bTEpPLnSwGVowAjmgF83J5xIEP5ARslNH/GrWJRpVT9uyl7ATEd8nzMQ==}
+    peerDependencies:
+      '@types/react': ^18.0.0 || ^19.0.0
+      react: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
   '@visx/grid@4.0.0':
     resolution: {integrity: sha512-BUnznqYo8jyn3zXRWZiF0zwg1VQl6w5kYqZ+XMY+cPXtAHZZbwGXBChMpPefH5Lj1+P1b4Pf3QihKG8zjL9PCw==}
     peerDependencies:
@@ -1774,6 +1804,15 @@ packages:
 
   '@visx/group@4.0.0':
     resolution: {integrity: sha512-HGAq8BCqn5x0t94CJOLJeKtWss9LFpF3HY69HbuO1PlR+B9c4aVT9xbjfudmU8wGQZLT6JNt+PJvxbO2aJ+1aA==}
+    peerDependencies:
+      '@types/react': ^18.0.0 || ^19.0.0
+      react: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  '@visx/hierarchy@4.0.0':
+    resolution: {integrity: sha512-u6L3TjHazIP/XTOgmnsqWaRKGKYXU6WgjZHAIyxN8jV4kHII7sKvqD9fvjec6v0NpIPB3oHj4jz2C1KoiqquYg==}
     peerDependencies:
       '@types/react': ^18.0.0 || ^19.0.0
       react: ^18.0.0 || ^19.0.0
@@ -2291,6 +2330,9 @@ packages:
   d3-geo@3.1.1:
     resolution: {integrity: sha512-637ln3gXKXOwhalDzinUgY83KzNWZRKbYubaG+fGVuc/dxO64RRljtCTnf5ecMyE1RIdtqpkVcq0IbtU2S8j2Q==}
     engines: {node: '>=12'}
+
+  d3-hierarchy@1.1.9:
+    resolution: {integrity: sha512-j8tPxlqh1srJHAtxfvOUwKNYJkQuBFdM1+JAUfq6xqH5eAqf93L7oG1NVqDa4CpFZNvnNKtCYEUC8KY9yEn9lQ==}
 
   d3-hierarchy@3.1.2:
     resolution: {integrity: sha512-FX/9frcub54beBdugHjDCdikxThEqjnR93Qt7PvQTOHxyiNCAlvMrHhclk3cD5VeAaq9fxmfRp+CnWw9rEMBuA==}
@@ -6315,6 +6357,8 @@ snapshots:
     dependencies:
       '@types/geojson': 7946.0.16
 
+  '@types/d3-hierarchy@1.1.11': {}
+
   '@types/d3-hierarchy@3.1.7': {}
 
   '@types/d3-interpolate@3.0.1':
@@ -6498,6 +6542,12 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.17
 
+  '@visx/clip-path@4.0.0(@types/react@19.2.17)(react@19.2.7)':
+    dependencies:
+      react: 19.2.7
+    optionalDependencies:
+      '@types/react': 19.2.17
+
   '@visx/curve@4.0.0':
     dependencies:
       '@visx/vendor': 4.0.0
@@ -6517,6 +6567,15 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.17
 
+  '@visx/glyph@4.0.0(@types/react@19.2.17)(react@19.2.7)':
+    dependencies:
+      '@visx/group': 4.0.0(@types/react@19.2.17)(react@19.2.7)
+      '@visx/vendor': 4.0.0
+      classnames: 2.5.1
+      react: 19.2.7
+    optionalDependencies:
+      '@types/react': 19.2.17
+
   '@visx/grid@4.0.0(@types/react@19.2.17)(react@19.2.7)':
     dependencies:
       '@visx/curve': 4.0.0
@@ -6532,6 +6591,16 @@ snapshots:
   '@visx/group@4.0.0(@types/react@19.2.17)(react@19.2.7)':
     dependencies:
       classnames: 2.5.1
+      react: 19.2.7
+    optionalDependencies:
+      '@types/react': 19.2.17
+
+  '@visx/hierarchy@4.0.0(@types/react@19.2.17)(react@19.2.7)':
+    dependencies:
+      '@types/d3-hierarchy': 1.1.11
+      '@visx/group': 4.0.0(@types/react@19.2.17)(react@19.2.7)
+      classnames: 2.5.1
+      d3-hierarchy: 1.1.9
       react: 19.2.7
     optionalDependencies:
       '@types/react': 19.2.17
@@ -7120,6 +7189,8 @@ snapshots:
   d3-geo@3.1.1:
     dependencies:
       d3-array: 3.2.4
+
+  d3-hierarchy@1.1.9: {}
 
   d3-hierarchy@3.1.2: {}
 

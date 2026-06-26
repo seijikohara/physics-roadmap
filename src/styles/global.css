@@ -12,12 +12,27 @@
  *   図中ラベルの $\sqrt{x}$ などで根号が消え、$\sqrt{2}$ が「2」に見える誤表示を防ぐ。
  * 本文のインライン数式は foreignObject を介さないため影響しない。
  */
+/*
+ * 図中の日本語のフォントを全図でそろえる。
+ *
+ * KatexLabel は日本語ラベル（例: \text{斜辺}）も KaTeX で組版する。KaTeX は CJK を
+ * `.cjk_fallback` で描き、既定では `KaTeX_Main, "Times New Roman", serif` のセリフに
+ * フォールバックする。一方 FlowChart の地の文は foreignObject で本文システムフォント
+ * （サンセリフ）を継ぐ。両者を放置すると、同じ図群の中で日本語がセリフとサンセリフに
+ * 割れる。CJK フォールバックを本文フォント（Starlight の `--sl-font` / `--__sl-font`）に
+ * 上書きし、全図の日本語をサンセリフへそろえる。ラテン文字・数式記号は KaTeX のままにする。
+ */
+.katex .cjk_fallback {
+  font-family: var(--sl-font, var(--__sl-font, sans-serif));
+}
+
 .mermaid .katex svg,
 .function-graph .katex svg,
 .unit-circle .katex svg,
 .triangle-figure .katex svg,
 .number-line .katex svg,
-.area-model .katex svg {
+.area-model .katex svg,
+.flow-chart .katex svg {
   height: 100%;
 }
 
@@ -36,11 +51,73 @@
   --fig-axis: #5b6675;
 }
 
+/*
+ * フローチャート（src/components/FlowChart.tsx を参照）のノード・クラスタ・エッジの色。
+ * Mermaid の図に近い淡い面と濃い輪郭をテーマごとに切り替え、本文との調和を保つ。
+ */
+:root {
+  --flow-node-fill: #eef2f7;
+  --flow-node-stroke: #64748b;
+  --flow-cluster-fill: #f8fafc;
+  --flow-cluster-stroke: #cbd5e1;
+  --flow-edge: #64748b;
+}
+
+:root[data-theme="dark"] {
+  --flow-node-fill: #1e2530;
+  --flow-node-stroke: #6b7686;
+  --flow-cluster-fill: #161c25;
+  --flow-cluster-stroke: #38414f;
+  --flow-edge: #7d8794;
+}
+
+/* 静的なフローチャート（インライン SVG。src/components/FlowChart.tsx を参照）。 */
+.flow-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 1.25rem auto;
+}
+
+/*
+ * 図の表示倍率を全図でそろえ、フォントサイズの一貫性を保つ。
+ *
+ * 各図は viewBox 単位を 1 CSS px に対応させて描く（max-width を viewBox 幅に一致させ、
+ * 表示倍率を 1.0 にする）。これにより、各コンポーネントが指定するフォントサイズ（11〜14）が
+ * そのまま画面上の px になり、図をまたいで文字の大きさがそろう。max-width を指定しないと、
+ * SVG が本文幅（約 612px）まで拡大し、同じ指定でも図ごとに実寸が変わる（関数グラフは
+ * 倍率約 1.9 倍となり、フォント 12 が約 23px に拡大していた）。本文幅より広い図がないため、
+ * 倍率 1.0 ではどの図も拡大で頭打ちにならず、一貫した実寸を保てる。
+ */
+.function-graph {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  margin: 1rem auto;
+}
+
+.unit-circle {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  margin: 1rem auto;
+}
+
+.triangle-figure {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  margin: 1rem auto;
+}
+
 /* 静的なベン図（インライン SVG。src/components/VennDiagram.tsx を参照）。 */
 .venn-figure {
   display: block;
   width: 100%;
-  max-width: 360px;
+  max-width: 320px;
   aspect-ratio: 16 / 10;
   margin: 1rem auto;
 }
@@ -55,8 +132,9 @@
   font-family: "KaTeX_Math", "KaTeX_Main", "KaTeX_AMS", serif;
 }
 
+/* フォントサイズは他の図（軸名 13・補助 12 など）にそろえ、図をまたいで字の大きさを統一する。 */
 .venn-figure .venn-name {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .venn-figure .venn-region {
@@ -64,14 +142,14 @@
 }
 
 .venn-figure .venn-u {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* 静的な数直線（インライン SVG。src/components/NumberLine.tsx を参照）。 */
 .number-line {
   display: block;
   width: 100%;
-  max-width: 460px;
+  max-width: 320px;
   aspect-ratio: 320 / 96;
   margin: 1rem auto;
 }
@@ -88,7 +166,7 @@
 .area-model {
   display: block;
   width: 100%;
-  max-width: 340px;
+  max-width: 320px;
   aspect-ratio: 320 / 240;
   margin: 1rem auto;
 }

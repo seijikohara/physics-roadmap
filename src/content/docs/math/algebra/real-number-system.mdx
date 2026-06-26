@@ -5,6 +5,7 @@ sidebar:
   order: 1
 ---
 
+import FlowChart from "../../../../components/FlowChart";
 import NumberLine from "../../../../components/NumberLine";
 
 ## 前提
@@ -218,18 +219,19 @@ $$
 
 包含関係を、入れ子の箱から成る概念図で示す。外側の箱ほど広い数の範囲を表す。
 
-```mermaid
-flowchart TB
-    subgraph R["実数 $$\mathbb{R}$$"]
-        direction LR
-        subgraph Q["有理数 $$\mathbb{Q}$$"]
-            subgraph Z["整数 $$\mathbb{Z}$$"]
-                N["自然数 $$\mathbb{N}$$"]
-            end
-        end
-        Irr["無理数<br/>（$$\sqrt{2},\ \pi$$ など）"]
-    end
-```
+<FlowChart
+  direction="LR"
+  ariaLabel="実数の包含関係を表す入れ子の図。自然数 N が整数 Z に、整数が有理数 Q に含まれ、有理数と無理数（√2 や π など）が実数 R を構成する。"
+  nodes={[
+    { id: "N", label: "自然数 $\\mathbb{N}$" },
+    { id: "Irr", label: "無理数\n（$\\sqrt{2},\\ \\pi$ など）" },
+  ]}
+  clusters={[
+    { id: "Z", label: "整数 $\\mathbb{Z}$", children: ["N"] },
+    { id: "Q", label: "有理数 $\\mathbb{Q}$", children: ["Z"] },
+    { id: "R", label: "実数 $\\mathbb{R}$", children: ["Q", "Irr"] },
+  ]}
+/>
 
 図の箱の入れ子は「含む」関係を表す。外側の箱が内側の箱を含む。最も外側の実数 $\mathbb{R}$ は、有理数 $\mathbb{Q}$ と無理数の両方を含む。有理数 $\mathbb{Q}$ は整数 $\mathbb{Z}$ を含み、整数 $\mathbb{Z}$ は自然数 $\mathbb{N}$ を含む。無理数の箱は有理数 $\mathbb{Q}$ の箱の外にあり、両者は重ならない。
 

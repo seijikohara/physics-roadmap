@@ -5,6 +5,8 @@ sidebar:
   order: 8
 ---
 
+import FlowChart from "../../../../components/FlowChart";
+
 ## 前提
 
 本章の前提は、前の章[因数分解](../factorization/)と[恒等式](../identities/)である。多項式・項・係数・定数項・次数の用語と、分配法則 $a(b + c) = ab + ac$、および $(a + b)^2 = a^2 + 2ab + b^2$ のような乗法公式を使う。累乗の記法 $a^n$ は[指数法則](../laws-of-exponents/)で導入済みとする。
@@ -46,22 +48,33 @@ $$
 
 下の図は、シャツの選択ごとにズボンの選択が枝分かれする様子を表す。
 
-```mermaid
-flowchart LR
-  S["開始"]
-  A["シャツ 1"]
-  B["シャツ 2"]
-  C["シャツ 3"]
-  S --> A
-  S --> B
-  S --> C
-  A --> A1["ズボン 1"]
-  A --> A2["ズボン 2"]
-  B --> B1["ズボン 1"]
-  B --> B2["ズボン 2"]
-  C --> C1["ズボン 1"]
-  C --> C2["ズボン 2"]
-```
+<FlowChart
+  direction="LR"
+  ariaLabel="3 種のシャツそれぞれに 2 種のズボンを組み合わせる樹形図。場合の数は 3×2=6 通り。"
+  nodes={[
+    { id: "S", label: "開始" },
+    { id: "A", label: "シャツ 1" },
+    { id: "B", label: "シャツ 2" },
+    { id: "C", label: "シャツ 3" },
+    { id: "A1", label: "ズボン 1" },
+    { id: "A2", label: "ズボン 2" },
+    { id: "B1", label: "ズボン 1" },
+    { id: "B2", label: "ズボン 2" },
+    { id: "C1", label: "ズボン 1" },
+    { id: "C2", label: "ズボン 2" },
+  ]}
+  edges={[
+    { from: "S", to: "A" },
+    { from: "S", to: "B" },
+    { from: "S", to: "C" },
+    { from: "A", to: "A1" },
+    { from: "A", to: "A2" },
+    { from: "B", to: "B1" },
+    { from: "B", to: "B2" },
+    { from: "C", to: "C1" },
+    { from: "C", to: "C2" },
+  ]}
+/>
 
 <p style="text-align:center">
   <em>図 1. シャツ 3 通りの各々から、ズボンが 2 通りに枝分かれする。末端は全部で 6 通りある。</em>

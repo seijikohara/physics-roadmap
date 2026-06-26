@@ -5,6 +5,7 @@ sidebar:
   order: 1
 ---
 
+import FlowChart from "../../../../components/FlowChart";
 import FunctionGraph from "../../../../components/FunctionGraph";
 
 ## 前提
@@ -46,10 +47,19 @@ import FunctionGraph from "../../../../components/FunctionGraph";
 
 入力から出力への対応を、概念図で表す。
 
-```mermaid
-flowchart LR
-    A["入力 $$x$$"] --> B["規則 $$f$$"] --> C["出力 $$y = f(x)$$"]
-```
+<FlowChart
+  direction="LR"
+  ariaLabel="関数を入出力の対応として表す流れ図。入力 x に規則 f を適用して出力 y=f(x) を得る。"
+  nodes={[
+    { id: "A", label: "入力 $x$" },
+    { id: "B", label: "規則 $f$" },
+    { id: "C", label: "出力 $y = f(x)$" },
+  ]}
+  edges={[
+    { from: "A", to: "B" },
+    { from: "B", to: "C" },
+  ]}
+/>
 
 図は、入力 $x$ が規則 $f$ を通って出力 $y$ に変わる流れを表す。規則 $f$ は、入力を出力へ変える「箱」と捉えてよい。
 
@@ -100,22 +110,27 @@ $$
 
 定義域と値域の対応を、入力の集合から出力の集合への対応として図で表す。$h(x) = x^2$ の例で示す。
 
-```mermaid
-flowchart LR
-    subgraph D["定義域（実数全体）"]
-        x1["$$-2$$"]
-        x2["$$0$$"]
-        x3["$$3$$"]
-    end
-    subgraph R["値域（$$y \ge 0$$）"]
-        y1["$$4$$"]
-        y2["$$0$$"]
-        y3["$$9$$"]
-    end
-    x1 -->|"$$h$$"| y1
-    x2 -->|"$$h$$"| y2
-    x3 -->|"$$h$$"| y3
-```
+<FlowChart
+  direction="LR"
+  ariaLabel="関数 h による定義域から値域への対応図。定義域の -2, 0, 3 がそれぞれ値域の 4, 0, 9 に写る。"
+  nodes={[
+    { id: "x1", label: "$-2$" },
+    { id: "x2", label: "$0$" },
+    { id: "x3", label: "$3$" },
+    { id: "y1", label: "$4$" },
+    { id: "y2", label: "$0$" },
+    { id: "y3", label: "$9$" },
+  ]}
+  clusters={[
+    { id: "D", label: "定義域（実数全体）", children: ["x1", "x2", "x3"] },
+    { id: "R", label: "値域（$y \\ge 0$）", children: ["y1", "y2", "y3"] },
+  ]}
+  edges={[
+    { from: "x1", to: "y1", label: "$h$" },
+    { from: "x2", to: "y2", label: "$h$" },
+    { from: "x3", to: "y3", label: "$h$" },
+  ]}
+/>
 
 図は、定義域の各入力が、規則 $h$ を通って値域の出力へ移る様子を表す。入力 $-2$ と入力 $2$ はともに出力 $4$ へ移るが、関数の定義には反しない。「1 つの入力に出力が 1 つ」が条件であり、「異なる入力が同じ出力をもつ」ことは許すからである。
 

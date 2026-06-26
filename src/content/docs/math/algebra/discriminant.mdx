@@ -5,6 +5,8 @@ sidebar:
   order: 12
 ---
 
+import FlowChart from "../../../../components/FlowChart";
+
 ## 前提
 
 本章の前提は、同じ代数カテゴリの章[二次方程式](../quadratic-equations/)である。二次方程式・解の公式・平方完成・解と係数の関係の知識を前提とする。
@@ -104,14 +106,25 @@ $$
 
 判別式の符号から実数解の個数を判定する手順を、流れ図にまとめる。
 
-```mermaid
-flowchart TD
-  A["二次方程式 $$ax^2 + bx + c = 0$$"] --> B["判別式 $$D = b^2 - 4ac$$ を計算する"]
-  B --> C{"$$D$$ の符号は?"}
-  C -->|"$$D \gt 0$$"| D1["異なる 2 つの実数解"]
-  C -->|"$$D = 0$$"| D2["重解（ただ 1 つの実数解）"]
-  C -->|"$$D \lt 0$$"| D3["実数解を持たない"]
-```
+<FlowChart
+  direction="TD"
+  ariaLabel="判別式 D の符号で実数解の個数を判定する流れ図。二次方程式から判別式 D=b^2-4ac を計算し、D の符号で分岐する。D が正なら異なる 2 つの実数解、D=0 なら重解、D が負なら実数解を持たない。"
+  nodes={[
+    { id: "A", label: "二次方程式 $ax^2 + bx + c = 0$" },
+    { id: "B", label: "判別式 $D = b^2 - 4ac$ を計算する" },
+    { id: "C", shape: "diamond", label: "$D$ の符号は?" },
+    { id: "D1", label: "異なる 2 つの実数解" },
+    { id: "D2", label: "重解（ただ 1 つの実数解）" },
+    { id: "D3", label: "実数解を持たない" },
+  ]}
+  edges={[
+    { from: "A", to: "B" },
+    { from: "B", to: "C" },
+    { from: "C", to: "D1", label: "$D \\gt 0$" },
+    { from: "C", to: "D2", label: "$D = 0$" },
+    { from: "C", to: "D3", label: "$D \\lt 0$" },
+  ]}
+/>
 
 ## 重解の意味
 
