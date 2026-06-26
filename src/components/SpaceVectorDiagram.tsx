@@ -4,17 +4,24 @@ import KatexLabel from "./KatexLabel";
 /**
  * インライン SVG として描く、ビルド時生成の静的な空間ベクトルの軸測図。
  *
- * 3 次元の右手系を 2 次元画面へ軸測投影（斜投影）して描く。$x, y, z$ の 3 軸と、空間
+ * 3 次元の右手系を 2 次元画面へ正投影（軸測投影）して描く。$x, y, z$ の 3 軸と、空間
  * ベクトル（有向線分）・点・2 ベクトルが張る平行四辺形を 1 枚の静的な図で表す。空間
  * ベクトルの成分・和・外積の面積を視覚化する。本コンポーネントはクライアント JavaScript を
  * 一切載せない。Astro がビルド時に HTML へ描画する（クライアントディレクティブなし、
  * ハイドレーションなし）。軸・ベクトルは `@visx/shape` の `Line` で描き、矢じりは色を動的に
  * 変えられるよう polygon を手計算で置く。ラベルは KatexLabel を介して KaTeX で組版する。
  *
- * 投影の慣例:
- * - $z$ 軸は画面の上向き（画面ベクトル EZ）。
- * - $y$ 軸は画面の右向き（画面ベクトル EY）。
- * - $x$ 軸は画面の左下手前向き（画面ベクトル EX）。
+ * 投影は、方位角 AZIMUTH・仰角 ELEVATION を持つ正投影（ダイメトリック軸測）である。$y$ 軸を
+ * 真横に寝かせる斜投影だと床面（$xy$ 平面）が線分に潰れて立体に見えない。そこで $x$ 軸を
+ * 左手前へ、$y$ 軸を右奥へ、双方に下向きの傾きを与え、$xy$ 平面が「奥へ広がる床」に見える
+ * 視点を取る。$z$ 軸は画面の上向きである。
+ *
+ * 奥行きの手がかりを 3 つ重ねる。
+ * - 床グリッド: $z = 0$ の $xy$ 平面に淡いグリッドを敷き、地面の参照を与える。奥（原点側）の
+ *   線を淡く、手前の線を濃く描いて遠近を表す。
+ * - 落とし込み線: 各ベクトルの終点・各点から床へ下ろした鉛直の破線と、その足から $x$・$y$ 軸へ
+ *   向かう破線を描く。成分 $(a_1, a_2, a_3)$ の分解が立体的に読める。`dropLines` で抑制できる。
+ * - 描画順: 床・落とし込み線を背面に置き、主役のベクトル・点を前面に重ねる。
  *
  * 各空間座標 (x, y, z) は `project` で画面座標 (sx, sy) へ線形に写す。原点を viewBox の
  * 中央付近に置く。
@@ -63,12 +70,17 @@ type SpaceVectorDiagramProps = {
   parallelogram?: Parallelogram;
   /** 軸の表示範囲。各軸を 0..axisMax まで描く。既定 3。 */
   axisMax?: number;
+  /** $z = 0$ の床グリッドを敷くか。既定 true。 */
+  floorGrid?: boolean;
+  /** 終点・点から床・各軸へ落とし込みの破線を引くか。既定 true。 */
+  dropLines?: boolean;
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
 };
 
 // 軸・ベクトルは global.css の CSS 変数でテーマに追従する。
 const AXIS = "var(--fig-axis)";
+const GRID = "var(--fig-grid)";
 const VEC = "#3b82f6";
 const HIGHLIGHT = "#f59e0b";
 
@@ -76,39 +88,74 @@ const HIGHLIGHT = "#f59e0b";
 const VIEW_W = 320;
 const VIEW_H = 280;
 
-// 軸測投影の基底の向き（空間の単位ベクトルを写す画面ベクトルの向き。1 単位あたりの画面 px は
-// 倍率 SCALE を掛けて決める）。SVG は下向きが正のため、上向きの z 軸は画面の負の y へ向ける。
-const DIR_X = { sx: -0.6, sy: 0.4 }; // x 軸: 左下手前。
-const DIR_Y = { sx: 1, sy: 0 }; // y 軸: 右。
-const DIR_Z = { sx: 0, sy: -1 }; // z 軸: 上。
+// 正投影の視点。方位角 AZIMUTH（鉛直軸まわりの回転）と仰角 ELEVATION（見下ろし角）で決める。
+// 35°・30° のダイメトリックは、床面が十分開いて見え、3 軸の成分も読み取りやすい。
+const AZIMUTH = (35 * Math.PI) / 180;
+const ELEVATION = (30 * Math.PI) / 180;
+const SIN_T = Math.sin(AZIMUTH);
+const COS_T = Math.cos(AZIMUTH);
+const SIN_P = Math.sin(ELEVATION);
+const COS_P = Math.cos(ELEVATION);
+
+// 空間の単位ベクトルを写す画面ベクトルの向き（1 単位あたりの画面 px は倍率 SCALE を掛けて決める）。
+// SVG は下向きが正のため、上向きの z 軸は画面の負の y へ向ける。x は左手前（左・下）、y は
+// 右奥（右・下、x より浅い）へ退かせ、xy 平面を床として見せる。
+const DIR_X = { sx: -SIN_T, sy: COS_T * SIN_P }; // x 軸: 左手前。
+const DIR_Y = { sx: COS_T, sy: SIN_T * SIN_P }; // y 軸: 右奥。
+const DIR_Z = { sx: 0, sy: -COS_P }; // z 軸: 上。
+
+// 視線方向（画面手前を正とする奥行き）。値が大きいほど視点に近い。床グリッドの濃淡に使う。
+const FWD = { x: COS_T * COS_P, y: SIN_T * COS_P, z: SIN_P };
 
 // 軸の周りに確保する余白（軸名ラベル・矢じりを収める）。
-const MARGIN = 34;
+const MARGIN = 32;
 
 // 矢じり。長さ（線方向）と半幅（直交方向）を px で与える。
 const HEAD_LEN = 9;
 const HEAD_HALF = 3.6;
+
+// 座標が 0 とみなせる許容値（落とし込み線の退化を判定する）。
+const EPS = 1e-6;
+
+type Vec3 = { x: number; y: number; z: number };
 
 export default function SpaceVectorDiagram({
   vectors = [],
   points = [],
   parallelogram,
   axisMax = 3,
+  floorGrid = true,
+  dropLines = true,
   ariaLabel,
 }: SpaceVectorDiagramProps) {
-  // 3 軸の終点が画面に張り出す範囲（原点を基準とした倍率 1 のときの px）から、viewBox（余白を
-  // 引いた領域）へ収まる最大倍率と中央寄せの原点を求める。axisMax に追従して図が viewBox を
-  // 埋め、他図と倍率・余白がそろう。
-  const corners = [
-    DIR_X,
-    DIR_Y,
-    DIR_Z,
-    { sx: 0, sy: 0 }, // 原点。
-  ].map((d) => ({ sx: d.sx * axisMax, sy: d.sy * axisMax }));
-  const minSx = Math.min(...corners.map((c) => c.sx));
-  const maxSx = Math.max(...corners.map((c) => c.sx));
-  const minSy = Math.min(...corners.map((c) => c.sy));
-  const maxSy = Math.max(...corners.map((c) => c.sy));
+  // 図に現れるすべての空間点（軸端・床の隅・ベクトル端・点・平行四辺形の隅）から、倍率 1 の
+  // 画面範囲を求める。viewBox（余白を引いた領域）へ収まる最大倍率と中央寄せの原点を決める。
+  // axisMax と実データに追従して図が viewBox を埋め、他図と倍率・余白がそろう。
+  const boundsPts: Vec3[] = [
+    { x: 0, y: 0, z: 0 },
+    { x: axisMax, y: 0, z: 0 },
+    { x: 0, y: axisMax, z: 0 },
+    { x: 0, y: 0, z: axisMax },
+    { x: axisMax, y: axisMax, z: 0 }, // 床の奥の隅。
+    ...vectors.flatMap((v) => [v.from, v.to]),
+    ...points,
+    ...(parallelogram
+      ? [
+          parallelogram.o,
+          add(parallelogram.o, parallelogram.a),
+          add(parallelogram.o, parallelogram.b),
+          add(add(parallelogram.o, parallelogram.a), parallelogram.b),
+        ]
+      : []),
+  ];
+  const raw = boundsPts.map((p) => ({
+    sx: p.x * DIR_X.sx + p.y * DIR_Y.sx + p.z * DIR_Z.sx,
+    sy: p.x * DIR_X.sy + p.y * DIR_Y.sy + p.z * DIR_Z.sy,
+  }));
+  const minSx = Math.min(...raw.map((c) => c.sx));
+  const maxSx = Math.max(...raw.map((c) => c.sx));
+  const minSy = Math.min(...raw.map((c) => c.sy));
+  const maxSy = Math.max(...raw.map((c) => c.sy));
   const spanX = maxSx - minSx || 1;
   const spanY = maxSy - minSy || 1;
   const scale = Math.min((VIEW_W - 2 * MARGIN) / spanX, (VIEW_H - 2 * MARGIN) / spanY);
@@ -120,19 +167,36 @@ export default function SpaceVectorDiagram({
   const EY = { sx: DIR_Y.sx * scale, sy: DIR_Y.sy * scale };
   const EZ = { sx: DIR_Z.sx * scale, sy: DIR_Z.sy * scale };
 
-  const project = (p: { x: number; y: number; z: number }): { sx: number; sy: number } => ({
+  const project = (p: Vec3): { sx: number; sy: number } => ({
     sx: originX + p.x * EX.sx + p.y * EY.sx + p.z * EZ.sx,
     sy: originY + p.x * EX.sy + p.y * EY.sy + p.z * EZ.sy,
   });
+  const depth = (p: Vec3): number => p.x * FWD.x + p.y * FWD.y + p.z * FWD.z;
 
   // 各軸の正の向きの終点（軸名ラベルを少し外へ離して置く）。
-  const axes: { dir: "x" | "y" | "z"; label: string; end: { x: number; y: number; z: number } }[] =
-    [
-      { dir: "x", label: "x", end: { x: axisMax, y: 0, z: 0 } },
-      { dir: "y", label: "y", end: { x: 0, y: axisMax, z: 0 } },
-      { dir: "z", label: "z", end: { x: 0, y: 0, z: axisMax } },
-    ];
+  const axes: { dir: "x" | "y" | "z"; label: string; end: Vec3 }[] = [
+    { dir: "x", label: "x", end: { x: axisMax, y: 0, z: 0 } },
+    { dir: "y", label: "y", end: { x: 0, y: axisMax, z: 0 } },
+    { dir: "z", label: "z", end: { x: 0, y: 0, z: axisMax } },
+  ];
   const originP = project({ x: 0, y: 0, z: 0 });
+
+  // 床グリッドの格子値。3〜4 分割になるよう刻みを選び、端 axisMax を必ず含める。
+  const step = axisMax <= 2 ? 0.5 : axisMax <= 5 ? 1 : 2;
+  const gridValues: number[] = [];
+  for (let t = 0; t <= axisMax + EPS; t += step) gridValues.push(Math.round(t * 1e6) / 1e6);
+  if (gridValues[gridValues.length - 1] < axisMax - EPS) gridValues.push(axisMax);
+  // 床グリッドの最大奥行き（手前の隅）。濃淡の正規化に使う。
+  const floorMaxDepth = depth({ x: axisMax, y: axisMax, z: 0 }) || 1;
+  const gridOpacity = (mx: number, my: number): number => {
+    const t = Math.max(0, Math.min(1, depth({ x: mx, y: my, z: 0 }) / floorMaxDepth));
+    return 0.4 + 0.45 * t;
+  };
+
+  // 落とし込み線の対象（ベクトル終点と点）。床への鉛直線と、床の足から各軸への線を引く。
+  const markers: Vec3[] = dropLines
+    ? [...vectors.map((v) => v.to), ...points.map((p) => ({ x: p.x, y: p.y, z: p.z }))]
+    : [];
 
   // 当たり判定に使う線分（軸 3 本とベクトル）。ラベルが線・矢じりの上に乗らないよう、
   // ラベル中心から線分までの距離が近い候補にペナルティを課す。
@@ -169,7 +233,8 @@ export default function SpaceVectorDiagram({
       const box = boxFor(lx, ly, w);
       let p = i * 0.1; // 同点なら前方の候補を優先。
       if (box.x0 < 2 || box.x1 > VIEW_W - 2 || box.y0 < 2 || box.y1 > VIEW_H - 2) p += 1000;
-      for (const q of placedBoxes) if (boxesOverlap(box, q)) p += 7;
+      // ラベル同士の重なりは最優先で避ける（線分近接より重く罰する）。
+      for (const q of placedBoxes) if (boxesOverlap(box, q)) p += 15;
       // ラベル中心が線分に近すぎる（線・矢じりを覆う）候補を避ける。
       for (const s of segs) if (distToSeg(lx, ly, s) < 10) p += 9;
       if (p < bestP) {
@@ -198,19 +263,98 @@ export default function SpaceVectorDiagram({
       role="img"
       aria-label={ariaLabel}
     >
+      {/* 床グリッド（z=0 の xy 平面）。奥を淡く手前を濃くして遠近を表す。背面に敷く。 */}
+      {floorGrid && (
+        <g>
+          {gridValues.map((gx) => {
+            const a = project({ x: gx, y: 0, z: 0 });
+            const b = project({ x: gx, y: axisMax, z: 0 });
+            return (
+              <line
+                key={`gx-${gx}`}
+                x1={a.sx}
+                y1={a.sy}
+                x2={b.sx}
+                y2={b.sy}
+                stroke={GRID}
+                strokeWidth={1}
+                strokeOpacity={gridOpacity(gx, axisMax / 2)}
+              />
+            );
+          })}
+          {gridValues.map((gy) => {
+            const a = project({ x: 0, y: gy, z: 0 });
+            const b = project({ x: axisMax, y: gy, z: 0 });
+            return (
+              <line
+                key={`gy-${gy}`}
+                x1={a.sx}
+                y1={a.sy}
+                x2={b.sx}
+                y2={b.sy}
+                stroke={GRID}
+                strokeWidth={1}
+                strokeOpacity={gridOpacity(axisMax / 2, gy)}
+              />
+            );
+          })}
+        </g>
+      )}
+
+      {/* 落とし込み線。終点・点から床へ鉛直に下ろし、足から x・y 軸へ破線を引く。 */}
+      {markers.length > 0 && (
+        <g>
+          {markers.flatMap((m, i) => {
+            const foot = { x: m.x, y: m.y, z: 0 };
+            const fp = project(foot);
+            const lines: { key: string; a: Vec3; b: Vec3 }[] = [];
+            if (Math.abs(m.z) > EPS) lines.push({ key: `v-${i}`, a: m, b: foot });
+            if (Math.abs(m.y) > EPS)
+              lines.push({ key: `y-${i}`, a: foot, b: { x: m.x, y: 0, z: 0 } });
+            if (Math.abs(m.x) > EPS)
+              lines.push({ key: `x-${i}`, a: foot, b: { x: 0, y: m.y, z: 0 } });
+            return [
+              ...lines.map((seg) => {
+                const a = project(seg.a);
+                const b = project(seg.b);
+                return (
+                  <Line
+                    key={`drop-${seg.key}`}
+                    from={{ x: a.sx, y: a.sy }}
+                    to={{ x: b.sx, y: b.sy }}
+                    stroke={AXIS}
+                    strokeWidth={1}
+                    strokeOpacity={0.55}
+                    strokeDasharray="3 3"
+                  />
+                );
+              }),
+              ...(Math.abs(m.z) > EPS
+                ? [
+                    <circle
+                      key={`foot-${i}`}
+                      cx={fp.sx}
+                      cy={fp.sy}
+                      r={1.8}
+                      fill={AXIS}
+                      fillOpacity={0.6}
+                    />,
+                  ]
+                : []),
+            ];
+          })}
+        </g>
+      )}
+
       {/* 平行四辺形（半透明の塗り）。2 ベクトル a, b が起点 o から張る面を示す。 */}
       {parallelogram && (
         <g>
           {(() => {
             const { o, a, b } = parallelogram;
             const p0 = project(o);
-            const p1 = project({ x: o.x + a.x, y: o.y + a.y, z: o.z + a.z });
-            const p2 = project({
-              x: o.x + a.x + b.x,
-              y: o.y + a.y + b.y,
-              z: o.z + a.z + b.z,
-            });
-            const p3 = project({ x: o.x + b.x, y: o.y + b.y, z: o.z + b.z });
+            const p1 = project(add(o, a));
+            const p2 = project(add(add(o, a), b));
+            const p3 = project(add(o, b));
             const color = parallelogram.color ?? VEC;
             const cx = (p0.sx + p2.sx) / 2;
             const cy = (p0.sy + p2.sy) / 2;
@@ -286,22 +430,36 @@ export default function SpaceVectorDiagram({
         const base = { sx: toP.sx - HEAD_LEN * cos, sy: toP.sy - HEAD_LEN * sin };
         const left = { sx: base.sx - HEAD_HALF * sin, sy: base.sy + HEAD_HALF * cos };
         const right = { sx: base.sx + HEAD_HALF * sin, sy: base.sy - HEAD_HALF * cos };
-        // ラベルは線分の中点から直交方向へ逃がす。両側を候補にし、衝突の少ない側を選ぶ。
+        // ラベルは線分の中点を基準に、直交方向へ逃がしつつ線に沿って前後へもずらす。長い
+        // ベクトル（縦に伸びる外積など）は、中点で隣のラベルと衝突しても、矢印に沿って先端側へ
+        // 滑らせれば空きが見つかる。直交のみだと幅の広いラベルが逃げ切れない。
         const mx = (fromP.sx + toP.sx) / 2;
         const my = (fromP.sy + toP.sy) / 2;
         const len = Math.hypot(toP.sx - fromP.sx, toP.sy - fromP.sy) || 1;
         const perpX = -(toP.sy - fromP.sy) / len;
         const perpY = (toP.sx - fromP.sx) / len;
+        const alongX = (toP.sx - fromP.sx) / len;
+        const alongY = (toP.sy - fromP.sy) / len;
+        const cand = (a: number, p: number): { dx: number; dy: number } => ({
+          dx: alongX * a + perpX * p,
+          dy: alongY * a + perpY * p,
+        });
         const lp =
           v.label !== undefined
             ? place(
                 mx,
                 my,
                 [
-                  { dx: perpX * 13, dy: perpY * 13 },
-                  { dx: -perpX * 13, dy: -perpY * 13 },
-                  { dx: perpX * 22, dy: perpY * 22 },
-                  { dx: -perpX * 22, dy: -perpY * 22 },
+                  cand(0, 13),
+                  cand(0, -13),
+                  cand(0, 22),
+                  cand(0, -22),
+                  cand(26, 14),
+                  cand(26, -14),
+                  cand(-26, 14),
+                  cand(-26, -14),
+                  cand(26, 0),
+                  cand(-26, 0),
                 ],
                 v.label,
               )
@@ -360,6 +518,11 @@ export default function SpaceVectorDiagram({
   );
 }
 
+/** ベクトルの成分ごとの和を返す。 */
+function add(p: Vec3, q: Vec3): Vec3 {
+  return { x: p.x + q.x, y: p.y + q.y, z: p.z + q.z };
+}
+
 /** 当たり判定に使う線分（画面座標の端点 a→b）。 */
 type Seg = { ax: number; ay: number; bx: number; by: number };
 
@@ -392,8 +555,9 @@ function boxesOverlap(a: Box, b: Box): boolean {
 
 /** LaTeX 文字列の表示幅をおおまかに見積もる（DOM が無いビルド時の概算。安全側に広めに取る）。 */
 function estimateTexWidth(tex: string, fontSize = 12): number {
-  // バックスラッシュだけを除き、コマンド名の文字（\vec → vec）は字数として数える。
-  // 装飾記号（{ } ^ _ $ 空白）は幅 0 とする。実幅より広めに見積もり、重なり判定を安全側へ倒す。
-  const visible = tex.replace(/\\/g, "").replace(/[{}^_$\s]/g, "");
-  return Math.max(visible.length * fontSize * 0.72, 18);
+  // LaTeX コマンド（\vec・\times など）は描画上 1 グリフ相当とみなし、命令名 1 つを 1 文字に
+  // 畳む。コマンド名を字数で数えると \times が 5 文字分に膨れ、ボックスが過大化して衝突回避が
+  // 過剰に働く（長い数式ラベルが逃げ場を失う）。装飾記号（{ } ^ _ $ 空白）は幅 0 とする。
+  const visible = tex.replace(/\\[a-zA-Z]+/g, "x").replace(/[{}^_$\s]/g, "");
+  return Math.max(visible.length * fontSize * 0.6, 14);
 }
