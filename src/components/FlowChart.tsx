@@ -123,14 +123,33 @@ export default function FlowChart({
     g.setNode(meta.id, { width: meta.width, height: meta.height });
   }
 
-  // クラスタ（複合ノード）を登録し、子を親に結びつける。
+  // クラスタ（複合ノード）を、親子付けの前に全件登録する。子に後で定義されるクラスタ id が
+  // 来ても、親子付けの時点で全クラスタのノードが存在するようにする（順序非依存）。
   for (const c of clusters) {
     g.setNode(c.id, { label: c.label ?? "" });
-    for (const childId of c.children) g.setParent(childId, c.id);
   }
 
-  // エッジを登録する。ラベルがあれば寸法を渡し、dagre にラベルの場所を空けさせる。
+  // 既知の id（ノード＋クラスタ）。子・エッジ端点の参照ミスを、ビルド時に分かる形で弾く。
+  const known = new Set<string>([...metas.map((m) => m.id), ...clusters.map((c) => c.id)]);
+  for (const c of clusters) {
+    for (const childId of c.children) {
+      if (!known.has(childId)) {
+        throw new Error(
+          `FlowChart: クラスタ "${c.id}" の子 "${childId}" がノードにもクラスタにも存在しません。`,
+        );
+      }
+      g.setParent(childId, c.id);
+    }
+  }
+
+  // エッジを登録する。端点が未定義だと dagre が幽霊ノードを作るため、先に参照を検証する。
+  // ラベルがあれば寸法を渡し、dagre にラベルの場所を空けさせる。
   edges.forEach((e, i) => {
+    if (!known.has(e.from) || !known.has(e.to)) {
+      throw new Error(
+        `FlowChart: エッジ "${e.from}" → "${e.to}" が未定義のノードを参照しています。`,
+      );
+    }
     const lab = e.label ? measureLabel(e.label, EDGE_FONT, EDGE_LINE_H) : undefined;
     g.setEdge(
       e.from,
@@ -172,7 +191,14 @@ export default function FlowChart({
   // visx Graph に渡すリンク。リンクは平行移動されないため、絶対座標の経路で描く。
   const graphLinks: PlacedLink[] = edges.map((e, i) => {
     const ed = g.edge({ v: e.from, w: e.to, name: `e${i}` });
-    const points = (ed.points ?? []).map((p) => ({ x: p.x, y: p.y }));
+    // dagre が経路を埋めなかった場合（入力不整合・レイアウト失敗）は、壊れた SVG を返さず
+    // 原因が分かるエラーにする。
+    if (!ed || !ed.points || ed.points.length === 0) {
+      throw new Error(
+        `FlowChart: エッジ "${e.from}" → "${e.to}" のレイアウト結果が空です。ノード id を確認してください。`,
+      );
+    }
+    const points = ed.points.map((p) => ({ x: p.x, y: p.y }));
     const lab =
       e.label && typeof ed.x === "number" && typeof ed.y === "number"
         ? { text: e.label, x: ed.x, y: ed.y }
