@@ -31,7 +31,8 @@
 .triangle-figure .katex svg,
 .number-line .katex svg,
 .area-model .katex svg,
-.flow-chart .katex svg {
+.flow-chart .katex svg,
+.venn-figure .katex svg {
   height: 100%;
 }
 
@@ -140,29 +141,6 @@
   max-width: 320px;
   aspect-ratio: 16 / 10;
   margin: 1rem auto;
-}
-
-/*
- * ラベルは現在のテーマの文字色に追従し、インライン数式 `$...$` が使う KaTeX の数式
- * フォントに合わせる。KaTeX_Math はイタリックのラテン文字（A・B・U）を担い、演算子
- * （∩・∪・=）と ∅ は KaTeX_Main / KaTeX_AMS、さらに serif へフォールバックする。
- */
-.venn-figure text {
-  fill: currentColor;
-  font-family: "KaTeX_Math", "KaTeX_Main", "KaTeX_AMS", serif;
-}
-
-/* フォントサイズは他の図（軸名 13・補助 12 など）にそろえ、図をまたいで字の大きさを統一する。 */
-.venn-figure .venn-name {
-  font-size: 14px;
-}
-
-.venn-figure .venn-region {
-  font-size: 12px;
-}
-
-.venn-figure .venn-u {
-  font-size: 13px;
 }
 
 /* 静的な数直線（インライン SVG。src/components/NumberLine.tsx を参照）。 */
