@@ -1,0 +1,514 @@
+---
+title: 三角関数の合成
+description: a sinθ + b cosθ = r sin(θ+α) の合成を、加法定理を逆向きに使って自己完結で導入する。振幅 r と位相 α の意味、合成波のグラフ、最大最小と方程式への応用を扱う。
+sidebar:
+  order: 15
+---
+
+import FunctionGraph from "../../../../components/FunctionGraph";
+import Triangle from "../../../../components/Triangle";
+import UnitCircle from "../../../../components/UnitCircle";
+
+## 前提
+
+本章の前提は、次の章と前提知識である。
+
+- [加法定理](../addition-theorems/)：正弦の加法定理 $\sin(\theta + \alpha) = \sin\theta\cos\alpha + \cos\theta\sin\alpha$ を逆向きに使う。
+- [三角関数と単位円](../trigonometric-functions-and-unit-circle/)：単位円による $\sin\theta$・$\cos\theta$ の定義と、相互関係 $\cos^2\alpha + \sin^2\alpha = 1$ を使う。
+- [前提とする知識](../../../prerequisites/knowledge/)：三平方の定理（直角三角形で斜辺の 2 乗が他の 2 辺の 2 乗の和に等しい関係）を使う。
+
+前章では、和・差の角の三角関数をもとの角の三角関数で表す加法定理を導いた。本章では、加法定理を逆向きに使う。具体的には、$\sin\theta$ と $\cos\theta$ の和 $a\sin\theta + b\cos\theta$ を、1 つの正弦 $r\sin(\theta + \alpha)$ にまとめる。まとめる操作を**三角関数の合成**と呼ぶ。合成は、振幅と位相をもつ波を 1 本の波で表す技法である。物理学の単振動の重ね合わせや交流回路の解析で使う基本道具である。
+
+## 学習目標
+
+本章を読むと、次の概念と操作を使えるようになる。
+
+- 合成公式 $a\sin\theta + b\cos\theta = r\sin(\theta + \alpha)$ の導出
+- 振幅 $r = \sqrt{a^2 + b^2}$ と、位相 $\alpha$（$\cos\alpha = \dfrac{a}{r}$・$\sin\alpha = \dfrac{b}{r}$ で定まる角）の決め方
+- 合成した波の振幅・周期・位相の意味と、グラフ上の読み取り
+- 合成を使った最大値・最小値の計算
+- 合成を使った三角方程式の解法
+- 物理での単振動の重ね合わせとの対応
+
+## 合成公式の導出
+
+### 目標の形を見定める
+
+出発点は、$\sin\theta$ と $\cos\theta$ を係数付きで足した式である。係数 $a$・$b$ は定数とし、少なくとも一方は $0$ でないとする。
+
+$$
+a\sin\theta + b\cos\theta
+$$
+
+目標は、上式を 1 つの正弦にまとめることである。まとめた形を次の右辺とする。
+
+$$
+a\sin\theta + b\cos\theta = r\sin(\theta + \alpha)
+$$
+
+右辺の正弦に加法定理を使い、左辺と係数を比べる方針を取る。正弦の加法定理は前章で導いた次の式である。
+
+> $$
+> \sin(\theta + \alpha) = \sin\theta\cos\alpha + \cos\theta\sin\alpha
+> $$
+
+### 加法定理で右辺を展開する
+
+右辺 $r\sin(\theta + \alpha)$ に加法定理を使う。$r$ は定数だから、展開の外に出せる。
+
+$$
+r\sin(\theta + \alpha) = r(\sin\theta\cos\alpha + \cos\theta\sin\alpha) = (r\cos\alpha)\sin\theta + (r\sin\alpha)\cos\theta
+$$
+
+展開した式を、左辺 $a\sin\theta + b\cos\theta$ と比べる。$\sin\theta$ と $\cos\theta$ は独立に値を動かせる。よって、すべての $\theta$ で両辺が等しくなるには、$\sin\theta$ の係数どうし、$\cos\theta$ の係数どうしが一致するほかない。
+
+$$
+a = r\cos\alpha, \qquad b = r\sin\alpha
+$$
+
+### 振幅 r を決める
+
+2 つの係数の式から、$r$ と $\alpha$ を定める。まず $r$ を求める。$a = r\cos\alpha$・$b = r\sin\alpha$ を 2 乗して足す。
+
+$$
+a^2 + b^2 = r^2\cos^2\alpha + r^2\sin^2\alpha = r^2(\cos^2\alpha + \sin^2\alpha)
+$$
+
+相互関係 $\cos^2\alpha + \sin^2\alpha = 1$ を代入する。
+
+$$
+a^2 + b^2 = r^2
+$$
+
+$r$ は正弦の最大の高さを表す量であり、正の値とする。よって正の平方根を取る。
+
+> $$
+> r = \sqrt{a^2 + b^2}
+> $$
+>
+> 値 $r$ を、合成した波の**振幅**と呼ぶ。
+
+### 位相 α を決める
+
+次に $\alpha$ を求める。係数の式 $a = r\cos\alpha$・$b = r\sin\alpha$ を $r$ で割る。$r > 0$ だから割り算できる。
+
+> $$
+> \cos\alpha = \frac{a}{r}, \qquad \sin\alpha = \frac{b}{r}
+> $$
+>
+> 角 $\alpha$ を、合成した波の**位相**（または位相のずれ）と呼ぶ[^phase]。
+
+$\cos\alpha$ と $\sin\alpha$ の両方を指定すると、角 $\alpha$ は $0$ 以上 $2\pi$ 未満の範囲で 1 つに定まる。$\cos\alpha = \dfrac{a}{r}$ だけでは $\alpha$ と $-\alpha$ の区別が付かないため、$\sin\alpha = \dfrac{b}{r}$ で符号を確定する。
+
+> $$
+> \left(\frac{a}{r}\right)^2 + \left(\frac{b}{r}\right)^2 = \frac{a^2 + b^2}{r^2} = \frac{r^2}{r^2} = 1
+> $$
+>
+> $\cos\alpha$ と $\sin\alpha$ の 2 乗の和は $1$ になる。単位円上の点 $\left(\dfrac{a}{r},\ \dfrac{b}{r}\right)$ がただ 1 つの角 $\alpha$ を定める。
+
+### 合成公式
+
+導出をまとめる。
+
+> $$
+> a\sin\theta + b\cos\theta = r\sin(\theta + \alpha)
+> $$
+>
+> ただし $r = \sqrt{a^2 + b^2}$ であり、角 $\alpha$ は $\cos\alpha = \dfrac{a}{r}$・$\sin\alpha = \dfrac{b}{r}$ で定まる。式を**三角関数の合成**（合成公式）と呼ぶ。
+
+### r と α を直角三角形で読む
+
+振幅 $r$ と位相 $\alpha$ は、座標平面上の点 $(a,\ b)$ から幾何的に読める。横 $a$・縦 $b$ を 2 辺とする直角三角形を作る。三平方の定理より、斜辺の長さは $\sqrt{a^2 + b^2} = r$ である。斜辺と横軸のなす角が $\alpha$ である。下の図は、点 $(a,\ b)$ を例 $(1,\ \sqrt{3})$ で示した直角三角形である。
+
+<Triangle
+  vertices={[
+    { x: 0, y: 0, label: "\\mathrm{O}" },
+    { x: 1, y: 0, label: "(a,\\,0)" },
+    { x: 1, y: 1.732, label: "(a,\\,b)" },
+  ]}
+  edges={[
+    { from: 0, to: 1, label: "a" },
+    { from: 1, to: 2, label: "b" },
+    { from: 2, to: 0, label: "r" },
+  ]}
+  angles={[
+    { at: 0, label: "\\alpha" },
+    { at: 1, right: true },
+  ]}
+  ariaLabel="原点 O・点 (a,0)・点 (a,b) を頂点とする直角三角形。横の辺が a、縦の辺が b、斜辺が r、斜辺と横軸のなす角が α である。点 (a,0) の頂点が直角である。a=1・b=√3 の例を示す。"
+/>
+
+三角形から、振幅と位相が次のように読める。
+
+- 斜辺の長さ $r = \sqrt{a^2 + b^2}$ が振幅である。
+- 斜辺と横軸のなす角 $\alpha$ が位相である。横の辺の比 $\cos\alpha = \dfrac{a}{r}$、縦の辺の比 $\sin\alpha = \dfrac{b}{r}$ で定まる。
+
+単位円で見ると、点 $\left(\dfrac{a}{r},\ \dfrac{b}{r}\right)$ が半径 $1$ の円上にあり、動径と横軸のなす角が $\alpha$ である。下の図は、例 $(a,\ b) = (1,\ \sqrt{3})$ に対応する角 $\alpha = \dfrac{\pi}{3} = 60^\circ$ を単位円上に示す。
+
+<UnitCircle
+  angleDeg={60}
+  pointLabel="(\frac{a}{r},\ \frac{b}{r})"
+  angleLabel="\alpha"
+  cosLabel="\frac{a}{r}"
+  sinLabel="\frac{b}{r}"
+  ariaLabel="単位円上の角 α=60°。動径の先端は (a/r, b/r) に対応し、横軸への射影が cosα=a/r、縦軸への射影が sinα=b/r を表す。"
+/>
+
+## 合成波のグラフ
+
+### 例で合成を確かめる
+
+具体例で合成を確かめる。$a = 1$・$b = \sqrt{3}$ の場合を扱う。
+
+$$
+\sin\theta + \sqrt{3}\cos\theta
+$$
+
+振幅 $r$ を計算する。
+
+$$
+r = \sqrt{1^2 + (\sqrt{3})^2} = \sqrt{1 + 3} = \sqrt{4} = 2
+$$
+
+位相 $\alpha$ を計算する。$\cos\alpha = \dfrac{a}{r} = \dfrac{1}{2}$・$\sin\alpha = \dfrac{b}{r} = \dfrac{\sqrt{3}}{2}$ である。両方を満たす角は $\alpha = \dfrac{\pi}{3}$ である。よって合成は次のとおりである。
+
+$$
+\sin\theta + \sqrt{3}\cos\theta = 2\sin\left(\theta + \frac{\pi}{3}\right)
+$$
+
+### グラフで一致を見る
+
+合成の前後で、グラフが完全に一致する。下の図に 4 本の曲線を重ねる。
+
+- もとの 2 成分 $\sin\theta$ と $\sqrt{3}\cos\theta$（破線）。
+- 両者の和 $\sin\theta + \sqrt{3}\cos\theta$（青い実線）。
+- 合成形 $2\sin\left(\theta + \dfrac{\pi}{3}\right)$（赤い実線）。
+
+和の曲線と合成形の曲線は完全に重なる。
+
+<FunctionGraph
+  xMin={-3.5}
+  xMax={6.8}
+  yMin={-2.5}
+  yMax={2.5}
+  curves={[
+    { fn: (x) => Math.sin(x), color: "#64748b", label: "\\sin\\theta", labelX: -2.4, dashed: true },
+    {
+      fn: (x) => Math.sqrt(3) * Math.cos(x),
+      color: "#cbd5e1",
+      label: "\\sqrt{3}\\cos\\theta",
+      labelX: 5.0,
+      dashed: true,
+    },
+    {
+      fn: (x) => Math.sin(x) + Math.sqrt(3) * Math.cos(x),
+      color: "#2563eb",
+      label: "\\sin\\theta+\\sqrt{3}\\cos\\theta",
+      labelX: 1.2,
+    },
+    {
+      fn: (x) => 2 * Math.sin(x + Math.PI / 3),
+      color: "#dc2626",
+      label: "2\\sin(\\theta+\\frac{\\pi}{3})",
+      labelX: 3.7,
+      // 和（青い実線）と完全に一致するため、上に載る合成曲線は破線にして下の実線を透かす。
+      // 実線どうしだと青が赤に隠れ、一致が見えなくなる。
+      dashed: true,
+    },
+  ]}
+  xTicks={[
+    { value: -Math.PI, label: "-\\pi" },
+    { value: 0, label: "0" },
+    { value: Math.PI, label: "\\pi" },
+    { value: 2 * Math.PI, label: "2\\pi" },
+  ]}
+  yTicks={[-2, -1, 1, 2]}
+  xLabel="\theta"
+  ariaLabel="sinθ と √3cosθ の破線、両者の和の青い曲線、合成形 2sin(θ+π/3) の赤い曲線を重ねたグラフ。和の青い曲線と合成形の赤い曲線は完全に一致し、振幅 2、左へ π/3 ずれた正弦波になる。"
+/>
+
+### 振幅・周期・位相を読む
+
+合成形 $r\sin(\theta + \alpha)$ から、波の 3 つの量が読める。例 $2\sin\left(\theta + \dfrac{\pi}{3}\right)$ で確かめる。
+
+| 量            | 意味                                                                                               | 例での値                         |
+| ------------- | -------------------------------------------------------------------------------------------------- | -------------------------------- |
+| 振幅 $r$      | 波の高さの最大値。グラフは $r$ から $-r$ の間を動く。                                              | $2$                              |
+| 周期          | 波が 1 回りする $\theta$ の幅。$\sin$ の周期は $2\pi$ である。                                     | $2\pi$                           |
+| 位相 $\alpha$ | 横方向のずれ。$\theta + \alpha = 0$、すなわち $\theta = -\alpha$ で $\sin$ が $0$ から増え始める。 | $-\dfrac{\pi}{3}$ だけ左にずれる |
+
+合成は、振幅・周期・位相の 3 つで波を完全に表す。係数付きの和 $a\sin\theta + b\cos\theta$ より、合成形 $r\sin(\theta + \alpha)$ のほうが波の性質を読みやすい。
+
+> 合成の前後で、周期は変わらない。$\sin\theta$ も $\cos\theta$ も周期 $2\pi$ をもつため、和も合成形も周期 $2\pi$ である。合成で変わるのは、振幅と位相だけである。
+
+## 最大値・最小値
+
+合成形 $r\sin(\theta + \alpha)$ は、最大値と最小値を一目で与える。正弦 $\sin(\theta + \alpha)$ は、$-1$ 以上 $1$ 以下の値を取る。前章までで確かめたとおり、$\sin$ の値域は $[-1,\ 1]$ である。両辺に $r > 0$ を掛ける。
+
+$$
+-r \le r\sin(\theta + \alpha) \le r
+$$
+
+よって、合成した波の最大値と最小値が定まる。
+
+> $$
+> a\sin\theta + b\cos\theta \text{ の最大値は } r = \sqrt{a^2 + b^2}, \quad \text{最小値は } -r = -\sqrt{a^2 + b^2}
+> $$
+
+最大・最小を取る角も分かる。
+
+- 最大値 $r$ を取るのは、$\sin(\theta + \alpha) = 1$ のとき、すなわち $\theta + \alpha = \dfrac{\pi}{2}$ のときである。
+- 最小値 $-r$ を取るのは、$\sin(\theta + \alpha) = -1$ のとき、すなわち $\theta + \alpha = -\dfrac{\pi}{2}$ のときである。
+
+## 例題
+
+### 例題 1
+
+$\sqrt{3}\sin\theta + \cos\theta$ を $r\sin(\theta + \alpha)$ の形に合成せよ。ただし $0 \le \alpha < 2\pi$ とする。
+
+**解法.** 係数は $a = \sqrt{3}$・$b = 1$ である。まず振幅 $r$ を求める。
+
+$$
+r = \sqrt{a^2 + b^2} = \sqrt{(\sqrt{3})^2 + 1^2} = \sqrt{3 + 1} = 2
+$$
+
+次に位相 $\alpha$ を求める。
+
+$$
+\cos\alpha = \frac{a}{r} = \frac{\sqrt{3}}{2}, \qquad \sin\alpha = \frac{b}{r} = \frac{1}{2}
+$$
+
+両方を満たす角は $\alpha = \dfrac{\pi}{6}$ である。よって合成は次のとおりである。
+
+$$
+\sqrt{3}\sin\theta + \cos\theta = 2\sin\left(\theta + \frac{\pi}{6}\right)
+$$
+
+### 例題 2
+
+$\sin\theta - \cos\theta$ を $r\sin(\theta + \alpha)$ の形に合成せよ。ただし $0 \le \alpha < 2\pi$ とする。
+
+**解法.** 係数は $a = 1$・$b = -1$ である。振幅 $r$ を求める。
+
+$$
+r = \sqrt{1^2 + (-1)^2} = \sqrt{2}
+$$
+
+位相 $\alpha$ を求める。
+
+$$
+\cos\alpha = \frac{1}{\sqrt{2}}, \qquad \sin\alpha = \frac{-1}{\sqrt{2}}
+$$
+
+$\cos\alpha > 0$・$\sin\alpha < 0$ だから、角 $\alpha$ は第 4 象限にある。条件を満たす角は $\alpha = \dfrac{7\pi}{4}$ である。よって合成は次のとおりである。
+
+$$
+\sin\theta - \cos\theta = \sqrt{2}\sin\left(\theta + \frac{7\pi}{4}\right)
+$$
+
+位相を $-\dfrac{\pi}{4}$ で表してもよい。$\dfrac{7\pi}{4}$ と $-\dfrac{\pi}{4}$ は $2\pi$ の差であり、同じ角を指す。$0 \le \alpha < 2\pi$ の条件では $\dfrac{7\pi}{4}$ を採る。
+
+### 例題 3
+
+$y = \sin\theta + \sqrt{3}\cos\theta$ の最大値と最小値を求めよ。また、最大値を取る $\theta$ を $0 \le \theta < 2\pi$ の範囲で 1 つ求めよ。
+
+**解法.** 本文で確かめたとおり、合成は次のとおりである。
+
+$$
+y = \sin\theta + \sqrt{3}\cos\theta = 2\sin\left(\theta + \frac{\pi}{3}\right)
+$$
+
+$\sin\left(\theta + \dfrac{\pi}{3}\right)$ は $-1$ 以上 $1$ 以下だから、$y$ の値域は次のとおりである。
+
+$$
+-2 \le y \le 2
+$$
+
+よって最大値は $2$、最小値は $-2$ である。最大値 $2$ を取るのは $\sin\left(\theta + \dfrac{\pi}{3}\right) = 1$ のとき、すなわち $\theta + \dfrac{\pi}{3} = \dfrac{\pi}{2}$ のときである。
+
+$$
+\theta = \frac{\pi}{2} - \frac{\pi}{3} = \frac{3\pi - 2\pi}{6} = \frac{\pi}{6}
+$$
+
+$\theta = \dfrac{\pi}{6}$ は $0 \le \theta < 2\pi$ の範囲にある。
+
+## 演習問題
+
+問題ごとに解答を畳んである。「解答を表示」を開くと確認できる。
+
+### 問題 1
+
+$\cos\theta + \sin\theta$ を $r\sin(\theta + \alpha)$ の形に合成せよ。ただし $0 \le \alpha < 2\pi$ とする。
+
+<details>
+<summary>解答を表示</summary>
+
+合成公式に合わせるため、$\sin\theta$ の項を先に書く。係数は $a = 1$・$b = 1$ である。
+
+$$
+\sin\theta + \cos\theta
+$$
+
+振幅を求める。
+
+$$
+r = \sqrt{1^2 + 1^2} = \sqrt{2}
+$$
+
+位相を求める。$\cos\alpha = \dfrac{1}{\sqrt{2}}$・$\sin\alpha = \dfrac{1}{\sqrt{2}}$ より $\alpha = \dfrac{\pi}{4}$ である。
+
+$$
+\cos\theta + \sin\theta = \sqrt{2}\sin\left(\theta + \frac{\pi}{4}\right)
+$$
+
+</details>
+
+### 問題 2
+
+$3\sin\theta + 4\cos\theta$ の最大値と最小値を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+係数は $a = 3$・$b = 4$ である。振幅を求める。
+
+$$
+r = \sqrt{3^2 + 4^2} = \sqrt{9 + 16} = \sqrt{25} = 5
+$$
+
+合成形は $5\sin(\theta + \alpha)$ である。位相 $\alpha$ は $\cos\alpha = \dfrac{3}{5}$・$\sin\alpha = \dfrac{4}{5}$ で定まるが、最大・最小には $r$ だけが効く。
+
+$$
+-5 \le 3\sin\theta + 4\cos\theta \le 5
+$$
+
+最大値は $5$、最小値は $-5$ である。
+
+</details>
+
+### 問題 3
+
+$\sqrt{3}\sin\theta - \cos\theta$ を合成し、$0 \le \theta < 2\pi$ で $\sqrt{3}\sin\theta - \cos\theta = 1$ を満たす $\theta$ をすべて求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+係数は $a = \sqrt{3}$・$b = -1$ である。振幅を求める。
+
+$$
+r = \sqrt{(\sqrt{3})^2 + (-1)^2} = \sqrt{3 + 1} = 2
+$$
+
+位相を求める。$\cos\alpha = \dfrac{\sqrt{3}}{2}$・$\sin\alpha = \dfrac{-1}{2}$ である。$\cos\alpha > 0$・$\sin\alpha < 0$ より、角 $\alpha$ は第 4 象限にある。条件を満たす角は $\alpha = -\dfrac{\pi}{6}$（または $\dfrac{11\pi}{6}$）である。合成は次のとおりである。
+
+$$
+\sqrt{3}\sin\theta - \cos\theta = 2\sin\left(\theta - \frac{\pi}{6}\right)
+$$
+
+方程式 $2\sin\left(\theta - \dfrac{\pi}{6}\right) = 1$ を解く。両辺を $2$ で割る。
+
+$$
+\sin\left(\theta - \frac{\pi}{6}\right) = \frac{1}{2}
+$$
+
+$\theta - \dfrac{\pi}{6} = \varphi$ と置く。$0 \le \theta < 2\pi$ より $-\dfrac{\pi}{6} \le \varphi < \dfrac{11\pi}{6}$ である。範囲内で $\sin\varphi = \dfrac{1}{2}$ となるのは $\varphi = \dfrac{\pi}{6}$ と $\varphi = \dfrac{5\pi}{6}$ である。それぞれ $\theta$ に戻す。
+
+$$
+\theta - \frac{\pi}{6} = \frac{\pi}{6} \ \text{のとき}\ \theta = \frac{\pi}{3}, \qquad
+\theta - \frac{\pi}{6} = \frac{5\pi}{6} \ \text{のとき}\ \theta = \pi
+$$
+
+よって $\theta = \dfrac{\pi}{3}$ と $\theta = \pi$ である。
+
+</details>
+
+### 問題 4
+
+合成 $a\sin\theta + b\cos\theta = r\sin(\theta + \alpha)$ で $a = 0$・$b = 2$ とする。合成形を求め、もとの式 $2\cos\theta$ と一致することを確かめよ。
+
+<details>
+<summary>解答を表示</summary>
+
+振幅を求める。
+
+$$
+r = \sqrt{0^2 + 2^2} = 2
+$$
+
+位相を求める。$\cos\alpha = \dfrac{0}{2} = 0$・$\sin\alpha = \dfrac{2}{2} = 1$ より $\alpha = \dfrac{\pi}{2}$ である。合成形は次のとおりである。
+
+$$
+2\cos\theta = 2\sin\left(\theta + \frac{\pi}{2}\right)
+$$
+
+確かめる。正弦の加法定理で右辺を展開する。
+
+$$
+2\sin\left(\theta + \frac{\pi}{2}\right) = 2\left(\sin\theta\cos\frac{\pi}{2} + \cos\theta\sin\frac{\pi}{2}\right)
+$$
+
+$\cos\dfrac{\pi}{2} = 0$・$\sin\dfrac{\pi}{2} = 1$ を代入する。
+
+$$
+2\sin\left(\theta + \frac{\pi}{2}\right) = 2(\sin\theta\cdot 0 + \cos\theta\cdot 1) = 2\cos\theta
+$$
+
+もとの式と一致する。$\cos\theta$ が $\sin\theta$ を $\dfrac{\pi}{2}$ だけ進めた波であることを表す。
+
+</details>
+
+### 問題 5
+
+物理の単振動を考える。同じ角振動数 $\omega$（オメガ、単位時間あたりに進む角）をもつ 2 つの振動 $x_1 = 3\sin\omega t$ と $x_2 = 4\cos\omega t$ を重ね合わせる。合成した振動 $x = x_1 + x_2$ の振幅を求めよ。ここで $t$ は時刻である。
+
+<details>
+<summary>解答を表示</summary>
+
+合成する式は次のとおりである。
+
+$$
+x = 3\sin\omega t + 4\cos\omega t
+$$
+
+角の変数を $\theta = \omega t$ と見れば、合成公式が使える。係数は $a = 3$・$b = 4$ である。振幅を求める。
+
+$$
+r = \sqrt{3^2 + 4^2} = \sqrt{25} = 5
+$$
+
+合成した振動は $x = 5\sin(\omega t + \alpha)$ の形になる。振幅は $5$ である。位相 $\alpha$ は $\cos\alpha = \dfrac{3}{5}$・$\sin\alpha = \dfrac{4}{5}$ で定まる。同じ角振動数の単振動を重ねると、再び同じ角振動数の単振動になり、振幅は $\sqrt{a^2 + b^2}$ で与えられる。
+
+</details>
+
+## まとめ
+
+本章は、加法定理を逆向きに使い、$\sin\theta$ と $\cos\theta$ の係数付きの和を 1 つの正弦にまとめた。要点を振り返る。
+
+- 合成公式：$a\sin\theta + b\cos\theta = r\sin(\theta + \alpha)$。
+- 振幅：$r = \sqrt{a^2 + b^2}$。点 $(a,\ b)$ を斜辺の先とする直角三角形の斜辺の長さである。
+- 位相：$\alpha$ は $\cos\alpha = \dfrac{a}{r}$・$\sin\alpha = \dfrac{b}{r}$ で定まる。$\cos\alpha$ と $\sin\alpha$ の両方で角を確定する。
+- 合成で周期は変わらない。変わるのは振幅と位相だけである。
+- 最大値は $r$、最小値は $-r$ である。
+- 合成を使うと、最大最小問題や三角方程式を、1 つの正弦の問題に帰着できる。
+- 物理では、同じ角振動数の単振動の重ね合わせが、振幅 $\sqrt{a^2 + b^2}$ の単振動になる。
+
+### 初等関数カテゴリを学び終えて
+
+本章は、初等関数カテゴリの最終章（第 15 章）である。第 1 章から第 15 章までで、次の関数を体系的に学んだ。
+
+- 関数とグラフの基礎、合成関数・逆関数（第 1 章・第 2 章）。
+- 1 次関数・2 次関数と、2 次不等式・絶対値（第 3 章〜第 5 章）。
+- 多項式・有理関数・無理関数（第 6 章・第 7 章）。
+- 指数関数・対数関数（第 8 章・第 9 章）。
+- 三角比から三角関数、正弦定理・余弦定理、単位円、加法定理、合成（第 10 章〜第 15 章）。
+
+初等関数の道具は、物理学の数式を読み書くための土台である。次のカテゴリは「ベクトル」である。ベクトルは、向きと大きさをもつ量を扱う道具であり、力・速度・加速度といった物理量の記述に欠かせない。本章までで身につけた三角関数は、ベクトルの成分表示や内積で再び現れる。ベクトルのカテゴリの章はまだ用意していないため、ここではリンクを張らず、学習の次の方向として言及するにとどめる。
+
+[^phase]: 「位相」（phase）は、波や振動を表すときの用語である。波形を時間や角度の方向にどれだけずらすかを表す量を指す。後の物理で単振動 $x = A\cos(\omega t + \phi)$ を扱うときに再び現れる（$A$ は振幅、$\omega$ は角振動数、$t$ は時刻）。引数 $\omega t + \phi$ 全体を位相、定数 $\phi$ を初期位相と呼ぶ。本章で $\alpha$ と呼んだ波のずれが、初期位相 $\phi$ にあたる。2 つの振動の位相の差は「位相差」と呼び、波の重ね合わせを調べるときに再び現れる。
+
+## 参考文献
+
+三角関数の合成をさらに学ぶための一次資料を挙げる。
+
+- 一松信『初等関数概説』森北出版、1998 年。三角関数の合成を加法定理から統一的に導く古典的な入門書である。振幅と位相の意味も丁寧に扱う。
+- レオンハルト・オイラー著、高瀬正仁訳『オイラーの無限解析』海鳴社、2001 年。三角関数を解析の枠組みで論じた一次資料である。正弦・余弦の重ね合わせを統一的に捉える視点を与える。

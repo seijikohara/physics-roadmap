@@ -65,6 +65,10 @@ export default defineConfig({
               label: "代数",
               items: [{ autogenerate: { directory: "math/algebra" } }],
             },
+            {
+              label: "初等関数",
+              items: [{ autogenerate: { directory: "math/functions" } }],
+            },
           ],
         },
       ],
