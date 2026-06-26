@@ -235,8 +235,9 @@ export default function SpaceVectorDiagram({
       if (box.x0 < 2 || box.x1 > VIEW_W - 2 || box.y0 < 2 || box.y1 > VIEW_H - 2) p += 1000;
       // ラベル同士の重なりは最優先で避ける（線分近接より重く罰する）。
       for (const q of placedBoxes) if (boxesOverlap(box, q)) p += 15;
-      // ラベル中心が線分に近すぎる（線・矢じりを覆う）候補を避ける。
-      for (const s of segs) if (distToSeg(lx, ly, s) < 10) p += 9;
+      // ラベルの矩形が線分に近すぎる（線・矢じりを覆う・端が接する）候補を避ける。中心ではなく
+      // 矩形で測り、幅の広いラベル（外積など）の端が縦の線に接するのを防ぐ。
+      for (const s of segs) if (segBoxDist(s, box) < 4) p += 12;
       if (p < bestP) {
         bestP = p;
         best = c;
@@ -444,20 +445,25 @@ export default function SpaceVectorDiagram({
           dx: alongX * a + perpX * p,
           dy: alongY * a + perpY * p,
         });
+        // 直交方向の逃がし量はラベル半幅に余白を足して決める。幅の広いラベル（外積 a×b など）
+        // でも、近い端が自分のベクトル線から確実に離れるようにする。
+        const perpClear = estimateTexWidth(v.label ?? "") / 2 + 9;
         const lp =
           v.label !== undefined
             ? place(
                 mx,
                 my,
                 [
+                  cand(0, perpClear),
+                  cand(0, -perpClear),
                   cand(0, 13),
                   cand(0, -13),
                   cand(0, 22),
                   cand(0, -22),
-                  cand(26, 14),
-                  cand(26, -14),
-                  cand(-26, 14),
-                  cand(-26, -14),
+                  cand(26, perpClear),
+                  cand(26, -perpClear),
+                  cand(-26, perpClear),
+                  cand(-26, -perpClear),
                   cand(26, 0),
                   cand(-26, 0),
                 ],
@@ -526,15 +532,26 @@ function add(p: Vec3, q: Vec3): Vec3 {
 /** 当たり判定に使う線分（画面座標の端点 a→b）。 */
 type Seg = { ax: number; ay: number; bx: number; by: number };
 
-/** 点 (px, py) から線分 s までの最短距離（画面座標）。 */
-function distToSeg(px: number, py: number, s: Seg): number {
-  const dx = s.bx - s.ax;
-  const dy = s.by - s.ay;
-  const len2 = dx * dx + dy * dy;
-  if (len2 === 0) return Math.hypot(px - s.ax, py - s.ay);
-  let t = ((px - s.ax) * dx + (py - s.ay) * dy) / len2;
-  t = Math.max(0, Math.min(1, t));
-  return Math.hypot(px - (s.ax + t * dx), py - (s.ay + t * dy));
+/** 点 (px, py) から軸並行矩形 b までの最短距離（矩形の内部なら 0）。 */
+function pointToBox(px: number, py: number, b: Box): number {
+  const dx = Math.max(b.x0 - px, 0, px - b.x1);
+  const dy = Math.max(b.y0 - py, 0, py - b.y1);
+  return Math.hypot(dx, dy);
+}
+
+/**
+ * 線分 s と軸並行矩形 b の最短距離の近似。線分を標本化し、各点から矩形までの距離の最小を返す。
+ * ラベル中心ではなく矩形で線分との近接を測り、幅の広いラベルの端が線に接するのを検出する。
+ */
+function segBoxDist(s: Seg, b: Box): number {
+  let min = Infinity;
+  const N = 16;
+  for (let i = 0; i <= N; i += 1) {
+    const t = i / N;
+    const d = pointToBox(s.ax + (s.bx - s.ax) * t, s.ay + (s.by - s.ay) * t, b);
+    if (d < min) min = d;
+  }
+  return min;
 }
 
 /** 当たり判定に使う軸並行の矩形（左上 (x0,y0)・右下 (x1,y1)）。 */
