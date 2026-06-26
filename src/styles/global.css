@@ -2,17 +2,6 @@
 @import "katex/dist/katex.min.css";
 
 /*
- * foreignObject 内の KaTeX で、根号やオーバーブレースなどの伸縮グリフが消える問題を直す。
- * KaTeX はそれらを高さ指定付きの親（.hide-tail・.brace-* など）の中の SVG で描くが、
- * katex 0.17 では foreignObject 内で SVG が高さ 0 に潰れる。SVG に親の高さを継がせて復元する。
- *
- * 対象は 2 系統:
- * - Mermaid 図中の数式（forceLegacyMathML による KaTeX 組版）。
- * - ビルド時生成の図コンポーネント（KatexLabel が SVG の foreignObject に KaTeX を埋め込む）。
- *   図中ラベルの $\sqrt{x}$ などで根号が消え、$\sqrt{2}$ が「2」に見える誤表示を防ぐ。
- * 本文のインライン数式は foreignObject を介さないため影響しない。
- */
-/*
  * 図中の日本語のフォントを全図でそろえる。
  *
  * KatexLabel は日本語ラベル（例: \text{斜辺}）も KaTeX で組版する。KaTeX は CJK を
@@ -26,7 +15,16 @@
   font-family: var(--sl-font, var(--__sl-font, sans-serif));
 }
 
-.mermaid .katex svg,
+/*
+ * foreignObject 内の KaTeX で、根号やオーバーブレースなどの伸縮グリフが消える問題を直す。
+ * KaTeX はそれらを高さ指定付きの親（.hide-tail・.brace-* など）の中の SVG で描くが、
+ * katex 0.17 では foreignObject 内で SVG が高さ 0 に潰れる。SVG に親の高さを継がせて復元する。
+ *
+ * 対象はビルド時生成の図コンポーネント（KatexLabel・FlowChart・FunctionGraph の凡例が
+ * SVG または HTML の foreignObject に KaTeX を埋め込む）。図中ラベルの $\sqrt{x}$ などで
+ * 根号が消え、$\sqrt{2}$ が「2」に見える誤表示を防ぐ。本文のインライン数式は foreignObject を
+ * 介さないため影響しない。
+ */
 .function-graph .katex svg,
 .function-graph-legend .katex svg,
 .unit-circle .katex svg,
