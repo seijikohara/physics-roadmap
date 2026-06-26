@@ -26,6 +26,15 @@ export default defineConfig({
     react(),
     starlight({
       title: "Physics Roadmap",
+      // 原子（核と楕円軌道）のロゴ。テーマごとに light/dark を切り替える。SVG は src/assets/ に置き、
+      // Astro が import 解決する。タイトル文字は併記する（replacesTitle は付けない）。
+      logo: {
+        light: "./src/assets/logo-light.svg",
+        dark: "./src/assets/logo-dark.svg",
+        alt: "Physics Roadmap",
+      },
+      // favicon は public/ 直下の SVG を指す（ルート相対）。Astro が base を補う。
+      favicon: "/favicon.svg",
       customCss: ["./src/styles/global.css"],
       // 日本語モノリンガルのサイト。既定の英語ルートロケールを上書きする。
       locales: {

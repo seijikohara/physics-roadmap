@@ -30,6 +30,13 @@ export type FlowDirection = "TB" | "TD" | "LR";
 /** ノードの形状。`rect`（矩形・既定）と `diamond`（菱形・判断）。 */
 export type FlowShape = "rect" | "diamond";
 
+/**
+ * ノードの配色トーン。既定（未指定）は中立色。`done`（完了・達成済み）と
+ * `goal`（到達目標）を強調色で描き分ける。意味は利用側が与える（ロードマップ全体図では
+ * `done`＝執筆済み）。色は global.css の CSS 変数で与える。
+ */
+export type FlowTone = "done" | "goal";
+
 /** フローチャートの 1 ノード。 */
 export type FlowNode = {
   /** ノードの識別子。エッジ・クラスタから参照する。 */
@@ -38,6 +45,8 @@ export type FlowNode = {
   label: string;
   /** 形状。既定は `rect`。判断（分岐）には `diamond` を使う。 */
   shape?: FlowShape;
+  /** 配色トーン。既定は中立色。`done`・`goal` を強調色で描く。 */
+  tone?: FlowTone;
 };
 
 /** 2 ノードを結ぶ有向エッジ。 */
@@ -73,6 +82,8 @@ type FlowChartProps = {
   clusters?: FlowCluster[];
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
+  /** 表示の最大幅（px）。既定は 720。大きなグラフ（ロードマップ全体図）で広げる。 */
+  maxWidth?: number;
 };
 
 // 色はテーマに追従する CSS 変数（global.css の :root と [data-theme="dark"]）で与える。
@@ -103,6 +114,7 @@ export default function FlowChart({
   edges = [],
   clusters = [],
   ariaLabel,
+  maxWidth = 720,
 }: FlowChartProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const arrow = `flowArrow-${uid}`;
@@ -219,7 +231,7 @@ export default function FlowChart({
       viewBox={`0 0 ${totalW} ${totalH}`}
       role="img"
       aria-label={ariaLabel}
-      style={{ maxWidth: `${Math.min(totalW, 720)}px` }}
+      style={{ maxWidth: `${Math.min(totalW, maxWidth)}px` }}
     >
       <defs>
         <Marker
@@ -294,6 +306,8 @@ type NodeMeta = {
   id: string;
   label: string;
   shape: FlowShape;
+  /** 配色トーン。未指定は中立色。 */
+  tone?: FlowTone;
   /** 外形（dagre に渡す当たり判定）の幅・高さ。 */
   width: number;
   height: number;
@@ -318,9 +332,21 @@ type PlacedLink = {
   arrowId: string;
 };
 
+/** ノードのトーンごとの塗り・輪郭の CSS 変数。未指定（中立）は既定色。 */
+function toneColors(tone?: FlowTone): { fill: string; stroke: string } {
+  if (tone === "done") {
+    return { fill: "var(--flow-node-done-fill)", stroke: "var(--flow-node-done-stroke)" };
+  }
+  if (tone === "goal") {
+    return { fill: "var(--flow-node-goal-fill)", stroke: "var(--flow-node-goal-stroke)" };
+  }
+  return { fill: NODE_FILL, stroke: NODE_STROKE };
+}
+
 /** ノード 1 個を原点中心に描く。矩形は Bar、菱形は Polygon。中央にラベルを置く。 */
 function NodeShape({ node }: { node: PlacedNode }) {
-  const { shape, width, height, labelW, labelH, label } = node;
+  const { shape, width, height, labelW, labelH, label, tone } = node;
+  const { fill, stroke } = toneColors(tone);
   return (
     <Group>
       {shape === "diamond" ? (
@@ -331,8 +357,8 @@ function NodeShape({ node }: { node: PlacedNode }) {
             [0, height / 2],
             [-width / 2, 0],
           ]}
-          fill={NODE_FILL}
-          stroke={NODE_STROKE}
+          fill={fill}
+          stroke={stroke}
           strokeWidth={1.4}
         />
       ) : (
@@ -342,8 +368,8 @@ function NodeShape({ node }: { node: PlacedNode }) {
           width={width}
           height={height}
           rx={6}
-          fill={NODE_FILL}
-          stroke={NODE_STROKE}
+          fill={fill}
+          stroke={stroke}
           strokeWidth={1.4}
         />
       )}
@@ -510,6 +536,7 @@ function measureNode(n: FlowNode): NodeMeta {
       id: n.id,
       label: n.label,
       shape,
+      tone: n.tone,
       width: contentW * 1.5 + PAD_X * 2,
       height: contentH * 1.7 + PAD_Y * 2,
       labelW,
@@ -520,6 +547,7 @@ function measureNode(n: FlowNode): NodeMeta {
     id: n.id,
     label: n.label,
     shape,
+    tone: n.tone,
     width: contentW + PAD_X * 2,
     height: contentH + PAD_Y * 2,
     labelW: contentW + PAD_X * 2,
