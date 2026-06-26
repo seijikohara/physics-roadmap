@@ -1,6 +1,11 @@
-import { scaleLinear } from "@visx/scale";
+import { RectClipPath } from "@visx/clip-path";
+import { GridColumns, GridRows } from "@visx/grid";
 import { Group } from "@visx/group";
+import { LegendItem, LegendLabel } from "@visx/legend";
+import { Marker } from "@visx/marker";
+import { scaleLinear } from "@visx/scale";
 import { Circle, Line, LinePath } from "@visx/shape";
+import { renderToString } from "katex";
 import { useId } from "react";
 import type { ReactNode } from "react";
 import KatexLabel from "./KatexLabel";
@@ -14,9 +19,12 @@ import KatexLabel from "./KatexLabel";
  * ビルド時に HTML へ描画する（クライアントディレクティブなし、ハイドレーションなし）。
  * 座標計算には visx の `@visx/scale`（`scaleLinear`）を用いる。曲線は標本点の列を
  * `@visx/shape` の `LinePath` に渡し、`defined` で窓外・非有限の区間を分断して描く。
- * 軸・補助線・点は visx の `Line`・`Circle`、座標変換は `Group` を用いる。
+ * 軸・補助線・点は visx の `Line`・`Circle`、座標変換は `Group` を用いる。格子線は
+ * `@visx/grid` の `GridColumns`・`GridRows`、クリップは `@visx/clip-path` の
+ * `RectClipPath`、軸の矢印は `@visx/marker` の `Marker` を用いる。
  * 軸・点のラベルは KatexLabel を介して KaTeX で組版し、本文のインライン数式と同一の
- * 字形にそろえる。
+ * 字形にそろえる。曲線の凡例は SVG の外の HTML として `@visx/legend` の `LegendItem`・
+ * `LegendLabel` で描き、数式ラベルは KaTeX で組版する。
  *
  * 関数値は描画窓 [xMin, xMax] を細かく標本化して折れ線で近似する。値が描画窓の縦範囲
  * [yMin, yMax] を外れる区間、および NaN・無限大となる区間では経路を分断し、有理関数の
@@ -188,42 +196,11 @@ export default function FunctionGraph({
     return out;
   };
 
-  // 凡例（色見本＋数式ラベル）。曲線の上に重ねず、グラフの下の帯へ流し込みで並べる。
+  // 凡例（色見本＋数式ラベル）。曲線の上に重ねず、SVG の外の HTML として下に並べる。
   // 隅に置くと、波のように画面全体へ広がる曲線では必ず重なるため、プロット領域の外へ出す。
+  // @visx/legend の LegendItem・LegendLabel を使い、ビルド時の静的 HTML として描く。
   const labeled = curves.filter((c): c is Curve & { label: string } => c.label !== undefined);
   const legendItems = legend === "none" ? [] : labeled;
-  const legendAvailW = VIEW_W - 2 * PAD;
-  const placedLegend: Array<{
-    label: string;
-    color: string;
-    dashed: boolean;
-    x: number;
-    row: number;
-    w: number;
-  }> = [];
-  let lgX = PAD;
-  let lgRow = 0;
-  for (const c of legendItems) {
-    const labelW = estimateTexWidth(c.label, 12);
-    const itemW = LEGEND_SWATCH + LEGEND_GAP + labelW;
-    if (lgX > PAD && lgX + itemW > PAD + legendAvailW) {
-      lgX = PAD;
-      lgRow += 1;
-    }
-    placedLegend.push({
-      label: c.label,
-      color: c.color ?? CURVE,
-      dashed: c.dashed ?? false,
-      x: lgX,
-      row: lgRow,
-      w: labelW,
-    });
-    lgX += itemW + LEGEND_ITEM_GAP;
-  }
-  const legendRows = placedLegend.length > 0 ? lgRow + 1 : 0;
-  const legendBandH = legendRows > 0 ? LEGEND_TOP + legendRows * LEGEND_ROW_H + LEGEND_PAD : 0;
-  const legendBaseY = VIEW_H + LEGEND_TOP;
-  const totalH = VIEW_H + legendBandH;
 
   // ラベルの自動配置。点・漸近線のラベルを、軸・目盛り数字・曲線・既出ラベルと重ならない
   // 位置へ置く。候補位置を採点し、最も衝突の少ない位置を選ぶ。ビルド時に一度だけ走る。
@@ -346,257 +323,265 @@ export default function FunctionGraph({
   });
 
   return (
-    <svg
-      className="function-graph"
-      viewBox={`0 0 ${VIEW_W} ${totalH}`}
-      role="img"
-      aria-label={ariaLabel}
-    >
-      <defs>
-        <marker
-          id={arrow}
-          viewBox="0 0 10 10"
-          refX={8}
-          refY={5}
-          markerWidth={6}
-          markerHeight={6}
-          orient="auto-start-reverse"
-        >
-          <path d="M 0 0 L 10 5 L 0 10 z" fill={AXIS} />
-        </marker>
-        <clipPath id={`clip-${uid}`}>
-          <rect x={originX} y={originY} width={plotW} height={plotH} />
-        </clipPath>
-      </defs>
+    <div className="function-graph-figure">
+      <svg
+        className="function-graph"
+        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+        role="img"
+        aria-label={ariaLabel}
+      >
+        <defs>
+          {/* 軸の矢印マーカー。@visx/marker の汎用 Marker で描く。 */}
+          <Marker
+            id={arrow}
+            viewBox="0 0 10 10"
+            refX={8}
+            refY={5}
+            markerWidth={6}
+            markerHeight={6}
+            markerUnits="strokeWidth"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 0 L 10 5 L 0 10 z" fill={AXIS} />
+          </Marker>
+          {/* 曲線をプロット矩形でクリップする。@visx/clip-path の RectClipPath で描く。 */}
+          <RectClipPath id={`clip-${uid}`} x={originX} y={originY} width={plotW} height={plotH} />
+        </defs>
 
-      {/* 目盛りに沿った格子線。 */}
-      {xt.map((t, i) => (
-        <Line
-          key={`gx-${i}`}
-          from={{ x: x(tickValue(t)), y: originY }}
-          to={{ x: x(tickValue(t)), y: originY + plotH }}
+        {/* 目盛りに沿った格子線。@visx/grid の GridColumns・GridRows で描く。 */}
+        <GridColumns
+          scale={x}
+          top={originY}
+          height={plotH}
+          tickValues={xt.map(tickValue)}
           stroke={GRID}
           strokeWidth={1}
         />
-      ))}
-      {yt.map((t, i) => (
-        <Line
-          key={`gy-${i}`}
-          from={{ x: originX, y: y(tickValue(t)) }}
-          to={{ x: originX + plotW, y: y(tickValue(t)) }}
+        <GridRows
+          scale={y}
+          left={originX}
+          width={plotW}
+          tickValues={yt.map(tickValue)}
           stroke={GRID}
           strokeWidth={1}
         />
-      ))}
 
-      {/* 漸近線・補助線（破線）。 */}
-      {asymptotes.map((a, i) => {
-        const ap = asymLabelPos[i];
-        if (a.x !== undefined) {
-          return (
-            <g key={`as-${i}`}>
-              <Line
-                from={{ x: x(a.x), y: originY }}
-                to={{ x: x(a.x), y: originY + plotH }}
-                stroke={HIGHLIGHT}
-                strokeWidth={1.2}
-                strokeDasharray="4 3"
-              />
-              {ap && (
-                <KatexLabel tex={a.label ?? ""} x={ap.x} y={ap.y} fontSize={12} align={ap.align} />
-              )}
-            </g>
-          );
-        }
-        if (a.y !== undefined) {
-          return (
-            <g key={`as-${i}`}>
-              <Line
-                from={{ x: originX, y: y(a.y) }}
-                to={{ x: originX + plotW, y: y(a.y) }}
-                stroke={HIGHLIGHT}
-                strokeWidth={1.2}
-                strokeDasharray="4 3"
-              />
-              {ap && (
-                <KatexLabel tex={a.label ?? ""} x={ap.x} y={ap.y} fontSize={12} align={ap.align} />
-              )}
-            </g>
-          );
-        }
-        return null;
-      })}
-
-      {/* 補助線分（傾きの三角形の辺など）。 */}
-      {segments.map((s, i) => {
-        const sp = segLabelPos[i];
-        return (
-          <g key={`sg-${i}`}>
-            <Line
-              from={{ x: x(s.from.x), y: y(s.from.y) }}
-              to={{ x: x(s.to.x), y: y(s.to.y) }}
-              stroke={HIGHLIGHT}
-              strokeWidth={1.6}
-              strokeDasharray={s.dashed ? "5 4" : undefined}
-              strokeLinecap="round"
-            />
-            {sp && (
-              <KatexLabel tex={s.label ?? ""} x={sp.x} y={sp.y} fontSize={12} align={sp.align} />
-            )}
-          </g>
-        );
-      })}
-
-      {/* 軸。両端に矢印を付ける。 */}
-      <Line
-        from={{ x: originX - 6, y: axisY }}
-        to={{ x: originX + plotW + 6, y: axisY }}
-        stroke={AXIS}
-        strokeWidth={1.4}
-        markerStart={`url(#${arrow})`}
-        markerEnd={`url(#${arrow})`}
-      />
-      <Line
-        from={{ x: axisX, y: originY + plotH + 6 }}
-        to={{ x: axisX, y: originY - 6 }}
-        stroke={AXIS}
-        strokeWidth={1.4}
-        markerStart={`url(#${arrow})`}
-        markerEnd={`url(#${arrow})`}
-      />
-
-      {/* 軸名。y 軸名は目盛り数字と同じ左側に置くと接触するため、軸の右上へ離す。
-          x 軸名は目盛り数字の右外へ離す。 */}
-      <KatexLabel tex={xLabel} x={originX + plotW + 14} y={axisY - 11} fontSize={13} />
-      <KatexLabel tex={yLabel} x={axisX + 12} y={originY - 9} fontSize={13} />
-
-      {/* x 軸の目盛りと数字。 */}
-      {xt.map((t, i) => (
-        <g key={`tx-${i}`}>
-          <Line
-            from={{ x: x(tickValue(t)), y: axisY - 3 }}
-            to={{ x: x(tickValue(t)), y: axisY + 3 }}
-            stroke={AXIS}
-            strokeWidth={1.2}
-          />
-          <KatexLabel tex={tickLabel(t)} x={x(tickValue(t))} y={axisY + 13} fontSize={11} />
-        </g>
-      ))}
-      {/* y 軸の目盛りと数字。 */}
-      {yt.map((t, i) => (
-        <g key={`ty-${i}`}>
-          <Line
-            from={{ x: axisX - 3, y: y(tickValue(t)) }}
-            to={{ x: axisX + 3, y: y(tickValue(t)) }}
-            stroke={AXIS}
-            strokeWidth={1.2}
-          />
-          <KatexLabel tex={tickLabel(t)} x={axisX - 14} y={y(tickValue(t))} fontSize={11} />
-        </g>
-      ))}
-
-      {/* 曲線。描画窓でクリップしてはみ出しを防ぐ。 */}
-      <Group clipPath={`url(#clip-${uid})`}>
-        {curves.map((c, i) => (
-          <LinePath<CurveSample>
-            key={`curve-${i}`}
-            data={samplesOf(c)}
-            x={(d) => x(d.xv)}
-            y={(d) => y(d.yv)}
-            defined={(d) => d.visible}
-            fill="none"
-            stroke={c.color ?? CURVE}
-            strokeWidth={2}
-            strokeDasharray={c.dashed ? "5 4" : undefined}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ))}
-      </Group>
-
-      {/* 凡例（色見本＋数式ラベル）。プロット領域の下の帯に置き、曲線に重ねない。 */}
-      {placedLegend.length > 0 && (
-        <g>
-          <Line
-            from={{ x: PAD, y: VIEW_H + 2 }}
-            to={{ x: VIEW_W - PAD, y: VIEW_H + 2 }}
-            stroke={GRID}
-            strokeWidth={1}
-          />
-          {placedLegend.map((it, i) => {
-            const rowY = legendBaseY + LEGEND_ROW_H * (it.row + 0.5);
-            // 色見本だけ曲線色にし、ラベル文字は本文と同じ標準色で描く。曲線色が淡い
-            // （補助線など）場合でもラベルを読めるようにする。
+        {/* 漸近線・補助線（破線）。 */}
+        {asymptotes.map((a, i) => {
+          const ap = asymLabelPos[i];
+          if (a.x !== undefined) {
             return (
-              <g key={`lg-${i}`}>
+              <g key={`as-${i}`}>
                 <Line
-                  from={{ x: it.x, y: rowY }}
-                  to={{ x: it.x + LEGEND_SWATCH, y: rowY }}
-                  stroke={it.color}
-                  strokeWidth={2}
-                  strokeDasharray={it.dashed ? "5 4" : undefined}
-                  strokeLinecap="round"
+                  from={{ x: x(a.x), y: originY }}
+                  to={{ x: x(a.x), y: originY + plotH }}
+                  stroke={HIGHLIGHT}
+                  strokeWidth={1.2}
+                  strokeDasharray="4 3"
                 />
-                <KatexLabel
-                  tex={it.label}
-                  x={it.x + LEGEND_SWATCH + LEGEND_GAP}
-                  y={rowY}
-                  width={it.w}
-                  fontSize={12}
-                  align="left"
-                />
+                {ap && (
+                  <KatexLabel
+                    tex={a.label ?? ""}
+                    x={ap.x}
+                    y={ap.y}
+                    fontSize={12}
+                    align={ap.align}
+                  />
+                )}
               </g>
             );
-          })}
-        </g>
-      )}
+          }
+          if (a.y !== undefined) {
+            return (
+              <g key={`as-${i}`}>
+                <Line
+                  from={{ x: originX, y: y(a.y) }}
+                  to={{ x: originX + plotW, y: y(a.y) }}
+                  stroke={HIGHLIGHT}
+                  strokeWidth={1.2}
+                  strokeDasharray="4 3"
+                />
+                {ap && (
+                  <KatexLabel
+                    tex={a.label ?? ""}
+                    x={ap.x}
+                    y={ap.y}
+                    fontSize={12}
+                    align={ap.align}
+                  />
+                )}
+              </g>
+            );
+          }
+          return null;
+        })}
 
-      {/* 点。 */}
-      {points.map((p, i) => {
-        const px = x(p.x);
-        const py = y(p.y);
-        const color = p.highlight ? HIGHLIGHT : "currentColor";
-        const marks: ReactNode[] = [];
-        marks.push(
-          p.open ? (
-            <Circle
-              key="c"
-              cx={px}
-              cy={py}
-              r={4}
-              fill="var(--sl-color-bg, #fff)"
-              stroke={color}
-              strokeWidth={1.8}
+        {/* 補助線分（傾きの三角形の辺など）。 */}
+        {segments.map((s, i) => {
+          const sp = segLabelPos[i];
+          return (
+            <g key={`sg-${i}`}>
+              <Line
+                from={{ x: x(s.from.x), y: y(s.from.y) }}
+                to={{ x: x(s.to.x), y: y(s.to.y) }}
+                stroke={HIGHLIGHT}
+                strokeWidth={1.6}
+                strokeDasharray={s.dashed ? "5 4" : undefined}
+                strokeLinecap="round"
+              />
+              {sp && (
+                <KatexLabel tex={s.label ?? ""} x={sp.x} y={sp.y} fontSize={12} align={sp.align} />
+              )}
+            </g>
+          );
+        })}
+
+        {/* 軸。両端に矢印を付ける。 */}
+        <Line
+          from={{ x: originX - 6, y: axisY }}
+          to={{ x: originX + plotW + 6, y: axisY }}
+          stroke={AXIS}
+          strokeWidth={1.4}
+          markerStart={`url(#${arrow})`}
+          markerEnd={`url(#${arrow})`}
+        />
+        <Line
+          from={{ x: axisX, y: originY + plotH + 6 }}
+          to={{ x: axisX, y: originY - 6 }}
+          stroke={AXIS}
+          strokeWidth={1.4}
+          markerStart={`url(#${arrow})`}
+          markerEnd={`url(#${arrow})`}
+        />
+
+        {/* 軸名。y 軸名は目盛り数字と同じ左側に置くと接触するため、軸の右上へ離す。
+          x 軸名は目盛り数字の右外へ離す。 */}
+        <KatexLabel tex={xLabel} x={originX + plotW + 14} y={axisY - 11} fontSize={13} />
+        <KatexLabel tex={yLabel} x={axisX + 12} y={originY - 9} fontSize={13} />
+
+        {/* x 軸の目盛りと数字。 */}
+        {xt.map((t, i) => (
+          <g key={`tx-${i}`}>
+            <Line
+              from={{ x: x(tickValue(t)), y: axisY - 3 }}
+              to={{ x: x(tickValue(t)), y: axisY + 3 }}
+              stroke={AXIS}
+              strokeWidth={1.2}
             />
-          ) : (
-            <Circle key="c" cx={px} cy={py} r={4} fill={color} />
-          ),
-        );
-        const pos = pointLabelPos[i];
-        return (
-          <g key={`pt-${i}`}>
-            {marks}
-            {pos && (
-              <KatexLabel tex={p.label ?? ""} x={pos.x} y={pos.y} fontSize={12} align={pos.align} />
-            )}
+            <KatexLabel tex={tickLabel(t)} x={x(tickValue(t))} y={axisY + 13} fontSize={11} />
           </g>
-        );
-      })}
-    </svg>
+        ))}
+        {/* y 軸の目盛りと数字。 */}
+        {yt.map((t, i) => (
+          <g key={`ty-${i}`}>
+            <Line
+              from={{ x: axisX - 3, y: y(tickValue(t)) }}
+              to={{ x: axisX + 3, y: y(tickValue(t)) }}
+              stroke={AXIS}
+              strokeWidth={1.2}
+            />
+            <KatexLabel tex={tickLabel(t)} x={axisX - 14} y={y(tickValue(t))} fontSize={11} />
+          </g>
+        ))}
+
+        {/* 曲線。描画窓でクリップしてはみ出しを防ぐ。 */}
+        <Group clipPath={`url(#clip-${uid})`}>
+          {curves.map((c, i) => (
+            <LinePath<CurveSample>
+              key={`curve-${i}`}
+              data={samplesOf(c)}
+              x={(d) => x(d.xv)}
+              y={(d) => y(d.yv)}
+              defined={(d) => d.visible}
+              fill="none"
+              stroke={c.color ?? CURVE}
+              strokeWidth={2}
+              strokeDasharray={c.dashed ? "5 4" : undefined}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
+        </Group>
+
+        {/* 点。 */}
+        {points.map((p, i) => {
+          const px = x(p.x);
+          const py = y(p.y);
+          const color = p.highlight ? HIGHLIGHT : "currentColor";
+          const marks: ReactNode[] = [];
+          marks.push(
+            p.open ? (
+              <Circle
+                key="c"
+                cx={px}
+                cy={py}
+                r={4}
+                fill="var(--sl-color-bg, #fff)"
+                stroke={color}
+                strokeWidth={1.8}
+              />
+            ) : (
+              <Circle key="c" cx={px} cy={py} r={4} fill={color} />
+            ),
+          );
+          const pos = pointLabelPos[i];
+          return (
+            <g key={`pt-${i}`}>
+              {marks}
+              {pos && (
+                <KatexLabel
+                  tex={p.label ?? ""}
+                  x={pos.x}
+                  y={pos.y}
+                  fontSize={12}
+                  align={pos.align}
+                />
+              )}
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* 凡例（色見本＋数式ラベル）。SVG の外の HTML として下に並べ、曲線に重ねない。
+          @visx/legend の LegendItem・LegendLabel を使い、ビルド時の静的 HTML として描く。 */}
+      {legendItems.length > 0 && (
+        <div className="function-graph-legend">
+          {legendItems.map((c, i) => {
+            // 色見本だけ曲線色にし、ラベルの数式は KaTeX で本文と同じ字形に組版する。
+            const html = renderToString(c.label, {
+              throwOnError: false,
+              displayMode: false,
+              trust: false,
+            });
+            return (
+              <LegendItem key={`lg-${i}`}>
+                <svg width={24} height={12} aria-hidden="true">
+                  <line
+                    x1={0}
+                    y1={6}
+                    x2={24}
+                    y2={6}
+                    stroke={c.color ?? CURVE}
+                    strokeWidth={2}
+                    strokeDasharray={c.dashed ? "5 4" : undefined}
+                  />
+                </svg>
+                <LegendLabel margin="0 0 0 6px">
+                  {/* ラベルはソース内のリテラルのみを組版する。外部入力は受け取らない。 */}
+                  <span dangerouslySetInnerHTML={{ __html: html }} />
+                </LegendLabel>
+              </LegendItem>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
-
-// 凡例の寸法（viewBox 単位）。凡例はプロットの下の帯に流し込みで並べる。
-const LEGEND_PAD = 6;
-const LEGEND_ROW_H = 18;
-const LEGEND_SWATCH = 20;
-const LEGEND_GAP = 6; // 色見本とラベルの間隔。
-const LEGEND_ITEM_GAP = 16; // 同じ行の項目どうしの間隔。
-const LEGEND_TOP = 10; // プロット下端と凡例帯の間隔。
 
 /** LaTeX 文字列の表示幅をおおまかに見積もる（DOM が無いビルド時の概算。安全側に広めに取る）。 */
 function estimateTexWidth(tex: string, fontSize: number): number {

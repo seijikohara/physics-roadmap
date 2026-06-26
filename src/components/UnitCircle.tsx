@@ -1,3 +1,4 @@
+import { Marker } from "@visx/marker";
 import { scaleLinear } from "@visx/scale";
 import { Circle, Line } from "@visx/shape";
 import { useId } from "react";
@@ -85,17 +86,18 @@ export default function UnitCircle({
   return (
     <svg className="unit-circle" viewBox={`0 0 ${VIEW} ${VIEW}`} role="img" aria-label={ariaLabel}>
       <defs>
-        <marker
+        <Marker
           id={arrow}
           viewBox="0 0 10 10"
           refX={8}
           refY={5}
           markerWidth={6}
           markerHeight={6}
+          markerUnits="strokeWidth"
           orient="auto-start-reverse"
         >
           <path d="M 0 0 L 10 5 L 0 10 z" fill={AXIS} />
-        </marker>
+        </Marker>
       </defs>
 
       {/* 軸。 */}

@@ -28,6 +28,7 @@
 
 .mermaid .katex svg,
 .function-graph .katex svg,
+.function-graph-legend .katex svg,
 .unit-circle .katex svg,
 .triangle-figure .katex svg,
 .number-line .katex svg,
@@ -89,12 +90,33 @@
  * 倍率約 1.9 倍となり、フォント 12 が約 23px に拡大していた）。本文幅より広い図がないため、
  * 倍率 1.0 ではどの図も拡大で頭打ちにならず、一貫した実寸を保てる。
  */
+.function-graph-figure {
+  max-width: 320px;
+  margin: 1rem auto;
+}
+
 .function-graph {
   display: block;
   width: 100%;
-  max-width: 320px;
   height: auto;
-  margin: 1rem auto;
+  margin: 0;
+}
+
+/* 凡例は SVG の外の HTML として描く（@visx/legend）。色見本＋数式ラベルを横へ流し込む。
+   フォント 13px は軸名（13）・補助（12）と字の大きさをそろえる。 */
+.function-graph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 16px;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.function-graph-legend svg {
+  flex: none;
 }
 
 .unit-circle {

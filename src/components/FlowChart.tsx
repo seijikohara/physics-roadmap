@@ -1,6 +1,7 @@
 import { graphlib, layout as dagreLayout } from "@dagrejs/dagre";
 import { curveLinear } from "@visx/curve";
 import { Group } from "@visx/group";
+import { Marker } from "@visx/marker";
 import { Graph } from "@visx/network";
 import { Bar, LinePath, Polygon } from "@visx/shape";
 import { renderToString } from "katex";
@@ -195,17 +196,18 @@ export default function FlowChart({
       style={{ maxWidth: `${Math.min(totalW, 720)}px` }}
     >
       <defs>
-        <marker
+        <Marker
           id={arrow}
           viewBox="0 0 10 10"
           refX={9}
           refY={5}
           markerWidth={7}
           markerHeight={7}
+          markerUnits="strokeWidth"
           orient="auto-start-reverse"
         >
           <path d="M 0 0 L 10 5 L 0 10 z" fill={EDGE} />
-        </marker>
+        </Marker>
       </defs>
 
       {/* クラスタ（サブグラフ）の枠と見出し。ノード・エッジより背面に描く。 */}

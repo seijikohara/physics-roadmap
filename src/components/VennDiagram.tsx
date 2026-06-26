@@ -1,3 +1,4 @@
+import { CircleClipPath } from "@visx/clip-path";
 import { Bar, Circle } from "@visx/shape";
 import { useId } from "react";
 import type { ReactNode } from "react";
@@ -76,11 +77,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
       case "intersection":
         return (
           <>
-            <defs>
-              <clipPath id={clipA}>
-                <circle cx={A.cx} cy={A.cy} r={A.r} />
-              </clipPath>
-            </defs>
+            <CircleClipPath id={clipA} cx={A.cx} cy={A.cy} r={A.r} />
             <Circle cx={A.cx} cy={A.cy} r={A.r} fill="none" stroke={STROKE_A} strokeWidth={1.8} />
             <Circle cx={B.cx} cy={B.cy} r={B.r} fill="none" stroke={STROKE_B} strokeWidth={1.8} />
             <Circle
