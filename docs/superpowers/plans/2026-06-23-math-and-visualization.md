@@ -2,9 +2,10 @@
 
 > **Status: Superseded (2026-06-24).** This plan records the original
 > Mafs/Chart.js implementation. The 2D visualization standard later moved to
-> build-time static SVG with D3; see
+> build-time static SVG with visx (`@visx/*`), and Mermaid diagrams moved to a
+> build-time `FlowChart` component (`@dagrejs/dagre` + `@visx/network`); see
 > [2026-06-24-visualization-stack-design.md](../specs/2026-06-24-visualization-stack-design.md).
-> The Mafs/Chart.js plots and the `FunctionPlot`/`InteractivePlot`/`VectorFieldPlot`/`DataChart`
+> The Mafs/Chart.js plots, Mermaid, and the `FunctionPlot`/`InteractivePlot`/`VectorFieldPlot`/`DataChart`
 > components below have since been removed. The text is kept unchanged as history.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

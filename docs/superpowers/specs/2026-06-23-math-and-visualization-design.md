@@ -5,7 +5,9 @@ Status: Superseded by [2026-06-24-visualization-stack-design.md](./2026-06-24-vi
 
 > **Note**: This document is a point-in-time record of the original decision. The
 > 2D visualization standard later moved from Mafs/Chart.js to build-time static
-> SVG with D3 (see the superseding document). The Mafs/Chart.js choices and the
+> SVG with visx (`@visx/*`), and Mermaid diagrams to a build-time `FlowChart`
+> component (`@dagrejs/dagre` + `@visx/network`); see the superseding document.
+> The Mafs/Chart.js choices, Mermaid, and the
 > `FunctionPlot`/`InteractivePlot`/`VectorFieldPlot`/`DataChart` components and
 > `showcase.mdx` described below have since been removed. The text is kept
 > unchanged as history.

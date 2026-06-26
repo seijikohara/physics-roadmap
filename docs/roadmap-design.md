@@ -718,10 +718,10 @@ P-GR-22 は量子論（P-QM・P-RQM・P-QFT・P-GAU・P-SMD）を必要としな
 3. 学習目標: 章で読めるようになる数式・概念を箇条書きで示す。
 4. 本文: 導入から展開へ進める。表現手段は次のとおり使い分ける。
    - 数式: KaTeX（インライン`$...$`、ブロック`$$ ... $$`）。
-   - 概念図・フロー: Mermaid のコードブロック。
-   - 2D 数学・幾何（関数・幾何・ベクトル・ベン図・数直線）: ビルド時に静的 SVG を生成する React コンポーネント（`VennDiagram`など）。標準ライブラリは D3 とし、`client:only`は付けない。
-   - データグラフ: D3 によるビルド時の静的 SVG を標準とする。データ図が必要な章で導入する。
-   - 3D（曲面・3D ベクトル場・時空）: 物理段階で react-three-fiber を導入する。
+   - 概念図・フロー: `FlowChart`コンポーネント（`@dagrejs/dagre` ＋ `@visx/network`）。ビルド時に静的 SVG を生成する。
+   - 2D 数学・幾何（関数・幾何・ベクトル・ベン図・数直線）: ビルド時に静的 SVG を生成する React コンポーネント（`FunctionGraph`・`VennDiagram`・`SpaceVectorDiagram`など）。標準ライブラリは visx（`@visx/*`）とし、`client:only`は付けない。
+   - データグラフ: visx によるビルド時の静的 SVG を標準とする。高水準の図が要るときは`@visx/xychart`を導入する。データ図が必要な章で導入する。
+   - 3D（曲面・3D ベクトル場・時空）: 物理段階で react-three-fiber を導入する。数学段階の空間ベクトルは`SpaceVectorDiagram`の静的 SVG で表す。
    - 表現手段の選定方針は[可視化スタック設計](superpowers/specs/2026-06-24-visualization-stack-design.md)に従う。
 5. 例題: 解法を示す。
 6. 演習問題: 解答を付ける。

@@ -44,10 +44,10 @@ color: blue
 ## 表現手段
 
 - **数式**: KaTeX を使う。インラインは`$...$`、ブロックは`$$ ... $$`。
-- **概念図・フロー**: Mermaid のコードブロック（` ```mermaid `）を使う。
-- **2D 数学・幾何**（関数・幾何・ベクトル・ベン図・数直線）: ビルド時に静的 SVG を生成する宣言的 React コンポーネント（`VennDiagram`など、`src/components/`にある）を使う。標準ライブラリは D3 とする。`client:only`は付けず、ビルド時に SVG を HTML へ焼き込む。
+- **概念図・フロー**: `FlowChart`コンポーネント（`src/components/FlowChart.tsx`）を使う。`@dagrejs/dagre`がビルド時にレイアウトを計算し、`@visx/network`で静的 SVG を描く。ノード・エッジを宣言的な props で渡す。Mermaid は使わない。
+- **2D 数学・幾何**（関数・幾何・ベクトル・ベン図・数直線）: ビルド時に静的 SVG を生成する宣言的 React コンポーネントを使う。コンポーネントは`src/components/`にあり、`FunctionGraph`・`VennDiagram`・`SpaceVectorDiagram`などを使う。標準ライブラリは visx（`@visx/*`）とする。`client:only`は付けず、ビルド時に SVG を HTML へ焼き込む。
 - ドラッグやスライダーなど双方向性が要る図に限り、クライアントアイランドとして読み込む。
-- **データグラフ**: D3 によるビルド時生成の静的 SVG を使う。データ図が必要な章で導入する。双方向性が要る場合は、その時点で描画手段を選定する。
+- **データグラフ**: visx によるビルド時生成の静的 SVG を使う。高水準の図が要るときは`@visx/xychart`を導入する。データ図が必要な章で導入する。双方向性が要る場合は、その時点で描画手段を選定する。
 - アイランドの props は JSON シリアライズ可能な値のみ渡せる。
 - 必要なコンポーネントが無い場合は章側で作らず、`docs/superpowers/specs/2026-06-24-visualization-stack-design.md`の方針に沿って追加を相談する。
 
