@@ -1,4 +1,5 @@
-import { scaleLinear } from "d3-scale";
+import { scaleLinear } from "@visx/scale";
+import { Circle, Line } from "@visx/shape";
 import { useId } from "react";
 import type { ReactNode } from "react";
 import KatexLabel from "./KatexLabel";
@@ -9,8 +10,9 @@ import KatexLabel from "./KatexLabel";
  * 実数を 1 本の水平な軸上の点として表す。点・区間・端点の開閉（白丸／黒丸）を、
  * 双方向性に頼らず自身で描く。本コンポーネントはクライアント JavaScript を一切載せ
  * ない。Astro がビルド時に HTML へ描画する（クライアントディレクティブなし、ハイド
- * レーションなし）。座標計算には D3 の `scaleLinear` を用いる。目盛り・点のラベルは
- * KatexLabel を介して KaTeX で組版し、本文のインライン数式と同一の字形にそろえる。
+ * レーションなし）。座標計算には visx の `@visx/scale`（`scaleLinear`）を用い、軸・点・
+ * 区間は `@visx/shape` の `Line`・`Circle` で描く。目盛り・点のラベルは KatexLabel を
+ * 介して KaTeX で組版し、本文のインライン数式と同一の字形にそろえる。
  */
 
 /** 軸上に目盛りとして表示する刻み。`label` を省くと数値をそのまま描く。 */
@@ -79,9 +81,10 @@ export default function NumberLine({
   const arrow = `nlArrow-${uid}`;
 
   // 実数値を SVG の x 座標へ写す線形スケール。
-  const x = scaleLinear()
-    .domain([min, max])
-    .range([PAD, VIEW_W - PAD]);
+  const x = scaleLinear<number>({
+    domain: [min, max],
+    range: [PAD, VIEW_W - PAD],
+  });
 
   // 区間を負／正の無限大側へ伸ばすときは、軸の端まで描く。
   const left = PAD;
@@ -113,13 +116,11 @@ export default function NumberLine({
         const x1 = iv.from === undefined ? left : x(iv.from);
         const x2 = iv.to === undefined ? right : x(iv.to);
         return (
-          <line
+          <Line
             key={`iv-${i}`}
             className="number-line-interval"
-            x1={x1}
-            y1={AXIS_Y}
-            x2={x2}
-            y2={AXIS_Y}
+            from={{ x: x1, y: AXIS_Y }}
+            to={{ x: x2, y: AXIS_Y }}
             stroke={HIGHLIGHT}
             strokeWidth={4}
             strokeLinecap="round"
@@ -128,11 +129,9 @@ export default function NumberLine({
       })}
 
       {/* 軸線。両端に矢印を付け、実数が両方向へ続くことを示す。 */}
-      <line
-        x1={left - 8}
-        y1={AXIS_Y}
-        x2={right + 8}
-        y2={AXIS_Y}
+      <Line
+        from={{ x: left - 8, y: AXIS_Y }}
+        to={{ x: right + 8, y: AXIS_Y }}
         stroke={AXIS}
         strokeWidth={1.5}
         markerStart={`url(#${arrow})`}
@@ -144,11 +143,9 @@ export default function NumberLine({
         const tx = x(t.value);
         return (
           <g key={`tick-${i}`}>
-            <line
-              x1={tx}
-              y1={AXIS_Y - TICK_LEN}
-              x2={tx}
-              y2={AXIS_Y + TICK_LEN}
+            <Line
+              from={{ x: tx, y: AXIS_Y - TICK_LEN }}
+              to={{ x: tx, y: AXIS_Y + TICK_LEN }}
               stroke={AXIS}
               strokeWidth={1.5}
             />
@@ -182,7 +179,7 @@ export default function NumberLine({
         const color = p.highlight ? HIGHLIGHT : "currentColor";
         return (
           <g key={`pt-${i}`}>
-            <circle cx={px} cy={AXIS_Y} r={4} fill={color} />
+            <Circle cx={px} cy={AXIS_Y} r={4} fill={color} />
             {p.label !== undefined && (
               <KatexLabel tex={p.label} x={px} y={AXIS_Y - 14} fontSize={13} />
             )}
@@ -196,7 +193,7 @@ export default function NumberLine({
 /** 区間の端点。閉端は塗りつぶし（黒丸）、開端は白抜き（白丸）で描く。 */
 function endpoint(key: string, cx: number, closed: boolean): ReactNode {
   return (
-    <circle
+    <Circle
       key={key}
       cx={cx}
       cy={AXIS_Y}

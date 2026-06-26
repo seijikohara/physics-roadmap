@@ -1,4 +1,5 @@
-import { scaleLinear } from "d3-scale";
+import { scaleLinear } from "@visx/scale";
+import { Circle, Line } from "@visx/shape";
 import { useId } from "react";
 import KatexLabel from "./KatexLabel";
 
@@ -9,8 +10,9 @@ import KatexLabel from "./KatexLabel";
  * その先端 $(\cos\theta,\ \sin\theta)$ を描く。余弦・正弦を座標軸への射影として示し、
  * 三角関数の定義を 1 枚の静的な図で表す。本コンポーネントはクライアント JavaScript を
  * 一切載せない。Astro がビルド時に HTML へ描画する（クライアントディレクティブなし、
- * ハイドレーションなし）。座標計算には D3 の `scaleLinear` を用い、ラベルは KatexLabel
- * を介して KaTeX で組版する。
+ * ハイドレーションなし）。座標計算には visx の `@visx/scale`（`scaleLinear`）を用い、
+ * 円・軸・射影は `@visx/shape` の `Circle`・`Line` で描く。ラベルは KatexLabel を介して
+ * KaTeX で組版する。
  */
 
 type UnitCircleProps = {
@@ -55,9 +57,10 @@ export default function UnitCircle({
   const arrow = `ucArrow-${uid}`;
 
   // 数学座標 [-1.3, 1.3] を描画領域へ写す。横縦で同じ倍率にし、円を歪めない。
-  const s = scaleLinear()
-    .domain([-1.3, 1.3])
-    .range([PAD, VIEW - PAD]);
+  const s = scaleLinear<number>({
+    domain: [-1.3, 1.3],
+    range: [PAD, VIEW - PAD],
+  });
   const cx = s(0);
   const cy = s(0);
   const r = s(1) - s(0); // 半径 1 の画面上の長さ。
@@ -96,21 +99,17 @@ export default function UnitCircle({
       </defs>
 
       {/* 軸。 */}
-      <line
-        x1={PAD - 6}
-        y1={cy}
-        x2={VIEW - PAD + 6}
-        y2={cy}
+      <Line
+        from={{ x: PAD - 6, y: cy }}
+        to={{ x: VIEW - PAD + 6, y: cy }}
         stroke={AXIS}
         strokeWidth={1.3}
         markerStart={`url(#${arrow})`}
         markerEnd={`url(#${arrow})`}
       />
-      <line
-        x1={cx}
-        y1={VIEW - PAD + 6}
-        x2={cx}
-        y2={PAD - 6}
+      <Line
+        from={{ x: cx, y: VIEW - PAD + 6 }}
+        to={{ x: cx, y: PAD - 6 }}
         stroke={AXIS}
         strokeWidth={1.3}
         markerStart={`url(#${arrow})`}
@@ -120,25 +119,21 @@ export default function UnitCircle({
       <KatexLabel tex="y" x={cx - 12} y={PAD - 12} fontSize={12} />
 
       {/* 単位円。 */}
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke={CIRCLE} strokeWidth={1.4} />
+      <Circle cx={cx} cy={cy} r={r} fill="none" stroke={CIRCLE} strokeWidth={1.4} />
 
       {/* 射影（破線）。 */}
       {showProjections && (
         <g>
-          <line
-            x1={tipX}
-            y1={tipY}
-            x2={tipX}
-            y2={cy}
+          <Line
+            from={{ x: tipX, y: tipY }}
+            to={{ x: tipX, y: cy }}
             stroke={HIGHLIGHT}
             strokeWidth={1.3}
             strokeDasharray="4 3"
           />
-          <line
-            x1={tipX}
-            y1={tipY}
-            x2={cx}
-            y2={tipY}
+          <Line
+            from={{ x: tipX, y: tipY }}
+            to={{ x: cx, y: tipY }}
             stroke={HIGHLIGHT}
             strokeWidth={1.3}
             strokeDasharray="4 3"
@@ -165,7 +160,7 @@ export default function UnitCircle({
       )}
 
       {/* 動径。 */}
-      <line x1={cx} y1={cy} x2={tipX} y2={tipY} stroke={RADIUS} strokeWidth={2} />
+      <Line from={{ x: cx, y: cy }} to={{ x: tipX, y: tipY }} stroke={RADIUS} strokeWidth={2} />
 
       {/* 角の弧と θ ラベル。 */}
       {showAngle && (
@@ -186,7 +181,7 @@ export default function UnitCircle({
       )}
 
       {/* 先端の点とラベル。 */}
-      <circle cx={tipX} cy={tipY} r={3.6} fill={RADIUS} />
+      <Circle cx={tipX} cy={tipY} r={3.6} fill={RADIUS} />
       {/* 先端のラベルは中心から外向き（点の左右・上下と同じ向き）へ離し、射影の破線・点と
           重ねない。第3・第4象限の下側の点でもラベルを下の外側へ置く。座標ラベルは幅が広い
           ため、中央の x を viewBox 内へクランプし、端での切れを防ぐ。 */}

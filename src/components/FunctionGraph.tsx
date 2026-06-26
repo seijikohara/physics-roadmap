@@ -1,4 +1,6 @@
-import { scaleLinear } from "d3-scale";
+import { scaleLinear } from "@visx/scale";
+import { Group } from "@visx/group";
+import { Circle, Line, LinePath } from "@visx/shape";
 import { useId } from "react";
 import type { ReactNode } from "react";
 import KatexLabel from "./KatexLabel";
@@ -10,8 +12,9 @@ import KatexLabel from "./KatexLabel";
  * 二次・多項式・有理・無理・指数・対数・三角の各関数のグラフを、双方向性に頼らず 1 枚の
  * 静的な図で表す。本コンポーネントはクライアント JavaScript を一切載せない。Astro が
  * ビルド時に HTML へ描画する（クライアントディレクティブなし、ハイドレーションなし）。
- * 座標計算には D3 の `scaleLinear` を用いる。曲線の経路は標本点の列から `M`・`L` の
- * path 文字列を直接組み立てる。
+ * 座標計算には visx の `@visx/scale`（`scaleLinear`）を用いる。曲線は標本点の列を
+ * `@visx/shape` の `LinePath` に渡し、`defined` で窓外・非有限の区間を分断して描く。
+ * 軸・補助線・点は visx の `Line`・`Circle`、座標変換は `Group` を用いる。
  * 軸・点のラベルは KatexLabel を介して KaTeX で組版し、本文のインライン数式と同一の
  * 字形にそろえる。
  *
@@ -155,12 +158,14 @@ export default function FunctionGraph({
   const originX = PAD + (availW - plotW) / 2;
   const originY = PAD + (availH - plotH) / 2;
 
-  const x = scaleLinear()
-    .domain([xMin, xMax])
-    .range([originX, originX + plotW]);
-  const y = scaleLinear()
-    .domain([yMin, yMax])
-    .range([originY + plotH, originY]); // SVG は下向きが正のため反転する。
+  const x = scaleLinear<number>({
+    domain: [xMin, xMax],
+    range: [originX, originX + plotW],
+  });
+  const y = scaleLinear<number>({
+    domain: [yMin, yMax],
+    range: [originY + plotH, originY], // SVG は下向きが正のため反転する。
+  });
 
   // 軸の交点（数学座標の原点が窓内にあればそこ、なければ近い端に寄せる）。
   const axisX = x(clamp(0, xMin, xMax));
@@ -169,27 +174,18 @@ export default function FunctionGraph({
   const xt = xTicks ?? autoTicks(xMin, xMax);
   const yt = yTicks ?? autoTicks(yMin, yMax);
 
-  // 曲線を標本化し、窓外・非有限値で分断した折れ線群の SVG 経路文字列に変換する。
-  // 値が描画窓の縦範囲を外れる、または非有限となる点で経路を切り、漸近線をまたぐ枝が
-  // 直線で結ばれないようにする。
-  const pathOf = (c: Curve): string => {
+  // 曲線を標本化し、各標本に可視判定を添えた配列にする。LinePath の `defined` が、値が
+  // 描画窓の縦範囲を外れる、または非有限となる点で経路を切り、漸近線をまたぐ枝が直線で
+  // 結ばれないようにする。
+  const samplesOf = (c: Curve): CurveSample[] => {
     const [lo, hi] = c.domain ?? [xMin, xMax];
-    let d = "";
-    let penDown = false;
+    const out: CurveSample[] = [];
     for (let i = 0; i <= SAMPLES; i += 1) {
       const xv = lo + ((hi - lo) * i) / SAMPLES;
       const yv = c.fn(xv);
-      const visible = Number.isFinite(yv) && yv >= yMin && yv <= yMax;
-      if (!visible) {
-        penDown = false;
-        continue;
-      }
-      const px = x(xv).toFixed(2);
-      const py = y(yv).toFixed(2);
-      d += `${penDown ? "L" : "M"}${px} ${py} `;
-      penDown = true;
+      out.push({ xv, yv, visible: Number.isFinite(yv) && yv >= yMin && yv <= yMax });
     }
-    return d.trim();
+    return out;
   };
 
   // 凡例（色見本＋数式ラベル）。曲線の上に重ねず、グラフの下の帯へ流し込みで並べる。
@@ -375,23 +371,19 @@ export default function FunctionGraph({
 
       {/* 目盛りに沿った格子線。 */}
       {xt.map((t, i) => (
-        <line
+        <Line
           key={`gx-${i}`}
-          x1={x(tickValue(t))}
-          y1={originY}
-          x2={x(tickValue(t))}
-          y2={originY + plotH}
+          from={{ x: x(tickValue(t)), y: originY }}
+          to={{ x: x(tickValue(t)), y: originY + plotH }}
           stroke={GRID}
           strokeWidth={1}
         />
       ))}
       {yt.map((t, i) => (
-        <line
+        <Line
           key={`gy-${i}`}
-          x1={originX}
-          y1={y(tickValue(t))}
-          x2={originX + plotW}
-          y2={y(tickValue(t))}
+          from={{ x: originX, y: y(tickValue(t)) }}
+          to={{ x: originX + plotW, y: y(tickValue(t)) }}
           stroke={GRID}
           strokeWidth={1}
         />
@@ -403,11 +395,9 @@ export default function FunctionGraph({
         if (a.x !== undefined) {
           return (
             <g key={`as-${i}`}>
-              <line
-                x1={x(a.x)}
-                y1={originY}
-                x2={x(a.x)}
-                y2={originY + plotH}
+              <Line
+                from={{ x: x(a.x), y: originY }}
+                to={{ x: x(a.x), y: originY + plotH }}
                 stroke={HIGHLIGHT}
                 strokeWidth={1.2}
                 strokeDasharray="4 3"
@@ -421,11 +411,9 @@ export default function FunctionGraph({
         if (a.y !== undefined) {
           return (
             <g key={`as-${i}`}>
-              <line
-                x1={originX}
-                y1={y(a.y)}
-                x2={originX + plotW}
-                y2={y(a.y)}
+              <Line
+                from={{ x: originX, y: y(a.y) }}
+                to={{ x: originX + plotW, y: y(a.y) }}
                 stroke={HIGHLIGHT}
                 strokeWidth={1.2}
                 strokeDasharray="4 3"
@@ -444,11 +432,9 @@ export default function FunctionGraph({
         const sp = segLabelPos[i];
         return (
           <g key={`sg-${i}`}>
-            <line
-              x1={x(s.from.x)}
-              y1={y(s.from.y)}
-              x2={x(s.to.x)}
-              y2={y(s.to.y)}
+            <Line
+              from={{ x: x(s.from.x), y: y(s.from.y) }}
+              to={{ x: x(s.to.x), y: y(s.to.y) }}
               stroke={HIGHLIGHT}
               strokeWidth={1.6}
               strokeDasharray={s.dashed ? "5 4" : undefined}
@@ -462,21 +448,17 @@ export default function FunctionGraph({
       })}
 
       {/* 軸。両端に矢印を付ける。 */}
-      <line
-        x1={originX - 6}
-        y1={axisY}
-        x2={originX + plotW + 6}
-        y2={axisY}
+      <Line
+        from={{ x: originX - 6, y: axisY }}
+        to={{ x: originX + plotW + 6, y: axisY }}
         stroke={AXIS}
         strokeWidth={1.4}
         markerStart={`url(#${arrow})`}
         markerEnd={`url(#${arrow})`}
       />
-      <line
-        x1={axisX}
-        y1={originY + plotH + 6}
-        x2={axisX}
-        y2={originY - 6}
+      <Line
+        from={{ x: axisX, y: originY + plotH + 6 }}
+        to={{ x: axisX, y: originY - 6 }}
         stroke={AXIS}
         strokeWidth={1.4}
         markerStart={`url(#${arrow})`}
@@ -491,11 +473,9 @@ export default function FunctionGraph({
       {/* x 軸の目盛りと数字。 */}
       {xt.map((t, i) => (
         <g key={`tx-${i}`}>
-          <line
-            x1={x(tickValue(t))}
-            y1={axisY - 3}
-            x2={x(tickValue(t))}
-            y2={axisY + 3}
+          <Line
+            from={{ x: x(tickValue(t)), y: axisY - 3 }}
+            to={{ x: x(tickValue(t)), y: axisY + 3 }}
             stroke={AXIS}
             strokeWidth={1.2}
           />
@@ -505,11 +485,9 @@ export default function FunctionGraph({
       {/* y 軸の目盛りと数字。 */}
       {yt.map((t, i) => (
         <g key={`ty-${i}`}>
-          <line
-            x1={axisX - 3}
-            y1={y(tickValue(t))}
-            x2={axisX + 3}
-            y2={y(tickValue(t))}
+          <Line
+            from={{ x: axisX - 3, y: y(tickValue(t)) }}
+            to={{ x: axisX + 3, y: y(tickValue(t)) }}
             stroke={AXIS}
             strokeWidth={1.2}
           />
@@ -518,11 +496,14 @@ export default function FunctionGraph({
       ))}
 
       {/* 曲線。描画窓でクリップしてはみ出しを防ぐ。 */}
-      <g clipPath={`url(#clip-${uid})`}>
+      <Group clipPath={`url(#clip-${uid})`}>
         {curves.map((c, i) => (
-          <path
+          <LinePath<CurveSample>
             key={`curve-${i}`}
-            d={pathOf(c)}
+            data={samplesOf(c)}
+            x={(d) => x(d.xv)}
+            y={(d) => y(d.yv)}
+            defined={(d) => d.visible}
             fill="none"
             stroke={c.color ?? CURVE}
             strokeWidth={2}
@@ -531,16 +512,14 @@ export default function FunctionGraph({
             strokeLinejoin="round"
           />
         ))}
-      </g>
+      </Group>
 
       {/* 凡例（色見本＋数式ラベル）。プロット領域の下の帯に置き、曲線に重ねない。 */}
       {placedLegend.length > 0 && (
         <g>
-          <line
-            x1={PAD}
-            y1={VIEW_H + 2}
-            x2={VIEW_W - PAD}
-            y2={VIEW_H + 2}
+          <Line
+            from={{ x: PAD, y: VIEW_H + 2 }}
+            to={{ x: VIEW_W - PAD, y: VIEW_H + 2 }}
             stroke={GRID}
             strokeWidth={1}
           />
@@ -550,11 +529,9 @@ export default function FunctionGraph({
             // （補助線など）場合でもラベルを読めるようにする。
             return (
               <g key={`lg-${i}`}>
-                <line
-                  x1={it.x}
-                  y1={rowY}
-                  x2={it.x + LEGEND_SWATCH}
-                  y2={rowY}
+                <Line
+                  from={{ x: it.x, y: rowY }}
+                  to={{ x: it.x + LEGEND_SWATCH, y: rowY }}
                   stroke={it.color}
                   strokeWidth={2}
                   strokeDasharray={it.dashed ? "5 4" : undefined}
@@ -582,7 +559,7 @@ export default function FunctionGraph({
         const marks: ReactNode[] = [];
         marks.push(
           p.open ? (
-            <circle
+            <Circle
               key="c"
               cx={px}
               cy={py}
@@ -592,7 +569,7 @@ export default function FunctionGraph({
               strokeWidth={1.8}
             />
           ) : (
-            <circle key="c" cx={px} cy={py} r={4} fill={color} />
+            <Circle key="c" cx={px} cy={py} r={4} fill={color} />
           ),
         );
         const pos = pointLabelPos[i];
@@ -652,6 +629,9 @@ function autoTicks(lo: number, hi: number): number[] {
   }
   return out;
 }
+
+/** 曲線の 1 標本。`visible` は描画窓内かつ有限で、LinePath の `defined` に渡す。 */
+type CurveSample = { xv: number; yv: number; visible: boolean };
 
 /** ラベルの配置先（中心・左端・右端の基準点と寄せ方向）。 */
 type LabelPos = { x: number; y: number; align: "center" | "left" | "right" };

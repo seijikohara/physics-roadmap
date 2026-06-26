@@ -1,4 +1,5 @@
-import { scaleLinear } from "d3-scale";
+import { scaleLinear } from "@visx/scale";
+import { Circle, Line, Polygon } from "@visx/shape";
 import KatexLabel from "./KatexLabel";
 
 /**
@@ -112,12 +113,14 @@ export default function Triangle({
   const offX = PAD + (availW - boxW) / 2;
   const offY = PAD + (availH - boxH) / 2;
 
-  const sx = scaleLinear()
-    .domain([minX, maxX])
-    .range([offX, offX + boxW]);
-  const sy = scaleLinear()
-    .domain([minY, maxY])
-    .range([offY + boxH, offY]); // 上向きを正にする。
+  const sx = scaleLinear<number>({
+    domain: [minX, maxX],
+    range: [offX, offX + boxW],
+  });
+  const sy = scaleLinear<number>({
+    domain: [minY, maxY],
+    range: [offY + boxH, offY], // 上向きを正にする。
+  });
 
   const P = vertices.map((v) => ({ x: sx(v.x), y: sy(v.y) }));
   const centroid = {
@@ -133,8 +136,8 @@ export default function Triangle({
       aria-label={ariaLabel}
     >
       {/* 三角形の面。 */}
-      <polygon
-        points={P.map((p) => `${p.x},${p.y}`).join(" ")}
+      <Polygon
+        points={P.map((p): [number, number] => [p.x, p.y])}
         fill={FILL}
         fillOpacity={0.08}
         stroke={STROKE}
@@ -197,12 +200,10 @@ export default function Triangle({
 
       {/* 補助線分（破線）。底辺の延長などを表す。 */}
       {segments.map((s, i) => (
-        <line
+        <Line
           key={`seg-${i}`}
-          x1={sx(s.from.x)}
-          y1={sy(s.from.y)}
-          x2={sx(s.to.x)}
-          y2={sy(s.to.y)}
+          from={{ x: sx(s.from.x), y: sy(s.from.y) }}
+          to={{ x: sx(s.to.x), y: sy(s.to.y) }}
           stroke={MARK}
           strokeWidth={1.3}
           strokeDasharray="4 3"
@@ -226,11 +227,9 @@ export default function Triangle({
         const footLen = Math.hypot(footOut.x, footOut.y) || 1;
         return (
           <g key={`perp-${i}`}>
-            <line
-              x1={f.x}
-              y1={f.y}
-              x2={h.x}
-              y2={h.y}
+            <Line
+              from={{ x: f.x, y: f.y }}
+              to={{ x: h.x, y: h.y }}
               stroke={MARK}
               strokeWidth={1.3}
               strokeDasharray="4 3"
@@ -241,7 +240,7 @@ export default function Triangle({
               stroke={MARK}
               strokeWidth={1.3}
             />
-            <circle cx={h.x} cy={h.y} r={3} fill={STROKE} />
+            <Circle cx={h.x} cy={h.y} r={3} fill={STROKE} />
             {pp.label !== undefined && (
               <KatexLabel
                 tex={pp.label}
@@ -286,7 +285,7 @@ export default function Triangle({
         const len = Math.hypot(out.x, out.y) || 1;
         return (
           <g key={`v-${i}`}>
-            <circle cx={p.x} cy={p.y} r={3.2} fill={STROKE} />
+            <Circle cx={p.x} cy={p.y} r={3.2} fill={STROKE} />
             {vertices[i].label !== undefined && (
               <KatexLabel
                 tex={vertices[i].label ?? ""}
