@@ -1,0 +1,642 @@
+---
+title: 加法定理
+description: 正弦・余弦・正接の加法定理と 2 倍角・半角の公式を、単位円上の 2 点の距離だけから自己完結で導入する。複号同順・複号逆順の記法もあわせて定める。
+sidebar:
+  order: 14
+---
+
+import Triangle from "../../../../components/Triangle";
+
+## 前提
+
+本章の前提は、次の章と前提知識である。
+
+- [三角関数と単位円](../trigonometric-functions-and-unit-circle/)：単位円による $\sin\theta$・$\cos\theta$・$\tan\theta$ の定義、周期性、偶奇性を使う。
+- [前提とする知識](../../../prerequisites/knowledge/)：三平方の定理（直角三角形で斜辺の 2 乗が他の 2 辺の 2 乗の和に等しい関係）を使う。
+
+前章では、単位円上の動径の先端の座標が $(\cos\theta,\ \sin\theta)$ であることを確かめた。本章では、2 つの角 $\alpha$・$\beta$ の和 $\alpha + \beta$ や差 $\alpha - \beta$ の三角関数を、もとの角 $\alpha$・$\beta$ の三角関数で表す。和・差の三角関数を表す式を**加法定理**と呼ぶ。加法定理は、波の重ね合わせ・回転の合成・交流回路の計算など、物理学の広い場面で使う基本道具である。
+
+## 学習目標
+
+本章を読むと、次の概念と操作を使えるようになる。
+
+- 余弦の加法定理 $\cos(\alpha \pm \beta) = \cos\alpha\cos\beta \mp \sin\alpha\sin\beta$
+- 正弦の加法定理 $\sin(\alpha \pm \beta) = \sin\alpha\cos\beta \pm \cos\alpha\sin\beta$
+- 正接の加法定理 $\tan(\alpha \pm \beta) = \dfrac{\tan\alpha \pm \tan\beta}{1 \mp \tan\alpha\tan\beta}$
+- 2 倍角の公式（$\sin 2\theta$・$\cos 2\theta$・$\tan 2\theta$）
+- 半角の公式（$\sin^2\dfrac{\theta}{2}$・$\cos^2\dfrac{\theta}{2}$・$\tan^2\dfrac{\theta}{2}$）
+- 複号同順・複号逆順の記法
+
+## 複号の記法
+
+加法定理は、和（$+$）と差（$-$）の式をまとめて 1 行で書ける。まとめて書くために、**複号**と呼ぶ記号 $\pm$・$\mp$ を使う。
+
+> - 記号 $\pm$ は「プラスまたはマイナス」を表す。上側 $+$ と下側 $-$ の 2 通りをまとめる。
+> - 記号 $\mp$ は「マイナスまたはプラス」を表す。上側 $-$ と下側 $+$ の 2 通りをまとめる。
+
+1 つの式に複数の複号が現れるとき、符号の選び方には 2 つの約束がある。
+
+> - **複号同順**：すべての複号で同じ側（上どうし・下どうし）を選ぶ約束である。
+> - **複号逆順**：$\pm$ と $\mp$ で上下を逆に選ぶ約束である。$\pm$ の上側を選ぶとき、$\mp$ は下側を選ぶ。
+
+例として、余弦の加法定理を見る。
+
+$$
+\cos(\alpha \pm \beta) = \cos\alpha\cos\beta \mp \sin\alpha\sin\beta
+$$
+
+上式は、複号 $\pm$ と $\mp$ を逆順に選ぶ式である。上側を選ぶと和の式、下側を選ぶと差の式になる。
+
+$$
+\cos(\alpha + \beta) = \cos\alpha\cos\beta - \sin\alpha\sin\beta
+$$
+
+$$
+\cos(\alpha - \beta) = \cos\alpha\cos\beta + \sin\alpha\sin\beta
+$$
+
+左辺の符号と右辺の符号が逆になる点が、複号逆順の意味である。
+
+## 相互関係
+
+導出の前に、単位円から得られる基本の等式を確かめる。前章で確かめたとおり、単位円は半径 $1$ の円である。円上の点 $(x,\ y)$ は、原点からの距離が $1$ である。三平方の定理より、距離の 2 乗は $x^2 + y^2 = 1^2$ になる。
+
+円上の点の座標は $x = \cos\theta$・$y = \sin\theta$ である。代入すると、次の等式を得る。
+
+> $$
+> \cos^2\theta + \sin^2\theta = 1
+> $$
+>
+> 正弦と余弦を結ぶ等式を**相互関係**と呼ぶ。記号 $\cos^2\theta$ は「コサイン 2 乗シータ」と読み、$(\cos\theta)^2$ を表す。$\sin^2\theta$・$\tan^2\theta$ も同じく 2 乗を表す。
+
+相互関係は、本章の導出で繰り返し使う。
+
+## 余弦の加法定理
+
+### 単位円上の 2 点
+
+加法定理の出発点は、余弦の差の公式 $\cos(\alpha - \beta)$ である。単位円上の 2 点の距離から導く。
+
+単位円上に、角 $\alpha$ の点 $\mathrm{A}$ と角 $\beta$ の点 $\mathrm{B}$ を取る。前章の定義より、2 点の座標は次のとおりである。
+
+$$
+\mathrm{A} = (\cos\alpha,\ \sin\alpha), \qquad
+\mathrm{B} = (\cos\beta,\ \sin\beta)
+$$
+
+2 点 $\mathrm{A}$・$\mathrm{B}$ を結ぶ線分を**弦**と呼び、線分の長さを記号 $\mathrm{AB}$ で表す。原点を $\mathrm{O}$ とし、三角形 $\mathrm{OAB}$ を考える。下の図は、単位円上の 2 点 $\mathrm{A}$・$\mathrm{B}$ と原点 $\mathrm{O}$ を結んだ三角形である。辺 $\mathrm{OA}$・$\mathrm{OB}$ はともに半径で長さ $1$、頂点 $\mathrm{O}$ の角は 2 動径のなす角 $\alpha - \beta$ である。
+
+<Triangle
+  vertices={[
+    { x: 0, y: 0, label: "\\mathrm{O}" },
+    { x: Math.cos((65 * Math.PI) / 180), y: Math.sin((65 * Math.PI) / 180), label: "\\mathrm{A}" },
+    { x: Math.cos((20 * Math.PI) / 180), y: Math.sin((20 * Math.PI) / 180), label: "\\mathrm{B}" },
+  ]}
+  edges={[
+    { from: 0, to: 1, label: "1" },
+    { from: 0, to: 2, label: "1" },
+    { from: 1, to: 2, label: "\\mathrm{AB}" },
+  ]}
+  angles={[{ at: 0, label: "\\alpha-\\beta" }]}
+  unitScale={180}
+  ariaLabel="原点 O と単位円上の 2 点 A・B を結んだ三角形 OAB。辺 OA と OB はともに長さ 1、頂点 O の角は α−β、辺 AB が 2 点を結ぶ弦である。"
+/>
+
+弦の長さ $\mathrm{AB}$ を 2 通りで計算し、両者を等しいと置く。2 通りの計算が加法定理を生む。
+
+### 座標による距離の 2 乗
+
+まず、座標から弦 $\mathrm{AB}$ の長さの 2 乗を求める。一般の 2 点 $\mathrm{P}$・$\mathrm{Q}$ の座標を次のように書く。
+
+$$
+\mathrm{P} = (x_1,\ y_1), \qquad \mathrm{Q} = (x_2,\ y_2)
+$$
+
+横の差は $x_1 - x_2$、縦の差は $y_1 - y_2$ である。横の差と縦の差を 2 辺とする直角三角形を作ると、斜辺が線分 $\mathrm{PQ}$ になる。三平方の定理を使う。
+
+$$
+\mathrm{PQ}^2 = (x_1 - x_2)^2 + (y_1 - y_2)^2
+$$
+
+弦 $\mathrm{AB}$ に当てはめる。点 $\mathrm{A}$・$\mathrm{B}$ の座標を代入する。
+
+$$
+\mathrm{AB}^2 = (\cos\alpha - \cos\beta)^2 + (\sin\alpha - \sin\beta)^2
+$$
+
+右辺を展開する。$(a - b)^2 = a^2 - 2ab + b^2$ を使う。
+
+$$
+\mathrm{AB}^2 = \cos^2\alpha - 2\cos\alpha\cos\beta + \cos^2\beta + \sin^2\alpha - 2\sin\alpha\sin\beta + \sin^2\beta
+$$
+
+項を並べ替える。
+
+$$
+\mathrm{AB}^2 = (\cos^2\alpha + \sin^2\alpha) + (\cos^2\beta + \sin^2\beta) - 2(\cos\alpha\cos\beta + \sin\alpha\sin\beta)
+$$
+
+相互関係 $\cos^2\alpha + \sin^2\alpha = 1$ と $\cos^2\beta + \sin^2\beta = 1$ を代入する。
+
+> $$
+> \mathrm{AB}^2 = 2 - 2(\cos\alpha\cos\beta + \sin\alpha\sin\beta)
+> $$
+
+### 配置をそろえた距離の 2 乗
+
+次に、同じ弦 $\mathrm{AB}$ の長さを別の配置で計算する。弦 $\mathrm{AB}$ の長さは、三角形 $\mathrm{OAB}$ の 2 辺 $\mathrm{OA} = \mathrm{OB} = 1$ と、はさむ角 $\alpha - \beta$ で決まる。2 辺の長さとはさむ角を決めると、三角形の形と大きさが 1 つに定まる。残る辺の長さも 1 つに定まる。
+
+そこで、頂点 $\mathrm{O}$ の角を $\alpha - \beta$ に保ったまま、計算しやすい配置に置き直す。点 $\mathrm{B}'$ を $x$ 軸上の $(1,\ 0)$ に、点 $\mathrm{A}'$ を角 $\alpha - \beta$ の位置に取る。座標は次のとおりである。
+
+$$
+\mathrm{A}' = (\cos(\alpha - \beta),\ \sin(\alpha - \beta)), \qquad
+\mathrm{B}' = (1,\ 0)
+$$
+
+下の図は、置き直した三角形 $\mathrm{OA}'\mathrm{B}'$ である。2 辺の長さ $1$ とはさむ角 $\alpha - \beta$ は前の三角形 $\mathrm{OAB}$ と同じである。よって弦 $\mathrm{A}'\mathrm{B}'$ の長さは弦 $\mathrm{AB}$ の長さに等しい。
+
+<Triangle
+  vertices={[
+    { x: 0, y: 0, label: "\\mathrm{O}" },
+    { x: Math.cos((45 * Math.PI) / 180), y: Math.sin((45 * Math.PI) / 180), label: "\\mathrm{A}'" },
+    { x: 1, y: 0, label: "\\mathrm{B}'" },
+  ]}
+  edges={[
+    { from: 0, to: 1, label: "1" },
+    { from: 0, to: 2, label: "1" },
+    { from: 1, to: 2, label: "\\mathrm{A}'\\mathrm{B}'" },
+  ]}
+  angles={[{ at: 0, label: "\\alpha-\\beta" }]}
+  unitScale={180}
+  ariaLabel="原点 O と 2 点 A'・B' を結んだ三角形 OA'B'。点 B' は x 軸上の (1, 0)、点 A' は角 α−β の位置にある。辺 OA' と OB' はともに長さ 1、頂点 O の角は α−β で、2 辺の長さとはさむ角が前の三角形 OAB と同じである。"
+/>
+
+2 つの三角形は同じ形だから $\mathrm{A}'\mathrm{B}' = \mathrm{AB}$ である。置き直した座標で距離の 2 乗を計算する。三平方の定理を再び使う。
+
+$$
+\mathrm{AB}^2 = (\cos(\alpha - \beta) - 1)^2 + (\sin(\alpha - \beta) - 0)^2
+$$
+
+右辺を展開する。簡単のため $\gamma = \alpha - \beta$ と置く。
+
+$$
+\mathrm{AB}^2 = \cos^2\gamma - 2\cos\gamma + 1 + \sin^2\gamma
+$$
+
+相互関係 $\cos^2\gamma + \sin^2\gamma = 1$ を代入する。
+
+> $$
+> \mathrm{AB}^2 = 2 - 2\cos(\alpha - \beta)
+> $$
+
+### 2 つの式を等しいと置く
+
+弦の長さは 1 通りに決まるため、2 通りの $\mathrm{AB}^2$ は等しい。
+
+$$
+2 - 2\cos(\alpha - \beta) = 2 - 2(\cos\alpha\cos\beta + \sin\alpha\sin\beta)
+$$
+
+両辺から $2$ を引き、$-2$ で割る。左右の符号と係数が消える。
+
+> $$
+> \cos(\alpha - \beta) = \cos\alpha\cos\beta + \sin\alpha\sin\beta
+> $$
+>
+> 余弦の差の加法定理である。
+
+### 和の公式へ
+
+差の公式から、和の公式を導く。$\cos(\alpha + \beta)$ は、$\cos(\alpha - (-\beta))$ と書ける。差の公式に $\beta$ の代わりに $-\beta$ を入れる。
+
+$$
+\cos(\alpha + \beta) = \cos(\alpha - (-\beta)) = \cos\alpha\cos(-\beta) + \sin\alpha\sin(-\beta)
+$$
+
+前章の偶奇性 $\cos(-\beta) = \cos\beta$・$\sin(-\beta) = -\sin\beta$ を代入する。
+
+$$
+\cos(\alpha + \beta) = \cos\alpha\cos\beta - \sin\alpha\sin\beta
+$$
+
+和・差の 2 式を、複号でまとめる。
+
+> $$
+> \cos(\alpha \pm \beta) = \cos\alpha\cos\beta \mp \sin\alpha\sin\beta \qquad (\text{複号逆順})
+> $$
+
+## 正弦の加法定理
+
+### 余角の関係
+
+正弦の加法定理は、余弦の加法定理から導く。橋渡しに**余角の関係**を使う。余角とは、和が $\dfrac{\pi}{2}$ になる角どうしの関係である。次が成り立つ。
+
+> $$
+> \sin\theta = \cos\left(\frac{\pi}{2} - \theta\right), \qquad
+> \cos\theta = \sin\left(\frac{\pi}{2} - \theta\right)
+> $$
+
+余角の関係は、余弦の差の公式から確かめられる。$\cos\left(\dfrac{\pi}{2} - \theta\right)$ に差の公式を使う。
+
+$$
+\cos\left(\frac{\pi}{2} - \theta\right)
+= \cos\frac{\pi}{2}\cos\theta + \sin\frac{\pi}{2}\sin\theta
+$$
+
+前章の値 $\cos\dfrac{\pi}{2} = 0$・$\sin\dfrac{\pi}{2} = 1$ を代入する。
+
+$$
+\cos\left(\frac{\pi}{2} - \theta\right) = 0 \cdot \cos\theta + 1 \cdot \sin\theta = \sin\theta
+$$
+
+$\sin\theta = \cos\left(\dfrac{\pi}{2} - \theta\right)$ が得られた。もう 1 つの関係も同様に確かめられる。得られた式の $\theta$ を $\dfrac{\pi}{2} - \theta$ に置き換える。すると $\cos\theta = \sin\left(\dfrac{\pi}{2} - \theta\right)$ になる。
+
+### 正弦の加法定理の導出
+
+正弦の和 $\sin(\alpha + \beta)$ を、余角の関係で余弦に直す。
+
+$$
+\sin(\alpha + \beta) = \cos\left(\frac{\pi}{2} - (\alpha + \beta)\right)
+= \cos\left(\left(\frac{\pi}{2} - \alpha\right) - \beta\right)
+$$
+
+右辺は余弦の差の形である。余弦の差の公式を使う。
+
+$$
+\sin(\alpha + \beta)
+= \cos\left(\frac{\pi}{2} - \alpha\right)\cos\beta + \sin\left(\frac{\pi}{2} - \alpha\right)\sin\beta
+$$
+
+余角の関係 $\cos\left(\dfrac{\pi}{2} - \alpha\right) = \sin\alpha$・$\sin\left(\dfrac{\pi}{2} - \alpha\right) = \cos\alpha$ を代入する。
+
+$$
+\sin(\alpha + \beta) = \sin\alpha\cos\beta + \cos\alpha\sin\beta
+$$
+
+差の公式も、余弦のときと同じく $\beta$ を $-\beta$ に置き換えて得る。偶奇性 $\cos(-\beta) = \cos\beta$・$\sin(-\beta) = -\sin\beta$ を使う。
+
+$$
+\sin(\alpha - \beta) = \sin\alpha\cos\beta - \cos\alpha\sin\beta
+$$
+
+和・差の 2 式を複号でまとめる。
+
+> $$
+> \sin(\alpha \pm \beta) = \sin\alpha\cos\beta \pm \cos\alpha\sin\beta \qquad (\text{複号同順})
+> $$
+>
+> 左辺の符号と右辺の符号が一致するため、複号同順である。
+
+## 正接の加法定理
+
+正接の加法定理は、正接の定義 $\tan\theta = \dfrac{\sin\theta}{\cos\theta}$ と、正弦・余弦の加法定理から導く。
+
+$$
+\tan(\alpha \pm \beta) = \frac{\sin(\alpha \pm \beta)}{\cos(\alpha \pm \beta)}
+= \frac{\sin\alpha\cos\beta \pm \cos\alpha\sin\beta}{\cos\alpha\cos\beta \mp \sin\alpha\sin\beta}
+$$
+
+分子・分母を $\cos\alpha\cos\beta$ で割る（$\cos\alpha \ne 0$・$\cos\beta \ne 0$）。各項を $\cos\alpha\cos\beta$ で割ると、$\tan$ の形に整う。
+
+$$
+\tan(\alpha \pm \beta)
+= \frac{\dfrac{\sin\alpha\cos\beta}{\cos\alpha\cos\beta} \pm \dfrac{\cos\alpha\sin\beta}{\cos\alpha\cos\beta}}{\dfrac{\cos\alpha\cos\beta}{\cos\alpha\cos\beta} \mp \dfrac{\sin\alpha\sin\beta}{\cos\alpha\cos\beta}}
+= \frac{\dfrac{\sin\alpha}{\cos\alpha} \pm \dfrac{\sin\beta}{\cos\beta}}{1 \mp \dfrac{\sin\alpha}{\cos\alpha}\cdot\dfrac{\sin\beta}{\cos\beta}}
+$$
+
+各分数を $\tan$ に直す。
+
+> $$
+> \tan(\alpha \pm \beta) = \frac{\tan\alpha \pm \tan\beta}{1 \mp \tan\alpha\tan\beta} \qquad (\text{複号同順})
+> $$
+>
+> 分子の符号と分母の符号が逆になる点に注意する。複号 $\pm$ と $\mp$ を同順に選ぶ。$+$ を選ぶと分子が $+$、分母が $-$ になる。
+
+3 つの加法定理を表でまとめる。
+
+| 関数 | 加法定理                                                                               | 複号 |
+| ---- | -------------------------------------------------------------------------------------- | ---- |
+| 余弦 | $\cos(\alpha \pm \beta) = \cos\alpha\cos\beta \mp \sin\alpha\sin\beta$                 | 逆順 |
+| 正弦 | $\sin(\alpha \pm \beta) = \sin\alpha\cos\beta \pm \cos\alpha\sin\beta$                 | 同順 |
+| 正接 | $\tan(\alpha \pm \beta) = \dfrac{\tan\alpha \pm \tan\beta}{1 \mp \tan\alpha\tan\beta}$ | 同順 |
+
+## 2 倍角の公式
+
+加法定理で $\beta = \alpha$ と置くと、角 $2\alpha$ の三角関数が得られる。和の公式 $\sin(\alpha + \beta)$・$\cos(\alpha + \beta)$・$\tan(\alpha + \beta)$ を使う。以下では変数を $\theta$ と書く。
+
+### 正弦の 2 倍角
+
+正弦の和の公式で $\alpha = \beta = \theta$ とする。
+
+$$
+\sin 2\theta = \sin(\theta + \theta) = \sin\theta\cos\theta + \cos\theta\sin\theta
+$$
+
+同じ項が 2 つできる。
+
+> $$
+> \sin 2\theta = 2\sin\theta\cos\theta
+> $$
+
+### 余弦の 2 倍角
+
+余弦の和の公式で $\alpha = \beta = \theta$ とする。
+
+$$
+\cos 2\theta = \cos(\theta + \theta) = \cos\theta\cos\theta - \sin\theta\sin\theta = \cos^2\theta - \sin^2\theta
+$$
+
+相互関係 $\cos^2\theta + \sin^2\theta = 1$ を使うと、$\sin$ だけ・$\cos$ だけの形にも書き換えられる。$\cos^2\theta = 1 - \sin^2\theta$ を代入すると次を得る。
+
+$$
+\cos 2\theta = (1 - \sin^2\theta) - \sin^2\theta = 1 - 2\sin^2\theta
+$$
+
+$\sin^2\theta = 1 - \cos^2\theta$ を代入すると次を得る。
+
+$$
+\cos 2\theta = \cos^2\theta - (1 - \cos^2\theta) = 2\cos^2\theta - 1
+$$
+
+余弦の 2 倍角は 3 通りの形をもつ。
+
+> $$
+> \cos 2\theta = \cos^2\theta - \sin^2\theta = 1 - 2\sin^2\theta = 2\cos^2\theta - 1
+> $$
+
+### 正接の 2 倍角
+
+正接の和の公式で $\alpha = \beta = \theta$ とする。
+
+$$
+\tan 2\theta = \tan(\theta + \theta) = \frac{\tan\theta + \tan\theta}{1 - \tan\theta\tan\theta}
+$$
+
+> $$
+> \tan 2\theta = \frac{2\tan\theta}{1 - \tan^2\theta}
+> $$
+
+3 つの 2 倍角の公式を表でまとめる。
+
+| 関数 | 2 倍角の公式                                                                         |
+| ---- | ------------------------------------------------------------------------------------ |
+| 正弦 | $\sin 2\theta = 2\sin\theta\cos\theta$                                               |
+| 余弦 | $\cos 2\theta = \cos^2\theta - \sin^2\theta = 1 - 2\sin^2\theta = 2\cos^2\theta - 1$ |
+| 正接 | $\tan 2\theta = \dfrac{2\tan\theta}{1 - \tan^2\theta}$                               |
+
+## 半角の公式
+
+半角の公式は、余弦の 2 倍角の式を逆向きに使って導く。角 $\theta$ を半分の $\dfrac{\theta}{2}$ に対する式へ書き換える。
+
+### 導出
+
+余弦の 2 倍角の 2 つの形を出発点にする。
+
+$$
+\cos 2\varphi = 1 - 2\sin^2\varphi, \qquad
+\cos 2\varphi = 2\cos^2\varphi - 1
+$$
+
+ここで $2\varphi = \theta$、すなわち $\varphi = \dfrac{\theta}{2}$ と置く。式は次のようになる。
+
+$$
+\cos\theta = 1 - 2\sin^2\frac{\theta}{2}, \qquad
+\cos\theta = 2\cos^2\frac{\theta}{2} - 1
+$$
+
+第 1 式を $\sin^2\dfrac{\theta}{2}$ について解く。両辺を入れ替えて $2\sin^2\dfrac{\theta}{2} = 1 - \cos\theta$ とし、両辺を $2$ で割る。
+
+$$
+\sin^2\frac{\theta}{2} = \frac{1 - \cos\theta}{2}
+$$
+
+第 2 式を $\cos^2\dfrac{\theta}{2}$ について解く。両辺を入れ替えて $2\cos^2\dfrac{\theta}{2} = 1 + \cos\theta$ とし、両辺を $2$ で割る。
+
+$$
+\cos^2\frac{\theta}{2} = \frac{1 + \cos\theta}{2}
+$$
+
+正接の半角は、2 つの比から得る。$\tan^2\dfrac{\theta}{2} = \dfrac{\sin^2(\theta/2)}{\cos^2(\theta/2)}$ である。
+
+$$
+\tan^2\frac{\theta}{2} = \frac{1 - \cos\theta}{1 + \cos\theta} \qquad (\cos\theta \ne -1)
+$$
+
+### 半角の公式のまとめ
+
+3 つの半角の公式をまとめる。
+
+> $$
+> \sin^2\frac{\theta}{2} = \frac{1 - \cos\theta}{2}, \qquad
+> \cos^2\frac{\theta}{2} = \frac{1 + \cos\theta}{2}, \qquad
+> \tan^2\frac{\theta}{2} = \frac{1 - \cos\theta}{1 + \cos\theta}
+> $$
+>
+> 半角の公式は 2 乗の形で表す[^half-angle-sign]。$\sin\dfrac{\theta}{2}$ など 1 乗の値を求めるときは、平方根を取り、角 $\dfrac{\theta}{2}$ の象限から符号を決める。
+
+## 例題
+
+### 例題 1
+
+加法定理を使って、$\cos 75^\circ$ の値を求めよ。
+
+**解法.** $75^\circ = 45^\circ + 30^\circ$ と分ける。$45^\circ$ と $30^\circ$ は値が分かる角である。余弦の和の公式を使う。
+
+$$
+\cos 75^\circ = \cos(45^\circ + 30^\circ) = \cos 45^\circ\cos 30^\circ - \sin 45^\circ\sin 30^\circ
+$$
+
+前章の値を代入する。使う値は次のとおりである。
+
+$$
+\cos 45^\circ = \sin 45^\circ = \frac{\sqrt{2}}{2}, \qquad
+\cos 30^\circ = \frac{\sqrt{3}}{2}, \qquad
+\sin 30^\circ = \frac{1}{2}
+$$
+
+$$
+\cos 75^\circ = \frac{\sqrt{2}}{2}\cdot\frac{\sqrt{3}}{2} - \frac{\sqrt{2}}{2}\cdot\frac{1}{2}
+= \frac{\sqrt{6}}{4} - \frac{\sqrt{2}}{4} = \frac{\sqrt{6} - \sqrt{2}}{4}
+$$
+
+### 例題 2
+
+$\sin\theta = \dfrac{3}{5}$ とする。角 $\theta$ は第 1 象限にある。$\sin 2\theta$ と $\cos 2\theta$ の値を求めよ。
+
+**解法.** まず $\cos\theta$ を求める。相互関係 $\cos^2\theta + \sin^2\theta = 1$ より $\cos^2\theta = 1 - \dfrac{9}{25} = \dfrac{16}{25}$ である。$\theta$ は第 1 象限だから $\cos\theta > 0$ で、$\cos\theta = \dfrac{4}{5}$ である。
+
+2 倍角の公式を使う。
+
+$$
+\sin 2\theta = 2\sin\theta\cos\theta = 2\cdot\frac{3}{5}\cdot\frac{4}{5} = \frac{24}{25}
+$$
+
+$$
+\cos 2\theta = 1 - 2\sin^2\theta = 1 - 2\cdot\frac{9}{25} = 1 - \frac{18}{25} = \frac{7}{25}
+$$
+
+### 例題 3
+
+半角の公式を使って、$\cos^2 15^\circ$ の値を求めよ。
+
+**解法.** $15^\circ = \dfrac{30^\circ}{2}$ だから、$\theta = 30^\circ$ として $\cos^2\dfrac{\theta}{2}$ の公式を使う。
+
+$$
+\cos^2 15^\circ = \frac{1 + \cos 30^\circ}{2}
+$$
+
+$\cos 30^\circ = \dfrac{\sqrt{3}}{2}$ を代入する。
+
+$$
+\cos^2 15^\circ = \frac{1 + \dfrac{\sqrt{3}}{2}}{2} = \frac{\dfrac{2 + \sqrt{3}}{2}}{2} = \frac{2 + \sqrt{3}}{4}
+$$
+
+## 演習問題
+
+問題ごとに解答を畳んである。「解答を表示」を開くと確認できる。
+
+### 問題 1
+
+加法定理を使って、$\sin 15^\circ$ の値を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+$15^\circ = 45^\circ - 30^\circ$ と分ける。正弦の差の公式を使う。
+
+$$
+\sin 15^\circ = \sin(45^\circ - 30^\circ) = \sin 45^\circ\cos 30^\circ - \cos 45^\circ\sin 30^\circ
+$$
+
+値を代入する。
+
+$$
+\sin 15^\circ = \frac{\sqrt{2}}{2}\cdot\frac{\sqrt{3}}{2} - \frac{\sqrt{2}}{2}\cdot\frac{1}{2}
+= \frac{\sqrt{6} - \sqrt{2}}{4}
+$$
+
+</details>
+
+### 問題 2
+
+加法定理を使って、$\tan 75^\circ$ の値を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+$75^\circ = 45^\circ + 30^\circ$ と分ける。正接の和の公式を使う。
+
+$$
+\tan 75^\circ = \tan(45^\circ + 30^\circ) = \frac{\tan 45^\circ + \tan 30^\circ}{1 - \tan 45^\circ\tan 30^\circ}
+$$
+
+$\tan 45^\circ = 1$・$\tan 30^\circ = \dfrac{1}{\sqrt{3}}$ を代入する。
+
+$$
+\tan 75^\circ = \frac{1 + \dfrac{1}{\sqrt{3}}}{1 - 1\cdot\dfrac{1}{\sqrt{3}}}
+= \frac{\dfrac{\sqrt{3} + 1}{\sqrt{3}}}{\dfrac{\sqrt{3} - 1}{\sqrt{3}}}
+= \frac{\sqrt{3} + 1}{\sqrt{3} - 1}
+$$
+
+分母を有理化する。分子・分母に $\sqrt{3} + 1$ を掛ける。
+
+$$
+\tan 75^\circ = \frac{(\sqrt{3} + 1)^2}{(\sqrt{3} - 1)(\sqrt{3} + 1)}
+= \frac{3 + 2\sqrt{3} + 1}{3 - 1} = \frac{4 + 2\sqrt{3}}{2} = 2 + \sqrt{3}
+$$
+
+</details>
+
+### 問題 3
+
+$\cos\theta = -\dfrac{1}{3}$ とする。角 $\theta$ は第 2 象限にある。$\cos 2\theta$ の値を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+余弦の 2 倍角の公式のうち、$\cos\theta$ だけで表す形を使う。
+
+$$
+\cos 2\theta = 2\cos^2\theta - 1
+$$
+
+$\cos\theta = -\dfrac{1}{3}$ より $\cos^2\theta = \dfrac{1}{9}$ である。
+
+$$
+\cos 2\theta = 2\cdot\frac{1}{9} - 1 = \frac{2}{9} - 1 = -\frac{7}{9}
+$$
+
+象限の条件は $\cos^2\theta$ に影響しないため、$\cos\theta$ の符号によらず値は同じである。
+
+</details>
+
+### 問題 4
+
+半角の公式を使って、$\sin^2\dfrac{\theta}{2}$ を $\cos\theta$ で表し、$\theta = 60^\circ$ のときの $\sin^2 30^\circ$ の値を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+半角の公式は次のとおりである。
+
+$$
+\sin^2\frac{\theta}{2} = \frac{1 - \cos\theta}{2}
+$$
+
+$\theta = 60^\circ$ を代入する。$\dfrac{\theta}{2} = 30^\circ$ で、$\cos 60^\circ = \dfrac{1}{2}$ である。
+
+$$
+\sin^2 30^\circ = \frac{1 - \dfrac{1}{2}}{2} = \frac{\dfrac{1}{2}}{2} = \frac{1}{4}
+$$
+
+確かに $\sin 30^\circ = \dfrac{1}{2}$ だから $\sin^2 30^\circ = \dfrac{1}{4}$ であり、結果と整合する。
+
+</details>
+
+### 問題 5
+
+余弦の差の加法定理を使って、$\cos\left(\dfrac{\pi}{2} - \theta\right) = \sin\theta$ を確かめよ。
+
+<details>
+<summary>解答を表示</summary>
+
+余弦の差の公式 $\cos(\alpha - \beta) = \cos\alpha\cos\beta + \sin\alpha\sin\beta$ で、$\alpha = \dfrac{\pi}{2}$・$\beta = \theta$ とする。
+
+$$
+\cos\left(\frac{\pi}{2} - \theta\right) = \cos\frac{\pi}{2}\cos\theta + \sin\frac{\pi}{2}\sin\theta
+$$
+
+$\cos\dfrac{\pi}{2} = 0$・$\sin\dfrac{\pi}{2} = 1$ を代入する。
+
+$$
+\cos\left(\frac{\pi}{2} - \theta\right) = 0\cdot\cos\theta + 1\cdot\sin\theta = \sin\theta
+$$
+
+余角の関係が確かめられた。
+
+</details>
+
+## まとめ
+
+本章は、単位円上の 2 点の距離から余弦の加法定理を導き、そこから正弦・正接の加法定理、2 倍角・半角の公式を導いた。要点を振り返る。
+
+- 余弦の加法定理：$\cos(\alpha \pm \beta) = \cos\alpha\cos\beta \mp \sin\alpha\sin\beta$（複号逆順）。
+- 正弦の加法定理：$\sin(\alpha \pm \beta) = \sin\alpha\cos\beta \pm \cos\alpha\sin\beta$（複号同順）。
+- 正接の加法定理：$\tan(\alpha \pm \beta) = \dfrac{\tan\alpha \pm \tan\beta}{1 \mp \tan\alpha\tan\beta}$（複号同順）。
+- 2 倍角（正弦）：$\sin 2\theta = 2\sin\theta\cos\theta$。
+- 2 倍角（余弦）：$\cos 2\theta = \cos^2\theta - \sin^2\theta = 1 - 2\sin^2\theta = 2\cos^2\theta - 1$。
+- 2 倍角（正接）：$\tan 2\theta = \dfrac{2\tan\theta}{1 - \tan^2\theta}$。
+- 半角（正弦）：$\sin^2\dfrac{\theta}{2} = \dfrac{1 - \cos\theta}{2}$。
+- 半角（余弦）：$\cos^2\dfrac{\theta}{2} = \dfrac{1 + \cos\theta}{2}$。
+- 半角（正接）：$\tan^2\dfrac{\theta}{2} = \dfrac{1 - \cos\theta}{1 + \cos\theta}$。
+
+次の章は[三角関数の合成](../composition-of-trigonometric-functions/)である。合成では、加法定理を逆向きに使う。$a\sin\theta + b\cos\theta$ の形を、1 つの正弦にまとめる。まとめた形は $r\sin(\theta + \alpha)$ である。合成は、振幅と位相をもつ波を 1 本の波で表す技法である。物理学の振動・交流の解析で使う。
+
+[^half-angle-sign]: 半角の公式が $\sin\dfrac{\theta}{2}$ そのものではなく 2 乗の形で得られるのは、$\dfrac{\theta}{2}$ の象限が $\theta$ の値だけでは一意に定まらないためである。たとえば $\theta$ と $\theta + 2\pi$ は同じ角である。しかし半分を取ると $\dfrac{\theta}{2}$ と $\dfrac{\theta}{2} + \pi$ になり、象限が異なる。導出の出発点である余弦の 2 倍角の式は $\sin^2\dfrac{\theta}{2}$ にしか触れず、符号の情報を持たない。よって平方根を外して $\sin\dfrac{\theta}{2}$ を求めるときは、$\dfrac{\theta}{2}$ の象限に応じて符号 $\pm$ を選ぶ。
+
+## 参考文献
+
+加法定理をさらに学ぶための一次資料を挙げる。
+
+- 一松信『初等関数概説』森北出版、1998 年。三角関数の加法定理を、定義から体系的に導く古典的な入門書である。2 倍角・半角の公式も加法定理から統一的に展開する。
+- レオンハルト・オイラー著、高瀬正仁訳『オイラーの無限解析』海鳴社、2001 年。三角関数の加法定理を解析の枠組みで論じた一次資料である。加法定理を指数関数と結びつける視点を与える。

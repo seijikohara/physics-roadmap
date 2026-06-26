@@ -2,13 +2,38 @@
 @import "katex/dist/katex.min.css";
 
 /*
- * Mermaid 図中の数式（forceLegacyMathML による KaTeX 組版）で、根号やオーバーブレースなどの
- * 伸縮グリフが消える問題を直す。KaTeX はそれらを高さ指定付きの親（.hide-tail・.brace-* など）の
- * 中の SVG で描くが、katex 0.17 では foreignObject 内で SVG が高さ 0 に潰れる。SVG に親の高さを
- * 継がせて復元する。`.mermaid` 配下に限定し、本文の数式には影響しない。
+ * foreignObject 内の KaTeX で、根号やオーバーブレースなどの伸縮グリフが消える問題を直す。
+ * KaTeX はそれらを高さ指定付きの親（.hide-tail・.brace-* など）の中の SVG で描くが、
+ * katex 0.17 では foreignObject 内で SVG が高さ 0 に潰れる。SVG に親の高さを継がせて復元する。
+ *
+ * 対象は 2 系統:
+ * - Mermaid 図中の数式（forceLegacyMathML による KaTeX 組版）。
+ * - ビルド時生成の図コンポーネント（KatexLabel が SVG の foreignObject に KaTeX を埋め込む）。
+ *   図中ラベルの $\sqrt{x}$ などで根号が消え、$\sqrt{2}$ が「2」に見える誤表示を防ぐ。
+ * 本文のインライン数式は foreignObject を介さないため影響しない。
  */
-.mermaid .katex svg {
+.mermaid .katex svg,
+.function-graph .katex svg,
+.unit-circle .katex svg,
+.triangle-figure .katex svg,
+.number-line .katex svg,
+.area-model .katex svg {
   height: 100%;
+}
+
+/*
+ * 図コンポーネント共通の補助線の色（グリッド・軸・円・補助線）。淡色のため、暗テーマでは
+ * 背景に対して明るすぎ、主役の曲線・図形より目立つ。テーマごとに色を切り替えて沈める。
+ * 各コンポーネントはプレゼンテーション属性 stroke に変数を渡す（src/components/ を参照）。
+ */
+:root {
+  --fig-grid: #e2e8f0;
+  --fig-axis: #94a3b8;
+}
+
+:root[data-theme="dark"] {
+  --fig-grid: #2a3340;
+  --fig-axis: #5b6675;
 }
 
 /* 静的なベン図（インライン SVG。src/components/VennDiagram.tsx を参照）。 */

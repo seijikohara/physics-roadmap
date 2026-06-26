@@ -27,6 +27,12 @@ type KatexLabelProps = {
   height?: number;
   /** フォントサイズ（viewBox 単位）。既定 14。 */
   fontSize?: number;
+  /**
+   * 横の配置。既定 "center" は (x, y) を中心に左右へ広げる。"left" は (x, y) の x を
+   * 左端とし、右方向へだけ伸ばす。"right" は (x, y) の x を右端とし、左方向へだけ伸ばす。
+   * 点ラベルを点の外側（軸から離れる向き）へ伸ばし、目盛り数字との重なりを避けるのに使う。
+   */
+  align?: "center" | "left" | "right";
 };
 
 export default function KatexLabel({
@@ -36,6 +42,7 @@ export default function KatexLabel({
   width = 72,
   height = 24,
   fontSize = 14,
+  align = "center",
 }: KatexLabelProps) {
   // trust: false（既定）を明示する。\href や \htmlClass など、HTML を注入しうる
   // コマンドを無効に保ち、dangerouslySetInnerHTML へ渡す HTML を安全側に倒す。
@@ -44,9 +51,11 @@ export default function KatexLabel({
     displayMode: false,
     trust: false,
   });
+  const foreignX = align === "left" ? x : align === "right" ? x - width : x - width / 2;
+  const justify = align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center";
   return (
     <foreignObject
-      x={x - width / 2}
+      x={foreignX}
       y={y - height / 2}
       width={width}
       height={height}
@@ -59,7 +68,11 @@ export default function KatexLabel({
           height: "100%",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: justify,
+          // 数式ラベルは折り返さない。配置基準の枠（既定 72px）より長い数式は、枠の中央を
+          // 基準にはみ出して描く（foreignObject は overflow: visible）。図中ラベルが
+          // 途中で改行され、隣の要素と重なって読めなくなるのを防ぐ。
+          whiteSpace: "nowrap",
           fontSize: `${fontSize}px`,
           lineHeight: 1,
           color: "currentColor",
