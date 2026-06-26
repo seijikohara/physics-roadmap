@@ -2,14 +2,73 @@
 @import "katex/dist/katex.min.css";
 
 /*
+ * 和文の本文フォント Noto Serif JP（明朝系）。欧文 Latin Modern Roman と骨格をそろえ、
+ * 数式（KaTeX ＝ Computer Modern 系）と調和する理工系の紙面を再現する。fontsource は
+ * サブセットを unicode-range で分割し、本文で使う字だけを遅延読み込みする。欧文・ラテン
+ * 文字は --sl-font で Latin Modern Roman が先に当たるため、実際に読み込むのは和文サブセット
+ * のみとなる。本文と見出しを賄う 400・700 を取り込む。
+ */
+@import "@fontsource/noto-serif-jp/400.css";
+@import "@fontsource/noto-serif-jp/700.css";
+
+/*
+ * 欧文・数式記号の本文フォント Latin Modern Roman（GUST 配布の OpenType を WOFF2 へ変換）。
+ * KaTeX の数式フォント（KaTeX_Main ＝ Computer Modern 系）と字面が一致し、地の文の英字と
+ * 数式が一体に見える。光学サイズ 10pt（本文用）を全ウェイトで用いる。
+ * ライセンスは GUST Font License（src/fonts/LICENSE.md）。
+ */
+@font-face {
+  font-family: "Latin Modern Roman";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/lmroman10-regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Latin Modern Roman";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/lmroman10-bold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Latin Modern Roman";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/lmroman10-italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Latin Modern Roman";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/lmroman10-bolditalic.woff2") format("woff2");
+}
+
+/*
+ * サイト全体の本文フォントを上書きする。欧文・数式記号は Latin Modern Roman、和文は
+ * Noto Serif JP を当てる（ブラウザがコードポイントで自動フォールバックする）。Starlight の
+ * --sl-font を経由し、本文・見出し・サイドバー・図の地の文（FlowChart の foreignObject）
+ * まで一括で適用する。和文をサンセリフにしたい場合は、上の @import と下記の Noto Serif JP を
+ * Noto Sans JP へ差し替える。
+ */
+:root {
+  --sl-font: "Latin Modern Roman", "Noto Serif JP", serif;
+}
+
+/*
  * 図中の日本語のフォントを全図でそろえる。
  *
  * KatexLabel は日本語ラベル（例: \text{斜辺}）も KaTeX で組版する。KaTeX は CJK を
- * `.cjk_fallback` で描き、既定では `KaTeX_Main, "Times New Roman", serif` のセリフに
- * フォールバックする。一方 FlowChart の地の文は foreignObject で本文システムフォント
- * （サンセリフ）を継ぐ。両者を放置すると、同じ図群の中で日本語がセリフとサンセリフに
- * 割れる。CJK フォールバックを本文フォント（Starlight の `--sl-font` / `--__sl-font`）に
- * 上書きし、全図の日本語をサンセリフへそろえる。ラテン文字・数式記号は KaTeX のままにする。
+ * `.cjk_fallback` で描き、既定では `KaTeX_Main, "Times New Roman", serif` にフォール
+ * バックする。一方 FlowChart の地の文は foreignObject で本文フォントを継ぐ。両者を放置
+ * すると、同じ図群の中で日本語が別フォントに割れる。CJK フォールバックを本文フォント
+ * （--sl-font ＝ Noto Serif JP）に上書きし、全図の日本語を本文とそろえる。ラテン文字・
+ * 数式記号は KaTeX のままにする。
  */
 .katex .cjk_fallback {
   font-family: var(--sl-font, var(--__sl-font, sans-serif));

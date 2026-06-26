@@ -20,6 +20,7 @@
     "@astrojs/react": "^6.0.0",
     "@astrojs/starlight": "^0.41.0",
     "@dagrejs/dagre": "^3.0.0",
+    "@fontsource/noto-serif-jp": "^5.2.8",
     "@visx/clip-path": "^4.0.0",
     "@visx/curve": "^4.0.0",
     "@visx/grid": "^4.0.0",
