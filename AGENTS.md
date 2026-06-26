@@ -16,7 +16,7 @@
 
 ## 技術スタック
 
-- フレームワーク: Astro 7、Starlight 0.40
+- フレームワーク: Astro 7、Starlight 0.41
 - UI アイランド: React 19
 - 数式: remark-math、rehype-katex、KaTeX
 - 図・グラフ: visx（`@visx/*`）によるビルド時生成の静的 SVG。すべての図を visx で描く。
