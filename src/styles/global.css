@@ -32,7 +32,8 @@
 .number-line .katex svg,
 .area-model .katex svg,
 .flow-chart .katex svg,
-.venn-figure .katex svg {
+.venn-figure .katex svg,
+.space-vector .katex svg {
   height: 100%;
 }
 
@@ -166,5 +167,14 @@
   width: 100%;
   max-width: 320px;
   aspect-ratio: 320 / 240;
+  margin: 1rem auto;
+}
+
+/* 静的な空間ベクトルの軸測図（インライン SVG。src/components/SpaceVectorDiagram.tsx を参照）。 */
+.space-vector {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 320 / 280;
   margin: 1rem auto;
 }

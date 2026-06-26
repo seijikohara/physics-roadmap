@@ -77,6 +77,34 @@ type Segment = {
   dashed?: boolean;
 };
 
+/** 矢印付きベクトル（有向線分）。始点 from から終点 to へ矢じり付きで描く。 */
+type Vec = {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  /** 線分の中点付近に置く LaTeX ラベル（例: "\\vec{a}"）。 */
+  label?: string;
+  /** ベクトルの色。既定は青系（CURVE）。 */
+  color?: string;
+  /** 破線で描くか。既定は実線。 */
+  dashed?: boolean;
+};
+
+/** 媒介変数曲線。t を tMin..tMax で標本化し、(x(t), y(t)) を折れ線で結ぶ。 */
+type Parametric = {
+  /** 媒介変数 t を受け取り、数学座標 (x, y) を返す。 */
+  fn: (t: number) => { x: number; y: number };
+  tMin: number;
+  tMax: number;
+  /** 標本数。多いほど滑らかになる。既定 240。 */
+  samples?: number;
+  /** 曲線の色。既定は青系（CURVE）。 */
+  color?: string;
+  /** 凡例に出す LaTeX ラベル。 */
+  label?: string;
+  /** 破線で描くか。既定は実線。 */
+  dashed?: boolean;
+};
+
 /**
  * 軸の目盛り。数値だけ渡すと数値をそのまま描く。$\pi$ など特別な値には
  * `{ value, label }` でラベル（LaTeX）を添える。例: `{ value: Math.PI, label: "\\pi" }`。
@@ -98,6 +126,10 @@ type FunctionGraphProps = {
   asymptotes?: AsymptoteLine[];
   /** 2 点を結ぶ補助線分（傾きの三角形の辺など）。 */
   segments?: Segment[];
+  /** 矢印付きベクトル（有向線分）。 */
+  vectors?: Vec[];
+  /** 媒介変数曲線。label 付きは凡例にまとめる。 */
+  parametrics?: Parametric[];
   /** x 軸の目盛り。省略時は整数位置に自動で振る。空配列で目盛りなし。 */
   xTicks?: Tick[];
   /** y 軸の目盛り。省略時は整数位置に自動で振る。空配列で目盛りなし。 */
@@ -132,6 +164,10 @@ const PAD = 28; // 軸ラベルと目盛り数字を収める余白。
 // 曲線の標本数。多いほど滑らかになるが SVG が重くなる。
 const SAMPLES = 480;
 
+// ベクトルの矢じり。長さ（線方向）と半幅（直交方向）を px で与える。
+const HEAD_LEN = 9;
+const HEAD_HALF = 3.6;
+
 export default function FunctionGraph({
   xMin,
   xMax,
@@ -141,6 +177,8 @@ export default function FunctionGraph({
   points = [],
   asymptotes = [],
   segments = [],
+  vectors = [],
+  parametrics = [],
   xTicks,
   yTicks,
   xLabel = "x",
@@ -199,8 +237,26 @@ export default function FunctionGraph({
   // 凡例（色見本＋数式ラベル）。曲線の上に重ねず、SVG の外の HTML として下に並べる。
   // 隅に置くと、波のように画面全体へ広がる曲線では必ず重なるため、プロット領域の外へ出す。
   // @visx/legend の LegendItem・LegendLabel を使い、ビルド時の静的 HTML として描く。
-  const labeled = curves.filter((c): c is Curve & { label: string } => c.label !== undefined);
-  const legendItems = legend === "none" ? [] : labeled;
+  // 曲線・媒介変数曲線のうち label 付きを集め、凡例に同じ見た目で並べる。
+  const labeledCurves = curves.filter((c): c is Curve & { label: string } => c.label !== undefined);
+  const labeledParametrics = parametrics.filter(
+    (p): p is Parametric & { label: string } => p.label !== undefined,
+  );
+  const legendItems: LegendEntry[] =
+    legend === "none"
+      ? []
+      : [
+          ...labeledCurves.map((c) => ({
+            label: c.label,
+            color: c.color ?? CURVE,
+            dashed: c.dashed ?? false,
+          })),
+          ...labeledParametrics.map((p) => ({
+            label: p.label,
+            color: p.color ?? CURVE,
+            dashed: p.dashed ?? false,
+          })),
+        ];
 
   // ラベルの自動配置。点・漸近線のラベルを、軸・目盛り数字・曲線・既出ラベルと重ならない
   // 位置へ置く。候補位置を採点し、最も衝突の少ない位置を選ぶ。ビルド時に一度だけ走る。
@@ -301,6 +357,49 @@ export default function FunctionGraph({
       w,
     );
   });
+
+  // ベクトルのラベルは線分の中点から、線分に直交する向きへ逃がす（補助線分と同じ方式）。
+  const vectorLabelPos = vectors.map((v): LabelPos | null => {
+    if (v.label === undefined) return null;
+    const a = { x: x(v.from.x), y: y(v.from.y) };
+    const b = { x: x(v.to.x), y: y(v.to.y) };
+    const mx = (a.x + b.x) / 2;
+    const my = (a.y + b.y) / 2;
+    const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const perpX = -(b.y - a.y) / len; // 線分に直交する向き。
+    const perpY = (b.x - a.x) / len;
+    const w = estimateTexWidth(v.label, 12);
+    return choosePlacement(
+      [
+        { x: mx + perpX * 13, y: my + perpY * 13, align: "center" },
+        { x: mx - perpX * 13, y: my - perpY * 13, align: "center" },
+      ],
+      w,
+    );
+  });
+
+  // 媒介変数曲線を標本化し、各標本に可視判定を添える。描画窓 [xMin,xMax]×[yMin,yMax] を
+  // 外れる、または非有限となる点で経路を分断する（LinePath の defined に渡す）。
+  const paramSamplesOf = (p: Parametric): CurveSample[] => {
+    const n = p.samples ?? 240;
+    const out: CurveSample[] = [];
+    for (let i = 0; i <= n; i += 1) {
+      const t = p.tMin + ((p.tMax - p.tMin) * i) / n;
+      const { x: xv, y: yv } = p.fn(t);
+      out.push({
+        xv,
+        yv,
+        visible:
+          Number.isFinite(xv) &&
+          Number.isFinite(yv) &&
+          xv >= xMin &&
+          xv <= xMax &&
+          yv >= yMin &&
+          yv <= yMax,
+      });
+    }
+    return out;
+  };
 
   const pointLabelPos = points.map((p): LabelPos | null => {
     if (p.label === undefined) return null;
@@ -501,7 +600,58 @@ export default function FunctionGraph({
               strokeLinejoin="round"
             />
           ))}
+          {parametrics.map((p, i) => (
+            <LinePath<CurveSample>
+              key={`param-${i}`}
+              data={paramSamplesOf(p)}
+              x={(d) => x(d.xv)}
+              y={(d) => y(d.yv)}
+              defined={(d) => d.visible}
+              fill="none"
+              stroke={p.color ?? CURVE}
+              strokeWidth={2}
+              strokeDasharray={p.dashed ? "5 4" : undefined}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
         </Group>
+
+        {/* 矢印付きベクトル（有向線分）。クリップせず、点と同程度に前面へ描く。矢じりは
+            polygon を手計算で置き、色を動的に変えられるようにする。 */}
+        {vectors.map((v, i) => {
+          const color = v.color ?? CURVE;
+          const fromP = { x: x(v.from.x), y: y(v.from.y) };
+          const toP = { x: x(v.to.x), y: y(v.to.y) };
+          const ang = Math.atan2(toP.y - fromP.y, toP.x - fromP.x);
+          const cos = Math.cos(ang);
+          const sin = Math.sin(ang);
+          // 矢じりの根元まで線を引き、矢じりと線を重ねない。
+          const base = { x: toP.x - HEAD_LEN * cos, y: toP.y - HEAD_LEN * sin };
+          // 矢じりの底辺の 2 端（進行方向に直交する向きへ半幅だけ広げる）。
+          const left = { x: base.x - HEAD_HALF * sin, y: base.y + HEAD_HALF * cos };
+          const right = { x: base.x + HEAD_HALF * sin, y: base.y - HEAD_HALF * cos };
+          const vp = vectorLabelPos[i];
+          return (
+            <g key={`vec-${i}`}>
+              <Line
+                from={fromP}
+                to={base}
+                stroke={color}
+                strokeWidth={2}
+                strokeDasharray={v.dashed ? "5 4" : undefined}
+                strokeLinecap="round"
+              />
+              <polygon
+                points={`${toP.x},${toP.y} ${left.x},${left.y} ${right.x},${right.y}`}
+                fill={color}
+              />
+              {vp && (
+                <KatexLabel tex={v.label ?? ""} x={vp.x} y={vp.y} fontSize={12} align={vp.align} />
+              )}
+            </g>
+          );
+        })}
 
         {/* 点。 */}
         {points.map((p, i) => {
@@ -561,7 +711,7 @@ export default function FunctionGraph({
                     y1={6}
                     x2={24}
                     y2={6}
-                    stroke={c.color ?? CURVE}
+                    stroke={c.color}
                     strokeWidth={2}
                     strokeDasharray={c.dashed ? "5 4" : undefined}
                   />
@@ -617,6 +767,9 @@ function autoTicks(lo: number, hi: number): number[] {
 
 /** 曲線の 1 標本。`visible` は描画窓内かつ有限で、LinePath の `defined` に渡す。 */
 type CurveSample = { xv: number; yv: number; visible: boolean };
+
+/** 凡例の 1 項目。曲線と媒介変数曲線を同じ見た目で並べるために正規化する。 */
+type LegendEntry = { label: string; color: string; dashed: boolean };
 
 /** ラベルの配置先（中心・左端・右端の基準点と寄せ方向）。 */
 type LabelPos = { x: number; y: number; align: "center" | "left" | "right" };
