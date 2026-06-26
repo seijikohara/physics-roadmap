@@ -5,6 +5,8 @@ sidebar:
   order: 9
 ---
 
+import FlowChart from "../../../../components/FlowChart";
+
 ## 前提
 
 本章の前提は、同じ代数カテゴリの章[多項式の展開](../polynomial-expansion/)である。文字式の足し算・引き算・掛け算、係数、分配法則 $a(b + c) = ab + ac$ を使う。
@@ -454,13 +456,23 @@ $$
 
 3 つの場合を見分ける流れを図にまとめる。加減法で一方の未知数を消去した結果の式で判定する。
 
-```mermaid
-flowchart TD
-  A["加減法で一方の未知数を消去する"] --> B{"残る式は?"}
-  B -->|"$$px = q \ (p \neq 0)$$"| C["解はただ 1 組"]
-  B -->|"$$0 = 0$$"| D["解は無数"]
-  B -->|"$$0 = q \ (q \neq 0)$$"| E["解なし"]
-```
+<FlowChart
+  direction="TD"
+  ariaLabel="連立一次方程式を加減法で解くとき、残る式の形で解の種類が分かれる分岐図。px=q なら解はただ 1 組、0=0 なら解は無数、0=q なら解なし。"
+  nodes={[
+    { id: "A", label: "加減法で一方の未知数を消去する" },
+    { id: "B", shape: "diamond", label: "残る式は?" },
+    { id: "C", label: "解はただ 1 組" },
+    { id: "D", label: "解は無数" },
+    { id: "E", label: "解なし" },
+  ]}
+  edges={[
+    { from: "A", to: "B" },
+    { from: "B", to: "C", label: "$px = q \\ (p \\neq 0)$" },
+    { from: "B", to: "D", label: "$0 = 0$" },
+    { from: "B", to: "E", label: "$0 = q \\ (q \\neq 0)$" },
+  ]}
+/>
 
 <p style="text-align:center">
   <em>図 1. 連立一次方程式の解の 3 つの場合を、加減法で消去した後に残る式で判定する流れ。</em>

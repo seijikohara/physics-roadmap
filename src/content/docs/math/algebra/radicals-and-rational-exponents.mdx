@@ -5,6 +5,8 @@ sidebar:
   order: 4
 ---
 
+import FlowChart from "../../../../components/FlowChart";
+
 ## 前提
 
 本章の前提は、同じ代数カテゴリの 2 つの章である。
@@ -249,12 +251,21 @@ $$
 
 下の図は、整数指数から有理数指数へ拡張する流れを表す。図は定義の依存関係だけを示し、厳密な式は前掲の式に譲る。各定義は累乗の累乗の法則 $(a^p)^q = a^{pq}$ を保つことを共通の根拠とする。
 
-```mermaid
-flowchart LR
-  A["整数指数を定義"] --> B["$$(a^p)^q = a^{pq}$$ を保存"]
-  B --> C["$$a^{1/n}$$ を n 乗根として定義"]
-  C --> D["$$a^{m/n} = (a^{1/n})^m$$ を定義"]
-```
+<FlowChart
+  direction="LR"
+  ariaLabel="整数指数の定義から、指数法則 (a^p)^q=a^(pq) を保存しつつ、a^(1/n) を n 乗根として、さらに a^(m/n) を定義する流れ図。"
+  nodes={[
+    { id: "A", label: "整数指数を定義" },
+    { id: "B", label: "$(a^p)^q = a^{pq}$ を保存" },
+    { id: "C", label: "$a^{1/n}$ を n 乗根として定義" },
+    { id: "D", label: "$a^{m/n} = (a^{1/n})^m$ を定義" },
+  ]}
+  edges={[
+    { from: "A", to: "B" },
+    { from: "B", to: "C" },
+    { from: "C", to: "D" },
+  ]}
+/>
 
 ### 負の有理数指数
 

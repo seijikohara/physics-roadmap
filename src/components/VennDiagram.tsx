@@ -1,5 +1,8 @@
+import { CircleClipPath } from "@visx/clip-path";
+import { Bar, Circle } from "@visx/shape";
 import { useId } from "react";
 import type { ReactNode } from "react";
+import KatexLabel from "./KatexLabel";
 
 /**
  * インライン SVG として描く、ビルド時生成の静的なベン図。
@@ -45,20 +48,17 @@ const U = { x: 10, y: 8, w: 300, h: 184 };
 const A = { cx: 128, cy: 104, r: 58 };
 const B = { cx: 192, cy: 104, r: 58 };
 
-/** 補集合の記法である上線付きの文字（例: B̄）を描く。 */
-function Ov({ children }: { children: string }) {
-  return <tspan style={{ textDecoration: "overline" }}>{children}</tspan>;
-}
-
-// 中央寄せの SVG テキスト用ヘルパ。コンポーネントの状態を捕捉しないため、描画ごとで
-// はなく一度だけ定義するようモジュールスコープに置く。
-const label = (cls: string, x: number, y: number, text: ReactNode) => (
-  <text className={cls} x={x} y={y} textAnchor="middle" dominantBaseline="central">
-    {text}
-  </text>
+// 中央寄せの KaTeX ラベル用ヘルパ。`tex` は LaTeX 文字列を受け取り、(x, y) を中心に
+// 中央寄せで組版する。補集合の上線は `\overline{}` で正しく文字の上へ載せる。生 SVG の
+// `text-decoration: overline` と違い、`dominant-baseline: central` でも線が下へずれない。
+// コンポーネントの状態を捕捉しないため、描画ごとではなく一度だけ定義するようモジュール
+// スコープに置く。
+const name = (x: number, y: number, tex: string) => (
+  <KatexLabel tex={tex} x={x} y={y} fontSize={14} width={48} />
 );
-const name = (x: number, y: number, text: string) => label("venn-name", x, y, text);
-const region = (x: number, y: number, text: ReactNode) => label("venn-region", x, y, text);
+const region = (x: number, y: number, tex: string) => (
+  <KatexLabel tex={tex} x={x} y={y} fontSize={12} width={110} />
+);
 
 export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
@@ -75,14 +75,10 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
       case "intersection":
         return (
           <>
-            <defs>
-              <clipPath id={clipA}>
-                <circle cx={A.cx} cy={A.cy} r={A.r} />
-              </clipPath>
-            </defs>
-            <circle cx={A.cx} cy={A.cy} r={A.r} fill="none" stroke={STROKE_A} strokeWidth={1.8} />
-            <circle cx={B.cx} cy={B.cy} r={B.r} fill="none" stroke={STROKE_B} strokeWidth={1.8} />
-            <circle
+            <CircleClipPath id={clipA} cx={A.cx} cy={A.cy} r={A.r} />
+            <Circle cx={A.cx} cy={A.cy} r={A.r} fill="none" stroke={STROKE_A} strokeWidth={1.8} />
+            <Circle cx={B.cx} cy={B.cy} r={B.r} fill="none" stroke={STROKE_B} strokeWidth={1.8} />
+            <Circle
               cx={B.cx}
               cy={B.cy}
               r={B.r}
@@ -92,13 +88,13 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
             />
             {name(110, 70, a)}
             {name(210, 70, b)}
-            {region(160, 112, `${a}∩${b}`)}
+            {region(160, 112, `${a} \\cap ${b}`)}
           </>
         );
       case "union":
         return (
           <>
-            <circle
+            <Circle
               cx={A.cx}
               cy={A.cy}
               r={A.r}
@@ -107,7 +103,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
               stroke={STROKE_A}
               strokeWidth={1.8}
             />
-            <circle
+            <Circle
               cx={B.cx}
               cy={B.cy}
               r={B.r}
@@ -118,7 +114,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
             />
             {name(110, 70, a)}
             {name(210, 70, b)}
-            {region(160, 180, `${a}∪${b}`)}
+            {region(160, 180, `${a} \\cup ${b}`)}
           </>
         );
       case "complement":
@@ -130,7 +126,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
                 <circle cx={A.cx} cy={A.cy} r={A.r} fill="#000" />
               </mask>
             </defs>
-            <rect
+            <Bar
               x={U.x}
               y={U.y}
               width={U.w}
@@ -139,9 +135,9 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
               fillOpacity={0.45}
               mask={`url(#${maskNotA})`}
             />
-            <circle cx={A.cx} cy={A.cy} r={A.r} fill="none" stroke={STROKE_A} strokeWidth={1.8} />
+            <Circle cx={A.cx} cy={A.cy} r={A.r} fill="none" stroke={STROKE_A} strokeWidth={1.8} />
             {name(128, 104, a)}
-            {region(248, 70, <Ov>{a}</Ov>)}
+            {region(248, 70, `\\overline{${a}}`)}
           </>
         );
       case "subset": {
@@ -149,7 +145,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
         const aa = { cx: 150, cy: 104, r: 32 };
         return (
           <>
-            <circle
+            <Circle
               cx={bb.cx}
               cy={bb.cy}
               r={bb.r}
@@ -158,7 +154,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
               stroke={STROKE_B}
               strokeWidth={1.8}
             />
-            <circle
+            <Circle
               cx={aa.cx}
               cy={aa.cy}
               r={aa.r}
@@ -177,7 +173,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
         const bd = { cx: 240, cy: 104, r: 46 };
         return (
           <>
-            <circle
+            <Circle
               cx={ad.cx}
               cy={ad.cy}
               r={ad.r}
@@ -186,7 +182,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
               stroke={STROKE_A}
               strokeWidth={1.8}
             />
-            <circle
+            <Circle
               cx={bd.cx}
               cy={bd.cy}
               r={bd.r}
@@ -197,7 +193,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
             />
             {name(80, 104, a)}
             {name(240, 104, b)}
-            {region(160, 104, `${a}∩${b}=∅`)}
+            {region(160, 104, `${a} \\cap ${b} = \\varnothing`)}
           </>
         );
       }
@@ -205,17 +201,17 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
         // ほぼ重なる 2 円。2 集合はすべての要素を共有する（A=B）。
         return (
           <>
-            <circle cx={160} cy={104} r={60} fill={HIGHLIGHT} fillOpacity={0.12} />
-            <circle cx={160} cy={104} r={66} fill="none" stroke={STROKE_A} strokeWidth={1.8} />
-            <circle cx={160} cy={104} r={60} fill="none" stroke={STROKE_B} strokeWidth={1.8} />
-            {region(160, 104, `${a}=${b}`)}
+            <Circle cx={160} cy={104} r={60} fill={HIGHLIGHT} fillOpacity={0.12} />
+            <Circle cx={160} cy={104} r={66} fill="none" stroke={STROKE_A} strokeWidth={1.8} />
+            <Circle cx={160} cy={104} r={60} fill="none" stroke={STROKE_B} strokeWidth={1.8} />
+            {region(160, 104, `${a} = ${b}`)}
           </>
         );
       case "universal":
         // 集合が全体集合をすべて満たす（A=U）。U の全体を塗る。
         return (
           <>
-            <rect
+            <Bar
               x={U.x}
               y={U.y}
               width={U.w}
@@ -224,7 +220,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
               fillOpacity={0.4}
               rx={4}
             />
-            {region(160, 104, `${a}=U`)}
+            {region(160, 104, `${a} = U`)}
           </>
         );
       case "nonempty": {
@@ -232,7 +228,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
         const an = { cx: 160, cy: 104, r: 58 };
         return (
           <>
-            <circle
+            <Circle
               cx={an.cx}
               cy={an.cy}
               r={an.r}
@@ -241,9 +237,9 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
               stroke={STROKE_A}
               strokeWidth={1.8}
             />
-            <circle cx={an.cx} cy={an.cy} r={3.5} fill="currentColor" />
+            <Circle cx={an.cx} cy={an.cy} r={3.5} fill="currentColor" />
             {name(an.cx, 60, a)}
-            {region(an.cx, 132, `${a}≠∅`)}
+            {region(an.cx, 132, `${a} \\neq \\varnothing`)}
           </>
         );
       }
@@ -260,7 +256,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
                 <circle cx={bb.cx} cy={bb.cy} r={bb.r} fill="#000" />
               </mask>
             </defs>
-            <rect
+            <Bar
               x={U.x}
               y={U.y}
               width={U.w}
@@ -269,7 +265,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
               fillOpacity={0.45}
               mask={`url(#${maskNotB})`}
             />
-            <circle
+            <Circle
               cx={bb.cx}
               cy={bb.cy}
               r={bb.r}
@@ -277,7 +273,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
               stroke={STROKE_B}
               strokeWidth={1.8}
             />
-            <circle
+            <Circle
               cx={aa.cx}
               cy={aa.cy}
               r={aa.r}
@@ -288,14 +284,14 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
             />
             {name(150, 104, a)}
             {name(176, 52, b)}
-            {region(50, 176, <Ov>{b}</Ov>)}
+            {region(50, 176, `\\overline{${b}}`)}
           </>
         );
       }
       case "plain":
         return (
           <>
-            <circle
+            <Circle
               cx={A.cx}
               cy={A.cy}
               r={A.r}
@@ -304,7 +300,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
               stroke={STROKE_A}
               strokeWidth={1.8}
             />
-            <circle
+            <Circle
               cx={B.cx}
               cy={B.cy}
               r={B.r}
@@ -321,7 +317,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
       default:
         return (
           <>
-            <circle
+            <Circle
               cx={A.cx}
               cy={A.cy}
               r={A.r}
@@ -330,7 +326,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
               stroke={STROKE_A}
               strokeWidth={1.8}
             />
-            <circle
+            <Circle
               cx={B.cx}
               cy={B.cy}
               r={B.r}
@@ -341,28 +337,10 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
             />
             {name(110, 70, a)}
             {name(210, 70, b)}
-            {region(160, 112, `${a}∩${b}`)}
-            {region(
-              90,
-              112,
-              <>
-                {a}∩<Ov>{b}</Ov>
-              </>,
-            )}
-            {region(
-              230,
-              112,
-              <>
-                <Ov>{a}</Ov>∩{b}
-              </>,
-            )}
-            {region(
-              48,
-              178,
-              <>
-                <Ov>{a}</Ov>∩<Ov>{b}</Ov>
-              </>,
-            )}
+            {region(160, 112, `${a} \\cap ${b}`)}
+            {region(90, 112, `${a} \\cap \\overline{${b}}`)}
+            {region(230, 112, `\\overline{${a}} \\cap ${b}`)}
+            {region(48, 178, `\\overline{${a}} \\cap \\overline{${b}}`)}
           </>
         );
     }
@@ -371,7 +349,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
   return (
     <svg className="venn-figure" viewBox="0 0 320 200" role="img" aria-label={ariaLabel}>
       {body}
-      <rect
+      <Bar
         x={U.x}
         y={U.y}
         width={U.w}
@@ -381,9 +359,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
         strokeWidth={1.5}
         rx={4}
       />
-      <text className="venn-u" x={U.x + 10} y={U.y + 16} dominantBaseline="central">
-        U
-      </text>
+      <KatexLabel tex="U" x={U.x + 10} y={U.y + 16} fontSize={13} width={40} align="left" />
     </svg>
   );
 }

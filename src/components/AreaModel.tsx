@@ -1,3 +1,4 @@
+import { Bar, Line } from "@visx/shape";
 import { useId } from "react";
 import KatexLabel from "./KatexLabel";
 
@@ -118,7 +119,7 @@ export default function AreaModel({
           const cell = cellOf(ci, ri);
           if (!cell?.highlight) return null;
           return (
-            <rect
+            <Bar
               key={`fill-${uid}-${ci}-${ri}`}
               x={colEdges[ci]}
               y={rowEdges[ri]}
@@ -133,30 +134,26 @@ export default function AreaModel({
 
       {/* 内部の分割線。 */}
       {colEdges.slice(1, -1).map((cx, i) => (
-        <line
+        <Line
           key={`vg-${i}`}
-          x1={cx}
-          y1={originY}
-          x2={cx}
-          y2={originY + boxH}
+          from={{ x: cx, y: originY }}
+          to={{ x: cx, y: originY + boxH }}
           stroke={GRID}
           strokeWidth={1.2}
         />
       ))}
       {rowEdges.slice(1, -1).map((cy, i) => (
-        <line
+        <Line
           key={`hg-${i}`}
-          x1={originX}
-          y1={cy}
-          x2={originX + boxW}
-          y2={cy}
+          from={{ x: originX, y: cy }}
+          to={{ x: originX + boxW, y: cy }}
           stroke={GRID}
           strokeWidth={1.2}
         />
       ))}
 
       {/* 外枠。 */}
-      <rect
+      <Bar
         x={originX}
         y={originY}
         width={boxW}

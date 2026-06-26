@@ -5,6 +5,8 @@ sidebar:
   order: 6
 ---
 
+import FlowChart from "../../../../components/FlowChart";
+
 ## 前提
 
 本章の前提は、前の章[多項式の展開](../polynomial-expansion/)である。多項式・項・係数・定数項・次数・同類項の定義と、分配法則 $a(b + c) = ab + ac$、および乗法公式を使う。
@@ -34,13 +36,18 @@ sidebar:
 
 下の図は、展開と因数分解が逆向きの操作であることを表す。
 
-```mermaid
-flowchart LR
-  P["積の形<br/>$$(x + 2)(x + 3)$$"]
-  S["和の形<br/>$$x^2 + 5x + 6$$"]
-  P -- "展開" --> S
-  S -- "因数分解" --> P
-```
+<FlowChart
+  direction="LR"
+  ariaLabel="積の形 (x+2)(x+3) と和の形 x^2+5x+6 を、展開と因数分解で相互に変換する関係図。"
+  nodes={[
+    { id: "P", label: "積の形\n$(x + 2)(x + 3)$" },
+    { id: "S", label: "和の形\n$x^2 + 5x + 6$" },
+  ]}
+  edges={[
+    { from: "P", to: "S", label: "展開" },
+    { from: "S", to: "P", label: "因数分解" },
+  ]}
+/>
 
 <p style="text-align:center">
   <em>図 1. 展開と因数分解は互いに逆向きの操作である。</em>

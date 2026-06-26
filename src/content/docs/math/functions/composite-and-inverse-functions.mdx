@@ -5,6 +5,7 @@ sidebar:
   order: 2
 ---
 
+import FlowChart from "../../../../components/FlowChart";
 import FunctionGraph from "../../../../components/FunctionGraph";
 
 ## 前提
@@ -35,10 +36,19 @@ import FunctionGraph from "../../../../components/FunctionGraph";
 
 流れを概念図で表す。
 
-```mermaid
-flowchart LR
-    A["入力 $$x$$"] -->|"$$f$$"| B["中間の値 $$f(x)$$"] -->|"$$g$$"| C["出力 $$g(f(x))$$"]
-```
+<FlowChart
+  direction="LR"
+  ariaLabel="合成関数の流れ図。入力 x に f を適用して中間の値 f(x) を得て、さらに g を適用して出力 g(f(x)) を得る。"
+  nodes={[
+    { id: "A", label: "入力 $x$" },
+    { id: "B", label: "中間の値 $f(x)$" },
+    { id: "C", label: "出力 $g(f(x))$" },
+  ]}
+  edges={[
+    { from: "A", to: "B", label: "$f$" },
+    { from: "B", to: "C", label: "$g$" },
+  ]}
+/>
 
 図は、入力 $x$ が規則 $f$ を通って中間の値 $f(x)$ になり、続けて規則 $g$ を通って最終の出力 $g(f(x))$ になる流れを表す。
 
@@ -110,11 +120,18 @@ $$
 
 $f$ と $f^{-1}$ の向きの対比を、概念図で表す。
 
-```mermaid
-flowchart LR
-    A["$$x$$"] -->|"$$f$$"| B["$$y = f(x)$$"]
-    B -.->|"$$f^{-1}$$"| A
-```
+<FlowChart
+  direction="LR"
+  ariaLabel="逆関数の対応図。f が x を y=f(x) に写し、逆関数 f^{-1} が y を x に戻す。戻す矢印は破線で表す。"
+  nodes={[
+    { id: "A", label: "$x$" },
+    { id: "B", label: "$y = f(x)$" },
+  ]}
+  edges={[
+    { from: "A", to: "B", label: "$f$" },
+    { from: "B", to: "A", label: "$f^{-1}$", dashed: true },
+  ]}
+/>
 
 図は、規則 $f$ が入力 $x$ を出力 $y$ へ移す行きの向き（実線）と、逆関数 $f^{-1}$ が出力 $y$ を入力 $x$ へ戻す戻りの向き（破線）を表す。行きと戻りで矢印の向きが逆になる。
 

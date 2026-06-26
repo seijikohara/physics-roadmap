@@ -5,6 +5,7 @@ sidebar:
   order: 5
 ---
 
+import FlowChart from "../../../../components/FlowChart";
 import FunctionGraph from "../../../../components/FunctionGraph";
 import NumberLine from "../../../../components/NumberLine";
 
@@ -257,14 +258,25 @@ $a > 0$ の二次不等式を解く手順をまとめる。
 
 3 つの場合の放物線の様子を、流れ図にまとめる。
 
-```mermaid
-flowchart TD
-  A["二次不等式（$$a \gt 0$$ にそろえる）"] --> B["判別式 $$D = b^2 - 4ac$$ を計算する"]
-  B --> C{"$$D$$ の符号は?"}
-  C -->|"$$D \gt 0$$"| D1["2 交点。$$y \lt 0\ (\text{間}),\ y \gt 0\ (\text{外})$$"]
-  C -->|"$$D = 0$$"| D2["1 点で接する。頂点以外で $$y \gt 0$$"]
-  C -->|"$$D \lt 0$$"| D3["交点なし。つねに $$y \gt 0$$"]
-```
+<FlowChart
+  direction="TD"
+  ariaLabel="二次不等式を判別式 D の符号で解く流れ図。a>0 にそろえて D=b^2-4ac を計算し、D>0 なら 2 交点、D=0 なら 1 点で接する、D<0 なら交点なし。"
+  nodes={[
+    { id: "A", label: "二次不等式（$a \\gt 0$ にそろえる）" },
+    { id: "B", label: "判別式 $D = b^2 - 4ac$ を計算する" },
+    { id: "C", shape: "diamond", label: "$D$ の符号は?" },
+    { id: "D1", label: "2 交点。$y \\lt 0\\ (\\text{間}),\\ y \\gt 0\\ (\\text{外})$" },
+    { id: "D2", label: "1 点で接する。頂点以外で $y \\gt 0$" },
+    { id: "D3", label: "交点なし。つねに $y \\gt 0$" },
+  ]}
+  edges={[
+    { from: "A", to: "B" },
+    { from: "B", to: "C" },
+    { from: "C", to: "D1", label: "$D \\gt 0$" },
+    { from: "C", to: "D2", label: "$D = 0$" },
+    { from: "C", to: "D3", label: "$D \\lt 0$" },
+  ]}
+/>
 
 ## 絶対値を含む不等式
 

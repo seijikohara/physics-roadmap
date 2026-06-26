@@ -5,6 +5,7 @@ sidebar:
   order: 2
 ---
 
+import FlowChart from "../../../../components/FlowChart";
 import VennDiagram from "../../../../components/VennDiagram";
 
 ## 前提
@@ -208,13 +209,23 @@ $$
 
 下の図は、命題と条件から論理演算を経て集合演算へ至る対応の流れを示す。
 
-```mermaid
-flowchart LR
-  A["命題・条件<br/>$$p,\ p(x)$$"] --> B["論理演算<br/>かつ・または・否定"]
-  B --> C["真理値表で<br/>結果の真偽を定義"]
-  B --> D["真理集合 $$P$$ を介して<br/>集合演算へ翻訳"]
-  D --> E["$$\cap,\ \cup$$・補集合"]
-```
+<FlowChart
+  direction="LR"
+  ariaLabel="命題・条件から論理演算へ進み、真理値表で真偽を定義する道筋と、真理集合 P を介して集合演算（共通部分・和集合・補集合）へ翻訳する道筋を示す流れ図。"
+  nodes={[
+    { id: "A", label: "命題・条件\n$p,\\ p(x)$" },
+    { id: "B", label: "論理演算\nかつ・または・否定" },
+    { id: "C", label: "真理値表で\n結果の真偽を定義" },
+    { id: "D", label: "真理集合 $P$ を介して\n集合演算へ翻訳" },
+    { id: "E", label: "$\\cap,\\ \\cup$・補集合" },
+  ]}
+  edges={[
+    { from: "A", to: "B" },
+    { from: "B", to: "C" },
+    { from: "B", to: "D" },
+    { from: "D", to: "E" },
+  ]}
+/>
 
 ## ド・モルガンの法則
 
