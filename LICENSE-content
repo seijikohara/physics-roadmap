@@ -1,0 +1,29 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+Copyright (c) 2026 Seiji Kohara
+
+本ライセンスは、本リポジトリの「文章コンテンツ」に適用する。具体的には次を対象とする。
+
+- 章・解説（src/content/docs/ 配下の .md / .mdx の散文・数式・図表）
+- 設計・計画のドキュメント（docs/ 配下）
+
+ソースコード（React コンポーネント、設定、スクリプトなど）は対象外とし、MIT License
+（LICENSE ファイル）を適用する。
+
+------------------------------------------------------------------------------
+
+対象コンテンツは Creative Commons Attribution 4.0 International License の下で
+提供する。次の条件で、複製・再配布・改変・翻案を含む利用を認める。
+
+- 表示（Attribution）: 著作者のクレジット、ライセンスへのリンク、変更の有無を明示する。
+  合理的な方法で行えばよいが、利用許諾者が利用者を支持していると示唆する方法は避ける。
+
+クレジット表記の例:
+
+  "Physics Roadmap" by Seiji Kohara, licensed under CC BY 4.0.
+  https://github.com/seijikohara/physics-roadmap
+
+ライセンス全文（正文）は次を参照する。
+
+- 要約: https://creativecommons.org/licenses/by/4.0/deed.ja
+- 全文: https://creativecommons.org/licenses/by/4.0/legalcode

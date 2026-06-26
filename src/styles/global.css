@@ -121,6 +121,12 @@
   --flow-cluster-fill: #f8fafc;
   --flow-cluster-stroke: #cbd5e1;
   --flow-edge: #64748b;
+  /* ロードマップ全体図のノード状態色。done＝学習済み（青）、goal＝到達目標（琥珀）。
+     トーン未指定のノードは中立色（上の --flow-node-*）を使う。 */
+  --flow-node-done-fill: #dbeafe;
+  --flow-node-done-stroke: #2563eb;
+  --flow-node-goal-fill: #fde68a;
+  --flow-node-goal-stroke: #b45309;
 }
 
 :root[data-theme="dark"] {
@@ -129,6 +135,10 @@
   --flow-cluster-fill: #161c25;
   --flow-cluster-stroke: #38414f;
   --flow-edge: #7d8794;
+  --flow-node-done-fill: #16304d;
+  --flow-node-done-stroke: #3b82f6;
+  --flow-node-goal-fill: #3a2c0a;
+  --flow-node-goal-stroke: #f59e0b;
 }
 
 /* 静的なフローチャート（インライン SVG。src/components/FlowChart.tsx を参照）。 */
@@ -137,6 +147,23 @@
   width: 100%;
   height: auto;
   margin: 1.25rem auto;
+}
+
+/* トップページのロードマップ全体図（src/components/RoadmapOverview.tsx を参照）。 */
+.roadmap-overview {
+  margin: 1.5rem 0;
+}
+
+/* 進捗の凡例。色見本と説明を中央寄せで横へ流す。 */
+.roadmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px 20px;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--sl-color-gray-2, #6b7280);
 }
 
 /*
