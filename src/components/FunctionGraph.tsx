@@ -381,7 +381,8 @@ export default function FunctionGraph({
   // 媒介変数曲線を標本化し、各標本に可視判定を添える。描画窓 [xMin,xMax]×[yMin,yMax] を
   // 外れる、または非有限となる点で経路を分断する（LinePath の defined に渡す）。
   const paramSamplesOf = (p: Parametric): CurveSample[] => {
-    const n = p.samples ?? 240;
+    // 公開 props の samples に 0 や負数が来ても 0 除算で NaN にならないよう、最低 1 に丸める。
+    const n = Math.max(1, p.samples ?? 240);
     const out: CurveSample[] = [];
     for (let i = 0; i <= n; i += 1) {
       const t = p.tMin + ((p.tMax - p.tMin) * i) / n;
