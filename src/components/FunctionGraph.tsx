@@ -291,12 +291,32 @@ export default function FunctionGraph({
     }
     return n;
   };
+  // 媒介変数曲線は y=f(x) でないため x で逆引きできない。t で標本化して画面座標へ写し、
+  // box 内に入る標本があるかで衝突を判定する。点・漸近線ラベルが楕円などの曲線に重ならない
+  // よう、curves と同じ重みでペナルティに含める。
+  const crossesParametrics = (b: Box): number => {
+    let n = 0;
+    for (const p of parametrics) {
+      const m = Math.max(1, p.samples ?? 240);
+      let hit = false;
+      for (let k = 0; k <= m && !hit; k += 1) {
+        const pt = p.fn(p.tMin + ((p.tMax - p.tMin) * k) / m);
+        if (!Number.isFinite(pt.x) || !Number.isFinite(pt.y)) continue;
+        const px = x(pt.x);
+        const py = y(pt.y);
+        if (px >= b.x0 - 2 && px <= b.x1 + 2 && py >= b.y0 - 2 && py <= b.y1 + 2) hit = true;
+      }
+      if (hit) n += 1;
+    }
+    return n;
+  };
   const penaltyOf = (b: Box): number => {
     let p = 0;
     if (b.x0 < 2 || b.x1 > VIEW_W - 2 || b.y0 < 2 || b.y1 > VIEW_H - 2) p += 1000;
     for (const a of axisBoxes) if (boxesOverlap(b, a)) p += 6;
     for (const t of tickBoxes) if (boxesOverlap(b, t)) p += 8;
     p += crossesCurves(b) * 5;
+    p += crossesParametrics(b) * 5;
     for (const q of placedBoxes) if (boxesOverlap(b, q)) p += 7;
     return p;
   };
