@@ -1,0 +1,517 @@
+---
+title: 平面ベクトルの内積
+description: 2 つのベクトルの内積 a・b=|a||b|cosθ=a1b1+a2b2 を、なす角による定義から定め、成分公式を余弦定理から導く。交換律・分配律・直交条件・なす角の公式までを自己完結で扱う。
+sidebar:
+  order: 3
+---
+
+import FunctionGraph from "../../../../components/FunctionGraph";
+
+## 前提
+
+本章の前提は、次の 5 つである。
+
+- [ベクトルの和・差・スカラー倍](../vector-operations/)：和 $\vec{a} + \vec{b}$・差 $\vec{a} - \vec{b}$・スカラー倍 $k\vec{a}$ の図形的意味と成分計算を使う。
+- [平面ベクトルの定義と成分表示](../plane-vectors-and-components/)：成分表示 $\vec{a} = (a_1, a_2)$ と大きさ $\lvert \vec{a} \rvert = \sqrt{a_1^2 + a_2^2}$ を使う。
+- [三角比](../../functions/trigonometric-ratios/)：余弦 $\cos$ の定義と特別な角の値を使う。
+- [三角比の拡張](../../functions/extension-of-trigonometric-ratios/)：一般角への拡張、弧度法（ラジアン）と $\pi$、$90^\circ$ を超える角の余弦が負になることを使う。
+- [正弦定理と余弦定理](../../functions/law-of-sines-and-cosines/)：余弦定理 $a^2 = b^2 + c^2 - 2bc\cos A$ を使う。
+
+前章までで、ベクトルの和・差・スカラー倍を定めた。和・差・スカラー倍は、結果がふたたびベクトルになる演算である。本章は、2 つのベクトルから 1 つの実数（スカラー）を作る演算、**内積**を導入する。内積は、2 つのベクトルのなす角と大きさを結びつける。
+
+## 学習目標
+
+本章を読むと、次の概念と記号を使えるようになる。
+
+- 2 つのベクトルの**なす角** $\theta$（$0 \le \theta \le \pi$）の定義
+- **内積** $\vec{a} \cdot \vec{b} = \lvert \vec{a} \rvert \lvert \vec{b} \rvert \cos\theta$ の定義と、値がスカラーであること
+- 内積の**成分公式** $\vec{a} \cdot \vec{b} = a_1 b_1 + a_2 b_2$ と、余弦定理からの導出
+- 内積の基本法則：交換律・分配律・$\vec{a} \cdot \vec{a} = \lvert \vec{a} \rvert^2$
+- **直交条件** $\vec{a} \perp \vec{b} \iff \vec{a} \cdot \vec{b} = 0$
+- なす角の公式 $\cos\theta = \dfrac{\vec{a} \cdot \vec{b}}{\lvert \vec{a} \rvert \lvert \vec{b} \rvert}$
+
+## なす角と内積の定義
+
+### 2 つのベクトルのなす角
+
+内積を定める前に、2 つのベクトルが作る角を定義する。
+
+> **なす角の定義**：零ベクトルでない 2 つのベクトル $\vec{a}$・$\vec{b}$ について、始点をそろえて置いたとき、$\vec{a}$ から $\vec{b}$ へ測った角を**なす角**と呼び、$\theta$ で表す。なす角の範囲は $0 \le \theta \le \pi$ とする。
+
+なす角は、2 つのベクトルの始点を 1 点に重ねて測る。ベクトルは位置を問わないため、平行移動して始点をそろえてよい。角の測り方は次の約束に従う。
+
+- $\theta = 0$：$\vec{a}$ と $\vec{b}$ が同じ向き。
+- $\theta = \pi$（$180^\circ$）：$\vec{a}$ と $\vec{b}$ が逆向き。
+- $\theta = \dfrac{\pi}{2}$（$90^\circ$）：$\vec{a}$ と $\vec{b}$ が直角。
+
+角の単位は弧度法（ラジアン）と度数法のどちらでもよい。本章は両方を併記する。なす角を、始点をそろえた 2 ベクトルの図で示す。
+
+<figure>
+  <FunctionGraph
+    xMin={-1}
+    xMax={6}
+    yMin={-1}
+    yMax={5}
+    equalScale={true}
+    vectors={[
+      { from: { x: 0, y: 0 }, to: { x: 5, y: 1 }, label: "\\vec{a}" },
+      { from: { x: 0, y: 0 }, to: { x: 2, y: 4 }, label: "\\vec{b}", color: "#f59e0b" },
+    ]}
+    points={[{ x: 1.3, y: 1.0, label: "\\theta" }]}
+    ariaLabel="原点を共通の始点とする 2 つのベクトル。青の a が右へ、橙の b が右上へ伸びる。2 つの間の角 θ を頂点付近に示す。"
+  />
+  <figcaption>
+    始点をそろえた 2 つのベクトル $\vec{a}$・$\vec{b}$ と、なす角 $\theta$ である。なす角は、$\vec
+    {a}$ と $\vec{b}$ にはさまれた角として、$0$ から $\pi$ の範囲で測る。
+  </figcaption>
+</figure>
+
+### 内積の定義
+
+なす角と大きさを使って、内積を定義する。
+
+> **内積の定義**：零ベクトルでない 2 つのベクトル $\vec{a}$・$\vec{b}$ のなす角を $\theta$ とする。内積 $\vec{a} \cdot \vec{b}$ を、次で定める。
+>
+> $$
+> \vec{a} \cdot \vec{b} = \lvert \vec{a} \rvert \lvert \vec{b} \rvert \cos\theta
+> $$
+>
+> $\vec{a}$・$\vec{b}$ のいずれかが零ベクトルのときは、$\vec{a} \cdot \vec{b} = 0$ と定める。
+
+内積の記号と性質を確認する。
+
+- $\vec{a} \cdot \vec{b}$ は「ベクトル a ドット ベクトル b」と読む。中点「$\cdot$」を必ず書く。
+- 内積の値は、大きさ $\lvert \vec{a} \rvert$・$\lvert \vec{b} \rvert$ と余弦 $\cos\theta$ の積である。3 つはいずれも実数のため、内積の値は 1 つの実数（スカラー）である。内積は、和・差・スカラー倍と違い、結果がベクトルにならない。
+
+内積の符号は、なす角 $\theta$ によって決まる。大きさ $\lvert \vec{a} \rvert$・$\lvert \vec{b} \rvert$ は正のため、符号は $\cos\theta$ の符号に一致する。
+
+| なす角 $\theta$                     | $\cos\theta$ の符号 | 内積 $\vec{a} \cdot \vec{b}$ の符号 | なす角の分類 |
+| ----------------------------------- | ------------------- | ----------------------------------- | ------------ |
+| $0 \le \theta \lt \dfrac{\pi}{2}$   | 正                  | 正                                  | 鋭角         |
+| $\theta = \dfrac{\pi}{2}$           | $0$                 | $0$                                 | 直角         |
+| $\dfrac{\pi}{2} \lt \theta \le \pi$ | 負                  | 負                                  | 鈍角         |
+
+## 内積の成分公式
+
+### 公式の主張
+
+内積の定義は、なす角 $\theta$ を含む。実際の計算では、$\theta$ を直接測らずに済む形が便利である。成分から内積を求める公式を導く。
+
+> **内積の成分公式**：$\vec{a} = (a_1, a_2)$・$\vec{b} = (b_1, b_2)$ のとき、次が成り立つ。
+>
+> $$
+> \vec{a} \cdot \vec{b} = a_1 b_1 + a_2 b_2
+> $$
+
+公式は、対応する成分どうしを掛けて足すだけの計算である。なす角を測らずに済む点が要点である。
+
+### 余弦定理からの導出
+
+成分公式を、余弦定理から導く。零ベクトルでない 2 つのベクトル $\vec{a}$・$\vec{b}$ の始点を、原点 $\mathrm{O}$ にそろえる。$\vec{a}$ の終点を $\mathrm{A}$、$\vec{b}$ の終点を $\mathrm{B}$ とする。終点の座標は成分に等しい。
+
+$$
+\mathrm{A} = (a_1, a_2), \qquad \mathrm{B} = (b_1, b_2)
+$$
+
+差のベクトル $\vec{a} - \vec{b}$ は、前章より終点から終点へ向かう。$\vec{a} - \vec{b} = \overrightarrow{\mathrm{BA}}$ であり、線分 $\mathrm{BA}$ の長さが $\lvert \vec{a} - \vec{b} \rvert$ に等しい。3 点 $\mathrm{O}$・$\mathrm{A}$・$\mathrm{B}$ が作る三角形を図に示す。
+
+<figure>
+  <FunctionGraph
+    xMin={-1}
+    xMax={6}
+    yMin={-1}
+    yMax={5}
+    equalScale={true}
+    vectors={[
+      { from: { x: 0, y: 0 }, to: { x: 5, y: 1 }, label: "\\vec{a}" },
+      { from: { x: 0, y: 0 }, to: { x: 2, y: 4 }, label: "\\vec{b}", color: "#f59e0b" },
+      { from: { x: 2, y: 4 }, to: { x: 5, y: 1 }, label: "\\vec{a}-\\vec{b}", color: "#ef4444" },
+    ]}
+    points={[
+      { x: 5, y: 1, label: "\\mathrm{A}" },
+      { x: 2, y: 4, label: "\\mathrm{B}" },
+      { x: 1.0, y: 0.85, label: "\\theta" },
+    ]}
+    ariaLabel="原点 O を共通の始点とする青のベクトル a と橙のベクトル b。終点 B から終点 A へ向かう赤のベクトル a−b が三角形の対辺をなす。原点付近に角 θ を示す。"
+  />
+  <figcaption>
+    始点を原点 $\mathrm{O}$ にそろえた $\vec{a} = \overrightarrow{\mathrm{OA}}$・$\vec{b} =
+    \overrightarrow{\mathrm{OB}}$ である。対辺は $\vec{a} - \vec{b} =
+    \overrightarrow{\mathrm{BA}}$ をなす。頂点 $\mathrm{O}$ のなす角が $\theta$
+    であり、対辺の長さが $\lvert \vec{a} - \vec{b} \rvert$ である。
+  </figcaption>
+</figure>
+
+三角形 $\mathrm{OAB}$ を考える。頂点 $\mathrm{O}$ のはさむ 2 辺の長さは $\lvert \vec{a} \rvert$・$\lvert \vec{b} \rvert$ である。対辺 $\mathrm{BA}$ の長さは $\lvert \vec{a} - \vec{b} \rvert$、頂点 $\mathrm{O}$ の角は $\theta$ である。余弦定理を頂点 $\mathrm{O}$ に適用する。
+
+$$
+\lvert \vec{a} - \vec{b} \rvert^2 = \lvert \vec{a} \rvert^2 + \lvert \vec{b} \rvert^2 - 2 \lvert \vec{a} \rvert \lvert \vec{b} \rvert \cos\theta
+$$
+
+右辺の積 $\lvert \vec{a} \rvert \lvert \vec{b} \rvert \cos\theta$ は、内積の定義そのものである。式を内積で書き換える。
+
+$$
+\lvert \vec{a} - \vec{b} \rvert^2 = \lvert \vec{a} \rvert^2 + \lvert \vec{b} \rvert^2 - 2 \, (\vec{a} \cdot \vec{b})
+$$
+
+次に、左辺と右辺の大きさを、すべて成分で展開する。大きさの 2 乗は、前章の公式 $\lvert \vec{a} \rvert^2 = a_1^2 + a_2^2$ で計算する。差 $\vec{a} - \vec{b} = (a_1 - b_1, \ a_2 - b_2)$ の大きさの 2 乗は、次のとおりである。
+
+$$
+\lvert \vec{a} - \vec{b} \rvert^2 = (a_1 - b_1)^2 + (a_2 - b_2)^2
+$$
+
+右辺を展開する。
+
+$$
+\lvert \vec{a} - \vec{b} \rvert^2 = a_1^2 - 2 a_1 b_1 + b_1^2 + a_2^2 - 2 a_2 b_2 + b_2^2
+$$
+
+各ベクトルの大きさの 2 乗を成分で書き、余弦定理の式の右辺へ代入する。
+
+$$
+\lvert \vec{a} \rvert^2 = a_1^2 + a_2^2, \qquad \lvert \vec{b} \rvert^2 = b_1^2 + b_2^2
+$$
+
+余弦定理の式は、次の形になる。
+
+$$
+a_1^2 - 2 a_1 b_1 + b_1^2 + a_2^2 - 2 a_2 b_2 + b_2^2 = (a_1^2 + a_2^2) + (b_1^2 + b_2^2) - 2 \, (\vec{a} \cdot \vec{b})
+$$
+
+両辺から $a_1^2 + b_1^2 + a_2^2 + b_2^2$ を引くと、共通の項が消える。
+
+$$
+- 2 a_1 b_1 - 2 a_2 b_2 = - 2 \, (\vec{a} \cdot \vec{b})
+$$
+
+両辺を $-2$ で割る。
+
+$$
+\vec{a} \cdot \vec{b} = a_1 b_1 + a_2 b_2
+$$
+
+成分公式が導けた。導出は $\vec{a}$・$\vec{b}$ が零ベクトルでない場合を扱った。一方が零ベクトルなら、その成分はすべて $0$ のため右辺は $0$ となり、定義の $\vec{a} \cdot \vec{b} = 0$ と一致する。
+
+## 内積の基本法則
+
+成分公式から、内積の基本法則を導く。$\vec{a} = (a_1, a_2)$・$\vec{b} = (b_1, b_2)$・$\vec{c} = (c_1, c_2)$ とする。
+
+### 交換律
+
+内積は、掛ける順序を入れ替えてよい。
+
+$$
+\vec{a} \cdot \vec{b} = \vec{b} \cdot \vec{a}
+$$
+
+成分公式で確かめる。実数の掛け算は順序を入れ替えてよいため、$a_1 b_1 = b_1 a_1$・$a_2 b_2 = b_2 a_2$ が成り立つ。
+
+$$
+\vec{a} \cdot \vec{b} = a_1 b_1 + a_2 b_2 = b_1 a_1 + b_2 a_2 = \vec{b} \cdot \vec{a}
+$$
+
+### 分配律
+
+内積は、和に対して分配できる。
+
+$$
+\vec{a} \cdot (\vec{b} + \vec{c}) = \vec{a} \cdot \vec{b} + \vec{a} \cdot \vec{c}
+$$
+
+成分公式で確かめる。和の成分は $\vec{b} + \vec{c} = (b_1 + c_1, \ b_2 + c_2)$ である。
+
+$$
+\vec{a} \cdot (\vec{b} + \vec{c}) = a_1 (b_1 + c_1) + a_2 (b_2 + c_2)
+$$
+
+各項を分配して展開する。
+
+$$
+\vec{a} \cdot (\vec{b} + \vec{c}) = a_1 b_1 + a_1 c_1 + a_2 b_2 + a_2 c_2
+$$
+
+項を並べ替えてまとめる。
+
+$$
+\vec{a} \cdot (\vec{b} + \vec{c}) = (a_1 b_1 + a_2 b_2) + (a_1 c_1 + a_2 c_2) = \vec{a} \cdot \vec{b} + \vec{a} \cdot \vec{c}
+$$
+
+スカラー倍についても、$(k\vec{a}) \cdot \vec{b} = k (\vec{a} \cdot \vec{b})$ が同様に成り立つ。
+
+### 自分自身との内積
+
+ベクトルと自分自身の内積は、大きさの 2 乗に等しい。
+
+$$
+\vec{a} \cdot \vec{a} = \lvert \vec{a} \rvert^2
+$$
+
+2 つの方法で確かめる。
+
+- **定義から**：$\vec{a}$ と $\vec{a}$ のなす角は $\theta = 0$ で、$\cos 0 = 1$ である。よって $\vec{a} \cdot \vec{a} = \lvert \vec{a} \rvert \lvert \vec{a} \rvert \cos 0 = \lvert \vec{a} \rvert^2$ となる。
+- **成分から**：$\vec{a} \cdot \vec{a} = a_1 a_1 + a_2 a_2 = a_1^2 + a_2^2 = \lvert \vec{a} \rvert^2$ となる。
+
+2 つの方法は同じ結果を与える。
+
+## 直交条件となす角
+
+### 直交条件
+
+内積が $0$ になる場合を調べる。零ベクトルでない 2 つのベクトル $\vec{a}$・$\vec{b}$ の定義を見る。大きさ $\lvert \vec{a} \rvert$・$\lvert \vec{b} \rvert$ は正のため、内積が $0$ になるのは $\cos\theta = 0$ のときに限る。範囲 $0 \le \theta \le \pi$ で $\cos\theta = 0$ となるのは $\theta = \dfrac{\pi}{2}$（$90^\circ$）だけである。なす角が $90^\circ$ のとき、2 つのベクトルは**直交**するという。直交を記号 $\vec{a} \perp \vec{b}$（「a と b は垂直」と読む）で表す。次の直交条件が成り立つ。記号 $\iff$ は「同値」と読み、左の条件と右の条件が互いに成り立つことを表す。
+
+> **直交条件**：零ベクトルでない 2 つのベクトル $\vec{a}$・$\vec{b}$ について、次が成り立つ。
+>
+> $$
+> \vec{a} \perp \vec{b} \iff \vec{a} \cdot \vec{b} = 0
+> $$
+
+成分で書くと、直交条件は $a_1 b_1 + a_2 b_2 = 0$ である。直交する 2 ベクトルの例を図に示す。
+
+<figure>
+  <FunctionGraph
+    xMin={-2}
+    xMax={5}
+    yMin={-2}
+    yMax={5}
+    equalScale={true}
+    vectors={[
+      { from: { x: 0, y: 0 }, to: { x: 4, y: 2 }, label: "\\vec{a}" },
+      { from: { x: 0, y: 0 }, to: { x: -2, y: 4 }, label: "\\vec{b}", color: "#f59e0b" },
+    ]}
+    points={[{ x: 0.7, y: 1.6, label: "\\theta=90^\\circ" }]}
+    ariaLabel="原点を共通の始点とする青のベクトル a=(4,2) と橙のベクトル b=(−2,4)。2 つは直角に交わり、内積は 0 である。"
+  />
+  <figcaption>
+    直交する 2 つのベクトル $\vec{a} = (4, 2)$・$\vec{b} = (-2, 4)$ である。成分公式より $\vec{a}{" "}
+    \cdot \vec{b} = 4 \times (-2) + 2 \times 4 = -8 + 8 = 0$ となり、なす角は $90^\circ$ である。
+  </figcaption>
+</figure>
+
+### なす角を求める公式
+
+内積の定義を変形すると、なす角の余弦が求まる。零ベクトルでない 2 つのベクトル $\vec{a}$・$\vec{b}$ を考える。定義の式 $\vec{a} \cdot \vec{b} = \lvert \vec{a} \rvert \lvert \vec{b} \rvert \cos\theta$ を見る。両辺を大きさの積 $\lvert \vec{a} \rvert \lvert \vec{b} \rvert$ で割る。
+
+$$
+\cos\theta = \frac{\vec{a} \cdot \vec{b}}{\lvert \vec{a} \rvert \lvert \vec{b} \rvert}
+$$
+
+右辺は、成分公式と大きさの公式ですべて計算できる。
+
+$$
+\cos\theta = \frac{a_1 b_1 + a_2 b_2}{\sqrt{a_1^2 + a_2^2} \, \sqrt{b_1^2 + b_2^2}}
+$$
+
+$\cos\theta$ の値から、$0 \le \theta \le \pi$ の範囲でなす角 $\theta$ が 1 つに定まる。理由を、前提の[三角比の拡張](../../functions/extension-of-trigonometric-ratios/)の単位円の定義から述べる。半径 $1$ の単位円上で、角 $\theta$ の動径の先の点の $x$ 座標が $\cos\theta$ である。$\theta$ が $0$ から $\pi$ へ増えると、点は単位円の右端から左端へ動き、$x$ 座標は $1$ から $-1$ へ減り続ける。同じ余弦の値を 2 度取らないため、$\cos\theta$ の値と $\theta$ は 1 対 1 に対応する。
+
+## 物理学とのつながり
+
+内積は、物理量の積を表す基本の道具である。代表例が、力がする**仕事**である。
+
+物体に一定の力 $\vec{F}$ を加え、物体が変位 $\vec{d}$ だけ動いたとする。力がした仕事 $W$ は、力と変位の内積で定義する。
+
+$$
+W = \vec{F} \cdot \vec{d} = \lvert \vec{F} \rvert \lvert \vec{d} \rvert \cos\theta
+$$
+
+ここで $\theta$ は、力 $\vec{F}$ と変位 $\vec{d}$ のなす角である。内積の符号が、仕事の意味を分ける。
+
+- **力が運動を助ける**（$\theta \lt 90^\circ$）：内積は正で、仕事は正である。
+- **力が運動と直角**（$\theta = 90^\circ$）：内積は $0$ で、仕事は $0$ である。力は運動の向きへ寄与しない。
+- **力が運動を妨げる**（$\theta \gt 90^\circ$）：内積は負で、仕事は負である。
+
+直角に働く力が仕事をしない事実は、内積の直交条件 $\vec{a} \cdot \vec{b} = 0$ の物理的な表れである。仕事とエネルギーの詳しい扱いは、後続の物理カテゴリの章で行う。
+
+## 例題
+
+### 例題 1
+
+$\vec{a} = (3, 1)$・$\vec{b} = (2, 4)$ の内積 $\vec{a} \cdot \vec{b}$ を求めよ。
+
+**解法.** 成分公式 $\vec{a} \cdot \vec{b} = a_1 b_1 + a_2 b_2$ に代入する。
+
+$$
+\vec{a} \cdot \vec{b} = 3 \times 2 + 1 \times 4 = 6 + 4 = 10
+$$
+
+### 例題 2
+
+$\vec{a} = (1, 2)$・$\vec{b} = (3, -1)$ のなす角 $\theta$ を求めよ。
+
+**解法.** なす角の公式を使う。まず内積と各大きさを求める。
+
+$$
+\vec{a} \cdot \vec{b} = 1 \times 3 + 2 \times (-1) = 3 - 2 = 1
+$$
+
+大きさは、平方根の中を先に足してから計算する。
+
+$$
+\lvert \vec{a} \rvert = \sqrt{1^2 + 2^2} = \sqrt{5}, \qquad \lvert \vec{b} \rvert = \sqrt{3^2 + (-1)^2} = \sqrt{10}
+$$
+
+なす角の公式に代入する。
+
+$$
+\cos\theta = \frac{\vec{a} \cdot \vec{b}}{\lvert \vec{a} \rvert \lvert \vec{b} \rvert} = \frac{1}{\sqrt{5} \, \sqrt{10}} = \frac{1}{\sqrt{50}} = \frac{1}{5\sqrt{2}} = \frac{\sqrt{2}}{10}
+$$
+
+$0 \le \theta \le \pi$ の範囲で $\cos\theta = \dfrac{\sqrt{2}}{10}$ を満たす角が、求めるなす角である。
+
+### 例題 3
+
+$\vec{a} = (2, -3)$・$\vec{b} = (k, 4)$ が直交するように、定数 $k$ を定めよ。
+
+**解法.** 直交条件 $\vec{a} \cdot \vec{b} = 0$ を使う。成分公式で内積を書く。
+
+$$
+\vec{a} \cdot \vec{b} = 2 \times k + (-3) \times 4 = 2k - 12
+$$
+
+直交条件 $2k - 12 = 0$ を解く。
+
+$$
+k = 6
+$$
+
+### 例題 4
+
+なす角が $60^\circ$ で、$\lvert \vec{a} \rvert = 3$・$\lvert \vec{b} \rvert = 4$ のとき、内積 $\vec{a} \cdot \vec{b}$ を求めよ。
+
+**解法.** 内積の定義 $\vec{a} \cdot \vec{b} = \lvert \vec{a} \rvert \lvert \vec{b} \rvert \cos\theta$ に代入する。$\cos 60^\circ = \dfrac{1}{2}$ である。
+
+$$
+\vec{a} \cdot \vec{b} = 3 \times 4 \times \frac{1}{2} = 6
+$$
+
+## 演習問題
+
+問題ごとに解答を畳んである。「解答を表示」を開くと確認できる。
+
+### 問題 1
+
+$\vec{a} = (5, -2)$・$\vec{b} = (1, 3)$ の内積 $\vec{a} \cdot \vec{b}$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+成分公式 $\vec{a} \cdot \vec{b} = a_1 b_1 + a_2 b_2$ に代入する。
+
+$$
+\vec{a} \cdot \vec{b} = 5 \times 1 + (-2) \times 3 = 5 - 6 = -1
+$$
+
+内積が負のため、なす角は $90^\circ$ より大きい鈍角である。
+
+</details>
+
+### 問題 2
+
+$\vec{a} = (1, 1)$・$\vec{b} = (1, -1)$ が直交することを示せ。
+
+<details>
+<summary>解答を表示</summary>
+
+直交条件 $\vec{a} \cdot \vec{b} = 0$ を確かめる。成分公式で内積を計算する。
+
+$$
+\vec{a} \cdot \vec{b} = 1 \times 1 + 1 \times (-1) = 1 - 1 = 0
+$$
+
+内積が $0$ であり、$\vec{a}$・$\vec{b}$ はともに零ベクトルでないため、$\vec{a} \perp \vec{b}$ が成り立つ。
+
+</details>
+
+### 問題 3
+
+$\vec{a} = (2, 2)$・$\vec{b} = (0, 3)$ のなす角 $\theta$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+内積と各大きさを求める。
+
+$$
+\vec{a} \cdot \vec{b} = 2 \times 0 + 2 \times 3 = 6
+$$
+
+大きさは、平方根の中を先に足してから計算する。
+
+$$
+\lvert \vec{a} \rvert = \sqrt{2^2 + 2^2} = \sqrt{8} = 2\sqrt{2}, \qquad \lvert \vec{b} \rvert = \sqrt{0^2 + 3^2} = 3
+$$
+
+なす角の公式に代入する。
+
+$$
+\cos\theta = \frac{\vec{a} \cdot \vec{b}}{\lvert \vec{a} \rvert \lvert \vec{b} \rvert} = \frac{6}{2\sqrt{2} \times 3} = \frac{6}{6\sqrt{2}} = \frac{1}{\sqrt{2}}
+$$
+
+$0 \le \theta \le \pi$ で $\cos\theta = \dfrac{1}{\sqrt{2}}$ を満たすのは $\theta = \dfrac{\pi}{4}$（$45^\circ$）である。
+
+</details>
+
+### 問題 4
+
+$\vec{a} = (k, 2)$・$\vec{b} = (3, k)$ が直交するように、定数 $k$ を定めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+直交条件 $\vec{a} \cdot \vec{b} = 0$ を使う。
+
+$$
+\vec{a} \cdot \vec{b} = k \times 3 + 2 \times k = 3k + 2k = 5k
+$$
+
+$5k = 0$ より $k = 0$ である。
+
+</details>
+
+### 問題 5
+
+$\lvert \vec{a} \rvert = 2$・$\lvert \vec{b} \rvert = 3$・$\vec{a} \cdot \vec{b} = -3$ のとき、$\lvert \vec{a} + \vec{b} \rvert$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+自分自身との内積 $\vec{a} \cdot \vec{a} = \lvert \vec{a} \rvert^2$ と分配律を使う。大きさの 2 乗を内積で表す。
+
+$$
+\lvert \vec{a} + \vec{b} \rvert^2 = (\vec{a} + \vec{b}) \cdot (\vec{a} + \vec{b})
+$$
+
+分配律で展開する。交換律より $\vec{a} \cdot \vec{b} = \vec{b} \cdot \vec{a}$ である。
+
+$$
+\lvert \vec{a} + \vec{b} \rvert^2 = \vec{a} \cdot \vec{a} + 2 \, (\vec{a} \cdot \vec{b}) + \vec{b} \cdot \vec{b} = \lvert \vec{a} \rvert^2 + 2 \, (\vec{a} \cdot \vec{b}) + \lvert \vec{b} \rvert^2
+$$
+
+値を代入する。
+
+$$
+\lvert \vec{a} + \vec{b} \rvert^2 = 2^2 + 2 \times (-3) + 3^2 = 4 - 6 + 9 = 7
+$$
+
+大きさは負でないため、$\lvert \vec{a} + \vec{b} \rvert = \sqrt{7}$ である。
+
+</details>
+
+## まとめ
+
+本章は、平面ベクトルの内積を、前提の章だけから自己完結で導入した。要点を振り返る。
+
+- **なす角** $\theta$ は、始点をそろえた 2 ベクトルにはさまれた角で、範囲は $0 \le \theta \le \pi$ である。
+- **内積**は $\vec{a} \cdot \vec{b} = \lvert \vec{a} \rvert \lvert \vec{b} \rvert \cos\theta$ で定め、値は 1 つの実数（スカラー）である。
+- **成分公式** $\vec{a} \cdot \vec{b} = a_1 b_1 + a_2 b_2$ は、余弦定理と成分での展開を突き合わせて導ける。
+- 内積は**交換律**・**分配律**を満たし、$\vec{a} \cdot \vec{a} = \lvert \vec{a} \rvert^2$ が成り立つ。
+- **直交条件**は $\vec{a} \perp \vec{b} \iff \vec{a} \cdot \vec{b} = 0$ である。
+- なす角は $\cos\theta = \dfrac{\vec{a} \cdot \vec{b}}{\lvert \vec{a} \rvert \lvert \vec{b} \rvert}$ で求まる。
+
+次の章[空間ベクトルと成分](../space-vectors/)では、ベクトルを平面から空間へ広げる。空間座標 $(x, y, z)$・成分表示・大きさ・和・スカラー倍・内積を、平面の場合からの自然な拡張として定める。本章の内積 $a_1 b_1 + a_2 b_2$ に、第 3 成分の積 $a_3 b_3$ を加えた形が、空間ベクトルの内積になる。
+
+## 参考文献
+
+内積の扱いをさらに学ぶための一次資料を挙げる。
+
+- 小平邦彦『解析入門 I』岩波書店、2003 年。ベクトルと内積を基礎から述べた入門書である。内積の定義と性質を体系的に学べる。
+- T. M. Apostol, _Calculus, Volume I_（2nd ed.）John Wiley & Sons、1967 年。ベクトル代数と内積（ドット積）を厳密に定義し、幾何的意味との対応を丁寧に展開した標準的な教科書である。
