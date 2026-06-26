@@ -121,7 +121,7 @@
   --flow-cluster-fill: #f8fafc;
   --flow-cluster-stroke: #cbd5e1;
   --flow-edge: #64748b;
-  /* ロードマップ全体図のノード状態色。done＝学習済み（青）、goal＝到達目標（琥珀）。
+  /* ロードマップ全体図のノード状態色。done＝完了（執筆済み・青）、goal＝到達目標（琥珀）。
      トーン未指定のノードは中立色（上の --flow-node-*）を使う。 */
   --flow-node-done-fill: #dbeafe;
   --flow-node-done-stroke: #2563eb;

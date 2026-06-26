@@ -9,7 +9,7 @@ import FlowChart, { type FlowEdge, type FlowNode } from "./FlowChart";
  * 一般相対性理論）へ至る道筋を一望できる。
  *
  * エッジは各カテゴリの主要な前提に絞る。章ごとの厳密な前提は設計書と各章冒頭に委ねる。
- * 配色トーンは学習の進捗を表す。done＝執筆済み、goal＝到達目標、未指定＝執筆予定。
+ * 配色トーンは執筆の進捗を表す。done＝執筆済み、goal＝到達目標、未指定＝執筆予定。
  */
 
 /** カテゴリ。id は設計書の接頭辞、label は短縮名。tone は進捗（既定＝執筆予定）。 */
@@ -138,6 +138,7 @@ function LegendItem({ fill, stroke, label }: { fill: string; stroke: string; lab
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
       <span
+        aria-hidden="true"
         style={{
           display: "inline-block",
           width: "14px",

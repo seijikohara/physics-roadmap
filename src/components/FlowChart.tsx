@@ -31,8 +31,9 @@ export type FlowDirection = "TB" | "TD" | "LR";
 export type FlowShape = "rect" | "diamond";
 
 /**
- * ノードの配色トーン。既定（未指定）は中立色。`done`（学習済み・到達済み）と
- * `goal`（到達目標）を強調色で描き分ける。色は global.css の CSS 変数で与える。
+ * ノードの配色トーン。既定（未指定）は中立色。`done`（完了・達成済み）と
+ * `goal`（到達目標）を強調色で描き分ける。意味は利用側が与える（ロードマップ全体図では
+ * `done`＝執筆済み）。色は global.css の CSS 変数で与える。
  */
 export type FlowTone = "done" | "goal";
 
