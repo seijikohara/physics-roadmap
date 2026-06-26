@@ -54,6 +54,10 @@ export default defineConfig({
               label: "初等関数",
               items: [{ autogenerate: { directory: "math/functions" } }],
             },
+            {
+              label: "ベクトル",
+              items: [{ autogenerate: { directory: "math/vectors" } }],
+            },
           ],
         },
       ],
