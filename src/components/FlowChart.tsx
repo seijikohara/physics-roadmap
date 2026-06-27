@@ -573,6 +573,11 @@ function measureLabel(
         w += plainWidth(seg, fontSize);
       }
     }
+    // 数式を含む行は、foreignObject 内の KaTeX 描画幅がブラウザ・フォントの違いで
+    // 変動する。見積もりの過小評価で枠外へはみ出すのを防ぐため、安全余白を 1 文字分足す。
+    if (line.includes("$")) {
+      w += fontSize * 0.6;
+    }
     maxW = Math.max(maxW, w);
   }
   return { width: Math.max(maxW, fontSize * 2), height: lines.length * lineH };
@@ -589,9 +594,16 @@ function plainWidth(s: string, fontSize: number): number {
   return w;
 }
 
-/** LaTeX のおおよその表示幅。コマンド（\word）を 1 グリフと数え、装飾記号を除いて概算する。 */
+/**
+ * LaTeX のおおよその表示幅。コマンド（\word）を 1 グリフと数え、装飾記号を除いて概算する。
+ *
+ * 係数は安全側（広め）に取る。foreignObject 内の KaTeX 実描画幅はブラウザ・フォント読込で
+ * 変動し、過小評価するとノード枠から数式がはみ出すためである。根号 `\sqrt` の surd 記号は
+ * 通常のグリフより横に広いため、根号 1 つにつき余分な幅を加える。
+ */
 function texWidth(tex: string, fontSize: number): number {
   const commands = (tex.match(/\\[a-zA-Z]+/g) ?? []).length;
   const rest = tex.replace(/\\[a-zA-Z]+/g, "").replace(/[{}^_$\s]/g, "");
-  return (rest.length + commands) * fontSize * 0.6;
+  const sqrtCount = (tex.match(/\\sqrt/g) ?? []).length;
+  return (rest.length + commands) * fontSize * 0.66 + sqrtCount * fontSize * 0.5;
 }
