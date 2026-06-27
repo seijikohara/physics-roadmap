@@ -71,6 +71,10 @@ export default defineConfig({
               label: "座標幾何",
               items: [{ autogenerate: { directory: "math/coordinate-geometry" } }],
             },
+            {
+              label: "複素数",
+              items: [{ autogenerate: { directory: "math/complex-numbers" } }],
+            },
           ],
         },
       ],
