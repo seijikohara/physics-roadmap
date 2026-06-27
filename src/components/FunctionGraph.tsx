@@ -65,6 +65,8 @@ type AsymptoteLine = {
   y?: number;
   /** 線に添える LaTeX ラベル。 */
   label?: string;
+  /** 線の色。既定は強調色（HIGHLIGHT）。準線など他の補助線と区別したいとき指定する。 */
+  color?: string;
 };
 
 /** 2 点を結ぶ補助線分。傾きの三角形の辺など、限定した区間の補助線に使う。 */
@@ -495,7 +497,7 @@ export default function FunctionGraph({
                 <Line
                   from={{ x: x(a.x), y: originY }}
                   to={{ x: x(a.x), y: originY + plotH }}
-                  stroke={HIGHLIGHT}
+                  stroke={a.color ?? HIGHLIGHT}
                   strokeWidth={1.2}
                   strokeDasharray="4 3"
                 />
@@ -517,7 +519,7 @@ export default function FunctionGraph({
                 <Line
                   from={{ x: originX, y: y(a.y) }}
                   to={{ x: originX + plotW, y: y(a.y) }}
-                  stroke={HIGHLIGHT}
+                  stroke={a.color ?? HIGHLIGHT}
                   strokeWidth={1.2}
                   strokeDasharray="4 3"
                 />
