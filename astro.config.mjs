@@ -67,6 +67,10 @@ export default defineConfig({
               label: "ベクトル",
               items: [{ autogenerate: { directory: "math/vectors" } }],
             },
+            {
+              label: "座標幾何",
+              items: [{ autogenerate: { directory: "math/coordinate-geometry" } }],
+            },
           ],
         },
       ],
