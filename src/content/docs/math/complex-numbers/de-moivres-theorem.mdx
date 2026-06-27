@@ -1,0 +1,537 @@
+---
+title: ド・モアブルの定理
+description: 極形式の積の規則を繰り返し、ド・モアブルの定理 (cosθ+i sinθ)^n=cos nθ+i sin nθ を数学的帰納法で導く。負の整数の指数まで拡張し、複素数の累乗 z^n の絶対値 r^n と偏角 nθ を求める。さらに方程式 z^n=w の n 個の解として複素数の n 乗根を定め、1 の n 乗根が単位円上の正 n 角形の頂点に等間隔で並ぶことを自己完結で示す。
+sidebar:
+  order: 4
+---
+
+import FunctionGraph from "../../../../components/FunctionGraph";
+
+## 前提
+
+本章の前提は、次の 2 つである。
+
+- [複素数の極形式](../polar-form/)：極形式 $z = r(\cos\theta + i\sin\theta)$、偏角 $\arg z$、積の規則（絶対値は積、偏角は和）、逆数の極形式を使う。
+- [数学的帰納法](../../set/mathematical-induction/)：自然数 $n$ についての命題を、$n = 1$ の確認と $n = k$ から $n = k+1$ への接続で証明する方法を、定理の証明に使う。
+
+複素数カテゴリの第 4 章である。第 3 章では、複素数の積で偏角が和になる規則を加法定理から導いた。本章では、同じ複素数を $n$ 回掛ける累乗を扱う。偏角の和の規則を繰り返すと、累乗で偏角が $n$ 倍になる法則が現れる。法則がド・モアブルの定理である。
+
+## 学習目標
+
+本章を読むと、次の概念と計算を扱えるようになる。
+
+- **ド・モアブルの定理** $(\cos\theta + i\sin\theta)^n = \cos n\theta + i\sin n\theta$ と、数学的帰納法による証明
+- 指数 $n$ を負の整数へ拡張した形
+- 複素数の**累乗** $z^n$ の計算（絶対値は $r^n$、偏角は $n\theta$）
+- 複素数の **$n$ 乗根**：方程式 $z^n = w$ が $n$ 個の解を持つこと
+- **$1$ の $n$ 乗根**が、単位円上に正 $n$ 角形の頂点として等間隔に並ぶこと
+
+## ド・モアブルの定理
+
+### 定理の主張
+
+絶対値 $1$ の複素数 $\cos\theta + i\sin\theta$ を、$n$ 回掛けた累乗を考える。第 3 章の積の規則は、絶対値が積、偏角が和になると述べた。絶対値はすべて $1$ なので、累乗の絶対値は $1$ のままである。偏角は $\theta$ を $n$ 個足して $n\theta$ になる。予想を等式にまとめる。
+
+> **ド・モアブルの定理**：任意の実数 $\theta$ と整数 $n$ について、次の等式が成り立つ。
+>
+> $$
+> (\cos\theta + i\sin\theta)^n = \cos n\theta + i\sin n\theta
+> $$
+
+定理は、累乗の偏角が指数 $n$ 倍になる法則である[^name]。以下では、まず自然数 $n$ で証明する。次に $n = 0$ と負の整数 $n$ へ広げ、整数全体で成り立つことを確かめる。
+
+### 自然数の指数での証明
+
+自然数 $n$ についての証明には、数学的帰納法を使う。土台は、第 3 章で導いた絶対値 $1$ どうしの積の規則である。角 $\alpha$（アルファ）と $\beta$（ベータ）について、次の等式が成り立つ。
+
+$$
+(\cos\alpha + i\sin\alpha)(\cos\beta + i\sin\beta) = \cos(\alpha + \beta) + i\sin(\alpha + \beta)
+$$
+
+積の規則を出発点に、次の 2 段階で証明する。
+
+**第 1 段階（$n = 1$ の確認）.** 左辺は $(\cos\theta + i\sin\theta)^1 = \cos\theta + i\sin\theta$ である。右辺は $\cos(1 \cdot \theta) + i\sin(1 \cdot \theta) = \cos\theta + i\sin\theta$ である。両辺は等しい。
+
+**第 2 段階（$n = k$ から $n = k+1$ への接続）.** 自然数 $k$ で定理が成り立つと仮定する。仮定の等式を次のように書く。
+
+$$
+(\cos\theta + i\sin\theta)^k = \cos k\theta + i\sin k\theta
+$$
+
+指数を 1 つ増やす。累乗の定義から、$k+1$ 乗は $k$ 乗に 1 つ掛けた積である。
+
+$$
+(\cos\theta + i\sin\theta)^{k+1} = (\cos\theta + i\sin\theta)^k \cdot (\cos\theta + i\sin\theta)
+$$
+
+右辺の前半に、仮定の等式を代入する。
+
+$$
+(\cos\theta + i\sin\theta)^{k+1} = (\cos k\theta + i\sin k\theta)(\cos\theta + i\sin\theta)
+$$
+
+積の規則を、角 $k\theta$ と $\theta$ に当てる。偏角は和 $k\theta + \theta = (k+1)\theta$ になる。
+
+$$
+(\cos\theta + i\sin\theta)^{k+1} = \cos(k+1)\theta + i\sin(k+1)\theta
+$$
+
+得られた等式は、$n = k+1$ での定理である。第 1 段階で $n = 1$ が成り立ち、第 2 段階で $n = k$ から $n = k+1$ へ接続できる。数学的帰納法により、すべての自然数 $n$ で定理が成り立つ。
+
+### 指数を整数へ広げる
+
+定理を $n = 0$ と負の整数へ広げる。
+
+**$n = 0$ の場合.** $0$ でない数の $0$ 乗は $1$ と定める。左辺は $(\cos\theta + i\sin\theta)^0 = 1$ である。右辺は $\cos 0 + i\sin 0 = 1 + 0 = 1$ である。両辺は等しい。
+
+**負の整数の場合.** 負の整数を $n = -m$ と書く（$m$ は自然数）。負の指数は逆数の累乗を表すため、左辺は次の形になる。
+
+$$
+(\cos\theta + i\sin\theta)^{-m} = \frac{1}{(\cos\theta + i\sin\theta)^m}
+$$
+
+分母に、自然数で証明済みの定理を当てる。分母は $\cos m\theta + i\sin m\theta$ になる。
+
+$$
+(\cos\theta + i\sin\theta)^{-m} = \frac{1}{\cos m\theta + i\sin m\theta}
+$$
+
+第 3 章で導いた逆数の極形式を使う。絶対値 $1$ の複素数 $\cos\phi + i\sin\phi$（$\phi$ はファイ）の逆数は、偏角の符号を変えた $\cos(-\phi) + i\sin(-\phi)$ である。$\phi = m\theta$ を当てる。
+
+$$
+\frac{1}{\cos m\theta + i\sin m\theta} = \cos(-m\theta) + i\sin(-m\theta)
+$$
+
+$-m\theta = n\theta$ なので、右辺は $\cos n\theta + i\sin n\theta$ である。負の整数 $n$ でも定理が成り立つ。自然数・$0$・負の整数を合わせ、定理は整数全体で成り立つ。
+
+## 複素数の累乗
+
+ド・モアブルの定理を、絶対値が $1$ とは限らない複素数の累乗へ広げる。複素数 $z$ を極形式で表す。
+
+$$
+z = r(\cos\theta + i\sin\theta), \qquad r = \lvert z \rvert > 0
+$$
+
+累乗 $z^n$ を計算する。積の指数法則で、$r$ の累乗と括弧の累乗に分ける[^realpow]。
+
+$$
+z^n = r^n (\cos\theta + i\sin\theta)^n
+$$
+
+括弧の累乗に、ド・モアブルの定理を当てる。
+
+$$
+z^n = r^n (\cos n\theta + i\sin n\theta)
+$$
+
+結果は、絶対値 $r^n$、偏角 $n\theta$ の複素数である。
+
+> **複素数の累乗**：$z = r(\cos\theta + i\sin\theta)$ の $n$ 乗は、絶対値を $n$ 乗し、偏角を $n$ 倍する。
+>
+> $$
+> z^n = r^n (\cos n\theta + i\sin n\theta), \qquad \lvert z^n \rvert = r^n, \qquad \arg(z^n) = n\theta
+> $$
+
+直交形のまま $z^n$ を展開すると、項数が指数とともに増える。極形式に直すと、絶対値と偏角の 2 つの計算で累乗を求められる。
+
+## 複素数の n 乗根
+
+累乗の逆を考える。複素数 $w$ を与え、$n$ 乗して $w$ になる複素数 $z$ を求める。
+
+> **$n$ 乗根**：自然数 $n$ と複素数 $w$ について、方程式 $z^n = w$ の解 $z$ を、$w$ の $n$ 乗根と呼ぶ。
+
+実数の範囲では、$n$ 乗根は高々 2 個である。複素数の範囲では、$w \ne 0$ の $n$ 乗根はちょうど $n$ 個ある。個数の違いを、極形式で確かめる。
+
+### 解の絶対値と偏角
+
+$w \ne 0$ を極形式で表す。求める解 $z$ も極形式で置く。
+
+$$
+w = s(\cos\phi + i\sin\phi), \qquad z = r(\cos\theta + i\sin\theta)
+$$
+
+ここで $s = \lvert w \rvert > 0$、$\phi = \arg w$ である。未知数は、解の絶対値 $r$ と偏角 $\theta$ の 2 つである。複素数の累乗の規則から、$z^n$ は絶対値 $r^n$、偏角 $n\theta$ を持つ。方程式 $z^n = w$ を、極形式で書く。
+
+$$
+r^n(\cos n\theta + i\sin n\theta) = s(\cos\phi + i\sin\phi)
+$$
+
+両辺が等しいための条件を、絶対値と偏角に分ける。
+
+- **絶対値**：$r^n = s$。正の実数を $n$ 乗する操作は値とともに単調に増え、$0$ から限りなく大きい値まで連続にわたる。任意の $s > 0$ に対して、$r^n = s$ を満たす正の実数 $r$ がただ 1 つ存在する。$r$ を記号 $s^{1/n}$ で表し、$s$ の正の $n$ 乗根と呼ぶ。絶対値は $r = s^{1/n}$ と 1 つに定まる。
+- **偏角**：$n\theta$ と $\phi$ は、$2\pi$ の整数倍の差を許して等しい。整数 $k$ を使い $n\theta = \phi + 2\pi k$ と書ける。
+
+偏角の条件を $\theta$ について解く。
+
+$$
+\theta = \frac{\phi + 2\pi k}{n} \qquad (k は整数)
+$$
+
+整数 $k$ ごとに角 $\theta$ が決まる。次節で、相異なる解がちょうど $n$ 個になる理由を述べる。
+
+### 解がちょうど n 個になる理由
+
+$k$ を $0$ から $n-1$ まで動かすと、$n$ 個の角が得られる。隣り合う角の差は次のとおりである。
+
+$$
+\frac{\phi + 2\pi (k+1)}{n} - \frac{\phi + 2\pi k}{n} = \frac{2\pi}{n}
+$$
+
+差は $\dfrac{2\pi}{n}$ で一定である。$k = 0$ から $k = n-1$ までで、角は合計 $\dfrac{2\pi}{n} \times (n-1)$ だけ増える。全体は $2\pi$ 未満に収まる。異なる $k$ どうしの角の差は、$\dfrac{2\pi}{n}$ の $0$ でない整数倍であり、大きさは $2\pi$ 未満になる。差が $2\pi$ の整数倍にならないため、$n$ 個の角はすべて異なる向きを指す。
+
+$k$ をさらに $n$ だけ増やすと、角は $\dfrac{2\pi n}{n} = 2\pi$ だけ増える。$2\pi$ の差は同じ向きを表すため、$k = n$ の解は $k = 0$ の解に重なる。よって相異なる解は、$k = 0, 1, \dots, n-1$ の $n$ 個で尽きる。
+
+> **$n$ 乗根の公式**：$w = s(\cos\phi + i\sin\phi) \ne 0$ の $n$ 乗根は、次の $n$ 個である。
+>
+> $$
+> z_k = s^{1/n}\left(\cos\frac{\phi + 2\pi k}{n} + i\sin\frac{\phi + 2\pi k}{n}\right) \qquad (k = 0, 1, \dots, n-1)
+> $$
+
+$n$ 個の解は、すべて絶対値 $s^{1/n}$ を持つ。原点を中心とする半径 $s^{1/n}$ の円周上に、偏角の間隔 $\dfrac{2\pi}{n}$ で等間隔に並ぶ。等間隔に並ぶ $n$ 個の点は、正 $n$ 角形の頂点になる。
+
+### 1 の n 乗根
+
+特に $w = 1$ の $n$ 乗根を、**$1$ の $n$ 乗根**と呼ぶ。記号には $\zeta_k$（ゼータ・ケー）を使う。$1 = \cos 0 + i\sin 0$ なので、絶対値は $s = 1$、偏角は $\phi = 0$ である。公式に代入すると、絶対値はすべて $s^{1/n} = 1$ になる。
+
+$$
+\zeta_k = \cos\frac{2\pi k}{n} + i\sin\frac{2\pi k}{n} \qquad (k = 0, 1, \dots, n-1)
+$$
+
+$1$ の $n$ 乗根は、半径 $1$ の単位円上に並ぶ。$k = 0$ の解は $\zeta_0 = 1$ で、点 $(1, 0)$ にある。残りの解は、$(1, 0)$ から偏角 $\dfrac{2\pi}{n}$ ごとに反時計回りへ進んだ位置にある。$n$ 個の頂点は、単位円に内接する正 $n$ 角形をつくる。
+
+次の図は、$1$ の $3$ 乗根を表す。$n = 3$ で偏角は $0$, $\dfrac{2\pi}{3}$, $\dfrac{4\pi}{3}$ になる。
+
+<figure>
+  <FunctionGraph
+    xMin={-1.5}
+    xMax={1.5}
+    yMin={-1.5}
+    yMax={1.5}
+    equalScale={true}
+    xLabel="\mathrm{Re}"
+    yLabel="\mathrm{Im}"
+    parametrics={[
+      {
+        fn: (t) => ({ x: Math.cos(t), y: Math.sin(t) }),
+        tMin: 0,
+        tMax: 2 * Math.PI,
+        samples: 192,
+        color: "#94a3b8",
+      },
+    ]}
+    segments={[
+      { from: { x: 1, y: 0 }, to: { x: -0.5, y: 0.866 } },
+      { from: { x: -0.5, y: 0.866 }, to: { x: -0.5, y: -0.866 } },
+      { from: { x: -0.5, y: -0.866 }, to: { x: 1, y: 0 } },
+    ]}
+    points={[
+      { x: 1, y: 0, label: "\\zeta_0", highlight: true },
+      { x: -0.5, y: 0.866, label: "\\zeta_1", highlight: true },
+      { x: -0.5, y: -0.866, label: "\\zeta_2", highlight: true },
+    ]}
+    ariaLabel="複素平面の単位円上に並ぶ 1 の 3 乗根。灰色の円が半径 1 の単位円である。3 つの頂点 ζ0=1 が点 (1,0)、ζ1 が点 (-0.5, 0.866)、ζ2 が点 (-0.5, -0.866) にあり、偏角の間隔 2π/3 で等間隔に並ぶ。3 点を結ぶ線分が正三角形をつくる。"
+  />
+  <figcaption>
+    $1$ の $3$ 乗根である。単位円上の正三角形の頂点に等間隔で並ぶ。$\zeta_0 = 1$、$\zeta_1 =
+    -\dfrac{1}{2} + \dfrac{\sqrt{3}}{2}i$、$\zeta_2 = -\dfrac{1}{2} - \dfrac{\sqrt{3}}{2}i$ である。
+  </figcaption>
+</figure>
+
+次の図は、$1$ の $4$ 乗根を表す。$n = 4$ で偏角は $\dfrac{\pi}{2}$ の倍数になり、頂点が $1$・$i$・$-1$・$-i$ である。
+
+<figure>
+  <FunctionGraph
+    xMin={-1.5}
+    xMax={1.5}
+    yMin={-1.5}
+    yMax={1.5}
+    equalScale={true}
+    xLabel="\mathrm{Re}"
+    yLabel="\mathrm{Im}"
+    parametrics={[
+      {
+        fn: (t) => ({ x: Math.cos(t), y: Math.sin(t) }),
+        tMin: 0,
+        tMax: 2 * Math.PI,
+        samples: 192,
+        color: "#94a3b8",
+      },
+    ]}
+    segments={[
+      { from: { x: 1, y: 0 }, to: { x: 0, y: 1 } },
+      { from: { x: 0, y: 1 }, to: { x: -1, y: 0 } },
+      { from: { x: -1, y: 0 }, to: { x: 0, y: -1 } },
+      { from: { x: 0, y: -1 }, to: { x: 1, y: 0 } },
+    ]}
+    points={[
+      { x: 1, y: 0, label: "\\zeta_0", highlight: true },
+      { x: 0, y: 1, label: "\\zeta_1 = i", highlight: true },
+      { x: -1, y: 0, label: "\\zeta_2 = -1", highlight: true },
+      { x: 0, y: -1, label: "\\zeta_3 = -i", highlight: true },
+    ]}
+    ariaLabel="複素平面の単位円上に並ぶ 1 の 4 乗根。灰色の円が半径 1 の単位円である。4 つの頂点 ζ0=1 が点 (1,0)、ζ1=i が点 (0,1)、ζ2=-1 が点 (-1,0)、ζ3=-i が点 (0,-1) にあり、偏角の間隔 π/2 で等間隔に並ぶ。4 点を結ぶ線分が正方形をつくる。"
+  />
+  <figcaption>
+    $1$ の $4$ 乗根である。単位円上の正方形の頂点に等間隔で並ぶ。$\zeta_0 = 1$、$\zeta_1 =
+    i$、$\zeta_2 = -1$、$\zeta_3 = -i$ である。
+  </figcaption>
+</figure>
+
+## 例題
+
+### 例題 1
+
+$(1 + i)^8$ を計算せよ。
+
+**解法.** $1 + i$ を極形式に直す。絶対値は $\lvert 1 + i \rvert = \sqrt{1^2 + 1^2} = \sqrt{2}$ で、偏角が $\dfrac{\pi}{4}$ である。
+
+$$
+1 + i = \sqrt{2}\left(\cos\frac{\pi}{4} + i\sin\frac{\pi}{4}\right)
+$$
+
+累乗の規則で、絶対値を $8$ 乗し、偏角を $8$ 倍する。
+
+$$
+(1 + i)^8 = (\sqrt{2})^8 \left(\cos\frac{8\pi}{4} + i\sin\frac{8\pi}{4}\right) = 16\,(\cos 2\pi + i\sin 2\pi)
+$$
+
+$\cos 2\pi = 1$、$\sin 2\pi = 0$ なので、$(1 + i)^8 = 16$ である。
+
+### 例題 2
+
+$(\sqrt{3} + i)^6$ を計算せよ。
+
+**解法.** $\sqrt{3} + i$ を極形式に直す。絶対値は $\sqrt{(\sqrt{3})^2 + 1^2} = \sqrt{4} = 2$、偏角は $\dfrac{\pi}{6}$ である。
+
+$$
+\sqrt{3} + i = 2\left(\cos\frac{\pi}{6} + i\sin\frac{\pi}{6}\right)
+$$
+
+絶対値を $6$ 乗し、偏角を $6$ 倍する。
+
+$$
+(\sqrt{3} + i)^6 = 2^6\left(\cos\frac{6\pi}{6} + i\sin\frac{6\pi}{6}\right) = 64\,(\cos\pi + i\sin\pi)
+$$
+
+$\cos\pi = -1$、$\sin\pi = 0$ なので、$(\sqrt{3} + i)^6 = -64$ である。
+
+### 例題 3
+
+ド・モアブルの定理を使い、$\cos 3\theta$ を $\cos\theta$ だけの式で表せ。
+
+**解法.** $n = 3$ のド・モアブルの定理を書く。
+
+$$
+(\cos\theta + i\sin\theta)^3 = \cos 3\theta + i\sin 3\theta
+$$
+
+左辺を展開する。まず 2 乗を計算する。$i^2 = -1$ を使う。
+
+$$
+(\cos\theta + i\sin\theta)^2 = \cos^2\theta + 2i\sin\theta\cos\theta + i^2\sin^2\theta = (\cos^2\theta - \sin^2\theta) + i(2\sin\theta\cos\theta)
+$$
+
+2 乗の結果に、もう 1 つ $\cos\theta + i\sin\theta$ を掛ける。
+
+$$
+(\cos\theta + i\sin\theta)^3 = \left[(\cos^2\theta - \sin^2\theta) + i(2\sin\theta\cos\theta)\right](\cos\theta + i\sin\theta)
+$$
+
+展開し、実部と虚部に整理する。末尾で $i^2 = -1$ を使う。
+
+$$
+= (\cos^3\theta - 3\sin^2\theta\cos\theta) + i(3\sin\theta\cos^2\theta - \sin^3\theta)
+$$
+
+左辺の実部を、右辺 $\cos 3\theta + i\sin 3\theta$ の実部と比べる。
+
+$$
+\cos 3\theta = \cos^3\theta - 3\sin^2\theta\cos\theta
+$$
+
+$\sin^2\theta = 1 - \cos^2\theta$ を代入し、$\cos\theta$ だけの式にする。
+
+$$
+\cos 3\theta = \cos^3\theta - 3(1 - \cos^2\theta)\cos\theta = 4\cos^3\theta - 3\cos\theta
+$$
+
+### 例題 4
+
+$8i$ の $3$ 乗根をすべて求めよ。
+
+**解法.** $8i$ を極形式に直す。絶対値は $s = 8$、偏角は $\phi = \dfrac{\pi}{2}$ である。
+
+$$
+8i = 8\left(\cos\frac{\pi}{2} + i\sin\frac{\pi}{2}\right)
+$$
+
+$n = 3$ の $n$ 乗根の公式を当てる。絶対値は $s^{1/3} = 8^{1/3} = 2$ である。偏角は次の式で、$k = 0, 1, 2$ を代入する。
+
+$$
+\theta = \frac{\frac{\pi}{2} + 2\pi k}{3}
+$$
+
+$k$ ごとに偏角と解を求める。
+
+| $k$ | 偏角 $\theta$     | 解 $z_k$                                                                 |
+| --- | ----------------- | ------------------------------------------------------------------------ |
+| $0$ | $\dfrac{\pi}{6}$  | $2\left(\cos\frac{\pi}{6} + i\sin\frac{\pi}{6}\right) = \sqrt{3} + i$    |
+| $1$ | $\dfrac{5\pi}{6}$ | $2\left(\cos\frac{5\pi}{6} + i\sin\frac{5\pi}{6}\right) = -\sqrt{3} + i$ |
+| $2$ | $\dfrac{3\pi}{2}$ | $2\left(\cos\frac{3\pi}{2} + i\sin\frac{3\pi}{2}\right) = -2i$           |
+
+$8i$ の $3$ 乗根は、$\sqrt{3} + i$、$-\sqrt{3} + i$、$-2i$ の 3 個である。
+
+## 演習問題
+
+問題ごとに解答を畳んである。「解答を表示」を開くと確認できる。
+
+### 問題 1
+
+$(1 - i)^{10}$ を計算せよ。
+
+<details>
+<summary>解答を表示</summary>
+
+$1 - i$ を極形式に直す。絶対値は $\sqrt{1^2 + (-1)^2} = \sqrt{2}$ で、偏角が $-\dfrac{\pi}{4}$ である。
+
+$$
+1 - i = \sqrt{2}\left(\cos\left(-\frac{\pi}{4}\right) + i\sin\left(-\frac{\pi}{4}\right)\right)
+$$
+
+絶対値を $10$ 乗し、偏角を $10$ 倍する。
+
+$$
+(1 - i)^{10} = (\sqrt{2})^{10}\left(\cos\left(-\frac{10\pi}{4}\right) + i\sin\left(-\frac{10\pi}{4}\right)\right) = 32\left(\cos\left(-\frac{5\pi}{2}\right) + i\sin\left(-\frac{5\pi}{2}\right)\right)
+$$
+
+偏角 $-\dfrac{5\pi}{2}$ に $2\pi$ を足すと $-\dfrac{\pi}{2}$ になり、同じ向きを表す。$\cos\left(-\dfrac{\pi}{2}\right) = 0$、$\sin\left(-\dfrac{\pi}{2}\right) = -1$ を使う。
+
+$$
+(1 - i)^{10} = 32\,(0 - i) = -32i
+$$
+
+</details>
+
+### 問題 2
+
+$(-1 + \sqrt{3}\,i)^4$ を計算せよ。
+
+<details>
+<summary>解答を表示</summary>
+
+$-1 + \sqrt{3}\,i$ を極形式に直す。絶対値は $\sqrt{(-1)^2 + (\sqrt{3})^2} = \sqrt{4} = 2$ である。偏角は $\cos\theta = -\dfrac{1}{2}$、$\sin\theta = \dfrac{\sqrt{3}}{2}$ より $\dfrac{2\pi}{3}$ である。
+
+$$
+-1 + \sqrt{3}\,i = 2\left(\cos\frac{2\pi}{3} + i\sin\frac{2\pi}{3}\right)
+$$
+
+絶対値を $4$ 乗し、偏角を $4$ 倍する。
+
+$$
+(-1 + \sqrt{3}\,i)^4 = 2^4\left(\cos\frac{8\pi}{3} + i\sin\frac{8\pi}{3}\right) = 16\left(\cos\frac{8\pi}{3} + i\sin\frac{8\pi}{3}\right)
+$$
+
+偏角 $\dfrac{8\pi}{3}$ から $2\pi$ を引くと $\dfrac{2\pi}{3}$ になり、同じ向きを表す。$\cos\dfrac{2\pi}{3} = -\dfrac{1}{2}$、$\sin\dfrac{2\pi}{3} = \dfrac{\sqrt{3}}{2}$ を使う。
+
+$$
+(-1 + \sqrt{3}\,i)^4 = 16\left(-\frac{1}{2} + \frac{\sqrt{3}}{2}i\right) = -8 + 8\sqrt{3}\,i
+$$
+
+</details>
+
+### 問題 3
+
+$1$ の $6$ 乗根をすべて求めよ。直交形 $a + bi$ で表せ。
+
+<details>
+<summary>解答を表示</summary>
+
+$1$ の $6$ 乗根は $\zeta_k = \cos\dfrac{2\pi k}{6} + i\sin\dfrac{2\pi k}{6}$（$k = 0, 1, \dots, 5$）である。約分すると $\zeta_k = \cos\dfrac{\pi k}{3} + i\sin\dfrac{\pi k}{3}$ になる。$k$ ごとに直交形を求める。
+
+| $k$ | 偏角 $\dfrac{\pi k}{3}$ | 直交形 $\zeta_k$                       |
+| --- | ----------------------- | -------------------------------------- |
+| $0$ | $0$                     | $1$                                    |
+| $1$ | $\dfrac{\pi}{3}$        | $\dfrac{1}{2} + \dfrac{\sqrt{3}}{2}i$  |
+| $2$ | $\dfrac{2\pi}{3}$       | $-\dfrac{1}{2} + \dfrac{\sqrt{3}}{2}i$ |
+| $3$ | $\pi$                   | $-1$                                   |
+| $4$ | $\dfrac{4\pi}{3}$       | $-\dfrac{1}{2} - \dfrac{\sqrt{3}}{2}i$ |
+| $5$ | $\dfrac{5\pi}{3}$       | $\dfrac{1}{2} - \dfrac{\sqrt{3}}{2}i$  |
+
+6 個の解は、単位円上の正六角形の頂点に等間隔で並ぶ。
+
+</details>
+
+### 問題 4
+
+$-8$ の $3$ 乗根をすべて求めよ。直交形で表せ。
+
+<details>
+<summary>解答を表示</summary>
+
+$-8$ を極形式に直す。絶対値は $s = 8$、偏角は $\phi = \pi$ である。
+
+$$
+-8 = 8(\cos\pi + i\sin\pi)
+$$
+
+$n = 3$ の公式を当てる。絶対値は $8^{1/3} = 2$ である。偏角は $\theta = \dfrac{\pi + 2\pi k}{3}$ で、$k = 0, 1, 2$ を代入する。
+
+| $k$ | 偏角 $\theta$     | 解 $z_k$                                                                   |
+| --- | ----------------- | -------------------------------------------------------------------------- |
+| $0$ | $\dfrac{\pi}{3}$  | $2\left(\cos\frac{\pi}{3} + i\sin\frac{\pi}{3}\right) = 1 + \sqrt{3}\,i$   |
+| $1$ | $\pi$             | $2(\cos\pi + i\sin\pi) = -2$                                               |
+| $2$ | $\dfrac{5\pi}{3}$ | $2\left(\cos\frac{5\pi}{3} + i\sin\frac{5\pi}{3}\right) = 1 - \sqrt{3}\,i$ |
+
+$-8$ の $3$ 乗根は、$1 + \sqrt{3}\,i$、$-2$、$1 - \sqrt{3}\,i$ の 3 個である。実数の $3$ 乗根 $-2$ を含む。
+
+</details>
+
+### 問題 5
+
+$n = 2$ のド・モアブルの定理 $(\cos\theta + i\sin\theta)^2 = \cos 2\theta + i\sin 2\theta$ から、正弦と余弦の $2$ 倍角の公式を導け。
+
+<details>
+<summary>解答を表示</summary>
+
+左辺を展開する。$i^2 = -1$ を使う。
+
+$$
+(\cos\theta + i\sin\theta)^2 = \cos^2\theta + 2i\sin\theta\cos\theta + i^2\sin^2\theta = (\cos^2\theta - \sin^2\theta) + i(2\sin\theta\cos\theta)
+$$
+
+右辺 $\cos 2\theta + i\sin 2\theta$ と、実部・虚部をそれぞれ比べる。
+
+- 実部：$\cos 2\theta = \cos^2\theta - \sin^2\theta$
+- 虚部：$\sin 2\theta = 2\sin\theta\cos\theta$
+
+2 つの式が、$2$ 倍角の公式である。
+
+</details>
+
+## まとめ
+
+本章は、極形式の積の規則を繰り返してド・モアブルの定理を導き、累乗と $n$ 乗根へ応用した。要点を振り返る。
+
+- **ド・モアブルの定理**：$(\cos\theta + i\sin\theta)^n = \cos n\theta + i\sin n\theta$ が、すべての整数 $n$ で成り立つ。自然数では数学的帰納法、負の整数では逆数の極形式で証明した。
+- **複素数の累乗**：$z = r(\cos\theta + i\sin\theta)$ の $n$ 乗は、絶対値 $r^n$、偏角 $n\theta$ である。
+- **$n$ 乗根**：$w \ne 0$ の $n$ 乗根は、絶対値 $\lvert w \rvert^{1/n}$ をそろえ、偏角を $\dfrac{2\pi}{n}$ ずつずらした $n$ 個である。
+- **$1$ の $n$ 乗根**：単位円上に並ぶ正 $n$ 角形の頂点である。$1$ の点を頂点の 1 つに含む。
+
+ド・モアブルの定理で、複素数カテゴリ（M-CPX）の 4 章を終える。複素数を、定義から四則演算・複素平面・絶対値・極形式・累乗・$n$ 乗根まで、一通り扱えるようになった。
+
+極形式とド・モアブルの定理は、後の章で繰り返し現れる。
+
+- **オイラーの公式**：級数を使うと、極形式の $\cos\theta + i\sin\theta$ は指数関数 $e^{i\theta}$ と一致する。
+- **指数法則への言い換え**：等式が成り立つと、ド・モアブルの定理は指数法則 $(e^{i\theta})^n = e^{in\theta}$ の言い換えになる。
+- **複素解析とフーリエ解析の土台**：複素関数の微分積分や、波を三角関数の和で表す解析でも、極形式と $n$ 乗根が土台になる。
+
+## 参考文献
+
+ド・モアブルの定理と複素数の累乗・$n$ 乗根をさらに学ぶための一次資料を挙げる。
+
+- 高木貞治『解析概論（改訂第 3 版）』岩波書店、1983 年。複素数の累乗と $n$ 乗根を、極形式の幾何とともに基礎から述べた古典的な教科書である。
+- T. Needham, _Visual Complex Analysis_, Oxford University Press, 1997. ド・モアブルの定理と $1$ の $n$ 乗根を、回転と正多角形の図形的な直観で描く入門書である。
+
+[^name]: 定理の名は、フランス出身の数学者 Abraham de Moivre（アブラーム・ド・モアブル、1667–1754）に由来する。三角関数の累乗と多倍角を、複素数を介して結ぶ仕事で知られる。
+
+[^realpow]: 指数法則 $(ab)^n = a^n b^n$ は、$a = r$、$b = \cos\theta + i\sin\theta$ に対して使える。複素数の積は、第 1 章で確かめたとおり交換法則・結合法則を満たすため、実数と同じ指数法則が整数の指数で成り立つ。

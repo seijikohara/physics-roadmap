@@ -1,0 +1,526 @@
+---
+title: 複素数の極形式
+description: 複素数 z=a+bi を、原点からの距離 r=|z|（絶対値）と実軸からの角 θ=arg z（偏角）で表す極形式 z=r(cosθ+i sinθ) を導入する。直交形との相互変換、偏角の多価性と主値、積・商の絶対値と偏角の規則を加法定理から導き、積が回転と拡大・縮小を表す幾何的意味を自己完結で示す。
+sidebar:
+  order: 3
+---
+
+import FunctionGraph from "../../../../components/FunctionGraph";
+
+## 前提
+
+本章の前提は、次の 3 つである。
+
+- [複素平面と絶対値](../complex-plane-and-absolute-value/)：複素平面・絶対値 $\lvert z \rvert = \sqrt{a^2 + b^2}$・共役 $\overline{z}$・$\lvert z \rvert^2 = z\overline{z}$ を使う。
+- [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：単位円による $\cos\theta$・$\sin\theta$ の定義、弧度法、周期性、偶奇性を使う。
+- [加法定理](../../functions/addition-theorems/)：正弦・余弦の加法定理を、積・商の偏角の規則の導出に使う。
+
+複素数カテゴリの第 3 章である。第 2 章では複素数 $z = a + bi$ を、原点からの距離 $\lvert z \rvert$ と座標 $(a, b)$ で捉えた。本章では距離に角を組み合わせ、複素数を「距離」と「角」の 2 つの量で表す。表し方を極形式と呼ぶ。極形式に直すと、積と商の図形的意味が明快になる。
+
+## 学習目標
+
+本章を読むと、次の概念と記号を使えるようになる。
+
+- **偏角** $\arg z$ と、複素数の**極形式** $z = r(\cos\theta + i\sin\theta)$
+- 直交形 $a + bi$ と極形式の相互変換
+- 偏角の**多価性**（$2\pi$ の不定性）と、**主値** $\operatorname{Arg} z$
+- 積の規則 $\lvert z_1 z_2 \rvert = \lvert z_1 \rvert \lvert z_2 \rvert$・$\arg(z_1 z_2) = \arg z_1 + \arg z_2$
+- 商の規則 $\lvert z_1/z_2 \rvert = \lvert z_1 \rvert/\lvert z_2 \rvert$・$\arg(z_1/z_2) = \arg z_1 - \arg z_2$
+- 積が「回転と拡大・縮小」を表す幾何的意味
+
+## 極形式
+
+### 偏角の導入
+
+複素数 $z = a + bi$ は、複素平面上の点 $(a, b)$ に対応する。第 2 章では、原点 $\mathrm{O}$ から点 $z$ までの距離を絶対値 $\lvert z \rvert$ と定めた。点 $z$ の位置は、距離だけでは決まらない。原点を中心とする同じ半径の円周上に、点が無数に並ぶからである。点を 1 つに定めるには、距離に加えて向きが要る。
+
+向きを表す量として、角を導入する。$z \ne 0$ とする。実軸の正の向きから、原点と点 $z$ を結ぶ動径まで測った角を、$z$ の**偏角**と呼ぶ。偏角の記号には $\arg z$ を使う[^arg]。
+
+> **偏角の定義**：$z \ne 0$ のとき、実軸の正の向きから、原点と点 $z$ を結ぶ動径までの角を、$z$ の偏角と呼び $\arg z$ と書く。角は弧度法で測り、反時計回りを正の向きとする。
+
+偏角の単位には、三角関数の章と同じ弧度法を使う。反時計回りを正、時計回りを負とする。$z = 0$ は原点に重なり、動径の向きが定まらない。よって $z = 0$ の偏角は定義しない。
+
+### 極形式の定義
+
+絶対値 $r = \lvert z \rvert$ と偏角 $\theta = \arg z$ を使うと、点 $z$ の座標 $(a, b)$ を $r$ と $\theta$ で表せる。前提の単位円の定義により、半径 $1$ の円周上で角 $\theta$ の動径の先端は $(\cos\theta,\ \sin\theta)$ にある。点 $z$ は半径 $r$ の円周上にあるため、座標は $r$ 倍の $(r\cos\theta,\ r\sin\theta)$ になる。
+
+$$
+a = r\cos\theta, \qquad b = r\sin\theta
+$$
+
+2 つの式を $z = a + bi$ に代入する。
+
+$$
+z = r\cos\theta + (r\sin\theta)i = r(\cos\theta + i\sin\theta)
+$$
+
+得られた表し方を、複素数の**極形式**と呼ぶ。
+
+> **極形式**：$z \ne 0$ の複素数は、絶対値 $r = \lvert z \rvert$（$r > 0$）と偏角 $\theta = \arg z$ を使って
+>
+> $$
+> z = r(\cos\theta + i\sin\theta)
+> $$
+>
+> と表せる。$a + bi$ の形を**直交形**と呼び、極形式と区別する。
+
+次の図は、$z = 1 + \sqrt{3}\,i$ の極形式を表す。絶対値は $r = \lvert z \rvert = \sqrt{1^2 + (\sqrt{3})^2} = \sqrt{4} = 2$、偏角は $\theta = \dfrac{\pi}{3}$ である。
+
+<figure>
+  <FunctionGraph
+    xMin={-1}
+    xMax={3}
+    yMin={-1}
+    yMax={3}
+    equalScale={true}
+    xLabel="\mathrm{Re}"
+    yLabel="\mathrm{Im}"
+    vectors={[{ from: { x: 0, y: 0 }, to: { x: 1, y: 1.732 }, label: "r", color: "#ef4444" }]}
+    parametrics={[
+      {
+        fn: (t) => ({ x: 0.5 * Math.cos(t), y: 0.5 * Math.sin(t) }),
+        tMin: 0,
+        tMax: Math.PI / 3,
+        samples: 48,
+        color: "#f59e0b",
+        label: "\\theta",
+      },
+    ]}
+    segments={[{ from: { x: 1, y: 1.732 }, to: { x: 1, y: 0 }, dashed: true }]}
+    points={[
+      { x: 0, y: 0, label: "O" },
+      { x: 1, y: 1.732, label: "z = 1+\\sqrt{3}\\,i", highlight: true },
+      { x: 1, y: 0, open: true },
+    ]}
+    ariaLabel="複素平面で z=1+√3 i の極形式。原点から点 (1, 1.732) への赤い動径が長さ r=2 を表す。原点近くの橙の弧が偏角 θ=π/3 を表す。点から実軸へ下ろした破線が虚部 b=√3、実軸上の足が実部 a=1 にあたる。"
+  />
+  <figcaption>
+    複素数 $z = 1 + \sqrt{3}\,i$ の極形式である。赤い動径の長さが絶対値 $r = 2$、橙の弧が偏角 $\theta =
+    \dfrac{\pi}{3}$ を表す。実部 $a = r\cos\theta = 1$、虚部 $b = r\sin\theta = \sqrt{3}$ である。
+  </figcaption>
+</figure>
+
+### 直交形と極形式の相互変換
+
+直交形 $a + bi$ と極形式 $r(\cos\theta + i\sin\theta)$ は、たがいに変換できる。
+
+**極形式から直交形へ.** $a = r\cos\theta$、$b = r\sin\theta$ を計算する。三角関数の値を代入し、実部と虚部を求める。
+
+**直交形から極形式へ.** $z = a + bi$（$z \ne 0$）について、絶対値と偏角を求める。
+
+- 絶対値は $r = \sqrt{a^2 + b^2}$ で計算する。
+- 偏角 $\theta$ は、次の 2 つの式を同時に満たす角として定める。
+
+$$
+\cos\theta = \frac{a}{r}, \qquad \sin\theta = \frac{b}{r}
+$$
+
+偏角を求めるとき、$\cos\theta$ と $\sin\theta$ の符号の両方を見る。$\tan\theta = \dfrac{b}{a}$ だけでは、点が実軸の上側にあるか下側にあるかを区別できないからである。例として $1 + i$ と $-1 - i$ は、$\tan\theta = 1$ を共有しながら偏角が異なる。
+
+| 複素数 $z$ | $\tan\theta$ | $\cos\theta$ の符号 | $\sin\theta$ の符号 | 主値の偏角         |
+| ---------- | ------------ | ------------------- | ------------------- | ------------------ |
+| $1 + i$    | $1$          | 正                  | 正                  | $\dfrac{\pi}{4}$   |
+| $-1 - i$   | $1$          | 負                  | 負                  | $-\dfrac{3\pi}{4}$ |
+
+表のとおり、$\cos\theta$ と $\sin\theta$ の符号を見れば、点のある向きが定まる。
+
+具体例として $z = -1 + i$ を極形式に直す。絶対値を計算する。
+
+$$
+r = \sqrt{(-1)^2 + 1^2} = \sqrt{2}
+$$
+
+偏角の条件式に代入する。
+
+$$
+\cos\theta = \frac{-1}{\sqrt{2}}, \qquad \sin\theta = \frac{1}{\sqrt{2}}
+$$
+
+$\cos\theta < 0$ かつ $\sin\theta > 0$ より、点は実軸の負の側かつ虚軸の正の側にある。角は $\theta = \dfrac{3\pi}{4}$ である。よって極形式は次のとおりである。
+
+$$
+z = \sqrt{2}\left(\cos\frac{3\pi}{4} + i\sin\frac{3\pi}{4}\right)
+$$
+
+## 偏角の多価性と主値
+
+偏角には、絶対値にはない性質がある。**偏角は 1 つに定まらない。**
+
+理由を述べる。三角関数は周期 $2\pi$ を持つ。任意の整数 $n$ について、次の等式が成り立つ。
+
+$$
+\cos(\theta + 2\pi n) = \cos\theta, \qquad \sin(\theta + 2\pi n) = \sin\theta
+$$
+
+角 $\theta$ に $2\pi$ の整数倍を足しても、動径の向きは変わらない。反時計回りに 1 周すると、元の向きへ戻るからである。よって $\theta$ が偏角なら、$\theta + 2\pi n$ もすべて同じ点の偏角になる。
+
+> **偏角の多価性**：複素数 $z \ne 0$ の偏角は、$2\pi$ の整数倍だけの不定性を持つ。$\theta$ が偏角の 1 つなら、任意の整数 $n$ について $\theta + 2\pi n$ も偏角である。
+
+多価性のため、偏角の等式は「$2\pi$ の整数倍の差を許して等しい」という意味で読む。値を 1 つに固定する場合は、範囲を定めて代表を選ぶ。範囲 $-\pi < \theta \le \pi$ に入る偏角を、**偏角の主値**と呼ぶ。主値の記号には $\operatorname{Arg} z$ を使う[^principal]。$\operatorname{Arg}$ は頭文字が大文字であり、多価の $\arg$ と書き分けて主値を表す。
+
+| 記号                   | 意味                                                 | 値の数 |
+| ---------------------- | ---------------------------------------------------- | ------ |
+| $\arg z$               | 偏角全体（$2\pi$ の整数倍だけ異なる角の集まり）      | 無数   |
+| $\operatorname{Arg} z$ | 主値（$-\pi < \operatorname{Arg} z \le \pi$ の代表） | 1 つ   |
+
+例として $z = -1 + i$ の主値は $\operatorname{Arg} z = \dfrac{3\pi}{4}$ である。偏角全体は $\dfrac{3\pi}{4} + 2\pi n$（$n$ は整数）と書ける。本章では、特に断らない限り偏角を主値で表す。
+
+## 積と商の極形式
+
+極形式の威力は、積と商で現れる。直交形の積は展開の計算が要るが、極形式の積は絶対値と偏角だけで書ける。
+
+### 積の極形式
+
+2 つの複素数を極形式で表す。
+
+$$
+z_1 = r_1(\cos\theta_1 + i\sin\theta_1), \qquad z_2 = r_2(\cos\theta_2 + i\sin\theta_2)
+$$
+
+積 $z_1 z_2$ を計算する。まず絶対値どうし、三角関数どうしを分ける。
+
+$$
+z_1 z_2 = r_1 r_2 (\cos\theta_1 + i\sin\theta_1)(\cos\theta_2 + i\sin\theta_2)
+$$
+
+後ろの括弧の積を、$i^2 = -1$ を使って展開する。
+
+$$
+(\cos\theta_1 + i\sin\theta_1)(\cos\theta_2 + i\sin\theta_2) = \cos\theta_1\cos\theta_2 + i\cos\theta_1\sin\theta_2 + i\sin\theta_1\cos\theta_2 + i^2\sin\theta_1\sin\theta_2
+$$
+
+実部と虚部に整理する。末尾の項で $i^2 = -1$ を使う。
+
+$$
+= (\cos\theta_1\cos\theta_2 - \sin\theta_1\sin\theta_2) + i(\sin\theta_1\cos\theta_2 + \cos\theta_1\sin\theta_2)
+$$
+
+実部と虚部に、加法定理を当てる。
+
+- 余弦の加法定理：$\cos\theta_1\cos\theta_2 - \sin\theta_1\sin\theta_2 = \cos(\theta_1 + \theta_2)$
+- 正弦の加法定理：$\sin\theta_1\cos\theta_2 + \cos\theta_1\sin\theta_2 = \sin(\theta_1 + \theta_2)$
+
+代入すると、後ろの括弧の積は角 $\theta_1 + \theta_2$ の極形式になる。
+
+$$
+z_1 z_2 = r_1 r_2 \left(\cos(\theta_1 + \theta_2) + i\sin(\theta_1 + \theta_2)\right)
+$$
+
+結果は、絶対値が $r_1 r_2$、偏角が $\theta_1 + \theta_2$ の複素数である。
+
+> **積の規則**：複素数の積では、絶対値は積、偏角は和になる。
+>
+> $$
+> \lvert z_1 z_2 \rvert = \lvert z_1 \rvert \lvert z_2 \rvert, \qquad \arg(z_1 z_2) = \arg z_1 + \arg z_2
+> $$
+
+偏角の等式は、$2\pi$ の整数倍の差を許して成り立つ。主値どうしの和が範囲 $-\pi < \theta \le \pi$ を外れると、主値は和から $2\pi$ ずれる場合があるからである。
+
+### 商の極形式
+
+商の規則を導く。下ごしらえとして、逆数 $\dfrac{1}{z_2}$ の極形式を求める（$z_2 \ne 0$）。第 2 章の関係式 $z_2\overline{z_2} = \lvert z_2 \rvert^2$ を使い、分母を実数にする。
+
+$$
+\frac{1}{z_2} = \frac{\overline{z_2}}{z_2\overline{z_2}} = \frac{\overline{z_2}}{\lvert z_2 \rvert^2}
+$$
+
+共役 $\overline{z_2}$ を極形式で表す。$z_2 = r_2(\cos\theta_2 + i\sin\theta_2)$ の虚部の符号を変えて、$\overline{z_2} = r_2(\cos\theta_2 - i\sin\theta_2)$ である。三角関数の偶奇性 $\cos(-\theta_2) = \cos\theta_2$・$\sin(-\theta_2) = -\sin\theta_2$ を使うと、共役は角 $-\theta_2$ の極形式になる。
+
+$$
+\overline{z_2} = r_2\left(\cos(-\theta_2) + i\sin(-\theta_2)\right)
+$$
+
+分母は $\lvert z_2 \rvert^2 = r_2^2$ である。代入して約分する。
+
+$$
+\frac{1}{z_2} = \frac{r_2\left(\cos(-\theta_2) + i\sin(-\theta_2)\right)}{r_2^2} = \frac{1}{r_2}\left(\cos(-\theta_2) + i\sin(-\theta_2)\right)
+$$
+
+逆数 $\dfrac{1}{z_2}$ は、絶対値 $\dfrac{1}{r_2}$、偏角 $-\theta_2$ の複素数である。逆数の極形式を使い、次の手順で商を求める。
+
+1. 商 $\dfrac{z_1}{z_2}$ を、積 $z_1 \cdot \dfrac{1}{z_2}$ とみなす。
+2. 角 $\theta_1$ と $-\theta_2$ に、積の規則を当てる。
+3. 絶対値と偏角は、それぞれ積 $\dfrac{r_1}{r_2}$ と和 $\theta_1 - \theta_2$ になる。
+
+$$
+\frac{z_1}{z_2} = \frac{r_1}{r_2}\left(\cos(\theta_1 - \theta_2) + i\sin(\theta_1 - \theta_2)\right)
+$$
+
+> **商の規則**：複素数の商では、絶対値は商、偏角は差になる（$z_2 \ne 0$）。
+>
+> $$
+> \left\lvert \frac{z_1}{z_2} \right\rvert = \frac{\lvert z_1 \rvert}{\lvert z_2 \rvert}, \qquad \arg \frac{z_1}{z_2} = \arg z_1 - \arg z_2
+> $$
+
+商の偏角の等式も、積と同じく $2\pi$ の整数倍の差を許して成り立つ。主値どうしの差が範囲 $-\pi < \theta \le \pi$ を外れると、主値は差から $2\pi$ ずれる場合があるからである。
+
+積と商の規則を表にまとめる。
+
+| 演算           | 絶対値                                  | 偏角                  |
+| -------------- | --------------------------------------- | --------------------- |
+| 積 $z_1 z_2$   | $\lvert z_1 \rvert \lvert z_2 \rvert$   | $\arg z_1 + \arg z_2$ |
+| 商 $z_1 / z_2$ | $\lvert z_1 \rvert / \lvert z_2 \rvert$ | $\arg z_1 - \arg z_2$ |
+
+## 積の幾何的意味：回転と拡大・縮小
+
+積の規則は、複素数の積に明快な図形的意味を与える。複素数 $z$ に $z_2 = r_2(\cos\theta_2 + i\sin\theta_2)$ を掛ける操作を考える。積の規則より、結果 $z z_2$ は次の 2 つの変化を受ける。
+
+- **偏角が $\theta_2$ だけ増える**：点 $z$ を、原点を中心として角 $\theta_2$ だけ反時計回りに回す。
+- **絶対値が $r_2$ 倍になる**：原点から点までの距離を $r_2$ 倍に拡大・縮小する。
+
+> **積の幾何的意味**：複素数 $z_2 = r_2(\cos\theta_2 + i\sin\theta_2)$ を掛ける操作は、原点を中心とする角 $\theta_2$ の回転と、$r_2$ 倍の拡大・縮小を合わせた変換である。
+
+特別な場合を 2 つ挙げる。
+
+- $r_2 = 1$ のとき、絶対値は変わらない。掛け算は純粋な回転になる。例として虚数単位 $i = \cos\dfrac{\pi}{2} + i\sin\dfrac{\pi}{2}$ は、絶対値 $1$、偏角 $\dfrac{\pi}{2}$ である。$i$ を掛ける操作は、$90^\circ$ の回転にあたる。
+- $\theta_2 = 0$ のとき、偏角は変わらない。掛け算は正の実数 $r_2$ による拡大・縮小だけになる。
+
+次の図は、$z_1 = \sqrt{3} + i$ と $z_2 = 1 + i$ の積を表す。2 つを極形式に直す。
+
+$$
+z_1 = 2\left(\cos\frac{\pi}{6} + i\sin\frac{\pi}{6}\right), \qquad z_2 = \sqrt{2}\left(\cos\frac{\pi}{4} + i\sin\frac{\pi}{4}\right)
+$$
+
+積 $z_1 z_2$ は、絶対値 $2\sqrt{2}$、偏角 $\dfrac{\pi}{6} + \dfrac{\pi}{4} = \dfrac{5\pi}{12}$ になる。
+
+<figure>
+  <FunctionGraph
+    xMin={-1}
+    xMax={3}
+    yMin={-1}
+    yMax={3.5}
+    equalScale={true}
+    xLabel="\mathrm{Re}"
+    yLabel="\mathrm{Im}"
+    vectors={[
+      { from: { x: 0, y: 0 }, to: { x: 1.732, y: 1 }, label: "z_1" },
+      { from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, label: "z_2", color: "#f59e0b" },
+      { from: { x: 0, y: 0 }, to: { x: 0.732, y: 2.732 }, label: "z_1 z_2", color: "#ef4444" },
+    ]}
+    points={[
+      { x: 0, y: 0 },
+      { x: 0.732, y: 2.732, highlight: true },
+    ]}
+    ariaLabel="複素平面での積。原点から z1=√3+i の点 (1.732,1) へ青い矢印、z2=1+i の点 (1,1) へ橙の矢印が向かう。積 z1 z2 は赤い矢印で点 (0.732,2.732) へ向かい、青より長く、より上向きである。積の偏角は z1 と z2 の偏角の和、絶対値は積になる。"
+  />
+  <figcaption>
+    積の回転と拡大の図である。偏角 $\frac{\pi}{6}$・長さ $2$ の青い $z_1$ に、偏角 $\frac{\pi}{4}$・長さ $\sqrt{2}$ の橙の
+    $z_2$ を掛ける。結果は偏角 $\frac{5\pi}{12}$・長さ $2\sqrt{2}$ の赤い $z_1 z_2$ になる。偏角どうしの和が積の偏角、長さ
+    どうしの積が積の長さである。
+  </figcaption>
+</figure>
+
+## 例題
+
+### 例題 1
+
+複素数 $z = -2 - 2i$ を極形式に直せ。偏角は主値で表せ。
+
+**解法.** 絶対値を計算する。
+
+$$
+r = \sqrt{(-2)^2 + (-2)^2} = \sqrt{8} = 2\sqrt{2}
+$$
+
+偏角の条件式に代入する。
+
+$$
+\cos\theta = \frac{-2}{2\sqrt{2}} = -\frac{1}{\sqrt{2}}, \qquad \sin\theta = \frac{-2}{2\sqrt{2}} = -\frac{1}{\sqrt{2}}
+$$
+
+$\cos\theta < 0$ かつ $\sin\theta < 0$ より、点は実軸の負の側かつ虚軸の負の側にある。主値の範囲 $-\pi < \theta \le \pi$ で角を選ぶと $\theta = -\dfrac{3\pi}{4}$ である。よって極形式は次のとおりである。
+
+$$
+z = 2\sqrt{2}\left(\cos\left(-\frac{3\pi}{4}\right) + i\sin\left(-\frac{3\pi}{4}\right)\right)
+$$
+
+### 例題 2
+
+極形式 $z = 4\left(\cos\dfrac{2\pi}{3} + i\sin\dfrac{2\pi}{3}\right)$ を直交形 $a + bi$ に直せ。
+
+**解法.** $a = r\cos\theta$、$b = r\sin\theta$ を計算する。$\cos\dfrac{2\pi}{3} = -\dfrac{1}{2}$、$\sin\dfrac{2\pi}{3} = \dfrac{\sqrt{3}}{2}$ を使う。
+
+$$
+a = 4 \cdot \left(-\frac{1}{2}\right) = -2, \qquad b = 4 \cdot \frac{\sqrt{3}}{2} = 2\sqrt{3}
+$$
+
+よって直交形は $z = -2 + 2\sqrt{3}\,i$ である。
+
+### 例題 3
+
+次の 2 つの複素数を考える。
+
+$$
+z_1 = 2\left(\cos\frac{\pi}{3} + i\sin\frac{\pi}{3}\right), \qquad z_2 = 3\left(\cos\frac{\pi}{6} + i\sin\frac{\pi}{6}\right)
+$$
+
+積 $z_1 z_2$ と商 $\dfrac{z_1}{z_2}$ を極形式で求めよ。
+
+**解法.** 積の規則を使う。積 $z_1 z_2$ は、絶対値 $2 \cdot 3 = 6$、偏角 $\dfrac{\pi}{3} + \dfrac{\pi}{6} = \dfrac{\pi}{2}$ になる。
+
+$$
+z_1 z_2 = 6\left(\cos\frac{\pi}{2} + i\sin\frac{\pi}{2}\right)
+$$
+
+商の規則を使う。商 $\dfrac{z_1}{z_2}$ は、絶対値 $\dfrac{2}{3}$、偏角 $\dfrac{\pi}{3} - \dfrac{\pi}{6} = \dfrac{\pi}{6}$ になる。
+
+$$
+\frac{z_1}{z_2} = \frac{2}{3}\left(\cos\frac{\pi}{6} + i\sin\frac{\pi}{6}\right)
+$$
+
+### 例題 4
+
+複素数 $z = 2 + i$ に虚数単位 $i$ を掛けた点を求め、図形的意味を述べよ。
+
+**解法.** 直交形で積を計算する。$i^2 = -1$ を使う。
+
+$$
+i z = i(2 + i) = 2i + i^2 = -1 + 2i
+$$
+
+虚数単位は $i = \cos\dfrac{\pi}{2} + i\sin\dfrac{\pi}{2}$ で、絶対値 $1$、偏角 $\dfrac{\pi}{2}$ である。$i$ を掛ける操作は、絶対値を変えず偏角を $\dfrac{\pi}{2}$ だけ増やす。すなわち点 $z = 2 + i$ を、原点を中心として $90^\circ$ 反時計回りで回した点が $-1 + 2i$ である。
+
+## 演習問題
+
+問題ごとに解答を畳んである。「解答を表示」を開くと確認できる。
+
+### 問題 1
+
+複素数 $z = \sqrt{3} - i$ を極形式に直せ。偏角は主値で表せ。
+
+<details>
+<summary>解答を表示</summary>
+
+絶対値を計算する。
+
+$$
+r = \sqrt{(\sqrt{3})^2 + (-1)^2} = \sqrt{4} = 2
+$$
+
+偏角の条件式に代入する。
+
+$$
+\cos\theta = \frac{\sqrt{3}}{2}, \qquad \sin\theta = -\frac{1}{2}
+$$
+
+$\cos\theta > 0$ かつ $\sin\theta < 0$ より、点は実軸の正の側かつ虚軸の負の側にある。主値の範囲で角は $\theta = -\dfrac{\pi}{6}$ である。
+
+$$
+z = 2\left(\cos\left(-\frac{\pi}{6}\right) + i\sin\left(-\frac{\pi}{6}\right)\right)
+$$
+
+</details>
+
+### 問題 2
+
+極形式 $z = 6\left(\cos\dfrac{5\pi}{6} + i\sin\dfrac{5\pi}{6}\right)$ を直交形 $a + bi$ に直せ。
+
+<details>
+<summary>解答を表示</summary>
+
+$\cos\dfrac{5\pi}{6} = -\dfrac{\sqrt{3}}{2}$、$\sin\dfrac{5\pi}{6} = \dfrac{1}{2}$ を使う。
+
+$$
+a = 6 \cdot \left(-\frac{\sqrt{3}}{2}\right) = -3\sqrt{3}, \qquad b = 6 \cdot \frac{1}{2} = 3
+$$
+
+よって直交形は $z = -3\sqrt{3} + 3i$ である。
+
+</details>
+
+### 問題 3
+
+次の 2 つの複素数を考える。
+
+$$
+z_1 = \sqrt{2}\left(\cos\frac{\pi}{4} + i\sin\frac{\pi}{4}\right), \qquad z_2 = 2\left(\cos\frac{\pi}{12} + i\sin\frac{\pi}{12}\right)
+$$
+
+積 $z_1 z_2$ を極形式で求め、さらに直交形に直せ。
+
+<details>
+<summary>解答を表示</summary>
+
+積の規則を使う。絶対値は積 $\sqrt{2} \cdot 2 = 2\sqrt{2}$ になる。偏角は和 $\dfrac{\pi}{4} + \dfrac{\pi}{12} = \dfrac{4\pi}{12} = \dfrac{\pi}{3}$ になる。
+
+$$
+z_1 z_2 = 2\sqrt{2}\left(\cos\frac{\pi}{3} + i\sin\frac{\pi}{3}\right)
+$$
+
+直交形に直す。$\cos\dfrac{\pi}{3} = \dfrac{1}{2}$、$\sin\dfrac{\pi}{3} = \dfrac{\sqrt{3}}{2}$ を使う。
+
+$$
+z_1 z_2 = 2\sqrt{2}\left(\frac{1}{2} + i\frac{\sqrt{3}}{2}\right) = \sqrt{2} + \sqrt{6}\,i
+$$
+
+末尾で $2\sqrt{2} \cdot \dfrac{\sqrt{3}}{2} = \sqrt{2}\cdot\sqrt{3} = \sqrt{6}$ を使った。
+
+</details>
+
+### 問題 4
+
+次の 2 つの複素数を考える。
+
+$$
+z_1 = 6\left(\cos\frac{\pi}{2} + i\sin\frac{\pi}{2}\right), \qquad z_2 = 2\left(\cos\frac{\pi}{6} + i\sin\frac{\pi}{6}\right)
+$$
+
+積 $z_1 z_2$ と商 $\dfrac{z_1}{z_2}$ を極形式で求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+積の規則を使う。積 $z_1 z_2$ は、絶対値 $6 \cdot 2 = 12$、偏角 $\dfrac{\pi}{2} + \dfrac{\pi}{6} = \dfrac{2\pi}{3}$ になる。
+
+$$
+z_1 z_2 = 12\left(\cos\frac{2\pi}{3} + i\sin\frac{2\pi}{3}\right)
+$$
+
+商の規則を使う。商 $\dfrac{z_1}{z_2}$ は、絶対値 $\dfrac{6}{2} = 3$、偏角 $\dfrac{\pi}{2} - \dfrac{\pi}{6} = \dfrac{\pi}{3}$ になる。
+
+$$
+\frac{z_1}{z_2} = 3\left(\cos\frac{\pi}{3} + i\sin\frac{\pi}{3}\right)
+$$
+
+</details>
+
+### 問題 5
+
+複素数 $z = 3 + 2i$ に虚数単位 $i$ を掛けた点 $iz$ を求めよ。また、点 $z$ から点 $iz$ への移り方を図形的に述べよ。
+
+<details>
+<summary>解答を表示</summary>
+
+直交形で積を計算する。$i^2 = -1$ を使う。
+
+$$
+iz = i(3 + 2i) = 3i + 2i^2 = -2 + 3i
+$$
+
+虚数単位 $i$ は絶対値 $1$、偏角 $\dfrac{\pi}{2}$ である。$i$ を掛ける操作は、絶対値を変えず偏角を $\dfrac{\pi}{2}$ だけ増やす。よって点 $z = 3 + 2i$ を、原点を中心として $90^\circ$ 反時計回りで回した点が $iz = -2 + 3i$ である。
+
+</details>
+
+## まとめ
+
+本章は、複素数を絶対値と偏角で表す極形式を導入し、積・商の規則と幾何的意味を自己完結で導いた。要点を振り返る。
+
+- **極形式**：$z \ne 0$ は $z = r(\cos\theta + i\sin\theta)$ と表せる。$r = \lvert z \rvert$ は絶対値、$\theta = \arg z$ は偏角である。
+- **相互変換**：極形式から直交形へは $a = r\cos\theta$・$b = r\sin\theta$ を使う。逆向きは $r = \sqrt{a^2 + b^2}$ と $\cos\theta = \dfrac{a}{r}$・$\sin\theta = \dfrac{b}{r}$ を使う。
+- **多価性と主値**：偏角は $2\pi$ の整数倍だけ不定である。範囲 $-\pi < \theta \le \pi$ の代表を主値 $\operatorname{Arg} z$ と呼ぶ。
+- **積の規則**：絶対値は積 $\lvert z_1 \rvert \lvert z_2 \rvert$、偏角は和 $\arg z_1 + \arg z_2$ である。加法定理から導いた。
+- **商の規則**：商の絶対値と偏角は、それぞれ $\dfrac{\lvert z_1 \rvert}{\lvert z_2 \rvert}$ と $\arg z_1 - \arg z_2$ になる。
+- **幾何的意味**：複素数 $z_2 = r_2(\cos\theta_2 + i\sin\theta_2)$ を掛ける操作は、角 $\theta_2$ の回転と $r_2$ 倍の拡大・縮小である。
+
+積の規則は、偏角の和という形をしている。同じ複素数を $n$ 回掛けると、偏角は $n$ 倍になる。次の章[ド・モアブルの定理](../de-moivres-theorem/)では、累乗で偏角が $n$ 倍になる規則 $(\cos\theta + i\sin\theta)^n = \cos n\theta + i\sin n\theta$ を確かめ、複素数の $n$ 乗根を求める。本章で導いた積の偏角の和が、累乗の規則の出発点になる。
+
+## 参考文献
+
+複素数の極形式と幾何をさらに学ぶための一次資料を挙げる。
+
+- 高木貞治『解析概論（改訂第 3 版）』岩波書店、1983 年。複素数を平面上の点として扱い、極形式と積・商の幾何を基礎から述べた古典的な教科書である。
+- T. Needham, _Visual Complex Analysis_, Oxford University Press, 1997. 複素数の積を「回転と拡大」として一貫して描き、図形的な直観を重んじる入門書である。
+
+[^arg]: 記号 $\arg$ は、偏角を意味する英語 argument の頭 3 文字に由来する。声に出すときは「アーグ」と読む。主値の $\operatorname{Arg}$ は頭文字を大文字にして、多価の $\arg$ と区別する。
+
+[^principal]: 主値の範囲には流儀がある。本章は $-\pi < \theta \le \pi$ を採る。$0 \le \theta < 2\pi$ を採る流儀もある。いずれも幅 $2\pi$ の半開区間で、各複素数の偏角を 1 つに定める点は共通である。複素解析では、主値の不連続な切れ目が分岐の議論で重要になる。
