@@ -16,7 +16,7 @@ import FlowChart, { type FlowEdge, type FlowNode } from "./FlowChart";
 type Category = { id: string; label: string; tone?: "done" | "goal" };
 
 // 執筆済みカテゴリ（2026 年 6 月時点）。docs/roadmap-design.md の実装状況に対応する。
-const DONE = new Set(["PRE", "M-SET", "M-ALG", "M-FUN", "M-VEC"]);
+const DONE = new Set(["PRE", "M-SET", "M-ALG", "M-FUN", "M-VEC", "M-AGEO"]);
 // 到達目標の 2 カテゴリ。
 const GOALS = new Set(["P-SMD", "P-GR"]);
 
