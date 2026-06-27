@@ -11,7 +11,7 @@ import FunctionGraph from "../../../../components/FunctionGraph";
 
 本章の前提は、次の 2 つである。
 
-- [複素数の定義と四則演算](../definition-and-arithmetic/)：虚数単位 $i$、複素数 $a + bi$、共役 $\overline{z}$、絶対値の代数的な定義と計算を使う。
+- [複素数の定義と四則演算](../definition-and-arithmetic/)：虚数単位 $i$、複素数 $a + bi$、共役 $\overline{z}$、積 $z\overline{z} = a^2 + b^2$ を使う。
 - [平面ベクトルの定義と成分表示](../../vectors/plane-vectors-and-components/)：成分 $(a, b)$ と大きさ $\sqrt{a^2 + b^2}$ の対応に使う。
 
 加えて、[前提とする知識](../../../prerequisites/knowledge/)の座標平面・点の座標 $(x, y)$・三平方の定理を用いる。
@@ -39,7 +39,7 @@ import FunctionGraph from "../../../../components/FunctionGraph";
 - **和・差**：$(a + bi) \pm (c + di) = (a \pm c) + (b \pm d)i$ である（複号同順）。実部どうし・虚部どうしを足し引きする。
 - **積**：$(a + bi)(c + di) = (ac - bd) + (ad + bc)i$ である。$i^2 = -1$ を使って展開し整理する。
 - **共役**：$z = a + bi$ に対し、虚部の符号を変えた $\overline{z} = a - bi$ を共役複素数と呼ぶ。$\overline{z}$ は「$z$ バー」と読む。
-- **絶対値**：$z = a + bi$ に対し $\lvert z \rvert = \sqrt{a^2 + b^2}$ で定める。
+- **共役との積**：$z\overline{z} = a^2 + b^2$ は $0$ 以上の実数である。
 
 実部 $\operatorname{Re}(z) = a$ と虚部 $\operatorname{Im}(z) = b$ は、いずれも実数である。虚部 $b$ は「$bi$」ではなく実数 $b$ を指す点に注意する。
 
@@ -209,7 +209,7 @@ $$
 
 ### 原点からの距離
 
-複素数 $z = a + bi$ の絶対値は、第 1 章で $\lvert z \rvert = \sqrt{a^2 + b^2}$ と代数的に定めた。複素平面の上では、絶対値は明確な図形的意味を持つ。
+複素数 $z = a + bi$ の絶対値 $\lvert z \rvert = \sqrt{a^2 + b^2}$ を、本章で定める。複素平面の上では、絶対値は明確な図形的意味を持つ。
 
 > **絶対値の図形的意味**：$\lvert z \rvert$ は、原点 $\mathrm{O}$ から点 $z$ までの距離である。
 
