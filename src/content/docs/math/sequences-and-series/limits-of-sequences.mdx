@@ -1,0 +1,600 @@
+---
+title: 数列の極限
+description: 数列の収束と発散を誤差の言葉で丁寧に定義し、lim r^n の場合分け・極限の基本性質・はさみうちの原理を導く。多項式の比や漸化式 a_{n+1}=pa_n+q の極限まで自己完結で扱う。
+sidebar:
+  order: 5
+---
+
+import FunctionGraph from "../../../../components/FunctionGraph";
+
+## 前提
+
+本章の前提は、次の 3 章である。
+
+- [漸化式](../recurrence-relations/)：漸化式 $a_{n+1} = p\,a_n + q$ の解法、不動点 $\alpha$ を使った変形、等比数列への帰着
+- [等比数列](../geometric-sequences/)：一般項 $a_n = a_1 r^{n-1}$、公比 $r$ による増減
+- [平方根と絶対値](../../algebra/square-roots-and-absolute-value/)：絶対値 $\lvert r\rvert$ の定義と、数直線上での意味
+
+前章の[漸化式](../recurrence-relations/)では、$a_{n+1} = p\,a_n + q$ で定まる数列の一般項を求めた。一般項には公比の累乗 $r^{n-1}$ や $p^{n-1}$ が現れる。項番号 $n$ を限りなく大きくしたとき、累乗がどこへ向かうかを本章で調べる。
+
+## 学習目標
+
+本章を読むと、次の概念と数式を使えるようになる。
+
+- 数列の**収束**と**発散**の意味、および極限の記号 $\displaystyle\lim_{n\to\infty}a_n = L$
+- 発散の 3 種類（正の無限大・負の無限大・振動）の区別
+- 等比数列の極限 $\displaystyle\lim_{n\to\infty}r^n$ の、公比 $r$ による場合分け
+- 極限の基本性質（和・差・定数倍・積・商の極限）
+- **はさみうちの原理**による極限の計算
+- 多項式の比の極限、および漸化式 $a_{n+1} = p\,a_n + q$（$\lvert p\rvert < 1$）が定める数列の極限
+
+## 数列の極限とは
+
+数列 $\{a_n\}$ の項番号 $n$ を $1, 2, 3, \dots$ と限りなく大きくする操作を考える。操作のもとで、項 $a_n$ がどのような値へ向かうかを問うのが、数列の極限である。
+
+$n$ を限りなく大きくする操作を、記号で $n \to \infty$ と書く。矢印 $\to$ は「限りなく近づく」を表す。記号 $\infty$ は**無限大**と読み、限りなく大きくする操作を表す。ただし $\infty$ は数ではない[^infinity]。
+
+### 収束の定義
+
+ある一定の値 $L$ があり、$n$ を大きくするほど項 $a_n$ が $L$ に限りなく近づくとする。このとき、数列 $\{a_n\}$ は $L$ に**収束する**といい、$L$ を数列の**極限値**と呼ぶ。記号では次のように書く。
+
+$$
+\lim_{n\to\infty} a_n = L
+$$
+
+記号 $\lim$ は「リミット」と読み、極限（英語の limit に由来する）を表す。
+
+「限りなく近づく」を、誤差の言葉で正確に述べる。
+
+> どんなに小さい正の誤差を 1 つ決めても、ある番号から先のすべての項について、項 $a_n$ と極限値 $L$ の差が、決めた誤差より小さくなる。
+
+ポイントは「ある番号から先のすべての項」という部分である。たまたま 1 度だけ $L$ に近づくのではない。誤差をどれほど小さくしても、十分大きい番号から先の項は、ずっと誤差の内側にとどまる[^epsilon]。
+
+具体例で確かめる。数列 $a_n = 1 + \dfrac1n$ を考える。
+
+$$
+a_1 = 2,\quad a_2 = 1.5,\quad a_3 = 1.333\ldots,\quad a_4 = 1.25,\quad a_5 = 1.2,\ \dots
+$$
+
+項 $a_n$ は $1$ より大きい側から $1$ へ近づく。誤差を $0.3$ と決めると、$1$ との差が $0.3$ より小さい項は第 $4$ 項からである。誤差を $0.1$ に縮めると、差が $0.1$ より小さい項は第 $11$ 項からである。誤差をどれほど縮めても、十分先の項は誤差の内側に収まる。よって $\displaystyle\lim_{n\to\infty}\left(1 + \frac1n\right) = 1$ である。
+
+図 1 は、数列 $a_n = 1 + \dfrac1n$ の点 $(n, a_n)$ と、極限値 $L = 1$ を中心とする誤差 $0.3$ の帯を描いた図である。
+
+<figure style="text-align:center">
+  <FunctionGraph
+    xMin={0}
+    xMax={9}
+    yMin={0}
+    yMax={2.3}
+    xTicks={[1, 2, 3, 4, 5, 6, 7, 8]}
+    yTicks={[1, 2]}
+    xLabel="n"
+    yLabel="a_n"
+    asymptotes={[
+      { y: 1, label: "L = 1" },
+      { y: 1.3, color: "#94a3b8" },
+      { y: 0.7, color: "#94a3b8" },
+    ]}
+    points={[
+      { x: 1, y: 2, highlight: true },
+      { x: 2, y: 1.5, highlight: true },
+      { x: 3, y: 1.3333, highlight: true },
+      { x: 4, y: 1.25, highlight: true },
+      { x: 5, y: 1.2, highlight: true },
+      { x: 6, y: 1.1667, highlight: true },
+      { x: 7, y: 1.1429, highlight: true },
+      { x: 8, y: 1.125, highlight: true },
+    ]}
+    ariaLabel="横軸 n、縦軸 a_n のグラフ。数列 1 たす n 分の 1 の点 (1,2)・(2,1.5)・(3,1.333)・(4,1.25) 以降が、横線 L イコール 1 へ上から近づく。L を中心とする上下 0.3 の灰色の帯の内側に、第 4 項から先のすべての点が収まる。"
+  />
+  <figcaption>
+    <em>図 1. 収束の様子。数列 $a_n = 1 + \tfrac1n$ の点は、極限値 $L = 1$ へ上から近づく。誤差 $0.3$ の帯（灰色の 2 本の破線の間）には、第 $4$ 項から先のすべての点が収まる。</em>
+  </figcaption>
+</figure>
+
+### 発散の種類
+
+数列が収束しないとき、数列は**発散する**という。発散は 3 種類に分かれる。
+
+| 発散の種類       | 様子                                     | 記号                                          | 例             |
+| ---------------- | ---------------------------------------- | --------------------------------------------- | -------------- |
+| 正の無限大に発散 | 項が限りなく大きくなる                   | $\displaystyle\lim_{n\to\infty}a_n = +\infty$ | $a_n = n$      |
+| 負の無限大に発散 | 項が限りなく小さくなる（負へ大きくなる） | $\displaystyle\lim_{n\to\infty}a_n = -\infty$ | $a_n = -n$     |
+| 振動             | 1 つの値にも $\pm\infty$ にも近づかない  | 極限なし                                      | $a_n = (-1)^n$ |
+
+正の無限大に発散する場合も、記号 $\displaystyle\lim_{n\to\infty}a_n = +\infty$ を書く。ただし $+\infty$ は数ではないため、収束とは区別する。極限値 $L$ をもつのは収束する場合だけである。振動の行の記号 $\pm\infty$ は「プラスマイナス無限大」と読み、$+\infty$ と $-\infty$ の両方を一度に指す。
+
+振動の例として、数列 $a_n = (-1)^n$ を見る。項は $-1$ と $1$ を交互に繰り返す。1 つの値に近づかず、無限大にも向かわない。よって極限をもたない。
+
+## r の n 乗の極限
+
+等比数列の一般項 $a_n = a_1 r^{n-1}$（[等比数列](../geometric-sequences/)）の動きは、公比の累乗 $r^n$ で決まる。極限 $\displaystyle\lim_{n\to\infty}r^n$ を、公比 $r$ の値で場合分けする。結果を先に表で示す。
+
+| 公比 $r$ の範囲  | $\displaystyle\lim_{n\to\infty}r^n$ |
+| ---------------- | ----------------------------------- |
+| $-1 \lt r \lt 1$ | $0$                                 |
+| $r = 1$          | $1$                                 |
+| $r \gt 1$        | $+\infty$（発散）                   |
+| $r \le -1$       | 振動（極限なし）                    |
+
+各場合の理由を述べる。理由では絶対値 $\lvert r\rvert$ を使う。絶対値 $\lvert r\rvert$ は $r$ の符号を外した大きさであり、数直線上で原点からの距離を表す（[平方根と絶対値](../../algebra/square-roots-and-absolute-value/)で導入済み）。
+
+- **$-1 \lt r \lt 1$ のとき $0$ に収束する。** $\lvert r\rvert \lt 1$ なら、$r$ を掛けるたびに絶対値 $\lvert r^n\rvert = \lvert r\rvert^n$ が一定の割合で縮む。よって項は限りなく $0$ に近づく。$r = 0$ のときは、すべての項が $0$ で極限も $0$ である。
+- **$r = 1$ のとき $1$ に収束する。** すべての項が $1^n = 1$ で一定だからである。
+- **$r \gt 1$ のとき正の無限大に発散する。** $r = 1 + h$（$h \gt 0$）と置く。後述の不等式 $r^n \ge 1 + nh$ より、$r^n$ は限りなく大きくなる。
+- **$r \le -1$ のとき振動する。** $r = -1$ では項が $-1$ と $1$ を交互に繰り返す。$r \lt -1$ では絶対値が限りなく大きくなりつつ符号も交互に変わる。いずれの場合も、項は 1 つの値へ近づかず、無限大へも向かわない。
+
+### r が 1 より大きいとき発散する理由
+
+$r \gt 1$ の場合だけ、根拠となる不等式を補う。$r = 1 + h$（$h \gt 0$）と置くと、すべての自然数 $n$ で次の不等式が成り立つ[^bernoulli]。
+
+$$
+r^n = (1 + h)^n \ge 1 + nh
+$$
+
+右辺 $1 + nh$ は、$n$ を大きくすると限りなく大きくなる。左辺 $r^n$ は右辺以上だから、$r^n$ も限りなく大きくなる。よって $r \gt 1$ のとき $\displaystyle\lim_{n\to\infty}r^n = +\infty$ である。
+
+### 図で見る r の n 乗
+
+図 2 は、$\lvert r\rvert \lt 1$・$r = 1$・$r \gt 1$ の 3 例について、点 $(n, r^n)$ を描いた図である。
+
+<figure style="text-align:center">
+  <FunctionGraph
+    xMin={0}
+    xMax={6}
+    yMin={0}
+    yMax={5}
+    xTicks={[1, 2, 3, 4, 5]}
+    yTicks={[1, 2, 3, 4]}
+    xLabel="n"
+    yLabel="r^n"
+    curves={[
+      {
+        fn: (x) => Math.pow(0.5, x),
+        domain: [1, 5],
+        dashed: true,
+        color: "#10b981",
+        label: "r = \\tfrac12 : r^n \\to 0",
+      },
+      {
+        fn: () => 1,
+        domain: [1, 5],
+        dashed: true,
+        color: "#94a3b8",
+        label: "r = 1 : r^n = 1",
+      },
+      {
+        fn: (x) => Math.pow(2, x),
+        domain: [1, 5],
+        dashed: true,
+        color: "#3b82f6",
+        label: "r = 2 : r^n \\to +\\infty",
+      },
+    ]}
+    points={[
+      { x: 1, y: 0.5, highlight: true },
+      { x: 2, y: 0.25, highlight: true },
+      { x: 3, y: 0.125, highlight: true },
+      { x: 4, y: 0.0625, highlight: true },
+      { x: 1, y: 1, highlight: true },
+      { x: 2, y: 1, highlight: true },
+      { x: 3, y: 1, highlight: true },
+      { x: 4, y: 1, highlight: true },
+      { x: 5, y: 1, highlight: true },
+      { x: 1, y: 2, highlight: true },
+      { x: 2, y: 4, highlight: true },
+    ]}
+    ariaLabel="横軸 n、縦軸 r の n 乗のグラフ。公比 2 分の 1 の点列は 0.5・0.25・0.125 と 0 へ近づく。公比 1 の点列は高さ 1 で一定。公比 2 の点列 (1,2)・(2,4) は急上昇し、上端を越えて伸び続ける。"
+  />
+  <figcaption>
+    <em>図 2. 公比による $r^n$ の極限。$r = \tfrac12$ の点列（緑）は $0$ へ近づき、$r = 1$ の点列（灰）は $1$ で一定、$r = 2$ の点列（青）は上端を越えて限りなく大きくなる。破線は点を結ぶ目安の曲線である。</em>
+  </figcaption>
+</figure>
+
+公比が $r \le -1$ のときは振動する。図 3 は、$r = -1$ の数列 $r^n = (-1)^n$ の点を描いた図である。
+
+<figure style="text-align:center">
+  <FunctionGraph
+    xMin={0}
+    xMax={7}
+    yMin={-1.8}
+    yMax={1.8}
+    xTicks={[1, 2, 3, 4, 5, 6]}
+    yTicks={[-1, 1]}
+    xLabel="n"
+    yLabel="r^n"
+    segments={[
+      { from: { x: 1, y: -1 }, to: { x: 2, y: 1 }, dashed: true },
+      { from: { x: 2, y: 1 }, to: { x: 3, y: -1 }, dashed: true },
+      { from: { x: 3, y: -1 }, to: { x: 4, y: 1 }, dashed: true },
+      { from: { x: 4, y: 1 }, to: { x: 5, y: -1 }, dashed: true },
+      { from: { x: 5, y: -1 }, to: { x: 6, y: 1 }, dashed: true },
+    ]}
+    points={[
+      { x: 1, y: -1, highlight: true },
+      { x: 2, y: 1, highlight: true },
+      { x: 3, y: -1, highlight: true },
+      { x: 4, y: 1, highlight: true },
+      { x: 5, y: -1, highlight: true },
+      { x: 6, y: 1, highlight: true },
+    ]}
+    ariaLabel="横軸 n、縦軸 r の n 乗のグラフ。公比 マイナス 1 の数列の点 (1,-1)・(2,1)・(3,-1)・(4,1) が、高さ 1 と マイナス 1 を交互に行き来する。1 つの値に近づかず振動する。"
+  />
+  <figcaption>
+    <em>図 3. 公比 $r = -1$ の振動。点は $1$ と $-1$ を交互に繰り返す。1 つの値に近づかず、極限をもたない。破線は点を結ぶ目安の線である。</em>
+  </figcaption>
+</figure>
+
+## 極限の基本性質
+
+収束する 2 つの数列について、和・差・定数倍・積・商の極限は、もとの極限から計算できる。数列 $\{a_n\}$ と $\{b_n\}$ がともに収束し、極限を次のように置く。
+
+$$
+\lim_{n\to\infty} a_n = A, \qquad \lim_{n\to\infty} b_n = B
+$$
+
+このとき、次の性質が成り立つ[^limit-laws]。$c$ は定数とする。
+
+| 性質   | 式                                                                            |
+| ------ | ----------------------------------------------------------------------------- |
+| 和・差 | $\displaystyle\lim_{n\to\infty}(a_n \pm b_n) = A \pm B$                       |
+| 定数倍 | $\displaystyle\lim_{n\to\infty}(c\,a_n) = c\,A$                               |
+| 積     | $\displaystyle\lim_{n\to\infty}(a_n\,b_n) = A\,B$                             |
+| 商     | $\displaystyle\lim_{n\to\infty}\frac{a_n}{b_n} = \frac{A}{B}\quad (B \neq 0)$ |
+
+和・差の行の記号 $\pm$ は「プラスマイナス」と読む。複号を上下同じ順に取り、和の等式 $\lim(a_n + b_n) = A + B$ と差の等式 $\lim(a_n - b_n) = A - B$ をまとめて表す。商の行の記号 $\neq$ は「等しくない」と読み、左辺と右辺が等しくないことを表す。
+
+基本性質は、$\{a_n\}$ と $\{b_n\}$ がともに**収束する場合に限り**使える。商の性質では、分母の極限 $B$ が $0$ でないこと（$B \neq 0$）も要る。発散する数列には、表の等式をそのまま当てはめられない[^indeterminate]。
+
+性質を使う基本の極限を 1 つ挙げる。数列 $a_n = \dfrac1n$ は $0$ に収束する。
+
+$$
+\lim_{n\to\infty}\frac1n = 0
+$$
+
+$n$ を大きくすると $\dfrac1n$ が限りなく $0$ に近づくからである。積の性質を繰り返すと、$\dfrac{1}{n^2}$ や $\dfrac{1}{n^3}$ も $0$ に収束する。
+
+$$
+\lim_{n\to\infty}\frac{1}{n^2} = \lim_{n\to\infty}\left(\frac1n \cdot \frac1n\right) = 0 \cdot 0 = 0
+$$
+
+## はさみうちの原理
+
+極限を直接求めにくい数列でも、上下を別の数列で挟めば極限を決められる。
+
+> **はさみうちの原理.** すべての $n$ で $b_n \le a_n \le c_n$ が成り立ち、両端の数列が同じ極限 $\displaystyle\lim_{n\to\infty}b_n = \lim_{n\to\infty}c_n = L$ をもつとする。このとき、間の数列も収束し、$\displaystyle\lim_{n\to\infty}a_n = L$ である。
+
+直観は単純である。下からの $b_n$ と上からの $c_n$ がともに $L$ へ近づくなら、間に挟まれた $a_n$ は逃げ場を失い、$L$ へ近づくほかない。
+
+### はさみうちの例
+
+数列 $a_n = 2 + \dfrac{(-1)^n}{n}$ の極限を求める。変動する部分 $\dfrac{(-1)^n}{n}$ は正負に振れるため、直接の判断は難しい。そこで上下から挟む。すべての $n$ で $-1 \le (-1)^n \le 1$ だから、各辺を正の数 $n$ で割る。
+
+$$
+-\frac1n \le \frac{(-1)^n}{n} \le \frac1n
+$$
+
+各辺に $2$ を足すと、数列 $a_n$ を上下から挟む不等式になる。
+
+$$
+2 - \frac1n \le a_n \le 2 + \frac1n
+$$
+
+両端の数列は、ともに $2$ に収束する。
+
+$$
+\lim_{n\to\infty}\left(2 - \frac1n\right) = 2, \qquad \lim_{n\to\infty}\left(2 + \frac1n\right) = 2
+$$
+
+はさみうちの原理より、間の数列も $2$ に収束する。
+
+$$
+\lim_{n\to\infty}\left(2 + \frac{(-1)^n}{n}\right) = 2
+$$
+
+図 4 は、数列 $a_n = 2 + \dfrac{(-1)^n}{n}$ の点と、上下から挟む 2 本の包絡線 $c_n = 2 + \dfrac1n$・$b_n = 2 - \dfrac1n$ を描いた図である。
+
+<figure style="text-align:center">
+  <FunctionGraph
+    xMin={0}
+    xMax={9}
+    yMin={0}
+    yMax={3.2}
+    xTicks={[1, 2, 3, 4, 5, 6, 7, 8]}
+    yTicks={[1, 2, 3]}
+    xLabel="n"
+    yLabel="a_n"
+    asymptotes={[{ y: 2, label: "L = 2" }]}
+    curves={[
+      {
+        fn: (x) => 2 + 1 / x,
+        domain: [1, 8],
+        dashed: true,
+        color: "#3b82f6",
+        label: "c_n = 2 + \\tfrac1n",
+      },
+      {
+        fn: (x) => 2 - 1 / x,
+        domain: [1, 8],
+        dashed: true,
+        color: "#10b981",
+        label: "b_n = 2 - \\tfrac1n",
+      },
+    ]}
+    points={[
+      { x: 1, y: 1, highlight: true },
+      { x: 2, y: 2.5, highlight: true },
+      { x: 3, y: 1.6667, highlight: true },
+      { x: 4, y: 2.25, highlight: true },
+      { x: 5, y: 1.8, highlight: true },
+      { x: 6, y: 2.1667, highlight: true },
+      { x: 7, y: 1.8571, highlight: true },
+      { x: 8, y: 2.125, highlight: true },
+    ]}
+    ariaLabel="横軸 n、縦軸 a_n のグラフ。数列 2 たす マイナス 1 の n 乗を n で割った点が、横線 L イコール 2 の上下を交互に移る。上の破線 2 たす n 分の 1 と下の破線 2 ひく n 分の 1 が、両側からともに L へ近づき、間の点を挟み込む。"
+  />
+  <figcaption>
+    <em>図 4. はさみうちの原理。橙の点は数列 $a_n = 2 + \tfrac{(-1)^n}{n}$ を表す。上下の破線は 2 本の包絡線である。両端がともに $L = 2$ へ近づくため、間の点も $2$ に収束する。</em>
+  </figcaption>
+</figure>
+
+## 極限の応用
+
+### 多項式の比の極限
+
+分子と分母がともに $n$ の多項式である数列の極限を求める。次の数列を例にとる。
+
+$$
+a_n = \frac{3n^2 + 2n}{2n^2 - 1}
+$$
+
+$n \to \infty$ では分子と分母がともに限りなく大きくなる。基本性質の商をそのまま使えない[^indeterminate]。そこで分子と分母を、分母の最高次の項 $n^2$ で割る。
+
+$$
+a_n = \frac{3n^2 + 2n}{2n^2 - 1} = \frac{\dfrac{3n^2 + 2n}{n^2}}{\dfrac{2n^2 - 1}{n^2}} = \frac{3 + \dfrac{2}{n}}{2 - \dfrac{1}{n^2}}
+$$
+
+分子と分母を変形すると、$\dfrac2n$ と $\dfrac{1}{n^2}$ はともに $0$ に収束する。分子は $3$、分母は $2$ に収束し、分母の極限 $2$ は $0$ でない。商の性質を使う。
+
+$$
+\lim_{n\to\infty} a_n = \frac{3 + 0}{2 - 0} = \frac{3}{2}
+$$
+
+最高次で割る操作の要点は、各項を $\dfrac1n$ の累乗の形に直し、$0$ に収束する部分を見えるようにすることである。分子と分母の最高次の係数の比が、極限値になる。
+
+### 漸化式が定める数列の極限
+
+前章の[漸化式](../recurrence-relations/)では、$a_{n+1} = p\,a_n + q$ の一般項を求めた。極限を調べる前に、$p \neq 1$ の場合の一般項を本章でも導いておく。
+
+まず**不動点** $\alpha$ を導入する。不動点とは、漸化式に入れても値が変わらない値、すなわち $\alpha = p\,\alpha + q$ を満たす値である（$\alpha$ はギリシャ文字でアルファと読む）。$\alpha = p\,\alpha + q$ を $\alpha$ について解くと、$p \neq 1$ のとき不動点が定まる。
+
+$$
+\alpha = \frac{q}{1 - p}
+$$
+
+漸化式 $a_{n+1} = p\,a_n + q$ から、不動点の式 $\alpha = p\,\alpha + q$ を辺ごとに引く。右辺の定数 $q$ が消える。
+
+$$
+a_{n+1} - \alpha = p\,(a_n - \alpha)
+$$
+
+差を $b_n = a_n - \alpha$ と置くと、$b_{n+1} = p\,b_n$ になる。数列 $\{b_n\}$ は公比 $p$ の[等比数列](../geometric-sequences/)である。よって一般項は $b_n = b_1\,p^{n-1} = (a_1 - \alpha)\,p^{n-1}$ になる。$b_n = a_n - \alpha$ に戻す。
+
+$$
+a_n - \alpha = (a_1 - \alpha)\,p^{n-1}
+$$
+
+一般項を $a_n$ について書き直す。
+
+$$
+a_n = \alpha + (a_1 - \alpha)\,p^{n-1}
+$$
+
+公比にあたる $p$ が $\lvert p\rvert \lt 1$ を満たすとする。累乗 $p^{n-1}$ の指数は $r^n$ より $1$ 小さいだけで、極限の値は変わらない。よって $\displaystyle\lim_{n\to\infty}p^{n-1} = 0$ である。極限の基本性質を使う。第 2 項は定数 $(a_1 - \alpha)$ と $0$ に収束する $p^{n-1}$ の積だから、$0$ に収束する。
+
+$$
+\lim_{n\to\infty} a_n = \alpha + (a_1 - \alpha)\cdot 0 = \alpha
+$$
+
+$\lvert p\rvert \lt 1$ のとき、漸化式 $a_{n+1} = p\,a_n + q$ が定める数列は、初項の値と無関係に不動点 $\alpha$ へ収束する。初項 $a_1$ と不動点 $\alpha$ の差 $(a_1 - \alpha)$ が、$p^{n-1}$ の縮小とともに消えていくからである。
+
+## 例題
+
+### 例題 1
+
+次の極限を求めよ。
+
+$$
+\lim_{n\to\infty}\frac{4n^2 - n + 5}{2n^2 + 3n}
+$$
+
+**解答.** 分母の最高次の項 $n^2$ で、分子と分母を割る。
+
+$$
+\frac{4n^2 - n + 5}{2n^2 + 3n} = \frac{4 - \dfrac{1}{n} + \dfrac{5}{n^2}}{2 + \dfrac{3}{n}}
+$$
+
+$\dfrac1n$・$\dfrac{5}{n^2}$・$\dfrac3n$ はいずれも $0$ に収束する。分母の極限 $2$ は $0$ でない。商の性質より極限は次の値になる。
+
+$$
+\lim_{n\to\infty}\frac{4n^2 - n + 5}{2n^2 + 3n} = \frac{4 - 0 + 0}{2 + 0} = 2
+$$
+
+### 例題 2
+
+公比の累乗を含む極限 $\displaystyle\lim_{n\to\infty}\left(\frac23\right)^n$ を求めよ。
+
+**解答.** 公比は $r = \dfrac23$ である。$-1 \lt \dfrac23 \lt 1$ を満たすので、$\displaystyle\lim_{n\to\infty}r^n = 0$ の場合にあたる。
+
+$$
+\lim_{n\to\infty}\left(\frac23\right)^n = 0
+$$
+
+### 例題 3
+
+漸化式 $a_1 = 5$、$a_{n+1} = \dfrac12 a_n + 3$ で定まる数列 $\{a_n\}$ の極限を求めよ。
+
+**解答.** 不動点 $\alpha$ を $\alpha = \dfrac12\alpha + 3$ から求める。両辺から $\dfrac12\alpha$ を引くと $\dfrac12\alpha = 3$ となり、$\alpha = 6$ である。一般項は次の形になる。
+
+$$
+a_n = 6 + (a_1 - 6)\left(\frac12\right)^{n-1} = 6 + (5 - 6)\left(\frac12\right)^{n-1} = 6 - \left(\frac12\right)^{n-1}
+$$
+
+公比にあたる $p = \dfrac12$ は $\lvert p\rvert \lt 1$ を満たす。$\displaystyle\lim_{n\to\infty}\left(\frac12\right)^{n-1} = 0$ だから、極限は不動点に一致する。
+
+$$
+\lim_{n\to\infty} a_n = 6 - 0 = 6
+$$
+
+## 演習問題
+
+### 問題 1
+
+次の極限を求めよ。
+
+$$
+\lim_{n\to\infty}\frac{5n + 1}{3n - 2}
+$$
+
+<details>
+<summary>解答を表示</summary>
+
+分母の最高次の項 $n$ で、分子と分母を割る。
+
+$$
+\frac{5n + 1}{3n - 2} = \frac{5 + \dfrac{1}{n}}{3 - \dfrac{2}{n}}
+$$
+
+$\dfrac1n$ と $\dfrac2n$ はともに $0$ に収束する。分母の極限 $3$ は $0$ でない。商の性質より極限は次の値になる。
+
+$$
+\lim_{n\to\infty}\frac{5n + 1}{3n - 2} = \frac{5 + 0}{3 - 0} = \frac{5}{3}
+$$
+
+</details>
+
+### 問題 2
+
+次の 3 つの極限を、$\displaystyle\lim_{n\to\infty}r^n$ の場合分けを使って求めよ。
+
+1. $\displaystyle\lim_{n\to\infty}\left(\frac15\right)^n$
+2. $\displaystyle\lim_{n\to\infty} 3^n$
+3. $\displaystyle\lim_{n\to\infty}(-1)^n$
+
+<details>
+<summary>解答を表示</summary>
+
+公比 $r$ の範囲で場合を分ける。
+
+- (1) $r = \dfrac15$ は $-1 \lt r \lt 1$ を満たす。よって $\displaystyle\lim_{n\to\infty}\left(\frac15\right)^n = 0$ である。
+- (2) $r = 3$ は $r \gt 1$ である。よって $\displaystyle\lim_{n\to\infty}3^n = +\infty$ で、正の無限大に発散する。
+- (3) $r = -1$ は $r \le -1$ にあたる。項は $1$ と $-1$ を繰り返し、振動して極限をもたない。
+
+</details>
+
+### 問題 3
+
+数列 $a_n = \dfrac{(-1)^n}{2n + 1}$ の極限を、はさみうちの原理を使って求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+すべての $n$ で $-1 \le (-1)^n \le 1$ が成り立つ。各辺を正の数 $2n + 1$ で割る。
+
+$$
+-\frac{1}{2n + 1} \le \frac{(-1)^n}{2n + 1} \le \frac{1}{2n + 1}
+$$
+
+分母 $2n + 1$ は限りなく大きくなる。よって両端の数列はともに $0$ に収束する。
+
+$$
+\lim_{n\to\infty}\left(-\frac{1}{2n + 1}\right) = 0, \qquad \lim_{n\to\infty}\frac{1}{2n + 1} = 0
+$$
+
+はさみうちの原理より、間の数列も $0$ に収束する。
+
+$$
+\lim_{n\to\infty}\frac{(-1)^n}{2n + 1} = 0
+$$
+
+</details>
+
+### 問題 4
+
+漸化式 $a_1 = 1$、$a_{n+1} = \dfrac13 a_n + 4$ で定まる数列 $\{a_n\}$ の極限を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+不動点 $\alpha$ を $\alpha = \dfrac13\alpha + 4$ から求める。両辺から $\dfrac13\alpha$ を引くと $\dfrac23\alpha = 4$ となり、$\alpha = 6$ である。一般項は次の形になる。
+
+$$
+a_n = 6 + (a_1 - 6)\left(\frac13\right)^{n-1} = 6 + (1 - 6)\left(\frac13\right)^{n-1} = 6 - 5\left(\frac13\right)^{n-1}
+$$
+
+公比にあたる $p = \dfrac13$ は $\lvert p\rvert \lt 1$ を満たす。$\displaystyle\lim_{n\to\infty}\left(\frac13\right)^{n-1} = 0$ だから、極限は不動点に一致する。
+
+$$
+\lim_{n\to\infty} a_n = 6 - 5 \cdot 0 = 6
+$$
+
+</details>
+
+### 問題 5
+
+次の極限を求めよ。分子と分母の次数の違いに注意せよ。
+
+$$
+\lim_{n\to\infty}\frac{2n + 1}{n^2 + 3}
+$$
+
+<details>
+<summary>解答を表示</summary>
+
+分母の最高次の項 $n^2$ で、分子と分母を割る。
+
+$$
+\frac{2n + 1}{n^2 + 3} = \frac{\dfrac{2}{n} + \dfrac{1}{n^2}}{1 + \dfrac{3}{n^2}}
+$$
+
+分子の $\dfrac2n$ と $\dfrac{1}{n^2}$ はともに $0$ に収束し、分子全体は $0$ に収束する。分母は $1$ に収束する。商の性質より極限は次の値になる。
+
+$$
+\lim_{n\to\infty}\frac{2n + 1}{n^2 + 3} = \frac{0}{1} = 0
+$$
+
+分母の次数が分子より高いとき、極限は $0$ になる。
+
+</details>
+
+## まとめ
+
+本章は、数列の極限を誤差の言葉で定義し、計算の道具をそろえた。要点を振り返る。
+
+- **収束と発散**：項 $a_n$ が一定値 $L$ に限りなく近づくとき、$\displaystyle\lim_{n\to\infty}a_n = L$ と書き、収束するという。収束しないときは発散し、正の無限大・負の無限大・振動の 3 種類に分かれる。
+- **$r^n$ の極限**：$-1 \lt r \lt 1$ で $0$、$r = 1$ で $1$、$r \gt 1$ で $+\infty$、$r \le -1$ で振動する。
+- **基本性質**：収束する数列どうしの和・差・定数倍・積・商の極限は、もとの極限から計算できる。商は分母の極限が $0$ でないときに限る。
+- **はさみうちの原理**：$b_n \le a_n \le c_n$ で両端が同じ極限をもつなら、間の数列も同じ極限に収束する。
+- **応用**：多項式の比は最高次で割って極限を求める。漸化式 $a_{n+1} = p\,a_n + q$（$\lvert p\rvert \lt 1$）が定める数列は不動点 $\alpha$ に収束する。
+
+数列の極限は、後続の章で次のように展開する。
+
+- [無限級数と無限等比級数](../infinite-series/)：数列の項を限りなく足した和を、部分和の数列の極限で定義する。無限等比級数の収束は、本章の $\displaystyle\lim_{n\to\infty}r^n$ の場合分けで決まる。
+- 関数の極限：本章は数列という飛び飛びの変数 $n$ の極限を扱った。後の微分積分の章では、連続に変わる変数 $x$ について $\displaystyle\lim_{x\to a}f(x)$ を定義する。微分と積分の土台になる。
+
+## 参考文献
+
+数列の極限をさらに学ぶための一次資料を挙げる。
+
+- 高木貞治『解析概論（改訂第 3 版）』岩波書店、1983 年。数列の収束を実数の連続性の上に厳密に述べた古典的な教科書である。
+- 杉浦光夫『解析入門 I』東京大学出版会、1980 年。数列の極限とイプシロン・エヌ論法を体系的に扱う。
+
+[^infinity]: 記号 $\infty$ は限りなく大きくする操作を表し、特定の数を指さない。$\infty - \infty$ や $\dfrac{\infty}{\infty}$ のような計算を、数の四則と同じには扱えない。発散の様子を表すための記号である。
+
+[^epsilon]: 誤差の言葉による定義は、厳密な定義であるイプシロン・エヌ論法を、記号を使わず日常語で言い換えたものである。記号による厳密な定式化は、本ロードマップの後続の解析の章で扱う。
+
+[^bernoulli]: 不等式 $(1 + h)^n \ge 1 + nh$（$h \ge -1$）はベルヌーイの不等式と呼ぶ。$n$ についての数学的帰納法で証明できる。本章では $r \gt 1$ の発散を示すための道具として、結果を承認して使う。
+
+[^limit-laws]: 基本性質の証明には、収束の厳密な定義であるイプシロン・エヌ論法が要る。本章では結果を直観に基づいて承認し、計算に使う。厳密な証明は後続の解析の章に譲る。
+
+[^indeterminate]: $a_n \to \infty$ かつ $b_n \to \infty$ のとき、商 $\dfrac{a_n}{b_n}$ の極限は一通りに定まらない。例題 1 や多項式の比のように、$\dfrac{\infty}{\infty}$ の形は変形して初めて極限が決まる。変形が要る形を不定形と呼ぶ。

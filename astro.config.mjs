@@ -75,6 +75,10 @@ export default defineConfig({
               label: "複素数",
               items: [{ autogenerate: { directory: "math/complex-numbers" } }],
             },
+            {
+              label: "数列と級数",
+              items: [{ autogenerate: { directory: "math/sequences-and-series" } }],
+            },
           ],
         },
       ],
