@@ -270,6 +270,25 @@ export default function FlowChart({
         nodeComponent={NodeShape}
         linkComponent={EdgeShape}
       />
+
+      {/*
+       * ノードのラベルは、visx Graph がノードへ施す translate 変換の外側で、絶対座標で描く。
+       * WebKit は、translate された `<g>` 内の foreignObject に置いた KaTeX（独自ペイント
+       * レイヤーを持つ inline-block）を、変換を無視して SVG 原点基準で描くバグがある。
+       * 数式だけがノード枠の外（図の上端）へ飛び出すため、ラベルだけを変換の外へ出す。
+       * 図形（Bar・Polygon）は SVG プリミティブで変換が正しく効くため Graph 配下に残す。
+       */}
+      {graphNodes.map((n) => (
+        <LabelBox
+          key={`lab-${n.id}`}
+          label={n.label}
+          cx={n.x}
+          cy={n.y}
+          width={n.labelW}
+          height={n.labelH}
+          fontSize={NODE_FONT}
+        />
+      ))}
     </svg>
   );
 }
@@ -343,9 +362,14 @@ function toneColors(tone?: FlowTone): { fill: string; stroke: string } {
   return { fill: NODE_FILL, stroke: NODE_STROKE };
 }
 
-/** ノード 1 個を原点中心に描く。矩形は Bar、菱形は Polygon。中央にラベルを置く。 */
+/**
+ * ノード 1 個の外形を原点中心に描く。矩形は Bar、菱形は Polygon。
+ *
+ * ラベルはここでは描かない。visx Graph がノードへ施す translate 変換の下に foreignObject の
+ * KaTeX を置くと WebKit が誤った位置に描くため、ラベルは FlowChart 側で変換の外に描く。
+ */
 function NodeShape({ node }: { node: PlacedNode }) {
-  const { shape, width, height, labelW, labelH, label, tone } = node;
+  const { shape, width, height, tone } = node;
   const { fill, stroke } = toneColors(tone);
   return (
     <Group>
@@ -373,7 +397,6 @@ function NodeShape({ node }: { node: PlacedNode }) {
           strokeWidth={1.4}
         />
       )}
-      <LabelBox label={label} cx={0} cy={0} width={labelW} height={labelH} fontSize={NODE_FONT} />
     </Group>
   );
 }
