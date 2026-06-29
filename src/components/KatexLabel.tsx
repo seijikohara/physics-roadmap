@@ -33,6 +33,8 @@ type KatexLabelProps = {
    * 点ラベルを点の外側（軸から離れる向き）へ伸ばし、目盛り数字との重なりを避けるのに使う。
    */
   align?: "center" | "left" | "right";
+  /** ラベル内側の要素へ付ける CSS クラス。背景色ハローなどテーマ依存の装飾を CSS で与える。 */
+  className?: string;
 };
 
 export default function KatexLabel({
@@ -43,6 +45,7 @@ export default function KatexLabel({
   height = 24,
   fontSize = 14,
   align = "center",
+  className,
 }: KatexLabelProps) {
   // trust: false（既定）を明示する。\href や \htmlClass など、HTML を注入しうる
   // コマンドを無効に保ち、dangerouslySetInnerHTML へ渡す HTML を安全側に倒す。
@@ -63,6 +66,7 @@ export default function KatexLabel({
     >
       <div
         xmlns="http://www.w3.org/1999/xhtml"
+        className={className}
         style={{
           width: "100%",
           height: "100%",
