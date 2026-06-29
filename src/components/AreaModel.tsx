@@ -121,12 +121,12 @@ export default function AreaModel({
           return (
             <Bar
               key={`fill-${uid}-${ci}-${ri}`}
+              className="area-model-highlight"
               x={colEdges[ci]}
               y={rowEdges[ri]}
               width={colEdges[ci + 1] - colEdges[ci]}
               height={rowEdges[ri + 1] - rowEdges[ri]}
               fill={HIGHLIGHT}
-              fillOpacity={0.18}
             />
           );
         }),

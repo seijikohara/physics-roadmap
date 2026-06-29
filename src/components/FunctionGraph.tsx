@@ -581,29 +581,25 @@ export default function FunctionGraph({
         <KatexLabel tex={xLabel} x={originX + plotW + 14} y={axisY - 11} fontSize={13} />
         <KatexLabel tex={yLabel} x={axisX + 12} y={originY - 9} fontSize={13} />
 
-        {/* x 軸の目盛りと数字。 */}
+        {/* x 軸の目盛りの刻み線。数字は点・曲線より前面に描くため、最後にまとめて置く。 */}
         {xt.map((t, i) => (
-          <g key={`tx-${i}`}>
-            <Line
-              from={{ x: x(tickValue(t)), y: axisY - 3 }}
-              to={{ x: x(tickValue(t)), y: axisY + 3 }}
-              stroke={AXIS}
-              strokeWidth={1.2}
-            />
-            <KatexLabel tex={tickLabel(t)} x={x(tickValue(t))} y={axisY + 13} fontSize={11} />
-          </g>
+          <Line
+            key={`tx-${i}`}
+            from={{ x: x(tickValue(t)), y: axisY - 3 }}
+            to={{ x: x(tickValue(t)), y: axisY + 3 }}
+            stroke={AXIS}
+            strokeWidth={1.2}
+          />
         ))}
-        {/* y 軸の目盛りと数字。 */}
+        {/* y 軸の目盛りの刻み線。 */}
         {yt.map((t, i) => (
-          <g key={`ty-${i}`}>
-            <Line
-              from={{ x: axisX - 3, y: y(tickValue(t)) }}
-              to={{ x: axisX + 3, y: y(tickValue(t)) }}
-              stroke={AXIS}
-              strokeWidth={1.2}
-            />
-            <KatexLabel tex={tickLabel(t)} x={axisX - 14} y={y(tickValue(t))} fontSize={11} />
-          </g>
+          <Line
+            key={`ty-${i}`}
+            from={{ x: axisX - 3, y: y(tickValue(t)) }}
+            to={{ x: axisX + 3, y: y(tickValue(t)) }}
+            stroke={AXIS}
+            strokeWidth={1.2}
+          />
         ))}
 
         {/* 曲線。描画窓でクリップしてはみ出しを防ぐ。 */}
@@ -718,6 +714,29 @@ export default function FunctionGraph({
             </g>
           );
         })}
+
+        {/* 軸の目盛り数字。曲線や点マーカーと重なっても読めるよう、最後（最前面）に描き、
+            背景色のハロー（global.css の .fig-tick-label）を敷く。 */}
+        {xt.map((t, i) => (
+          <KatexLabel
+            key={`txn-${i}`}
+            tex={tickLabel(t)}
+            x={x(tickValue(t))}
+            y={axisY + 13}
+            fontSize={11}
+            className="fig-tick-label"
+          />
+        ))}
+        {yt.map((t, i) => (
+          <KatexLabel
+            key={`tyn-${i}`}
+            tex={tickLabel(t)}
+            x={axisX - 14}
+            y={y(tickValue(t))}
+            fontSize={11}
+            className="fig-tick-label"
+          />
+        ))}
       </svg>
 
       {/* 凡例（色見本＋数式ラベル）。SVG の外の HTML として下に並べ、曲線に重ねない。

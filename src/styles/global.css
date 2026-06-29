@@ -118,11 +118,33 @@
 :root {
   --fig-grid: #e2e8f0;
   --fig-axis: #94a3b8;
+  /* 面積図の強調セルの塗りの不透明度。暗テーマでは淡く沈むため、テーマごとに切り替える。 */
+  --fig-highlight-fill-opacity: 0.2;
 }
 
 :root[data-theme="dark"] {
   --fig-grid: #2a3340;
   --fig-axis: #5b6675;
+  --fig-highlight-fill-opacity: 0.34;
+}
+
+/*
+ * 面積図（src/components/AreaModel.tsx を参照）の強調セルの塗り。塗り色は琥珀色のまま、
+ * 不透明度だけをテーマ変数で切り替え、暗テーマでも階段や着色領域が判別できるようにする。
+ */
+.area-model-highlight {
+  fill-opacity: var(--fig-highlight-fill-opacity);
+}
+
+/*
+ * 関数グラフ（src/components/FunctionGraph.tsx を参照）の軸の目盛り数字。原点付近の点
+ * マーカーや曲線と重なっても読めるよう、背景色のハローを敷く。数字は最前面に描く。
+ */
+.function-graph .fig-tick-label {
+  text-shadow:
+    0 0 2px var(--sl-color-bg),
+    0 0 2px var(--sl-color-bg),
+    0 0 3px var(--sl-color-bg);
 }
 
 /*
