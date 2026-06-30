@@ -11,10 +11,11 @@ import AreaModel from "../../../../components/AreaModel";
 
 本章の前提は、次の章である。
 
-- [等比数列](../geometric-sequences/)：数列・一般項 $a_n$ の記法、等比数列の和 $S_n=\dfrac{a_1(1-r^n)}{1-r}$
+- [等差数列](../arithmetic-sequences/)：数列・一般項 $a_n$ の記法、等差数列の和 $S_n=\dfrac{n}{2}(a_1+a_n)$
+- [等比数列](../geometric-sequences/)：等比数列の和 $S_n=\dfrac{a_1(1-r^n)}{1-r}$
 - [数学的帰納法](../../set/mathematical-induction/)：自然数に関する命題を、基底と帰納段階の 2 段で示す証明法
 
-前章までで、等差数列の和 $S_n=\dfrac{n}{2}(a_1+a_n)$ と等比数列の和 $S_n=\dfrac{a_1(1-r^n)}{1-r}$ を求めた。和を一般に書き表す記号として、総和記号を導入する。
+前提の[等差数列](../arithmetic-sequences/)で和 $S_n=\dfrac{n}{2}(a_1+a_n)$ を、[等比数列](../geometric-sequences/)で和 $S_n=\dfrac{a_1(1-r^n)}{1-r}$ を求めた。和を一般に書き表す記号として、総和記号を導入する。
 
 ## 学習目標
 
@@ -502,12 +503,7 @@ $$
 - **性質**：線形性 $\displaystyle\sum(a_k\pm b_k)=\sum a_k\pm\sum b_k$ が成り立つ。定数倍 $\displaystyle\sum c\,a_k=c\sum a_k$ と定数の和 $\displaystyle\sum_{k=1}^{n}c=nc$ も成り立つ。
 - **和の公式**：$\displaystyle\sum k=\frac{n(n+1)}{2}$ と $\displaystyle\sum k^2=\frac{n(n+1)(2n+1)}{6}$ を導いた。さらに $\displaystyle\sum k^3=\left\{\frac{n(n+1)}{2}\right\}^2$ も telescoping で得た。
 
-総和記号は、後続の章で和を扱う土台になる。
-
-- **[漸化式](../recurrence-relations/)**（次章）：階差数列の和を総和記号で表し、一般項を求める。
-- **[数列の極限](../limits-of-sequences/)・[無限級数](../infinite-series/)**：和の項数を限りなく増やした極限を扱う。部分和 $\displaystyle S_n=\sum_{k=1}^{n}a_k$ の極限として、無限級数を定める。
-
-総和記号は、後の微分積分のカテゴリでも、定積分を細い長方形の面積の和の極限として定義する場面で再び現れる[^riemann]。
+総和記号は、数列の和を簡潔に書き表し、項ごとに分けて扱うための基本的な道具である。線形性と和の公式を組み合わせると、多項式で与えられる一般項の和を $n$ の式に整理できる。
 
 ## 参考文献
 
@@ -519,5 +515,3 @@ $$
 [^sigma]: 記号 $\Sigma$ は、ギリシャ語で「和」を表す語の頭文字に当たる大文字のシグマである。和（sum）の頭文字 $S$ に対応する。レオンハルト・オイラーが 18 世紀に和の記号として用い、以後の標準になった。
 
 [^induction]: $1$ 乗・$2$ 乗・$3$ 乗の和の公式は、いずれも[数学的帰納法](../../set/mathematical-induction/)でも証明できる。例えば $\displaystyle\sum_{k=1}^{n}k=\frac{n(n+1)}{2}$ は、$n=1$ で両辺が $1$ となり成り立つ。$n=m$ で成り立つと仮定する。すると $\displaystyle\sum_{k=1}^{m+1}k=\frac{m(m+1)}{2}+(m+1)=\frac{(m+1)(m+2)}{2}$ となり、$n=m+1$ でも成り立つ。本文の telescoping は公式を未知として導く方法であり、帰納法は与えられた公式を検証する方法である。
-
-[^riemann]: 定積分 $\displaystyle\int_a^b f(x)\,dx$ は、区間を細かく分けた長方形の面積の和 $\displaystyle\sum_{k} f(x_k)\,\Delta x$ の、分割を限りなく細かくした極限として定義する。和を表す総和記号が、積分記号 $\displaystyle\int$ の出発点になる。微分積分のカテゴリで扱う。

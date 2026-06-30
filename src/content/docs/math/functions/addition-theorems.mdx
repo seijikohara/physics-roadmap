@@ -11,6 +11,7 @@ import Triangle from "../../../../components/Triangle";
 
 本章の前提は、次の章と前提知識である。
 
+- [三角比の拡張](../extension-of-trigonometric-ratios/)：座標平面を 4 つに分ける象限と、各象限での $\sin\theta$・$\cos\theta$ の符号を使う。
 - [三角関数と単位円](../trigonometric-functions-and-unit-circle/)：単位円による $\sin\theta$・$\cos\theta$・$\tan\theta$ の定義、周期性、偶奇性を使う。
 - [前提とする知識](../../../prerequisites/knowledge/)：三平方の定理（直角三角形で斜辺の 2 乗が他の 2 辺の 2 乗の和に等しい関係）を使う。
 
@@ -84,7 +85,7 @@ $$
 \mathrm{B} = (\cos\beta,\ \sin\beta)
 $$
 
-2 点 $\mathrm{A}$・$\mathrm{B}$ を結ぶ線分を**弦**と呼び、線分の長さを記号 $\mathrm{AB}$ で表す。原点を $\mathrm{O}$ とし、三角形 $\mathrm{OAB}$ を考える。下の図は、単位円上の 2 点 $\mathrm{A}$・$\mathrm{B}$ と原点 $\mathrm{O}$ を結んだ三角形である。辺 $\mathrm{OA}$・$\mathrm{OB}$ はともに半径で長さ $1$、頂点 $\mathrm{O}$ の角は 2 動径のなす角 $\alpha - \beta$ である。
+2 点 $\mathrm{A}$・$\mathrm{B}$ を結ぶ線分を**弦**と呼び、線分の長さを記号 $\mathrm{AB}$ で表す。原点を $\mathrm{O}$ とし、三角形 $\mathrm{OAB}$ を考える。下の図は、単位円上の 2 点 $\mathrm{A}$・$\mathrm{B}$ と原点 $\mathrm{O}$ を結んだ三角形である。辺 $\mathrm{OA}$・$\mathrm{OB}$ はともに半径で長さ $1$、頂点 $\mathrm{O}$ の角は 2 動径のなす角 $\alpha - \beta$ である。なす角の本来の値は差の大きさだが、余弦は偶関数のため、$\alpha - \beta$ と $\beta - \alpha$ のどちらで測っても以降の結果は変わらない。
 
 <Triangle
   vertices={[
@@ -144,7 +145,7 @@ $$
 
 ### 配置をそろえた距離の 2 乗
 
-次に、同じ弦 $\mathrm{AB}$ の長さを別の配置で計算する。弦 $\mathrm{AB}$ の長さは、三角形 $\mathrm{OAB}$ の 2 辺 $\mathrm{OA} = \mathrm{OB} = 1$ と、はさむ角 $\alpha - \beta$ で決まる。2 辺の長さとはさむ角を決めると、三角形の形と大きさが 1 つに定まる。残る辺の長さも 1 つに定まる。
+次に、同じ弦 $\mathrm{AB}$ の長さを別の配置で計算する。弦 $\mathrm{AB}$ の長さは、三角形 $\mathrm{OAB}$ の 2 辺 $\mathrm{OA} = \mathrm{OB} = 1$ と、はさむ角 $\alpha - \beta$ で決まる。2 辺の長さとはさむ角を決めると、三角形の形と大きさが 1 つに定まる。2 辺の長さとはさむ角が等しい三角形どうしは合同になるという基本事実から、残る辺の長さも 1 つに定まる。
 
 そこで、頂点 $\mathrm{O}$ の角を $\alpha - \beta$ に保ったまま、計算しやすい配置に置き直す。点 $\mathrm{B}'$ を $x$ 軸上の $(1,\ 0)$ に、点 $\mathrm{A}'$ を角 $\alpha - \beta$ の位置に取る。座標は次のとおりである。
 
@@ -390,7 +391,7 @@ $$
 
 ### 導出
 
-余弦の 2 倍角の 2 つの形を出発点にする。
+余弦の 2 倍角の 2 つの形を出発点にする。角を $\varphi$ と書き、あとで $2\varphi = \theta$ と置く。
 
 $$
 \cos 2\varphi = 1 - 2\sin^2\varphi, \qquad
@@ -629,8 +630,6 @@ $$
 - 半角（正弦）：$\sin^2\dfrac{\theta}{2} = \dfrac{1 - \cos\theta}{2}$。
 - 半角（余弦）：$\cos^2\dfrac{\theta}{2} = \dfrac{1 + \cos\theta}{2}$。
 - 半角（正接）：$\tan^2\dfrac{\theta}{2} = \dfrac{1 - \cos\theta}{1 + \cos\theta}$。
-
-次の章は[三角関数の合成](../composition-of-trigonometric-functions/)である。合成では、加法定理を逆向きに使う。$a\sin\theta + b\cos\theta$ の形を、1 つの正弦にまとめる。まとめた形は $r\sin(\theta + \alpha)$ である。合成は、振幅と位相をもつ波を 1 本の波で表す技法である。物理学の振動・交流の解析で使う。
 
 [^half-angle-sign]: 半角の公式が $\sin\dfrac{\theta}{2}$ そのものではなく 2 乗の形で得られるのは、$\dfrac{\theta}{2}$ の象限が $\theta$ の値だけでは一意に定まらないためである。たとえば $\theta$ と $\theta + 2\pi$ は同じ角である。しかし半分を取ると $\dfrac{\theta}{2}$ と $\dfrac{\theta}{2} + \pi$ になり、象限が異なる。導出の出発点である余弦の 2 倍角の式は $\sin^2\dfrac{\theta}{2}$ にしか触れず、符号の情報を持たない。よって平方根を外して $\sin\dfrac{\theta}{2}$ を求めるときは、$\dfrac{\theta}{2}$ の象限に応じて符号 $\pm$ を選ぶ。
 
