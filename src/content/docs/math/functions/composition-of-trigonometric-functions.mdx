@@ -60,7 +60,7 @@ $$
 r\sin(\theta + \alpha) = r(\sin\theta\cos\alpha + \cos\theta\sin\alpha) = (r\cos\alpha)\sin\theta + (r\sin\alpha)\cos\theta
 $$
 
-展開した式を、左辺 $a\sin\theta + b\cos\theta$ と比べる。$\sin\theta$ と $\cos\theta$ は独立に値を動かせる。よって、すべての $\theta$ で両辺が等しくなるには、$\sin\theta$ の係数どうし、$\cos\theta$ の係数どうしが一致するほかない。
+展開した式を、左辺 $a\sin\theta + b\cos\theta$ と比べ、すべての $\theta$ で両辺が等しくなる条件を調べる。$\theta = \dfrac{\pi}{2}$ を代入すると $\sin\theta = 1$・$\cos\theta = 0$ となり、$a = r\cos\alpha$ を得る。$\theta = 0$ を代入すると $\sin\theta = 0$・$\cos\theta = 1$ となり、$b = r\sin\alpha$ を得る。逆に 2 つの係数の式が成り立てば、すべての $\theta$ で両辺は一致する。
 
 $$
 a = r\cos\alpha, \qquad b = r\sin\alpha
@@ -243,7 +243,7 @@ $$
 
 ## 最大値・最小値
 
-合成形 $r\sin(\theta + \alpha)$ は、最大値と最小値を一目で与える。正弦 $\sin(\theta + \alpha)$ は、$-1$ 以上 $1$ 以下の値を取る。前章までで確かめたとおり、$\sin$ の値域は $[-1,\ 1]$ である。両辺に $r > 0$ を掛ける。
+合成形 $r\sin(\theta + \alpha)$ は、最大値と最小値を一目で与える。正弦 $\sin(\theta + \alpha)$ は、$-1$ 以上 $1$ 以下の値を取る。前章までで確かめたとおり、$\sin$ の値域は閉区間 $[-1,\ 1]$（$-1$ 以上 $1$ 以下の範囲）である。両辺に $r > 0$ を掛ける。
 
 $$
 -r \le r\sin(\theta + \alpha) \le r
@@ -300,7 +300,7 @@ $$
 \cos\alpha = \frac{1}{\sqrt{2}}, \qquad \sin\alpha = \frac{-1}{\sqrt{2}}
 $$
 
-$\cos\alpha > 0$・$\sin\alpha < 0$ だから、角 $\alpha$ は第 4 象限にある。条件を満たす角は $\alpha = \dfrac{7\pi}{4}$ である。よって合成は次のとおりである。
+ここで座標平面を 2 本の座標軸で 4 つに分けた各領域を象限と呼ぶ。第 1 象限が右上で、反時計回りに第 2・第 3・第 4 と数える。$\cos\alpha > 0$・$\sin\alpha < 0$ だから、点 $(\cos\alpha,\ \sin\alpha)$ は $x > 0$・$y < 0$ の右下、すなわち第 4 象限にある。条件を満たす角は $\alpha = \dfrac{7\pi}{4}$ である。よって合成は次のとおりである。
 
 $$
 \sin\theta - \cos\theta = \sqrt{2}\sin\left(\theta + \frac{7\pi}{4}\right)
@@ -411,7 +411,7 @@ $$
 \sin\left(\theta - \frac{\pi}{6}\right) = \frac{1}{2}
 $$
 
-$\theta - \dfrac{\pi}{6} = \varphi$ と置く。$0 \le \theta < 2\pi$ より $-\dfrac{\pi}{6} \le \varphi < \dfrac{11\pi}{6}$ である。範囲内で $\sin\varphi = \dfrac{1}{2}$ となるのは $\varphi = \dfrac{\pi}{6}$ と $\varphi = \dfrac{5\pi}{6}$ である。それぞれ $\theta$ に戻す。
+$\theta - \dfrac{\pi}{6} = \varphi$（ファイ）と置く。$0 \le \theta < 2\pi$ より $-\dfrac{\pi}{6} \le \varphi < \dfrac{11\pi}{6}$ である。範囲内で $\sin\varphi = \dfrac{1}{2}$ となるのは $\varphi = \dfrac{\pi}{6}$ と $\varphi = \dfrac{5\pi}{6}$ である。それぞれ $\theta$ に戻す。
 
 $$
 \theta - \frac{\pi}{6} = \frac{\pi}{6} \ \text{のとき}\ \theta = \frac{\pi}{3}, \qquad
@@ -502,9 +502,9 @@ $$
 - 指数関数・対数関数。
 - 三角比から三角関数、正弦定理・余弦定理、単位円、加法定理、合成。
 
-初等関数の道具は、物理学の数式を読み書くための土台である。次のカテゴリは「ベクトル」である。ベクトルは、向きと大きさをもつ量を扱う道具であり、力・速度・加速度といった物理量の記述に欠かせない。本章までで身につけた三角関数は、ベクトルの成分表示や内積で再び現れる。ベクトルのカテゴリの章はまだ用意していないため、ここではリンクを張らず、学習の次の方向として言及するにとどめる。
+初等関数の道具は、物理学の数式を読み書くための土台である。
 
-[^phase]: 「位相」（phase）は、波や振動を表すときの用語である。波形を時間や角度の方向にどれだけずらすかを表す量を指す。後の物理で単振動 $x = A\cos(\omega t + \phi)$ を扱うときに再び現れる（$A$ は振幅、$\omega$ は角振動数、$t$ は時刻）。引数 $\omega t + \phi$ 全体を位相、定数 $\phi$ を初期位相と呼ぶ。本章で $\alpha$ と呼んだ波のずれが、初期位相 $\phi$ にあたる。2 つの振動の位相の差は「位相差」と呼び、波の重ね合わせを調べるときに再び現れる。
+[^phase]: 「位相」（phase）は、波や振動を表すときの用語である。波形を時間や角度の方向にどれだけずらすかを表す量を指す。単振動 $x = A\cos(\omega t + \phi)$ では（$A$ は振幅、$\omega$ は角振動数、$t$ は時刻、$\phi$ はファイ）、引数 $\omega t + \phi$ 全体を位相、定数 $\phi$ を初期位相と呼ぶ。本章で $\alpha$ と呼んだ波のずれが、初期位相 $\phi$ にあたる。2 つの振動の位相の差は「位相差」と呼ぶ。
 
 ## 参考文献
 
