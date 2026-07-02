@@ -371,10 +371,13 @@ export default function FunctionGraph({
     const perpX = -(b.y - a.y) / len; // 線分に直交する向き。
     const perpY = (b.x - a.x) / len;
     const w = estimateTexWidth(s.label, 12);
+    // オフセットをラベル幅の半分より大きく取り、急勾配の線分でも中央寄せのラベル矩形が
+    // 線分自身を貫かないようにする（横長ラベル・縦に近い線分の組み合わせで特に効く）。
+    const offset = Math.max(13, w / 2 + 6);
     return choosePlacement(
       [
-        { x: mx + perpX * 13, y: my + perpY * 13, align: "center" },
-        { x: mx - perpX * 13, y: my - perpY * 13, align: "center" },
+        { x: mx + perpX * offset, y: my + perpY * offset, align: "center" },
+        { x: mx - perpX * offset, y: my - perpY * offset, align: "center" },
       ],
       w,
     );
@@ -391,10 +394,12 @@ export default function FunctionGraph({
     const perpX = -(b.y - a.y) / len; // 線分に直交する向き。
     const perpY = (b.x - a.x) / len;
     const w = estimateTexWidth(v.label, 12);
+    // segLabelPos と同じ理由で、ラベル幅に応じてオフセットを広げる。
+    const offset = Math.max(13, w / 2 + 6);
     return choosePlacement(
       [
-        { x: mx + perpX * 13, y: my + perpY * 13, align: "center" },
-        { x: mx - perpX * 13, y: my - perpY * 13, align: "center" },
+        { x: mx + perpX * offset, y: my + perpY * offset, align: "center" },
+        { x: mx - perpX * offset, y: my - perpY * offset, align: "center" },
       ],
       w,
     );
@@ -577,9 +582,10 @@ export default function FunctionGraph({
         />
 
         {/* 軸名。y 軸名は目盛り数字と同じ左側に置くと接触するため、軸の右上へ離す。
-          x 軸名は目盛り数字の右外へ離す。 */}
+          x 軸名は目盛り数字の右外へ離す。y 軸名は左寄せにし、幅広のラベル（例: a_n, c_n）
+          でも左半分が軸線や矢印へ食い込まないよう、右方向へだけ伸ばす。 */}
         <KatexLabel tex={xLabel} x={originX + plotW + 14} y={axisY - 11} fontSize={13} />
-        <KatexLabel tex={yLabel} x={axisX + 12} y={originY - 9} fontSize={13} />
+        <KatexLabel tex={yLabel} x={axisX + 8} y={originY - 9} fontSize={13} align="left" />
 
         {/* x 軸の目盛りの刻み線。数字は点・曲線より前面に描くため、最後にまとめて置く。 */}
         {xt.map((t, i) => (
