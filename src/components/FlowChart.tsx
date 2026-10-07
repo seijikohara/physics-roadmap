@@ -534,7 +534,9 @@ function labelToHtml(label: string): string {
           return escapeHtml(seg);
         })
         .join("");
-      return `<div>${inner.length > 0 ? inner : "&#8203;"}</div>`;
+      // Starlight の markdown.css は兄弟要素へ margin-top を加えるため、行の余白を明示的に 0 にする。
+      // 余白が入ると dagre の計算したノード寸法をあふれ、菱形などの枠線と文字が交差する。
+      return `<div style="margin:0">${inner.length > 0 ? inner : "&#8203;"}</div>`;
     })
     .join("");
 }
