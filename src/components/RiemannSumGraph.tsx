@@ -31,9 +31,10 @@ import KatexLabel from "./KatexLabel";
 /**
  * 軸の目盛り。数値だけ渡すと数値をそのまま描く。`{ value, label }` でラベル（LaTeX）を添える。
  * x 軸の目盛りで `above: true` を指定すると、数字を軸の上側に置く。軸の下に負の長方形や領域が
- * あり、数字が塗りの縁と重なるときに使う。
+ * あり、数字が塗りの縁と重なるときに使う。`dx` は x 軸の目盛り数字を横へずらす量（px、右が正）で
+ * ある。急な曲線が目盛りの真上または真下を通り、数字と重なるときに、曲線の無い側へ逃がす。
  */
-type Tick = number | { value: number; label?: string; above?: boolean };
+type Tick = number | { value: number; label?: string; above?: boolean; dx?: number };
 
 /** 代表点の選び方。左端・右端・中点、または各小区間の代表点の配列。 */
 type Sample = "left" | "right" | "mid" | number[];
@@ -71,6 +72,16 @@ type RiemannSumGraphProps = {
   upperFn?: (x: number) => number;
   /** 2 本目の曲線の凡例に添える LaTeX ラベル。 */
   upperLabel?: string;
+  /**
+   * 2 曲線の間を塗る区間。省略時は area と同じ。曲線の下の領域と、2 曲線の間の領域を別の区間で
+   * 塗り分けるときに指定する。指定すると、2 本目の曲線もこの区間で描く。
+   */
+  betweenArea?: [number, number];
+  /**
+   * 2 曲線の間の領域の下側の境界。省略時は fn。区間の一部で fn と異なる境界（定数の高さなど）を
+   * 下側に使い、L 字形などの領域を塗るときに指定する。
+   */
+  betweenLowerFn?: (x: number) => number;
   /** 分割点 x_0 < x_1 < ... < x_n。指定すると、各小区間に長方形を描く。 */
   partition?: number[];
   /** 代表点の選び方。既定 "left"。配列を渡すときは小区間の個数と同じ長さにする。 */
@@ -128,6 +139,8 @@ export default function RiemannSumGraph({
   curveLabel,
   upperFn,
   upperLabel,
+  betweenArea,
+  betweenLowerFn,
   partition = [],
   sample = "left",
   showSamples = false,
@@ -207,13 +220,18 @@ export default function RiemannSumGraph({
   const positiveArea = areaPolygon(1);
   const negativeArea = areaPolygon(-1);
 
-  // 2 曲線の間の領域。下の曲線に沿って進み、上の曲線に沿って戻る多角形にする。
+  // 2 曲線の間の領域。下の曲線に沿って進み、上の曲線に沿って戻る多角形にする。区間と下側の境界は、
+  // 指定が無ければ曲線の下の領域と同じ（area と fn）にし、従来の描画を変えない。
+  const betweenRange = betweenArea ?? area;
+  const betweenLower = betweenLowerFn ?? fn;
   const betweenPolygon: [number, number][] | null =
-    area === undefined || upperFn === undefined
+    betweenRange === undefined || upperFn === undefined
       ? null
       : [
-          ...areaSamples.map((d): [number, number] => [x(d.xv), y(d.yv)]),
-          ...sampleRange(upperFn, area[0], area[1])
+          ...sampleRange(betweenLower, betweenRange[0], betweenRange[1]).map(
+            (d): [number, number] => [x(d.xv), y(d.yv)],
+          ),
+          ...sampleRange(upperFn, betweenRange[0], betweenRange[1])
             .toReversed()
             .map((d): [number, number] => [x(d.xv), y(d.yv)]),
         ];
@@ -231,7 +249,8 @@ export default function RiemannSumGraph({
 
   const [curveLo, curveHi] = curveDomain ?? [xMin, xMax];
   const curveSamples = sampleRange(fn, curveLo, curveHi);
-  const upperSamples = upperFn === undefined ? [] : sampleRange(upperFn, curveLo, curveHi);
+  const [upperLo, upperHi] = betweenArea ?? [curveLo, curveHi];
+  const upperSamples = upperFn === undefined ? [] : sampleRange(upperFn, upperLo, upperHi);
 
   // 凡例。ラベル付きの曲線だけを並べる。
   const legendItems = [
@@ -484,7 +503,7 @@ export default function RiemannSumGraph({
           <KatexLabel
             key={`txn-${i}`}
             tex={tickLabel(t)}
-            x={x(tickValue(t))}
+            x={x(tickValue(t)) + tickDx(t)}
             y={tickAbove(t) ? axisY - 13 : axisY + 13}
             fontSize={11}
             className="fig-tick-label"
@@ -547,6 +566,10 @@ function tickLabel(t: Tick): string {
 
 function tickAbove(t: Tick): boolean {
   return typeof t === "number" ? false : (t.above ?? false);
+}
+
+function tickDx(t: Tick): number {
+  return typeof t === "number" ? 0 : (t.dx ?? 0);
 }
 
 /** 区間 [lo, hi] 内の 0 以外の整数位置を目盛りとして返す。 */

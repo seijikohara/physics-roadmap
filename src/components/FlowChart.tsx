@@ -84,6 +84,12 @@ type FlowChartProps = {
   ariaLabel: string;
   /** 表示の最大幅（px）。既定は 720。大きなグラフ（ロードマップ全体図）で広げる。 */
   maxWidth?: number;
+  /**
+   * dagre のノード整列の基準（`UL`・`UR`・`DL`・`DR`）。省略時は dagre の既定に任せる。
+   * 2 列に並べたいノードが段ごとに横へずれるとき、列をまっすぐそろえるために指定する。
+   * 省略時は従来どおり dagre へ何も渡さず、既存の図の配置を変えない。
+   */
+  align?: "UL" | "UR" | "DL" | "DR";
 };
 
 // 色はテーマに追従する CSS 変数（global.css の :root と [data-theme="dark"]）で与える。
@@ -115,6 +121,7 @@ export default function FlowChart({
   clusters = [],
   ariaLabel,
   maxWidth = 720,
+  align,
 }: FlowChartProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const arrow = `flowArrow-${uid}`;
@@ -126,7 +133,14 @@ export default function FlowChart({
     compound: true,
     multigraph: true,
   });
-  g.setGraph({ rankdir, nodesep: NODE_SEP, ranksep: RANK_SEP, marginx: MARGIN, marginy: MARGIN });
+  g.setGraph({
+    rankdir,
+    nodesep: NODE_SEP,
+    ranksep: RANK_SEP,
+    marginx: MARGIN,
+    marginy: MARGIN,
+    ...(align === undefined ? {} : { align }),
+  });
   g.setDefaultEdgeLabel(() => ({}));
 
   // ノードを登録する。形状ごとに、ラベルの行・数式から外形の幅・高さを見積もる。
