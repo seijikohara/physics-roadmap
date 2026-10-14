@@ -397,18 +397,6 @@ export default function RiemannSumGraph({
             );
           })}
 
-          {/* 区間の分け目。x 軸から曲線上の点まで破線で引き、塗った領域を 2 つに分けて見せる。 */}
-          {dividers.map((dx, i) => (
-            <Line
-              key={`div-${i}`}
-              from={{ x: x(dx), y: zeroY }}
-              to={{ x: x(dx), y: y(fn(dx)) }}
-              stroke={HIGHLIGHT}
-              strokeWidth={1.6}
-              strokeDasharray="5 4"
-            />
-          ))}
-
           {/* 曲線。長方形の上に描き、長方形の上辺とのずれを見せる。 */}
           {upperSamples.length > 0 && (
             <LinePath<Sample2>
@@ -474,6 +462,24 @@ export default function RiemannSumGraph({
             strokeWidth={1.2}
           />
         ))}
+
+        {/* 区間の分け目。x 軸から曲線上の点まで破線で引き、塗った領域を 2 つに分けて見せる。
+            軸より後に描く。x=0 の分け目が y 軸に隠れないようにするためである。描画窓の外へ
+            伸びる分だけは、曲線と同じく描画窓で切る。 */}
+        {dividers.length > 0 && (
+          <Group clipPath={`url(#${clip})`}>
+            {dividers.map((dx, i) => (
+              <Line
+                key={`div-${i}`}
+                from={{ x: x(dx), y: zeroY }}
+                to={{ x: x(dx), y: y(fn(dx)) }}
+                stroke={HIGHLIGHT}
+                strokeWidth={1.6}
+                strokeDasharray="5 4"
+              />
+            ))}
+          </Group>
+        )}
 
         {/* 代表点。長方形の上辺と曲線が交わる点に、強調色の丸を置く。 */}
         {showSamples &&

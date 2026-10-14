@@ -215,6 +215,7 @@ export default function FlowChart({
   });
 
   // visx Graph に渡すリンク。リンクは平行移動されないため、絶対座標の経路で描く。
+  const nodeById = new Map(graphNodes.map((n) => [n.id, n]));
   const graphLinks: PlacedLink[] = edges.map((e, i) => {
     const ed = g.edge({ v: e.from, w: e.to, name: `e${i}` });
     // dagre が経路を埋めなかった場合（入力不整合・レイアウト失敗）は、壊れた SVG を返さず
@@ -225,6 +226,11 @@ export default function FlowChart({
       );
     }
     const points = ed.points.map((p) => ({ x: p.x, y: p.y }));
+    // dagre は端点を外接矩形の上に置くため、菱形ノードでは矢印が輪郭から浮く。菱形の端点だけを
+    // 輪郭上へ付け替える。矩形ノード・クラスタの端点は dagre の結果のまま使う。
+    const last = points.length - 1;
+    points[0] = clipToDiamond(points[0], nodeById.get(e.from));
+    points[last] = clipToDiamond(points[last], nodeById.get(e.to));
     const lab =
       e.label && typeof ed.x === "number" && typeof ed.y === "number"
         ? { text: e.label, x: ed.x, y: ed.y }
@@ -364,6 +370,23 @@ type PlacedLink = {
   /** 矢印マーカーの id。FlowChart インスタンスごとに異なる。 */
   arrowId: string;
 };
+
+/**
+ * エッジの端点を、菱形ノードの輪郭 |dx|/(w/2) + |dy|/(h/2) = 1 の上へ移す。
+ *
+ * dagre は端点を、ノード中心から隣の経路点へ向かう半直線と外接矩形との交点に置く。
+ * 同じ半直線上で菱形の輪郭と交わる点へ縮めれば、経路の向きを変えずに矢印を輪郭へ届かせられる。
+ * 矩形の上の点では左辺の値が 1 以上 2 以下になるため、移した点は元の線分の内側に収まる。
+ * 菱形でないノード（矩形・クラスタ）と、中心と重なる退化した端点は、そのまま返す。
+ */
+function clipToDiamond(p: Pt, node: PlacedNode | undefined): Pt {
+  if (node === undefined || node.shape !== "diamond") return p;
+  const dx = p.x - node.x;
+  const dy = p.y - node.y;
+  const s = Math.abs(dx) / (node.width / 2) + Math.abs(dy) / (node.height / 2);
+  if (s <= 1e-9) return p;
+  return { x: node.x + dx / s, y: node.y + dy / s };
+}
 
 /** ノードのトーンごとの塗り・輪郭の CSS 変数。未指定（中立）は既定色。 */
 function toneColors(tone?: FlowTone): { fill: string; stroke: string } {

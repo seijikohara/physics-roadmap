@@ -113,7 +113,18 @@ export default function NumberLine({
         </Marker>
       </defs>
 
-      {/* 塗りつぶす区間。軸線の上に太い帯で重ねる。 */}
+      {/* 軸線。両端に矢印を付け、実数が両方向へ続くことを示す。 */}
+      <Line
+        from={{ x: left - 8, y: AXIS_Y }}
+        to={{ x: right + 8, y: AXIS_Y }}
+        stroke={AXIS}
+        strokeWidth={1.5}
+        markerStart={`url(#${arrow})`}
+        markerEnd={`url(#${arrow})`}
+      />
+
+      {/* 塗りつぶす区間。軸線より後に描き、太い帯で軸線を覆う。軸線が帯の中央を通ると、
+          帯が 2 本の細線に割れて見えるためである。目盛りは帯より後に描き、帯の上でも見せる。 */}
       {intervals.map((iv, i) => {
         const x1 = iv.from === undefined ? left : x(iv.from);
         const x2 = iv.to === undefined ? right : x(iv.to);
@@ -129,16 +140,6 @@ export default function NumberLine({
           />
         );
       })}
-
-      {/* 軸線。両端に矢印を付け、実数が両方向へ続くことを示す。 */}
-      <Line
-        from={{ x: left - 8, y: AXIS_Y }}
-        to={{ x: right + 8, y: AXIS_Y }}
-        stroke={AXIS}
-        strokeWidth={1.5}
-        markerStart={`url(#${arrow})`}
-        markerEnd={`url(#${arrow})`}
-      />
 
       {/* 目盛り。 */}
       {(ticks ?? []).map((t, i) => {
