@@ -37,7 +37,8 @@ type SectorComparisonProps = {
   ariaLabel: string;
 };
 
-// 塗りは領域ごとに色を変え、暗テーマでも重なりが判別できるようにする（不透明度は固定）。
+// 塗りは領域ごとに色を変え、重なりを判別できるようにする。色はテーマ共通とし、不透明度は
+// global.css のテーマ変数（--sector-*-fill-opacity）で切り替え、暗テーマでも判別できるようにする。
 const OUTER = "#f59e0b"; // 三角形 OAT（面積 (1/2) tan x）。
 const SECTOR = "#3b82f6"; // 扇形 OAP（面積 (1/2) x）。弧・半径もこの色でそろえる。
 const INNER = "#10b981"; // 三角形 OAP（面積 (1/2) sin x）。弦もこの色でそろえる。
