@@ -333,3 +333,76 @@
   aspect-ratio: 320 / 280;
   margin: 1rem auto;
 }
+
+/*
+ * 静的な 3 次元の図（曲面・平面・直方体・空間曲線。src/components/SurfacePlot.tsx を参照）。
+ * 高さは内容に合わせて図ごとに決まるため、縦横比は SVG の style 属性で与える。幅 320 は
+ * viewBox 幅と一致し、表示倍率 1.0 で描く。
+ */
+.surface-plot {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  margin: 1rem auto;
+}
+
+/* 伸縮グリフ（根号など）の復元。冒頭の .katex svg の規則と同じ理由による。 */
+.surface-plot .katex svg {
+  height: 100%;
+}
+
+/*
+ * 図中のラベル・目盛り数字は曲面や網目の上に重なることが多い。背景色のハローを敷き、
+ * 下の線や塗りから文字を浮かせて読めるようにする。
+ */
+.surface-plot .surface-plot-label {
+  text-shadow:
+    0 0 2px var(--sl-color-bg),
+    0 0 2px var(--sl-color-bg),
+    0 0 3px var(--sl-color-bg);
+}
+
+/*
+ * 静的な平面図（等高線・領域・勾配の矢印・分割の格子。src/components/ContourPlot.tsx を参照）。
+ * 高さは描画窓の縦横比から図ごとに決まる。表示の最大幅は外側の要素の style 属性で viewBox 幅と
+ * 一致させ、表示倍率 1.0 で描く。
+ */
+.contour-plot-figure {
+  margin: 1rem auto;
+}
+
+.contour-plot {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+}
+
+/* 伸縮グリフ（根号など）の復元。冒頭の .katex svg の規則と同じ理由による。 */
+.contour-plot .katex svg {
+  height: 100%;
+}
+
+/* ラベル・目盛り数字は等高線や領域の塗りに重なりやすい。背景色のハローを敷いて読めるようにする。 */
+.contour-plot .fig-tick-label {
+  text-shadow:
+    0 0 2px var(--sl-color-bg),
+    0 0 2px var(--sl-color-bg),
+    0 0 3px var(--sl-color-bg);
+}
+
+/*
+ * 等高線の既定パレット（単色の濃淡）の両端。高さの順に --contour-lo から --contour-hi へ混ぜる。
+ * 大きい高さほど背景との差が大きくなるよう、明テーマでは淡→濃、暗テーマでは濃→淡にとる。
+ * 両端とも背景から判別できる明るさに収め、背景との差が最も小さい線も背景に溶けないようにする。
+ */
+:root {
+  --contour-lo: #60a5fa;
+  --contour-hi: #1e3a8a;
+}
+
+:root[data-theme="dark"] {
+  --contour-lo: #2563eb;
+  --contour-hi: #bfdbfe;
+}
