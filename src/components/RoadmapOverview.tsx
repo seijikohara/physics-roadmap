@@ -15,8 +15,18 @@ import FlowChart, { type FlowEdge, type FlowNode } from "./FlowChart";
 /** カテゴリ。id は設計書の接頭辞、label は短縮名。tone は進捗（既定＝執筆予定）。 */
 type Category = { id: string; label: string; tone?: "done" | "goal" };
 
-// 執筆済みカテゴリ（2026 年 6 月時点）。docs/roadmap-design.md の実装状況に対応する。
-const DONE = new Set(["PRE", "M-SET", "M-ALG", "M-FUN", "M-VEC", "M-AGEO", "M-CPX"]);
+// 執筆済みカテゴリ（2026 年 10 月時点）。docs/roadmap-design.md の実装状況に対応する。
+const DONE = new Set([
+  "PRE",
+  "M-SET",
+  "M-ALG",
+  "M-FUN",
+  "M-VEC",
+  "M-AGEO",
+  "M-CPX",
+  "M-SEQ",
+  "M-CALC",
+]);
 // 到達目標の 2 カテゴリ。
 const GOALS = new Set(["P-SMD", "P-GR"]);
 

@@ -92,7 +92,8 @@
 .area-model .katex svg,
 .flow-chart .katex svg,
 .venn-figure .katex svg,
-.space-vector .katex svg {
+.space-vector .katex svg,
+.sector-comparison .katex svg {
   height: 100%;
 }
 
@@ -120,12 +121,21 @@
   --fig-axis: #94a3b8;
   /* 面積図の強調セルの塗りの不透明度。暗テーマでは淡く沈むため、テーマごとに切り替える。 */
   --fig-highlight-fill-opacity: 0.2;
+  /* 扇形比較図（3 領域を重ねて塗る）の各層の不透明度。暗テーマでは背景が暗く、同じ不透明度
+     では明るさの差が出にくいため、テーマごとに切り替える。特に最下層（外側の三角形のみを
+     覆う層）は最も淡くなりやすいため、他の層より大きく引き上げる。 */
+  --sector-outer-fill-opacity: 0.12;
+  --sector-sector-fill-opacity: 0.22;
+  --sector-inner-fill-opacity: 0.3;
 }
 
 :root[data-theme="dark"] {
   --fig-grid: #2a3340;
   --fig-axis: #5b6675;
   --fig-highlight-fill-opacity: 0.34;
+  --sector-outer-fill-opacity: 0.32;
+  --sector-sector-fill-opacity: 0.4;
+  --sector-inner-fill-opacity: 0.46;
 }
 
 /*
@@ -134,6 +144,20 @@
  */
 .area-model-highlight {
   fill-opacity: var(--fig-highlight-fill-opacity);
+}
+
+/*
+ * 扇形比較図（src/components/SectorComparison.tsx を参照）の 3 領域の塗り。同じ理由で、
+ * 不透明度だけをテーマ変数で切り替える。
+ */
+.sector-comparison-outer {
+  fill-opacity: var(--sector-outer-fill-opacity);
+}
+.sector-comparison-sector {
+  fill-opacity: var(--sector-sector-fill-opacity);
+}
+.sector-comparison-inner {
+  fill-opacity: var(--sector-inner-fill-opacity);
 }
 
 /*
@@ -253,6 +277,15 @@
   display: block;
   width: 100%;
   max-width: 320px;
+  height: auto;
+  margin: 1rem auto;
+}
+
+/* 静的な扇形比較図（インライン SVG。src/components/SectorComparison.tsx を参照）。 */
+.sector-comparison {
+  display: block;
+  width: 100%;
+  max-width: 300px;
   height: auto;
   margin: 1rem auto;
 }

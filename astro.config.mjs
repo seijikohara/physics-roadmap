@@ -79,6 +79,10 @@ export default defineConfig({
               label: "数列と級数",
               items: [{ autogenerate: { directory: "math/sequences-and-series" } }],
             },
+            {
+              label: "微分積分",
+              items: [{ autogenerate: { directory: "math/calculus" } }],
+            },
           ],
         },
       ],

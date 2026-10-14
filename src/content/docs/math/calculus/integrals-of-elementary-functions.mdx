@@ -1,0 +1,1766 @@
+---
+title: 指数・対数・三角関数の積分
+description: 指数関数・三角関数の導関数を逆向きに読み、∫e^x dx=e^x+C、∫sin x dx=-cos x+C、∫cos x dx=sin x+C などの基本の不定積分を、成り立つ開区間とともに導く。置換積分法・部分積分法と組み合わせ、∫tan x dx=-ln|cos x|+C、∫ln x dx=x ln x-x+C、同じ積分が戻ってくる ∫e^x sin x dx を扱う。半角の公式と積和の公式で三角関数の積を積分し、整数倍の角の積の定積分の値を示す。置換 x=sin θ で ∫_0^1√(1-x²)dx=π/4 と円の面積 πr² を求め、正弦の累乗の定積分の漸化式を導く。
+sidebar:
+  order: 19
+---
+
+import FlowChart from "../../../../components/FlowChart";
+import FunctionGraph from "../../../../components/FunctionGraph";
+import RiemannSumGraph from "../../../../components/RiemannSumGraph";
+
+## 前提
+
+本章の前提は、次の 32 章である。
+
+- [部分分数分解と有理関数の積分](../partial-fractions-and-rational-integrals/)：逆数の不定積分（定理）$\displaystyle\int\frac1x\,dx=\ln\lvert x\rvert+C$（$0$ を含まない開区間）
+  - 分母の導関数が分子にある形（定理）：$g$ が開区間 $I$ で微分可能であり、$I$ で $g(x)\neq0$ ならば $\displaystyle\int\frac{g'(x)}{g(x)}\,dx=\ln\lvert g(x)\rvert+C$
+  - 「正の側と負の側の定数」の節：定義域が複数の開区間に分かれるとき、式を開区間ごとに成り立つ式と読むこと
+- [部分積分法](../integration-by-parts/)：部分積分法（定理）と、関数から不定積分を引く書き方（約束）・定数倍が付く式の読み方
+  - 「成立条件の役割」の節：$f'$ が連続ならば $f'g$ が原始関数を持つという確かめ方
+  - 「g の選び方によらないこと」の節：積分定数を $0$ とした $g$ を使ってよいこと
+  - 定積分の部分積分（定理）と、境界の項
+  - 「計算を整理する表」の節：微分する側 $D_k$・積分する側 $V_k$ と、符号が交互に現れる式
+  - 「漸化式で求める定積分」の節：添字の異なる定積分どうしの関係式も漸化式と呼ぶこと
+- [置換積分法](../integration-by-substitution/)：置換積分法（定理）と、開区間を表す文字 $I$・$J$
+  - 文字 $u$ を使った書き方と、書き換えの規則 $du=g'(x)\,dx$ が便宜的な書き方であること
+  - 一次式の代入（系）$\displaystyle\int f(ax+b)\,dx=\frac1aF(ax+b)+C$ と、関数の累乗と導関数の積（系）
+  - 定積分の置換（定理）と、積分区間の対応表
+  - 「定積分での使い方」の節：定積分の置換を右辺から左辺へ読む式と、単調性が条件に含まれないこと
+  - 逆向きの置換（定理）と、置き換えの関数の名前に使う文字 $\varphi$（ファイ）
+- [微分積分学の基本定理](../fundamental-theorem-of-calculus/)：基本定理 2 $\displaystyle\int_a^b f(x)\,dx=F(b)-F(a)$ と、記号 $\bigl[F(x)\bigr]_a^b$
+  - 連続関数の原始関数の存在（系）と、区間における平均値（定義）
+  - 「符号が変わる関数の面積と定積分」の節：符号が変わる点で積分区間を分けて面積を求めること
+  - 2 曲線の間の図形の面積（定義）
+- [定積分とリーマン和](../definite-integrals-and-riemann-sums/)：定積分の定義（閉区間 $[a,b]$ の点での値から作るリーマン和で定めること）と、連続関数は積分可能であること（承認事項）
+  - 定積分の線形性（定理）、定数関数の定積分、定積分の単調性（定理）
+  - 積分変数がダミー変数であることと、下端と上端の約束
+  - 曲線と $x$ 軸の間の図形の面積（定義）と、符号つきの面積
+- [不定積分の定義](../indefinite-integrals/)：端点が無限の開区間、原始関数の定義、不定積分の記号と積分定数 $C$
+  - 不定積分の等号が関数の集合の等しさを表すこと
+  - 原始関数の全体（定理）、不定積分の線形性、「積分定数をまとめる」の節、微分による検算
+- [指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)：自然対数の記号 $\ln$ と性質の表
+  - 「単調性と 1 対 1」の節：$e^x$ が狭義単調増加であることと、$x\neq1$ ならば $\ln x\neq0$ であること
+  - 正弦・余弦・正接の導関数（定理）と、正接の導関数の証明で使う「$x\neq\dfrac\pi2+n\pi$ では $\cos x\neq0$」
+  - 絶対値を含む自然対数の導関数（定理）と、関数の絶対値の自然対数（系）$\{\ln\lvert g(x)\rvert\}'=\dfrac{g'(x)}{g(x)}$
+  - 指数関数の導関数（定理）、自然対数の導関数（定理）、一般の底の指数関数の導関数（定理）
+  - 「連鎖律と組み合わせた公式」の節：括弧の省略 $\sin g(x)=\sin(g(x))$ と、記法 $\cos^2g(x)=\{\cos g(x)\}^2$
+- [合成関数の微分（連鎖律）](../chain-rule/)：連鎖律（定理）と、関数の整数乗の公式
+  - 関数の平方根の公式 $\left\{\sqrt{g(x)}\right\}'=\dfrac{g'(x)}{2\sqrt{g(x)}}$（$g(x)>0$）
+  - 累乗の単調性（補題）：$n$ が自然数で $0\le s<t$ ならば $s^n<t^n$
+- [積・商の微分法](../product-and-quotient-rules/)：積の微分（定理）
+- [微分の基本公式](../basic-differentiation-rules/)：定数倍・和・差の微分、0 乗の約束、波括弧 $\{\ \}$ で式のまとまりを示す書き方
+- [微分係数と導関数の定義](../derivative-definition/)：「微分可能ならば連続である」の節の定理
+- [関数の連続性](../continuity-of-functions/)：連続の定義、閉区間で連続であることの定義（端点での片側からの連続）、「四則演算による性質」の節
+- [関数の極限](../function-limits/)：誤差の言葉による収束の定義と、置き換えの原理
+- [自然対数の底 e と重要な極限](../euler-number-and-key-limits/)：定数 $e=2.718\cdots$
+  - 重要な極限 $\displaystyle\lim_{x\to0}\frac{\sin x}{x}=1$ の証明が、円の面積の公式と、扇形の面積が中心角に比例すること（承認事項）を使うこと
+- [加法定理](../../functions/addition-theorems/)：正弦・余弦の加法定理と、複号同順・複号逆順の記法
+  - 相互関係 $\cos^2\theta+\sin^2\theta=1$ と、記法 $\sin^2\theta=(\sin\theta)^2$
+  - 余角の関係 $\cos\left(\dfrac\pi2-\alpha\right)=\sin\alpha$・$\sin\left(\dfrac\pi2-\alpha\right)=\cos\alpha$
+  - 正弦の 2 倍角の公式 $\sin2\theta=2\sin\theta\cos\theta$
+  - 半角の公式 $\sin^2\dfrac\theta2=\dfrac{1-\cos\theta}{2}$・$\cos^2\dfrac\theta2=\dfrac{1+\cos\theta}{2}$
+- [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：$\sin x$・$\cos x$・$\tan x$ の定義と値域、代表的な値の表、$\tan x$ の定義域
+  - 周期性 $\sin(x+2\pi)=\sin x$・$\cos(x+2\pi)=\cos x$ と、偶奇性 $\cos(-x)=\cos x$・$\sin(-x)=-\sin x$
+  - 正弦・余弦のグラフ
+- [三角比の拡張](../../functions/extension-of-trigonometric-ratios/)：弧度法、動径と象限、各象限の符号
+- [円と軌跡](../../coordinate-geometry/circles-and-loci/)：2 点間の距離、円の定義、中心が原点・半径 $r$ の円の方程式 $x^2+y^2=r^2$
+- [円錐曲線（楕円・放物線・双曲線）](../../coordinate-geometry/conic-sections/)：楕円の標準形 $\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}=1$
+- [多項式関数と有理関数](../../functions/polynomial-and-rational-functions/)：多項式関数と有理関数
+- [指数関数](../../functions/exponential-functions/)：$a>0$ のとき $a^x>0$ であること
+- [無理関数](../../functions/irrational-functions/)：平方根関数 $y=\sqrt x$ の定義域 $x\ge0$
+- [平方根と絶対値](../../algebra/square-roots-and-absolute-value/)：平方根 $\sqrt a$、絶対値 $\lvert a\rvert$、恒等式 $\sqrt{a^2}=\lvert a\rvert$、記号 $\neq$（等しくない）
+  - 絶対値の積の性質 $\lvert ab\rvert=\lvert a\rvert\lvert b\rvert$
+  - 波括弧による場合分けの書き方
+- [因数分解](../../algebra/factorization/)：公式 $a^2-b^2=(a+b)(a-b)$
+- [一次不等式](../../algebra/linear-inequalities/)：不等式の基本性質
+  - 絶対値の不等式（$a>0$）：$\lvert x\rvert<a\iff-a<x<a$、$\lvert x\rvert\le a\iff-a\le x\le a$、$\lvert x\rvert>a\iff x<-a$ または $x>a$
+- [数学的帰納法](../../set/mathematical-induction/)：数学的帰納法の原理と、基底・帰納段階による証明
+- [漸化式](../../sequences-and-series/recurrence-relations/)：漸化式の意味（数列の隣り合う項の関係式）
+- [実数と数の体系](../../algebra/real-number-system/)：自然数（$1,2,3,\dots$）・整数・有理数の区別
+- [必要条件と十分条件](../../set/necessary-and-sufficient-conditions/)：同値と記号 $\iff$（同値である）
+- [証明の方法](../../set/methods-of-proof/)：背理法
+- [集合と要素](../../set/sets-and-elements/)：集合と、集合が等しいこと、用語「任意の」（どの〜をとっても）
+- [前提とする知識](../../../prerequisites/knowledge/)：円の面積の公式（半径 $r$ の円の面積は $\pi r^2$）
+
+[指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)の章では、指数関数・対数関数・三角関数の導関数を求めた。[部分分数分解と有理関数の積分](../partial-fractions-and-rational-integrals/)の章では、$\dfrac1x$ の原始関数が $\ln\lvert x\rvert$ であることを示した。一方、$e^x$・$\sin x$・$\cos x$ の原始関数は、まだ求めていない。
+
+本章では、導関数の公式を逆向きに読み、指数関数と三角関数の基本の不定積分を導く。次に、置換積分法・部分積分法と組み合わせ、積分できる関数の範囲を広げる。最後に、三角関数の積の積分と三角関数による置換を扱い、円の面積を定積分で求める。
+
+## 学習目標
+
+本章を読むと、次の概念と数式を使えるようになる。
+
+- 基本の不定積分と、成り立つ開区間
+  - $\displaystyle\int e^x\,dx=e^x+C$ と、$\displaystyle\int a^x\,dx=\frac{a^x}{\ln a}+C$（$a>0$、$a\neq1$）
+  - $\displaystyle\int\sin x\,dx=-\cos x+C$ と $\displaystyle\int\cos x\,dx=\sin x+C$
+  - $\displaystyle\int\frac{1}{\cos^2x}\,dx=\tan x+C$
+- 置換積分法との組み合わせと、$\displaystyle\int\tan x\,dx=-\ln\lvert\cos x\rvert+C$
+- 部分積分法との組み合わせと、$\displaystyle\int\ln x\,dx=x\ln x-x+C$
+- 同じ積分が戻ってくる $\displaystyle\int e^x\sin x\,dx$ の求め方と、不定積分の等式を集合の等式として扱う注意
+- 半角の公式による $\displaystyle\int\sin^2x\,dx$ と、閉区間 $[0,2\pi]$ における $\sin^2x$ の平均値 $\dfrac12$
+- 積和の公式と、自然数 $m$・$n$ についての定積分 $\displaystyle\int_0^{2\pi}\sin mx\sin nx\,dx$ の値
+- 置換 $x=\sin\theta$ による $\displaystyle\int_0^1\sqrt{1-x^2}\,dx=\frac\pi4$ と、円の面積 $\pi r^2$
+- 正弦の累乗の定積分の漸化式 $I_n=\dfrac{n-1}{n}I_{n-2}$
+
+## 積分の見取り図
+
+### 本章で扱う積分
+
+本章で扱う積分を、主に使う方法で分類する。
+
+| 種類                 | 被積分関数の例               | 主に使う方法               |
+| -------------------- | ---------------------------- | -------------------------- |
+| 基本の不定積分       | $e^x$、$\sin x$、$\cos x$    | 導関数の公式を逆向きに読む |
+| 合成関数を含む形     | $xe^{x^2}$、$\tan x$         | 置換積分法                 |
+| 種類の異なる関数の積 | $xe^x$、$\ln x$、$e^x\sin x$ | 部分積分法                 |
+| 三角関数の積         | $\sin^2x$、$\sin3x\cos x$    | 半角の公式・積和の公式     |
+| 根号を含む形         | $\sqrt{1-x^2}$               | 三角関数による置換         |
+
+### 本章で導く公式の関係
+
+本章で導く公式と、使う既習事項の関係を図 1 に示す。
+
+<figure>
+  <FlowChart
+    direction="TB"
+    ariaLabel="本章の公式の関係図。指数・三角関数の導関数と逆数の不定積分から、基本の不定積分を導く。加法定理から半角の公式と積和の公式を導き、基本の不定積分と合わせて三角関数の積の積分を求める。三角関数の積の積分から、整数倍の角の積の定積分を求める。三角関数の積の積分と定積分の置換から、円の面積を求める。基本の不定積分に置換積分法を組み合わせて合成関数を含む形の積分を、部分積分法を組み合わせて積の積分を求める。部分積分法から正弦の累乗の定積分の漸化式を導く。"
+    nodes={[
+      { id: "add", label: "加法定理" },
+      { id: "p2s", label: "半角の公式・\n積和の公式" },
+      { id: "deriv", label: "指数・三角関数の\n導関数" },
+      { id: "recip", label: "逆数の不定積分" },
+      { id: "basic", label: "基本の不定積分\n$\\int e^x\\,dx$・$\\int\\sin x\\,dx$ など", tone: "goal" },
+      { id: "trig", label: "三角関数の積の積分", tone: "goal" },
+      { id: "dsub", label: "定積分の置換" },
+      { id: "orth", label: "整数倍の角の\n積の定積分" },
+      { id: "circle", label: "円の面積 $\\pi r^2$", tone: "goal" },
+      { id: "sub", label: "置換積分法" },
+      { id: "comp", label: "合成関数を含む形\n$\\int\\tan x\\,dx$ など" },
+      { id: "parts", label: "部分積分法" },
+      { id: "prod", label: "積の積分\n$\\int e^x\\sin x\\,dx$ など" },
+      { id: "rec", label: "正弦の累乗の\n定積分の漸化式" },
+    ]}
+    edges={[
+      { from: "add", to: "p2s" },
+      { from: "p2s", to: "trig" },
+      { from: "deriv", to: "basic" },
+      { from: "recip", to: "basic" },
+      { from: "basic", to: "trig" },
+      { from: "trig", to: "orth" },
+      { from: "trig", to: "circle" },
+      { from: "dsub", to: "circle" },
+      { from: "basic", to: "prod" },
+      { from: "parts", to: "prod" },
+      { from: "parts", to: "rec" },
+      { from: "basic", to: "comp" },
+      { from: "sub", to: "comp" },
+    ]}
+  />
+  <figcaption>
+    <em>
+      図 1. 本章の公式の関係。矢印は「矢印の元の結果を使って、矢印の先の結果を導く」ことを表す。強調した 3 つの箱が、本章の中心となる結果である。
+    </em>
+  </figcaption>
+</figure>
+
+## 基本の不定積分
+
+### 指数関数の不定積分
+
+不定積分の定義の章で確かめたとおり、開区間で成り立つ導関数の公式 $F'(x)=f(x)$ が 1 つ分かれば、不定積分の公式が 1 つ得られる。指数関数の導関数（定理）を逆向きに読む。
+
+> **指数関数の不定積分（定理）.** 開区間 $(-\infty,\infty)$ で次が成り立つ。
+>
+> $$
+> \int e^x\,dx = e^x+C
+> $$
+
+**証明.** 指数関数の導関数（定理）より、$e^x$ はすべての実数 $x$ で微分可能であり、$(e^x)'=e^x$ である。よって $e^x$ は、$(-\infty,\infty)$ における $e^x$ の原始関数である。原始関数の全体（定理）より、定理を得る。証明を終わる。
+
+$e^x$ の原始関数の 1 つは、$e^x$ 自身である。微分しても、原始関数を求めても、関数の形が変わらない。
+
+底が $e$ でない指数関数も、同じ方法で積分できる。
+
+> **一般の底の指数関数の不定積分（定理）.** $a>0$、$a\neq1$ とする。開区間 $(-\infty,\infty)$ で次が成り立つ。
+>
+> $$
+> \int a^x\,dx = \frac{a^x}{\ln a}+C
+> $$
+
+**証明.** まず、分母が $0$ でないことを確かめる。$a\neq1$ だから、指数・対数・三角関数の微分の章の「単調性と 1 対 1」の節より、$\ln a\neq0$ である。一般の底の指数関数の導関数（定理）と定数倍の微分より、すべての実数 $x$ で次の式を得る。
+
+$$
+\left(\frac{a^x}{\ln a}\right)' = \frac{a^x\ln a}{\ln a} = a^x
+$$
+
+原始関数の全体（定理）より、定理を得る。証明を終わる。
+
+定理について、次の 3 点を補う。
+
+- **底が e の場合.** $\ln e=1$ だから、指数関数の不定積分（定理）と一致する。
+- **底が 1 より小さい場合.** 例えば $a=\dfrac12$ では、$\ln\dfrac12=\ln1-\ln2=-\ln2$ である。よって $\displaystyle\int\left(\frac12\right)^x dx=-\frac{1}{\ln2}\left(\frac12\right)^x+C$ である。
+- **累乗の公式との違い.** $a^x$ では、変数 $x$ が指数の位置にある。変数が底の位置にある累乗 $x^n$ の公式 $\dfrac{x^{n+1}}{n+1}$ は使えない。
+
+### 三角関数の不定積分
+
+正弦・余弦の導関数（定理）を逆向きに読む。
+
+> **正弦・余弦の不定積分（定理）.** 開区間 $(-\infty,\infty)$ で次の 2 つが成り立つ。
+>
+> $$
+> \int\sin x\,dx = -\cos x+C,\qquad \int\cos x\,dx = \sin x+C
+> $$
+
+**証明.** 2 つの導関数を確かめる。
+
+- **正弦の原始関数.** 余弦の導関数（定理）と定数倍の微分より、$(-\cos x)'=-(-\sin x)=\sin x$ である。
+- **余弦の原始関数.** 正弦の導関数（定理）より、$(\sin x)'=\cos x$ である。
+
+どちらもすべての実数 $x$ で成り立つ。$-\cos x$ と $\sin x$ は、それぞれ $(-\infty,\infty)$ における $\sin x$・$\cos x$ の原始関数である。原始関数の全体（定理）より、定理を得る。証明を終わる。
+
+符号の付き方は、微分と積分の向きをそろえた表で確かめるとよい。表の各行で、左の列の関数を微分すると中央の列になり、左の列の関数の原始関数の 1 つが右の列になる。
+
+| 関数      | 導関数    | 原始関数の 1 つ |
+| --------- | --------- | --------------- |
+| $\sin x$  | $\cos x$  | $-\cos x$       |
+| $\cos x$  | $-\sin x$ | $\sin x$        |
+| $-\sin x$ | $-\cos x$ | $\cos x$        |
+| $-\cos x$ | $\sin x$  | $-\sin x$       |
+
+微分では、表の上の行から下の行へ $\sin x\to\cos x\to-\sin x\to-\cos x\to\sin x$ と 4 回で元に戻る。原始関数を求める向きは、微分の逆の順になる。
+
+正接の導関数（定理）からは、次の不定積分が得られる。
+
+> **余弦の 2 乗の逆数の不定積分（定理）.** $k$ を整数とする。開区間 $\left(-\dfrac\pi2+k\pi,\ \dfrac\pi2+k\pi\right)$ で次が成り立つ。
+>
+> $$
+> \int\frac{1}{\cos^2x}\,dx = \tan x+C
+> $$
+
+**証明.** $\dfrac\pi2+n\pi$（$n$ は整数）の形の点のうち、隣り合う 2 点が $-\dfrac\pi2+k\pi$（$n=k-1$）と $\dfrac\pi2+k\pi$（$n=k$）である。よって開区間は、$\dfrac\pi2+n\pi$ の形の点を含まない。正接の導関数（定理）より、$\tan x$ は開区間の各点で微分可能であり、$(\tan x)'=\dfrac{1}{\cos^2x}$ である。原始関数の全体（定理）より、定理を得る。証明を終わる。
+
+$\dfrac{1}{\cos^2x}$ の定義域は、$\dfrac\pi2+n\pi$ の形の点で区切られ、無限個の開区間に分かれる。部分分数分解と有理関数の積分の章の $\dfrac1x$ と同じく、式は開区間ごとに成り立つと読む。開区間ごとに別々の定数を取れる。
+
+### 一次式を代入した形
+
+置換積分法の章の一次式の代入（系）を使うと、$ax+b$ を代入した形も積分できる。
+
+> **一次式を代入した指数関数・三角関数（系）.** $a$・$b$ を定数とし、$a\neq0$ とする。開区間 $(-\infty,\infty)$ で次の 3 つが成り立つ。
+>
+> $$
+> \begin{aligned}
+> \int e^{ax+b}\,dx &= \frac1ae^{ax+b}+C \\
+> \int\sin(ax+b)\,dx &= -\frac1a\cos(ax+b)+C \\
+> \int\cos(ax+b)\,dx &= \frac1a\sin(ax+b)+C
+> \end{aligned}
+> $$
+
+**証明.** 一次式の代入（系）を、$I=(-\infty,\infty)$、$J=(-\infty,\infty)$ として使う。外側の関数 $f(u)$ と原始関数 $F(u)$ を、前節までの定理から次のように取る。
+
+| $f(u)$   | $F(u)$    | 根拠                         |
+| -------- | --------- | ---------------------------- |
+| $e^u$    | $e^u$     | 指数関数の不定積分（定理）   |
+| $\sin u$ | $-\cos u$ | 正弦・余弦の不定積分（定理） |
+| $\cos u$ | $\sin u$  | 正弦・余弦の不定積分（定理） |
+
+$J$ は実数全体だから、$ax+b$ は $J$ に含まれる。系の式 $\displaystyle\int f(ax+b)\,dx=\frac1aF(ax+b)+C$ から、3 つの式を得る。証明を終わる。
+
+使用例を挙げる。
+
+| 不定積分                            | $a$        | 結果                 |
+| ----------------------------------- | ---------- | -------------------- |
+| $\displaystyle\int e^{-x}\,dx$      | $-1$       | $-e^{-x}+C$          |
+| $\displaystyle\int e^{3x-1}\,dx$    | $3$        | $\dfrac13e^{3x-1}+C$ |
+| $\displaystyle\int\sin2x\,dx$       | $2$        | $-\dfrac12\cos2x+C$  |
+| $\displaystyle\int\cos\frac x2\,dx$ | $\dfrac12$ | $2\sin\dfrac x2+C$   |
+
+微分すると内側の導関数 $a$ が掛かり、原始関数を求めると $a$ で割る。例えば $\left(-\dfrac12\cos2x\right)'=-\dfrac12\cdot(-\sin2x)\cdot2=\sin2x$ である。
+
+### 基本の不定積分の一覧
+
+本節までの結果と、部分分数分解と有理関数の積分の章の逆数の不定積分を、表にまとめる。
+
+| 被積分関数               | 不定積分               | 成り立つ開区間                                                | 逆向きに読んだ微分の公式     |
+| ------------------------ | ---------------------- | ------------------------------------------------------------- | ---------------------------- |
+| $e^x$                    | $e^x+C$                | $(-\infty,\infty)$                                            | 指数関数の導関数             |
+| $a^x$（$a>0$、$a\neq1$） | $\dfrac{a^x}{\ln a}+C$ | $(-\infty,\infty)$                                            | 一般の底の指数関数の導関数   |
+| $\sin x$                 | $-\cos x+C$            | $(-\infty,\infty)$                                            | 余弦の導関数                 |
+| $\cos x$                 | $\sin x+C$             | $(-\infty,\infty)$                                            | 正弦の導関数                 |
+| $\dfrac{1}{\cos^2x}$     | $\tan x+C$             | $\left(-\dfrac\pi2+k\pi,\dfrac\pi2+k\pi\right)$（$k$ は整数） | 正接の導関数                 |
+| $\dfrac1x$               | $\ln\lvert x\rvert+C$  | $0$ を含まない開区間                                          | 絶対値を含む自然対数の導関数 |
+
+表の公式は、どれも右辺を微分して検算できる。不定積分の定義の章の微分による検算は、本章の計算でも有効である。
+
+### 符号つきの面積で見る定積分
+
+基本の不定積分を使い、定積分を計算する。定積分とリーマン和の章の符号つきの面積で、結果を読む。
+
+$\sin x$ は微分可能だから、$(-\infty,\infty)$ で連続である。原始関数 $-\cos x$ を持つから、基本定理 2 より、次の 2 つの値を得る。
+
+$$
+\int_0^{\pi}\sin x\,dx = \bigl[-\cos x\bigr]_0^{\pi} = -\cos\pi+\cos0 = 1+1 = 2
+$$
+
+$$
+\int_{\pi}^{2\pi}\sin x\,dx = \bigl[-\cos x\bigr]_{\pi}^{2\pi} = -\cos2\pi+\cos\pi = -1-1 = -2
+$$
+
+使った値を確かめる。
+
+- **$\cos\pi=-1$.** 角 $\pi$ の動径の先端は、単位円上の点 $(-1,0)$ である。
+- **$\cos2\pi=1$.** 周期性より、$\cos2\pi=\cos(0+2\pi)=\cos0=1$ である。
+
+$\sin x$ の符号は、三角比の拡張の章の象限と符号で決まる。$0\le x\le\pi$ では動径の先端の $y$ 座標が $0$ 以上だから、$\sin x\ge0$ である。$\pi\le x\le2\pi$ では $\sin x\le0$ である。図 2 に描く。
+
+<figure>
+  <RiemannSumGraph
+    xMin={-0.5}
+    xMax={6.9}
+    yMin={-1.35}
+    yMax={1.45}
+    fn={(x) => Math.sin(x)}
+    curveDomain={[-0.3, 6.6]}
+    curveLabel="y=\sin x"
+    area={[0, 2 * Math.PI]}
+    xTicks={[
+      { value: Math.PI, label: "\\pi", above: true, dx: 9 },
+      { value: 2 * Math.PI, label: "2\\pi", above: true, dx: -10 },
+    ]}
+    yTicks={[-1, 1]}
+    ariaLabel="曲線 y=sin x を描き、x=0 から x=2π までの曲線と x 軸の間の図形を塗った図。x=0 から x=π までは曲線が x 軸の上にあり、青く塗ってある。x=π から x=2π までは曲線が x 軸の下にあり、桃色に塗ってある。2 つの部分は同じ形で、x=π で接する。"
+  />
+  <figcaption>
+    <em>
+      図 2. $y=\sin x$ の符号つきの面積。青い部分（$0\le x\le\pi$）の面積は $2$、桃色の部分（$\pi\le x\le2\pi$）の面積も $2$ である。定積分 $\int_0^{2\pi}\sin x\,dx$ は $2+(-2)=0$ だが、面積の合計は $4$ である。
+    </em>
+  </figcaption>
+</figure>
+
+結果を整理する。
+
+| 範囲                   | 定積分 | 面積                      |
+| ---------------------- | ------ | ------------------------- |
+| ${0\le x\le\pi}$       | $2$    | $2$                       |
+| ${\pi\le x\le2\pi}$    | $-2$   | $2$（定積分の符号を反転） |
+| ${0\le x\le2\pi}$ 全体 | $0$    | $2+2=4$                   |
+
+指数関数の定積分も求める。$e^x$ は微分可能だから $(-\infty,\infty)$ で連続であり、原始関数 $e^x$ を持つ。
+
+$$
+\int_0^1e^x\,dx = \bigl[e^x\bigr]_0^1 = e-1 = 1.718\cdots
+$$
+
+$e^x$ は狭義単調増加だから、$0\le x\le1$ で $1=e^0\le e^x\le e^1=e$ である。定積分の単調性（定理）と定数関数の定積分より、$1\le\displaystyle\int_0^1e^x\,dx\le e$ である。値 $e-1$ は評価と整合する（図 3）。
+
+<figure>
+  <RiemannSumGraph
+    xMin={-0.6}
+    xMax={1.6}
+    yMin={-0.35}
+    yMax={3.2}
+    fn={(x) => Math.exp(x)}
+    curveDomain={[0, 1.12]}
+    curveLabel="y=e^x"
+    area={[0, 1]}
+    frames={[
+      { x0: 0, x1: 1, height: 1 },
+      { x0: 0, x1: 1, height: Math.E, label: "e" },
+    ]}
+    xTicks={[1]}
+    yTicks={[1, 2]}
+    ariaLabel="曲線 y=e^x を描き、x=0 から x=1 までの曲線と x 軸の間の図形を青く塗った図。曲線は x=0 で高さ 1、x=1 で高さ e を通り、右へ行くほど高くなる。x=0 から x=1 の上に、高さ 1 と高さ e の長方形を橙の破線の外枠で描く。塗った図形は、高さ 1 の長方形を含み、高さ e の長方形に含まれる。"
+  />
+  <figcaption>
+    <em>
+      図 3. 定積分 $\int_0^1e^x\,dx=e-1$ を表す図形。青く塗った図形の面積は $e-1=1.718\cdots$ である。橙の破線は、高さ $1$ と高さ $e$ の長方形の外枠である。塗った図形の面積は、2 つの長方形の面積 $1$ と $e$ の間にある。
+    </em>
+  </figcaption>
+</figure>
+
+## 置換積分法との組み合わせ
+
+### 合成関数の形を見つける
+
+置換積分法（定理）は、被積分関数が $f(g(x))\,g'(x)$ の形のとき、$\displaystyle\int f(g(x))\,g'(x)\,dx=F(g(x))+C$ を与えた。外側の関数 $f$ に、本章の基本の不定積分を使う例を見る。
+
+| 不定積分                               | 内側 $g(x)$ | 外側 $f(u)$ | 考える開区間       |
+| -------------------------------------- | ----------- | ----------- | ------------------ |
+| $\displaystyle\int xe^{x^2}\,dx$       | $x^2$       | $e^u$       | $(-\infty,\infty)$ |
+| $\displaystyle\int\sin^3x\cos x\,dx$   | $\sin x$    | $u^3$       | $(-\infty,\infty)$ |
+| $\displaystyle\int\frac{\ln x}{x}\,dx$ | $\ln x$     | $u$         | $(0,\infty)$       |
+
+表の 3 つを順に求める。
+
+**例 1.** 置換積分法（定理）の条件を先に確かめる。$g(x)=x^2$ は多項式関数だから、$(-\infty,\infty)$ で微分可能である。$f(u)=e^u$ は $J=(-\infty,\infty)$ で原始関数 $e^u$ を持つ。
+
+$u=x^2$ とおくと、$du=2x\,dx$ である。被積分関数には $2x$ ではなく $x$ が現れるから、$x=\dfrac12\cdot2x$ と書き直し、線形性で $\dfrac12$ を外に出す。
+
+$$
+\begin{aligned}
+\int xe^{x^2}\,dx &= \frac12\int e^{x^2}\cdot2x\,dx = \frac12\int e^u\,du \\
+&= \frac12e^u+C = \frac12e^{x^2}+C
+\end{aligned}
+$$
+
+検算すると、$\left(\dfrac12e^{x^2}\right)'=\dfrac12e^{x^2}\cdot2x=xe^{x^2}$ となる。
+
+**例 2.** 記号 $\sin^3x$ は、加法定理の章の記法 $\sin^2\theta=(\sin\theta)^2$ と同じく、$(\sin x)^3$ を表す。$g(x)=\sin x$ とおくと、$g'(x)=\cos x$ である。関数の累乗と導関数の積（系）を、指数 $r=3$ で使う。$r$ は $0$ 以上の整数だから、$g$ の符号の条件はない。
+
+$$
+\int\sin^3x\cos x\,dx = \int(\sin x)^3(\sin x)'\,dx = \frac{\sin^4x}{4}+C
+$$
+
+**例 3.** $g(x)=\ln x$ とおくと、自然対数の導関数（定理）より、$(0,\infty)$ で $g'(x)=\dfrac1x$ である。関数の累乗と導関数の積（系）を、指数 $r=1$ で使う。
+
+$$
+\int\frac{\ln x}{x}\,dx = \int(\ln x)^1\cdot\frac1x\,dx = \frac{(\ln x)^2}{2}+C
+$$
+
+$(\ln x)^2$ は $\ln x$ の 2 乗である。性質の表の $\ln x^2=2\ln x$（$x>0$）とは異なる。
+
+### 対数が現れる形
+
+部分分数分解と有理関数の積分の章の分母の導関数が分子にある形（定理）を、三角関数と指数関数に使う。
+
+> **正接の不定積分（定理）.** $k$ を整数とする。開区間 $\left(-\dfrac\pi2+k\pi,\ \dfrac\pi2+k\pi\right)$ で次が成り立つ。
+>
+> $$
+> \int\tan x\,dx = -\ln\lvert\cos x\rvert+C
+> $$
+
+**証明.** $g(x)=\cos x$ とおく。次の 2 点を確かめる。
+
+- **微分可能.** 余弦の導関数（定理）より、$g$ は微分可能であり、$g'(x)=-\sin x$ である。
+- **分母が 0 でない.** 余弦の 2 乗の逆数の不定積分（定理）の証明のとおり、開区間は $\dfrac\pi2+n\pi$ の形の点を含まない。正接の導関数の証明で確かめたとおり、$x\neq\dfrac\pi2+n\pi$ では $\cos x\neq0$ である。
+
+$\tan x=\dfrac{\sin x}{\cos x}=-\dfrac{g'(x)}{g(x)}$ である。不定積分の線形性と、分母の導関数が分子にある形（定理）より、次の式を得る。
+
+$$
+\int\tan x\,dx = -\int\frac{g'(x)}{g(x)}\,dx = -\ln\lvert\cos x\rvert+C
+$$
+
+最後の等号では、積分定数をまとめる約束で $-C$ を改めて $C$ と書いた。証明を終わる。
+
+定理について、次の 2 点を補う。
+
+- **絶対値を外せる場合.** 開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$（$k=0$）では、動径が第 4 象限・$x$ 軸の正の部分・第 1 象限のいずれかにあるから、$\cos x>0$ である。よって $-\ln(\cos x)+C$ と書ける。
+- **検算.** $(-\ln\lvert\cos x\rvert)'=-\dfrac{-\sin x}{\cos x}=\tan x$ である。関数の絶対値の自然対数（系）を使った。
+
+指数関数でも、同じ形が現れる。開区間 $(-\infty,\infty)$ で $\displaystyle\int\frac{e^x}{e^x+1}\,dx$ を求める。$g(x)=e^x+1$ とおくと、$g'(x)=e^x$ である。$e^x>0$ だから $g(x)>1>0$ であり、絶対値を外せる。
+
+$$
+\int\frac{e^x}{e^x+1}\,dx = \ln(e^x+1)+C
+$$
+
+### 定積分での置換
+
+定積分の置換（定理）を、積分区間の対応表とともに使う。
+
+**例 1.** $\displaystyle\int_0^{\pi/2}\sin^3x\cos x\,dx$ を求める。$u=\sin x$ とおく。$g(x)=\sin x$ は $(-\infty,\infty)$ で微分可能であり、$g'(x)=\cos x$ は連続である。$f(u)=u^3$ も連続である。
+
+| 文字       | 下端 | 上端         |
+| ---------- | ---- | ------------ |
+| $x$        | $0$  | $\dfrac\pi2$ |
+| $u=\sin x$ | $0$  | $1$          |
+
+$$
+\int_0^{\pi/2}\sin^3x\cos x\,dx = \int_0^1u^3\,du = \left[\frac{u^4}{4}\right]_0^1 = \frac14
+$$
+
+**例 2.** $\displaystyle\int_0^1xe^{x^2}\,dx$ を求める。$u=x^2$ とおく。$g(x)=x^2$ は $(-\infty,\infty)$ で微分可能であり、$g'(x)=2x$ は連続である。$f(u)=e^u$ も連続である。
+
+| 文字    | 下端 | 上端 |
+| ------- | ---- | ---- |
+| $x$     | $0$  | $1$  |
+| $u=x^2$ | $0$  | $1$  |
+
+$$
+\begin{aligned}
+\int_0^1xe^{x^2}\,dx &= \frac12\int_0^1e^{x^2}\cdot2x\,dx = \frac12\int_0^1e^u\,du \\
+&= \frac12\bigl[e^u\bigr]_0^1 = \frac{e-1}{2}
+\end{aligned}
+$$
+
+**例 3.** $\displaystyle\int_1^e\frac{\ln x}{x}\,dx$ を求める。$u=\ln x$ とおき、$I=(0,\infty)$ で考える。$g(x)=\ln x$ は $I$ で微分可能であり、$g'(x)=\dfrac1x$ は $I$ で連続である。
+
+| 文字      | 下端 | 上端 |
+| --------- | ---- | ---- |
+| $x$       | $1$  | $e$  |
+| $u=\ln x$ | $0$  | $1$  |
+
+$$
+\int_1^e\frac{\ln x}{x}\,dx = \int_0^1u\,du = \left[\frac{u^2}{2}\right]_0^1 = \frac12
+$$
+
+## 部分積分法との組み合わせ
+
+### 多項式と指数関数・三角関数の積
+
+部分積分法（定理）は、$f$・$g$ が開区間 $I$ で微分可能であり、$f'g$ が $I$ で原始関数を持つとき、次の式を与えた。
+
+$$
+\int f(x)g'(x)\,dx = f(x)g(x)-\int f'(x)g(x)\,dx
+$$
+
+$e^x$・$\sin x$・$\cos x$ は、原始関数を求めても同じ種類の関数のままである。よって $g'$ の役に向く。多項式関数 $x$ は、微分すると定数になるから、$f$ の役に向く。
+
+**例 1.** 開区間 $(-\infty,\infty)$ で $\displaystyle\int xe^x\,dx$ を求める。$f(x)=x$、$g'(x)=e^x$ とおくと、$f'(x)=1$、$g(x)=e^x$ である。$f'=1$ は連続だから、部分積分法の章の確かめ方より、$f'g$ は原始関数を持つ。
+
+$$
+\int xe^x\,dx = xe^x-\int1\cdot e^x\,dx = xe^x-e^x+C = (x-1)e^x+C
+$$
+
+検算すると、積の微分より $\{(x-1)e^x\}'=e^x+(x-1)e^x=xe^x$ となる。
+
+**例 2.** 開区間 $(-\infty,\infty)$ で $\displaystyle\int x\sin x\,dx$ を求める。$f(x)=x$、$g'(x)=\sin x$ とおくと、$f'(x)=1$、$g(x)=-\cos x$ である。例 1 と同じく、$f'=1$ は連続だから、$f'g$ は原始関数を持つ。
+
+$$
+\int x\sin x\,dx = -x\cos x-\int1\cdot(-\cos x)\,dx
+$$
+
+$-\cos x$ の原始関数の 1 つは $-\sin x$ である。関数から不定積分を引く書き方（約束）より、右辺は $-x\cos x-(-\sin x)+C$ の形の関数の集合である。
+
+$$
+\int x\sin x\,dx = -x\cos x+\sin x+C
+$$
+
+例 1 で役割を逆に選ぶと、計算は易しくならない。$f(x)=e^x$、$g'(x)=x$ とおくと、$g(x)=\dfrac{x^2}{2}$ だから、右辺の積分は $\displaystyle\int\frac{x^2}{2}e^x\,dx$ になる。多項式の次数が上がり、元の積分より難しくなる。
+
+### 繰り返しと計算を整理する表
+
+開区間 $(-\infty,\infty)$ で $\displaystyle\int x^2e^x\,dx$ を求める。多項式の因数 $x^2$ は 2 次だから、部分積分を 2 回使う。部分積分法の章の計算を整理する表を使う。
+
+- **微分する側.** $D_0=x^2$ とし、順に微分する。$D_1=2x$、$D_2=2$、$D_3=0$ である。
+- **積分する側.** $V_0=e^x$ とし、順に原始関数を 1 つずつ取る。$V_1=V_2=V_3=e^x$ である。
+- **条件.** $D_0$ は多項式関数である。各 $V_k=e^x$ は $(-\infty,\infty)$ で原始関数を持つ。部分積分法の章の「計算を整理する表」の節の条件を満たす。
+
+| $k$ | 微分する側 $D_k$ | 積分する側 $V_{k+1}$ | 符号 | 項 $D_kV_{k+1}$ |
+| --- | ---------------- | -------------------- | ---- | --------------- |
+| $0$ | $x^2$            | $e^x$                | $+$  | $x^2e^x$        |
+| $1$ | $2x$             | $e^x$                | $-$  | $2xe^x$         |
+| $2$ | $2$              | $e^x$                | $+$  | $2e^x$          |
+| $3$ | $0$              | （計算しない）       |      | （項はない）    |
+
+項の列を符号つきで足し、積分定数を付ける。
+
+$$
+\int x^2e^x\,dx = x^2e^x-2xe^x+2e^x+C = (x^2-2x+2)e^x+C
+$$
+
+積の微分で検算する。
+
+$$
+\{(x^2-2x+2)e^x\}' = (2x-2)e^x+(x^2-2x+2)e^x = x^2e^x
+$$
+
+$e^x$ は原始関数を何度求めても $e^x$ のままだから、表の右の列は同じ関数が並ぶ。
+
+### 対数関数を微分する側に選ぶ
+
+$\ln x$ は、微分すると有理関数 $\dfrac1x$ になる。よって $\ln x$ を $f$ の役に選ぶと、右辺の積分が易しくなる。
+
+**例 1.** 開区間 $(0,\infty)$ で $\displaystyle\int\ln x\,dx$ を求める。被積分関数を $\ln x\cdot1$ と見て、$f(x)=\ln x$、$g'(x)=1$ とおく。$f'(x)=\dfrac1x$、$g(x)=x$ である。$f'(x)=\dfrac1x$ は $(0,\infty)$ で連続だから、$f'g$ は原始関数を持つ。
+
+$$
+\int\ln x\,dx = x\ln x-\int\frac1x\cdot x\,dx = x\ln x-\int1\,dx = x\ln x-x+C
+$$
+
+検算すると、$(x\ln x-x)'=\ln x+x\cdot\dfrac1x-1=\ln x$ となる。
+
+**例 2.** 開区間 $(0,\infty)$ で $\displaystyle\int x\ln x\,dx$ を求める。$f(x)=\ln x$、$g'(x)=x$ とおくと、$g(x)=\dfrac{x^2}{2}$ である。例 1 と同じく、$f'(x)=\dfrac1x$ は $(0,\infty)$ で連続だから、$f'g$ は原始関数を持つ。
+
+$$
+\begin{aligned}
+\int x\ln x\,dx &= \frac{x^2}{2}\ln x-\int\frac1x\cdot\frac{x^2}{2}\,dx = \frac{x^2}{2}\ln x-\int\frac x2\,dx \\
+&= \frac{x^2}{2}\ln x-\frac{x^2}{4}+C
+\end{aligned}
+$$
+
+本章の積で、$f$ と $g'$ の役割の選び方を表にまとめる。
+
+| 因数                        | 微分すると                 | 原始関数を求めると      | 向く役割 |
+| --------------------------- | -------------------------- | ----------------------- | -------- |
+| $x$・$x^2$ などの多項式関数 | 次数が $1$ 下がる          | 次数が $1$ 上がる       | $f$      |
+| $e^x$・$\sin x$・$\cos x$   | 同じ種類の関数になる       | 同じ種類の関数になる    | $g'$     |
+| $\ln x$                     | 有理関数 $\dfrac1x$ になる | 本節で求めた $x\ln x-x$ | $f$      |
+
+### 同じ積分が戻ってくる形
+
+$\displaystyle\int e^x\sin x\,dx$ の 2 つの因数 $e^x$・$\sin x$ は、微分しても原始関数を求めても消えない。部分積分を 2 回使うと、元の積分が戻ってくる。戻ってきた積分を未知の量として扱い、方程式を解く。
+
+不定積分は関数の集合を表すから、数の方程式と同じ移項や打ち消しはできない。原始関数を 1 つ固定し、関数の値どうしの等式を立てる。
+
+**準備.** 次の記号を使う。
+
+- **存在.** $e^x$ は微分可能だから連続である。$e^x\sin x$ と $e^x\cos x$ は、連続な関数の積だから $(-\infty,\infty)$ で連続である。連続関数の原始関数の存在（系）より、どちらも原始関数を持つ。
+- **意味.** $e^x\sin x$ の原始関数を 1 つ選び $H$ と書く。$e^x\cos x$ の原始関数を 1 つ選び $K$ と書く。
+- **読み方.** $H$ は「エイチ」、$K$ は「ケー」と読む。
+- **区別.** 本節で使う便宜的な名前である。手順の中の $c_1$・$c_2$・$c$ は、1 つに決まった定数を表す便宜的な文字である。
+
+1. **1 回目の部分積分.** $f(x)=\sin x$、$g'(x)=e^x$ とおく。$f'(x)=\cos x$、$g(x)=e^x$ であり、$f'g=e^x\cos x$ は原始関数 $K$ を持つ。部分積分法（定理）より、次が成り立つ。
+
+   $$
+   \int e^x\sin x\,dx = e^x\sin x-\int e^x\cos x\,dx
+   $$
+
+   左辺は $H(x)+C$ の形の関数の集合、右辺は $e^x\sin x-K(x)+C$ の形の関数の集合である。$H$ は左辺の要素だから、右辺の要素でもある。よって、ある定数 $c_1$ で次が成り立つ。
+
+   $$
+   H(x) = e^x\sin x-K(x)+c_1
+   $$
+
+2. **2 回目の部分積分.** $f(x)=\cos x$、$g'(x)=e^x$ とおく。$f'(x)=-\sin x$ であり、$f'g=-e^x\sin x$ は原始関数 $-H$ を持つ。部分積分法（定理）より、次が成り立つ。
+
+   $$
+   \int e^x\cos x\,dx = e^x\cos x-\int(-e^x\sin x)\,dx
+   $$
+
+   手順 1 と同じく、ある定数 $c_2$ で次が成り立つ。
+
+   $$
+   K(x) = e^x\cos x-\{-H(x)\}+c_2 = e^x\cos x+H(x)+c_2
+   $$
+
+3. **H について解く.** 手順 2 の式を、手順 1 の式に代入する。
+
+   $$
+   H(x) = e^x\sin x-e^x\cos x-H(x)-c_2+c_1
+   $$
+
+   各 $x$ で両辺は実数だから、移項できる。$c=c_1-c_2$ とおくと、$2H(x)=e^x(\sin x-\cos x)+c$ である。両辺を $2$ で割る。
+
+   $$
+   H(x) = \frac12e^x(\sin x-\cos x)+\frac c2
+   $$
+
+4. **不定積分を求める.** 手順 3 より、$\dfrac12e^x(\sin x-\cos x)=H(x)-\dfrac c2$ である。原始関数の全体（定理）より、原始関数 $H$ から定数を引いた関数も原始関数である。原始関数の全体（定理）をもう一度使い、次を得る。
+
+   $$
+   \int e^x\sin x\,dx = \frac12e^x(\sin x-\cos x)+C
+   $$
+
+検算する。積の微分より、次のようになる。
+
+$$
+\begin{aligned}
+\left\{\frac12e^x(\sin x-\cos x)\right\}' &= \frac12e^x(\sin x-\cos x)+\frac12e^x(\cos x+\sin x) \\
+&= e^x\sin x
+\end{aligned}
+$$
+
+不定積分の式のまま移項すると、誤りやすい。手順 1・2 を合わせた式を、不定積分の記号のまま書く。
+
+$$
+\int e^x\sin x\,dx = e^x\sin x-e^x\cos x-\int e^x\sin x\,dx
+$$
+
+上の式は、関数の集合の等式として正しい。手順 3 の結果で確かめる。
+
+- **右辺の集合.** 関数から不定積分を引く書き方（約束）より、右辺は $e^x(\sin x-\cos x)-H(x)+C$ の形の関数の集合である。
+- **書き直す.** 手順 3 より $e^x(\sin x-\cos x)=2H(x)-c$ だから、右辺の要素は $H(x)-c+C$ の形である。$-c+C$ はどんな定数にもなるから、右辺は $H(x)+C$ の形の関数の集合に等しく、左辺と一致する。
+
+しかし、右辺の不定積分を左辺へ移して「$2\displaystyle\int e^x\sin x\,dx=e^x(\sin x-\cos x)$」と書くと、誤りになる。理由は次の 2 点である。
+
+- **打ち消し合わない.** 不定積分の定義の章の線形性の読み方では、$\displaystyle\int f(x)\,dx-\int f(x)\,dx$ は、原始関数どうしの差をすべて集めた集合である。差は定数関数だから、集合は定数関数の全体になる。数の $a-a=0$ のようには打ち消し合わない。
+- **積分定数が落ちる.** 数と同じく移項すると、右辺に残るのは 1 つの関数 $e^x(\sin x-\cos x)$ であり、積分定数が抜ける。左辺の $2\displaystyle\int e^x\sin x\,dx$ は $2H(x)+C$ の形の関数の集合だから、正しくは $e^x(\sin x-\cos x)+C$ と等しい。
+
+不定積分の式で見通しを立てた後は、手順 1〜4 のように原始関数を 1 つ固定して示すか、最後に微分して検算する。
+
+### 定積分の部分積分の例
+
+定積分の部分積分（定理）を使う。$f'$・$g'$ が、2 つの端点を含む開区間で連続であることを確かめる。
+
+**例 1.** $f(x)=x$、$g'(x)=e^x$ とおく。$f'=1$・$g'=e^x$ は $(-\infty,\infty)$ で連続である。
+
+$$
+\int_0^1xe^x\,dx = \bigl[xe^x\bigr]_0^1-\int_0^1e^x\,dx = e-(e-1) = 1
+$$
+
+**例 2.** $f(x)=x$、$g'(x)=\sin x$ とおき、$g(x)=-\cos x$ を使う。$f'=1$・$g'=\sin x$ は $(-\infty,\infty)$ で連続である。$\cos\pi=-1$、$\sin\pi=\sin0=0$ である。
+
+$$
+\int_0^{\pi}x\sin x\,dx = \bigl[-x\cos x\bigr]_0^{\pi}+\int_0^{\pi}\cos x\,dx = \pi+\bigl[\sin x\bigr]_0^{\pi} = \pi
+$$
+
+**例 3.** 開区間 $(0,\infty)$ で考え、$f(x)=\ln x$、$g'(x)=1$ とおく。$f'(x)=\dfrac1x$・$g'(x)=1$ は $(0,\infty)$ で連続であり、$(0,\infty)$ は $1$ と $e$ を含む。
+
+$$
+\begin{aligned}
+\int_1^e\ln x\,dx &= \bigl[x\ln x\bigr]_1^e-\int_1^e1\,dx = (e\ln e-1\cdot\ln1)-(e-1) \\
+&= e-(e-1) = 1
+\end{aligned}
+$$
+
+## 三角関数の積の積分
+
+### 半角の公式による 2 乗の積分
+
+$\sin^2x$ は、関数の累乗と導関数の積（系）の形をしていない。系を使うには、因数 $(\sin x)'=\cos x$ が要るからである。そこで、加法定理の章の半角の公式で、2 乗を 1 乗の三角関数に直す。
+
+加法定理の章は、単位円上の任意の角について加法定理を導き、2 倍角・半角の公式を加法定理から導いた。よって半角の公式 $\sin^2\dfrac\theta2=\dfrac{1-\cos\theta}{2}$・$\cos^2\dfrac\theta2=\dfrac{1+\cos\theta}{2}$ は、すべての実数 $\theta$ で成り立つ。$\theta=2x$ とおくと、すべての実数 $x$ で次が成り立つ。
+
+$$
+\sin^2x = \frac{1-\cos2x}{2},\qquad \cos^2x = \frac{1+\cos2x}{2}
+$$
+
+> **正弦・余弦の 2 乗の不定積分（定理）.** 開区間 $(-\infty,\infty)$ で次の 2 つが成り立つ。
+>
+> $$
+> \int\sin^2x\,dx = \frac x2-\frac{\sin2x}{4}+C,\qquad \int\cos^2x\,dx = \frac x2+\frac{\sin2x}{4}+C
+> $$
+
+**証明.** 一次式を代入した指数関数・三角関数（系）より、$\cos2x$ の原始関数の 1 つは $\dfrac{\sin2x}{2}$ である。半角の公式で書き直した式に、不定積分の線形性を使う。
+
+$$
+\int\sin^2x\,dx = \int\left(\frac12-\frac12\cos2x\right)dx = \frac x2-\frac12\cdot\frac{\sin2x}{2}+C
+$$
+
+$\cos^2x$ も、符号を替えて同様に得る。証明を終わる。
+
+正弦の 2 倍角の公式 $\sin2x=2\sin x\cos x$ を使うと、$\displaystyle\int\sin^2x\,dx=\frac x2-\frac{\sin x\cos x}{2}+C$ とも書ける。
+
+### 1 周期での定積分
+
+$\sin x$・$\cos x$ の周期は $2\pi$ である。整数倍の角 $kx$ の三角関数を、$0$ から $2\pi$ まで積分する。
+
+記法を確かめる。$\sin kx$ は $\sin(kx)$ を、$\cos(m-n)x$ は $\cos((m-n)x)$ を、$\sin2k\pi$ は $\sin(2k\pi)$ を表す。指数・対数・三角関数の微分の章の $\sin g(x)=\sin(g(x))$ と同じく、括弧を省いた便宜的な書き方である。
+
+準備として、$2\pi$ の整数倍での値を求める。
+
+> **2π の整数倍での値（補題）.** すべての整数 $k$ について、$\sin2k\pi=0$、$\cos2k\pi=1$ である。
+
+**証明.** $k$ の符号で場合を分ける。
+
+- **$k$ が自然数のとき.** 自然数 $k$ についての命題「$\sin2k\pi=0$ かつ $\cos2k\pi=1$」を、数学的帰納法で示す。
+  - **基底.** 周期性と代表的な値の表より、$\sin2\pi=\sin(0+2\pi)=\sin0=0$、$\cos2\pi=\cos0=1$ である。
+  - **帰納段階.** $k$ で命題が成り立つとする。周期性より、$\sin2(k+1)\pi=\sin(2k\pi+2\pi)=\sin2k\pi=0$ である。$\cos2(k+1)\pi=\cos2k\pi=1$ も同様である。
+- **$k=0$ のとき.** $\sin0=0$、$\cos0=1$ である。
+- **$k$ が負の整数のとき.** $-k$ は自然数である。偶奇性より、$\sin2k\pi=-\sin2(-k)\pi=0$、$\cos2k\pi=\cos2(-k)\pi=1$ である。
+
+証明を終わる。
+
+> **整数倍の角の定積分（定理）.** $k$ を $0$ でない整数とする。次の 2 つが成り立つ。
+>
+> $$
+> \int_0^{2\pi}\cos kx\,dx = 0,\qquad \int_0^{2\pi}\sin kx\,dx = 0
+> $$
+
+**証明.** 一次式を代入した指数関数・三角関数（系）を $a=k$、$b=0$ として使う。$\cos kx$・$\sin kx$ は微分可能だから $(-\infty,\infty)$ で連続であり、原始関数 $\dfrac{\sin kx}{k}$・$-\dfrac{\cos kx}{k}$ を持つ。基本定理 2 と前の補題より、次の値を得る。
+
+$$
+\int_0^{2\pi}\cos kx\,dx = \left[\frac{\sin kx}{k}\right]_0^{2\pi} = \frac{\sin2k\pi-\sin0}{k} = 0
+$$
+
+$$
+\int_0^{2\pi}\sin kx\,dx = \left[-\frac{\cos kx}{k}\right]_0^{2\pi} = -\frac{\cos2k\pi-\cos0}{k} = -\frac{1-1}{k} = 0
+$$
+
+証明を終わる。
+
+定理について、次の 2 点を補う。
+
+- **$k$ が自然数の場合の見方.** 周期性より $\cos k\left(x+\dfrac{2\pi}{k}\right)=\cos(kx+2\pi)=\cos kx$ である。$\cos kx$ は、$x$ が $\dfrac{2\pi}{k}$ 増えるごとに同じ値をくり返す。$0$ から $2\pi$ までに同じ形の波が $k$ 回現れ、$x$ 軸の上の部分と下の部分が打ち消し合う。$\sin kx$ も同様である。
+- **$k=0$ の場合.** $\cos0x=1$ だから、$\displaystyle\int_0^{2\pi}1\,dx=2\pi$ となり、$0$ にならない。定理が $k\neq0$ を仮定する理由である。
+
+### 正弦の 2 乗の平均
+
+半角の公式で書き直し、前節の定理を $k=2$ で使う。$\cos2x$ と $\sin^2x$ は連続だから、定積分の線形性が使える。
+
+$$
+\begin{aligned}
+\int_0^{2\pi}\sin^2x\,dx &= \int_0^{2\pi}\frac12\,dx-\frac12\int_0^{2\pi}\cos2x\,dx \\
+&= \frac12\cdot2\pi-\frac12\cdot0 = \pi
+\end{aligned}
+$$
+
+微分積分学の基本定理の章の区間における平均値（定義）で読むと、閉区間 $[0,2\pi]$ における $\sin^2x$ の平均値は次の値である。
+
+$$
+\frac{1}{2\pi}\int_0^{2\pi}\sin^2x\,dx = \frac{\pi}{2\pi} = \frac12
+$$
+
+相互関係 $\sin^2x+\cos^2x=1$ と線形性より、$\cos^2x$ の定積分も求まる。
+
+$$
+\int_0^{2\pi}\cos^2x\,dx = \int_0^{2\pi}1\,dx-\int_0^{2\pi}\sin^2x\,dx = 2\pi-\pi = \pi
+$$
+
+$\cos^2x$ の平均値も $\dfrac12$ である。図 4 に描く。
+
+<figure>
+  <RiemannSumGraph
+    xMin={-0.5}
+    xMax={6.9}
+    yMin={-0.15}
+    yMax={1.25}
+    fn={(x) => Math.sin(x) ** 2}
+    curveDomain={[-0.3, 6.6]}
+    curveLabel="y=\sin^2x"
+    area={[0, 2 * Math.PI]}
+    frames={[{ x0: 0, x1: 2 * Math.PI, height: 0.5 }]}
+    xTicks={[
+      { value: Math.PI / 2, label: "\\tfrac{\\pi}{2}" },
+      { value: Math.PI, label: "\\pi" },
+      { value: (3 * Math.PI) / 2, label: "\\tfrac{3\\pi}{2}" },
+      { value: 2 * Math.PI, label: "2\\pi" },
+    ]}
+    yTicks={[{ value: 0.5, label: "\\tfrac12" }, 1]}
+    ariaLabel="曲線 y=sin^2 x を描き、x=0 から x=2π までの曲線と x 軸の間の図形を青く塗った図。曲線は 0 と 1 の間を上下し、x=π/2 と x=3π/2 で高さ 1、x=0・π・2π で高さ 0 になる。x=0 から x=2π の上に、高さ 1/2 の長方形を橙の破線の外枠で描く。曲線は高さ 1/2 の線の上下に同じ形ではみ出す。"
+  />
+  <figcaption>
+    <em>
+      図 4. $\sin^2x$ の平均値。青く塗った図形の面積は $\pi$ であり、橙の破線の長方形（横 $2\pi$、高さ $\tfrac12$）の面積に等しい。曲線が高さ $\tfrac12$ より上にはみ出す部分と、下にへこむ部分は、同じ形をしている。
+    </em>
+  </figcaption>
+</figure>
+
+曲線の形は、半角の公式 $\sin^2x=\dfrac12-\dfrac12\cos2x$ から読める。$\sin^2x$ は、高さ $\dfrac12$ の水平線を中心に、振れ幅 $\dfrac12$ で上下する波である。上下する部分 $-\dfrac12\cos2x$ の定積分は、前節の定理より $0$ である。
+
+### 積和の公式
+
+2 つの三角関数の積は、加法定理から和に直せる。正弦・余弦の加法定理を、和と差の 4 つの式で並べる。
+
+$$
+\begin{aligned}
+\sin(\alpha+\beta) &= \sin\alpha\cos\beta+\cos\alpha\sin\beta \\
+\sin(\alpha-\beta) &= \sin\alpha\cos\beta-\cos\alpha\sin\beta \\
+\cos(\alpha+\beta) &= \cos\alpha\cos\beta-\sin\alpha\sin\beta \\
+\cos(\alpha-\beta) &= \cos\alpha\cos\beta+\sin\alpha\sin\beta
+\end{aligned}
+$$
+
+組み合わせ方を表にまとめる。
+
+| 組み合わせ     | 消える項              | 得られる式                                                   |
+| -------------- | --------------------- | ------------------------------------------------------------ |
+| 1 行目＋2 行目 | $\cos\alpha\sin\beta$ | $\sin(\alpha+\beta)+\sin(\alpha-\beta)=2\sin\alpha\cos\beta$ |
+| 3 行目＋4 行目 | $\sin\alpha\sin\beta$ | $\cos(\alpha+\beta)+\cos(\alpha-\beta)=2\cos\alpha\cos\beta$ |
+| 4 行目－3 行目 | $\cos\alpha\cos\beta$ | $\cos(\alpha-\beta)-\cos(\alpha+\beta)=2\sin\alpha\sin\beta$ |
+
+両辺を $2$ で割ると、次の公式を得る[^product-to-sum]。
+
+> **積和の公式（定理）.** すべての実数 $\alpha$・$\beta$ について、次の 3 つが成り立つ。
+>
+> $$
+> \begin{aligned}
+> \sin\alpha\cos\beta &= \frac12\{\sin(\alpha+\beta)+\sin(\alpha-\beta)\} \\
+> \cos\alpha\cos\beta &= \frac12\{\cos(\alpha+\beta)+\cos(\alpha-\beta)\} \\
+> \sin\alpha\sin\beta &= \frac12\{\cos(\alpha-\beta)-\cos(\alpha+\beta)\}
+> \end{aligned}
+> $$
+
+3 つ目の式で $\alpha=\beta=x$ とおくと、$\sin^2x=\dfrac12(\cos0-\cos2x)=\dfrac{1-\cos2x}{2}$ となり、半角の公式と一致する。
+
+積和の公式で和に直せば、各項に一次式を代入した三角関数の公式が使える。例として、開区間 $(-\infty,\infty)$ で $\displaystyle\int\cos3x\cos x\,dx$ を求める。2 つ目の式で $\alpha=3x$、$\beta=x$ とおく。
+
+$$
+\int\cos3x\cos x\,dx = \frac12\int(\cos4x+\cos2x)\,dx = \frac{\sin4x}{8}+\frac{\sin2x}{4}+C
+$$
+
+検算すると、$\left(\dfrac{\sin4x}{8}+\dfrac{\sin2x}{4}\right)'=\dfrac{\cos4x}{2}+\dfrac{\cos2x}{2}$ となる。積和の公式より、右辺は $\cos3x\cos x$ に等しい。
+
+### 整数倍の角の積の定積分
+
+積和の公式と、整数倍の角の定積分（定理）を組み合わせる。整数倍の角の三角関数どうしの積を、$0$ から $2\pi$ まで積分すると、次の一般的な事実が成り立つ。
+
+> **整数倍の角の積の定積分（定理）.** $m$・$n$ を自然数とする。次の 3 つが成り立つ。
+>
+> $$
+> \int_0^{2\pi}\sin mx\sin nx\,dx = \begin{cases} 0 & (m\neq n) \\ \pi & (m=n) \end{cases}
+> $$
+>
+> $$
+> \int_0^{2\pi}\cos mx\cos nx\,dx = \begin{cases} 0 & (m\neq n) \\ \pi & (m=n) \end{cases}
+> $$
+>
+> $$
+> \int_0^{2\pi}\sin mx\cos nx\,dx = 0
+> $$
+
+左の波括弧は、平方根と絶対値の章の場合分けの書き方であり、条件に当てはまる行の値をとる。
+
+**証明.** 被積分関数はどれも連続な関数の積だから連続であり、定積分の線形性を使える。1 つ目と 3 つ目の式を示す。2 つ目の式は問題 4 で示す。
+
+**1 つ目の式.** 積和の公式の 3 つ目の式で、$\alpha=mx$、$\beta=nx$ とおく。
+
+$$
+\int_0^{2\pi}\sin mx\sin nx\,dx = \frac12\int_0^{2\pi}\cos(m-n)x\,dx-\frac12\int_0^{2\pi}\cos(m+n)x\,dx
+$$
+
+$m+n\ge2$ だから、$m+n$ は $0$ でない整数である。整数倍の角の定積分（定理）より、右辺の第 2 項は $0$ である。第 1 項を場合で分ける。
+
+- **$m\neq n$ のとき.** $m-n$ は $0$ でない整数だから、第 1 項も $0$ である。左辺は $0$ である。
+- **$m=n$ のとき.** $\cos(m-n)x=\cos0=1$ だから、第 1 項は $\dfrac12\cdot2\pi=\pi$ である。左辺は $\pi$ である。
+
+**3 つ目の式.** 積和の公式の 1 つ目の式で、$\alpha=mx$、$\beta=nx$ とおく。
+
+$$
+\int_0^{2\pi}\sin mx\cos nx\,dx = \frac12\int_0^{2\pi}\sin(m+n)x\,dx+\frac12\int_0^{2\pi}\sin(m-n)x\,dx
+$$
+
+$m+n\neq0$ だから、整数倍の角の定積分（定理）より、右辺の第 1 項は $0$ である。第 2 項を場合で分ける。
+
+- **$m\neq n$ のとき.** $m-n$ は $0$ でない整数だから、同じ定理より第 2 項も $0$ である。
+- **$m=n$ のとき.** 被積分関数は $\sin0x=0$ だから、第 2 項は $0$ である。
+
+どちらの場合も左辺は $0$ である。証明を終わる。
+
+$m=1$、$n=2$ の場合を図 5 に描く。積 $\sin x\sin2x$ は、$x$ 軸の上と下に同じ面積の部分を持ち、符号つきの面積が打ち消し合う。
+
+<figure>
+  <RiemannSumGraph
+    xMin={-0.5}
+    xMax={6.9}
+    yMin={-1.0}
+    yMax={1.05}
+    fn={(x) => Math.sin(x) * Math.sin(2 * x)}
+    curveDomain={[-0.3, 6.6]}
+    curveLabel="y=\sin x\sin2x"
+    area={[0, 2 * Math.PI]}
+    xTicks={[
+      { value: Math.PI / 2, label: "\\tfrac{\\pi}{2}", above: true, dx: 10 },
+      { value: Math.PI, label: "\\pi", above: true },
+      { value: (3 * Math.PI) / 2, label: "\\tfrac{3\\pi}{2}", dx: 12 },
+      { value: 2 * Math.PI, label: "2\\pi" },
+    ]}
+    yTicks={[{ value: -0.5, label: "-\\tfrac12" }, { value: 0.5, label: "\\tfrac12" }]}
+    ariaLabel="曲線 y=sin x sin 2x を描き、x=0 から x=2π までの曲線と x 軸の間の図形を塗った図。x=0 から π/2 では x 軸の上にあり青、π/2 から π では下にあり桃色、π から 3π/2 では下にあり桃色、3π/2 から 2π では上にあり青である。青い 2 つの山と桃色の 2 つの谷は、同じ形をしている。"
+  />
+  <figcaption>
+    <em>
+      図 5. $\sin x\sin2x$ の符号つきの面積。青い部分（正）と桃色の部分（負）の面積は等しく、$\int_0^{2\pi}\sin x\sin2x\,dx=0$ となる。積和の公式では $\sin x\sin2x=\tfrac12(\cos x-\cos3x)$ であり、どちらの項も $0$ から $2\pi$ までに波が整数回くり返す。
+    </em>
+  </figcaption>
+</figure>
+
+## 三角関数による置換
+
+### 半円を表す関数
+
+$r>0$ とする。円と軌跡の章より、中心が原点・半径 $r$ の円の方程式は $x^2+y^2=r^2$ である。$y\ge0$ の部分を解くと、$y=\sqrt{r^2-x^2}$（$-r\le x\le r$）である。曲線 $y=\sqrt{r^2-x^2}$ は、円の上半分の半円を表す。
+
+半円の下の図形の面積を、定積分で求めたい。ところが、置換積分法の章の定積分の置換（定理）と基本定理 2 は、被積分関数が端点を含む開区間で連続であることを仮定する。$\sqrt{r^2-x^2}$ は $\lvert x\rvert>r$ で定義されないから、端点 $r$ を含む開区間で連続にならない。そこで、定義域の外で値 $0$ をとるように関数を広げる。
+
+本節では、すべての実数 $x$ に次の値を対応させる関数を $h$ と書く。$h$ は「エイチ」と読み、本節で使う便宜的な名前である。
+
+$$
+h(x) = \begin{cases} \sqrt{r^2-x^2} & (\lvert x\rvert\le r) \\ 0 & (\lvert x\rvert>r) \end{cases}
+$$
+
+条件 $\lvert x\rvert\le r$ と $-r\le x\le r$ は、一次不等式の章の絶対値の不等式より同じ条件である。
+
+準備として、$0$ 以上の数の大小と 2 乗の大小の関係を確かめる。
+
+> **平方の大小（補題）.** $a\ge0$、$b\ge0$ とする。次の 2 つが成り立つ。
+>
+> 1. $a<b$ と $a^2<b^2$ は同値である。
+> 2. $a\le b$ と $a^2\le b^2$ は同値である。
+
+**証明.** 性質ごとに示す。
+
+1. **狭義の大小.** $a<b$ ならば、累乗の単調性（補題）を $n=2$ で使い、$a^2<b^2$ である。逆向きは背理法で示す。$a^2<b^2$ とし、仮に $a\ge b$ とする。$a=b$ ならば $a^2=b^2$ であり、$b<a$ ならば前半より $b^2<a^2$ である。どちらも $a^2<b^2$ に矛盾する。
+2. **等号を含む大小.** $a\le b$ ならば、$a<b$ のときは性質 1 より $a^2<b^2$、$a=b$ のときは $a^2=b^2$ だから、$a^2\le b^2$ である。逆向きは背理法で示す。$a^2\le b^2$ とし、仮に $b<a$ とする。性質 1 を $a$ と $b$ を入れ替えて使うと $b^2<a^2$ となり、$a^2\le b^2$ に矛盾する。$b<a$ でないから、$a\le b$ である。
+
+証明を終わる。
+
+補題を $a=\sqrt s$、$b=\sqrt t$（$s\ge0$、$t\ge0$）に使うと、$\sqrt s<\sqrt t$ と $s<t$ は同値であり、$\sqrt s\le\sqrt t$ と $s\le t$ も同値である。以下、平方根についての使い方も平方の大小（補題）と呼ぶ。
+
+> **半円の関数の連続性（補題）.** 関数 $h$ は $(-\infty,\infty)$ で連続である。とくに、$\sqrt{r^2-x^2}$ は閉区間 $[-r,r]$ で連続である。
+
+**証明.** 点 $x_0$ の位置で場合を分ける。記号 $x_0$ は「エックス・ゼロ」と読み、固定した点を表す便宜的な書き方である。
+
+1. **$-r<x_0<r$ の場合.** 開区間 $(-r,r)$ では $r^2-x^2>0$ である。連鎖律の章の関数の平方根の公式より、$\sqrt{r^2-x^2}$ は $(-r,r)$ で微分可能だから連続である。$x_0$ に十分近い $x$ では $h(x)=\sqrt{r^2-x^2}$ だから、置き換えの原理より $\displaystyle\lim_{x\to x_0}h(x)=\sqrt{r^2-x_0^2}=h(x_0)$ である。
+2. **$x_0>r$ または $x_0<-r$ の場合.** $x_0$ に十分近い $x$ では $h(x)=0$ である。置き換えの原理より、$\displaystyle\lim_{x\to x_0}h(x)=0=h(x_0)$ である。
+3. **$x_0=r$ の場合.** $h(x)$ を上から押さえる。
+   - **$-r\le x\le r$ のとき.** 因数分解の公式より $r^2-x^2=(r-x)(r+x)$ である。$0\le r-x=\lvert x-r\rvert$ と $0\le r+x\le2r$ より、$0\le r^2-x^2\le2r\lvert x-r\rvert$ である。平方の大小（補題）より、$0\le h(x)\le\sqrt{2r\lvert x-r\rvert}$ である。
+   - **$x>r$ のとき.** $h(x)=0$ だから、同じ不等式が成り立つ。
+
+   上の不等式を使い、関数の極限の章の誤差の言葉で極限を確かめる。
+
+   - **誤差を決める.** 正の誤差を 1 つ決め、$\varepsilon$ と書く。記号 $\varepsilon$ は「イプシロン」と読み、誤差を表す便宜的な文字である。
+   - **範囲を選ぶ.** $\lvert x-r\rvert$ が $r$ と $\dfrac{\varepsilon^2}{2r}$ の両方より小さいとする。$\lvert x-r\rvert<r$ より $0<x<2r$ だから、$x>-r$ であり、上の不等式が使える。
+   - **差を見積もる.** $2r\lvert x-r\rvert<\varepsilon^2$ と平方の大小（補題）より、次が成り立つ。
+
+     $$
+     h(x) \le \sqrt{2r\lvert x-r\rvert} < \sqrt{\varepsilon^2} = \varepsilon
+     $$
+
+     $h(r)=0$ だから、$h(x)$ と $h(r)$ の差は誤差より小さい。
+
+   よって $\displaystyle\lim_{x\to r}h(x)=0=h(r)$ である。
+
+4. **$x_0=-r$ の場合.** $-r\le x\le r$ で $r^2-x^2\le2r\lvert x+r\rvert$ が成り立つ。手順 3 と同じ議論で、$\displaystyle\lim_{x\to-r}h(x)=0=h(-r)$ である。
+
+$h$ はすべての点で連続である。関数の連続性の章で確かめたとおり、ある点で連続な関数は、その点で片側からの連続も満たす。$[-r,r]$ では $h(x)=\sqrt{r^2-x^2}$ だから、$\sqrt{r^2-x^2}$ は閉区間 $[-r,r]$ で連続である。証明を終わる。
+
+### 四分円の定積分
+
+$r=1$ とする。原点からの距離が $1$ 以下で、$x\ge0$ かつ $y\ge0$ を満たす点の集まりを、**四分円**と呼ぶ。後述の円の面積（定理）の証明の手順 1 と同じ議論で、四分円は、曲線 $y=\sqrt{1-x^2}$ と $x$ 軸の間の $0\le x\le1$ の部分と一致する。
+
+前節の補題より、$\sqrt{1-x^2}$ は閉区間 $[0,1]$ で連続だから、定積分は存在する。$\sqrt{1-x^2}\ge0$ だから、定積分とリーマン和の章の曲線と $x$ 軸の間の図形の面積（定義）より、四分円の面積は定積分 $\displaystyle\int_0^1\sqrt{1-x^2}\,dx$ である。
+
+被積分関数は、置換 $x=\sin\theta$ で簡単になる。$\theta$ は「シータ」と読み、角を表す文字である。$0\le\theta\le\dfrac\pi2$ のとき、点 $(\sin\theta,\cos\theta)$ の意味を確かめる。
+
+- **半円上にある.** 相互関係より $\sin^2\theta+\cos^2\theta=1$ である。証明の手順 3 で確かめるとおり $\cos\theta\ge0$ だから、点は曲線 $y=\sqrt{1-x^2}$ の上にある。横の座標が $x=\sin\theta$、高さが $\cos\theta$ である。
+- **角の意味.** 加法定理の章の余角の関係より、点の座標は $\left(\cos\left(\dfrac\pi2-\theta\right),\sin\left(\dfrac\pi2-\theta\right)\right)$ に等しい。点は、$x$ 軸の正の向きから角 $\dfrac\pi2-\theta$ の動径の先端である。原点と点を結ぶ線分は、$y$ 軸の正の部分と角 $\theta$ をなす。
+
+図 6 に描く。
+
+<figure>
+  <FunctionGraph
+    xMin={-1.15}
+    xMax={1.15}
+    yMin={-0.3}
+    yMax={1.3}
+    equalScale
+    xTicks={[-1, { value: 0.5, label: "\\sin\\theta" }, 1]}
+    yTicks={[]}
+    curves={[{ fn: (x) => Math.sqrt(Math.max(0, 1 - x * x)), domain: [-1, 1], label: "y=\\sqrt{1-x^2}" }]}
+    parametrics={[
+      {
+        fn: (t) => ({ x: 0.3 * Math.cos(t), y: 0.3 * Math.sin(t) }),
+        tMin: Math.PI / 3,
+        tMax: Math.PI / 2,
+        samples: 40,
+        color: "#10b981",
+        label: "\\theta",
+      },
+    ]}
+    segments={[
+      { from: { x: 0, y: 0 }, to: { x: 0.5, y: Math.sqrt(3) / 2 }, label: "1" },
+      { from: { x: 0.5, y: 0 }, to: { x: 0.5, y: Math.sqrt(3) / 2 }, label: "\\cos\\theta", dashed: true },
+    ]}
+    points={[{ x: 0.5, y: Math.sqrt(3) / 2, highlight: true }]}
+    ariaLabel="単位円の上半分 y=√(1-x^2) を青い曲線で描いた図。原点から半円上の点 (sinθ, cosθ) へ長さ 1 の線分を引く。線分と y 軸の間の角 θ を、原点の近くの緑の弧で示す。点から x 軸へ下ろした破線の足が x=sinθ であり、破線の長さが cosθ である。図では θ=π/6 である。"
+  />
+  <figcaption>
+    <em>
+      図 6. 置換 $x=\sin\theta$ の図形的な意味。強調した点が、半円上の点 $(\sin\theta,\cos\theta)$ である。点と原点を結ぶ長さ $1$ の線分は、$y$ 軸と角 $\theta$（緑の弧）をなす。破線の長さ（曲線の高さ）は $\cos\theta$ である。$\theta$ が $0$ から $\tfrac\pi2$ まで動くと、点は半円の右半分を $(0,1)$ から $(1,0)$ までたどる。図では $\theta=\tfrac\pi6$ である。
+    </em>
+  </figcaption>
+</figure>
+
+> **四分円の定積分（定理）.** 次が成り立つ。
+>
+> $$
+> \int_0^1\sqrt{1-x^2}\,dx = \frac\pi4
+> $$
+
+**証明.** $r=1$ とした前節の関数 $h$ を使い、次の 4 段階で示す。
+
+1. **関数を広げる.** 定積分は、閉区間 $[0,1]$ の点での値から作るリーマン和で定めた。$[0,1]$ では $h(x)=\sqrt{1-x^2}$ だから、リーマン和は一致し、次が成り立つ。
+
+   $$
+   \int_0^1\sqrt{1-x^2}\,dx = \int_0^1h(x)\,dx
+   $$
+
+2. **置換の条件を確かめる.** 置換積分法の章の「定積分での使い方」の節の式を、$f=h$、$\varphi(\theta)=\sin\theta$、積分変数 $\theta$ として使う。
+
+   $$
+   \int_{\varphi(\alpha)}^{\varphi(\beta)}h(x)\,dx = \int_\alpha^\beta h(\varphi(\theta))\,\varphi'(\theta)\,d\theta
+   $$
+
+   条件を表で確かめる。
+
+   | 条件                                                   | 本節の場合                                                               |
+   | ------------------------------------------------------ | ------------------------------------------------------------------------ |
+   | $\varphi$ が $J$ で微分可能、$\varphi'$ が連続         | $J=(-\infty,\infty)$、$\varphi'(\theta)=\cos\theta$ は微分可能だから連続 |
+   | $J$ の $\theta$ で $\varphi(\theta)$ が $I$ に含まれる | $I=(-\infty,\infty)$ だから成り立つ                                      |
+   | $f$ が $I$ で連続                                      | 半円の関数の連続性（補題）より成り立つ                                   |
+   | 端点の対応                                             | $\varphi(0)=\sin0=0$、$\varphi\left(\dfrac\pi2\right)=\sin\dfrac\pi2=1$  |
+
+   積分区間の対応表は次のとおりである。
+
+   | 文字                       | 下端 | 上端         |
+   | -------------------------- | ---- | ------------ |
+   | $x$                        | $0$  | $1$          |
+   | $\theta$（$x=\sin\theta$） | $0$  | $\dfrac\pi2$ |
+
+   $\alpha=0$、$\beta=\dfrac\pi2$ として、次の式を得る。
+
+   $$
+   \int_0^1h(x)\,dx = \int_0^{\pi/2}h(\sin\theta)\cos\theta\,d\theta
+   $$
+
+3. **被積分関数を整える.** $h(\sin\theta)\cos\theta$ を、次の順に書き直す。
+   - **値域.** 三角関数と単位円の章の値域より、すべての $\theta$ で $-1\le\sin\theta\le1$ である。よって $h(\sin\theta)=\sqrt{1-\sin^2\theta}$ である。
+   - **根号の中.** 相互関係と恒等式 $\sqrt{a^2}=\lvert a\rvert$ より、$h(\sin\theta)=\sqrt{\cos^2\theta}=\lvert\cos\theta\rvert$ である。
+   - **絶対値を外す.** $0\le\theta\le\dfrac\pi2$ では、動径が第 1 象限か座標軸の正の部分にあるから、$\cos\theta\ge0$ である。閉区間 $\left[0,\dfrac\pi2\right]$ では $h(\sin\theta)\cos\theta=\cos^2\theta$ となる。
+   - **定積分の一致.** 2 つの関数は閉区間 $\left[0,\dfrac\pi2\right]$ で値が一致する。手順 1 と同じ理由で、定積分も一致する。
+4. **計算する.** 正弦・余弦の 2 乗の不定積分（定理）と基本定理 2 より、次の値を得る。$\sin\pi=0$ を使った。
+
+   $$
+   \int_0^{\pi/2}\cos^2\theta\,d\theta = \left[\frac\theta2+\frac{\sin2\theta}{4}\right]_0^{\pi/2} = \frac\pi4+\frac{\sin\pi}{4}-0 = \frac\pi4
+   $$
+
+証明を終わる。
+
+証明の要点を補う。
+
+- **関数を広げた理由.** $\sqrt{1-x^2}$ は $x>1$ で定義されないから、$1$ を含む開区間で連続にならない。値 $0$ で広げた $h$ は、$[0,1]$ での値を変えずに、開区間 $(-\infty,\infty)$ での連続性を満たす。
+- **単調性は要らない.** 定積分の置換（定理）は、$\varphi$ の単調性を仮定しない。よって、$\sin\theta$ が単調であることを確かめる必要はない。
+- **θ の範囲の選び方.** $\sin\dfrac{5\pi}{2}=1$ だから、上端を $\dfrac{5\pi}{2}$ にしても式は成り立つ。しかし、$\dfrac\pi2<\theta<\dfrac{3\pi}{2}$ では $\cos\theta<0$ となり、$\lvert\cos\theta\rvert=\cos\theta$ が成り立たない。$\cos\theta\ge0$ となる $\left[0,\dfrac\pi2\right]$ を選ぶと、絶対値を外せる。
+- **不定積分の逆向きの置換との比較.** 逆向きの置換（定理）を不定積分に使うには、$\varphi$ が狭義単調であることを確かめ、$\theta$ を $x$ で表し直す手段を用意する必要がある。定積分では端点の対応だけを使うから、$\theta$ を $x$ で表し直さずに値が求まる。
+
+値 $\dfrac\pi4=0.785\cdots$ を図 7 で確かめる。四分円は、1 辺が $1$ の正方形に含まれる。値 $\dfrac\pi4$ は正方形の面積 $1$ より小さく、図と整合する。
+
+<figure>
+  <RiemannSumGraph
+    xMin={-0.3}
+    xMax={1.35}
+    yMin={-0.2}
+    yMax={1.2}
+    fn={(x) => Math.sqrt(Math.max(0, 1 - x * x))}
+    curveDomain={[0, 1]}
+    curveLabel="y=\sqrt{1-x^2}"
+    area={[0, 1]}
+    frames={[{ x0: 0, x1: 1, height: 1 }]}
+    xTicks={[1]}
+    yTicks={[1]}
+    ariaLabel="曲線 y=√(1-x^2) を描き、x=0 から x=1 までの曲線と x 軸の間の図形を青く塗った図。塗った図形は単位円の内部の 4 分の 1 である。x=0 から x=1 の上に、高さ 1 の正方形を橙の破線の外枠で描く。四分円は正方形に含まれる。"
+  />
+  <figcaption>
+    <em>
+      図 7. 四分円の面積。青く塗った図形の面積が $\int_0^1\sqrt{1-x^2}\,dx=\tfrac\pi4=0.785\cdots$ である。橙の破線は 1 辺が $1$ の正方形の外枠である。値 $\tfrac\pi4$ は、正方形の面積 $1$ より小さい。
+    </em>
+  </figcaption>
+</figure>
+
+### 円の面積
+
+同じ置換で、半径 $r$ の円の面積を求める。
+
+> **円の面積（定理）.** $r>0$ とする。原点からの距離が $r$ 以下の点の集まりを考える。図形は、中心が原点・半径 $r$ の円と、円の内部を合わせたものである。図形の面積を 2 曲線の間の図形の面積（定義）で定めると、値は $\pi r^2$ である。
+
+**証明.** 次の 3 段階で示す。
+
+1. **図形を 2 曲線の間に表す.** 円と軌跡の章の 2 点間の距離より、点 $(x,y)$ と原点の距離は $\sqrt{x^2+y^2}$ である。平方の大小（補題）より、距離が $r$ 以下であることは $x^2+y^2\le r^2$ と同値である。
+   - **x の範囲.** 図形の点では $x^2\le x^2+y^2\le r^2$ である。$\lvert x\rvert^2=x^2$ だから、平方の大小（補題）より $\lvert x\rvert\le r$、すなわち $-r\le x\le r$ である。
+   - **y の範囲.** $-r\le x\le r$ を固定すると、条件は $y^2\le r^2-x^2$ である。$\lvert y\rvert^2=y^2$ と $h(x)^2=r^2-x^2$ より、平方の大小（補題）を $a=\lvert y\rvert$、$b=h(x)$ に使うと、条件は $\lvert y\rvert\le h(x)$ と同値である。
+     - **$h(x)>0$ のとき.** 一次不等式の章の絶対値の不等式より、$-h(x)\le y\le h(x)$ と同値である。
+     - **$h(x)=0$ のとき.** $\lvert y\rvert\le0$ と $-0\le y\le0$ は、どちらも $y=0$ を表すから同値である。
+
+   よって図形は、2 曲線 $y=-h(x)$・$y=h(x)$ の間の、$-r\le x\le r$ の部分である。半円の関数の連続性（補題）より、$h$ と $-h$ は $[-r,r]$ で連続であり、$-h(x)\le h(x)$ である。2 曲線の間の図形の面積（定義）より、面積は次の値である。
+
+   $$
+   \int_{-r}^{r}\{h(x)-(-h(x))\}\,dx = 2\int_{-r}^{r}h(x)\,dx
+   $$
+
+2. **置換する.**「定積分での使い方」の節の式を、$\varphi(\theta)=r\sin\theta$、$J=I=(-\infty,\infty)$ として使う。$\varphi'(\theta)=r\cos\theta$ は連続であり、$\varphi\left(-\dfrac\pi2\right)=-r$、$\varphi\left(\dfrac\pi2\right)=r$ である。
+
+   | 文字                        | 下端          | 上端         |
+   | --------------------------- | ------------- | ------------ |
+   | $x$                         | $-r$          | $r$          |
+   | $\theta$（$x=r\sin\theta$） | $-\dfrac\pi2$ | $\dfrac\pi2$ |
+
+   被積分関数 $h(r\sin\theta)\cdot r\cos\theta$ を、次の順に書き直す。
+   - **根号の中.** $\lvert r\sin\theta\rvert\le r$ だから、$h(r\sin\theta)=\sqrt{r^2-r^2\sin^2\theta}$ である。相互関係より $\sqrt{(r\cos\theta)^2}=r\lvert\cos\theta\rvert$ に等しい。
+   - **絶対値を外す.** $0\le\theta\le\dfrac\pi2$ では、前節の手順 3 より $\cos\theta\ge0$ である。$-\dfrac\pi2\le\theta\le0$ では、偶奇性 $\cos\theta=\cos(-\theta)$ と $0\le-\theta\le\dfrac\pi2$ より $\cos\theta\ge0$ である。
+   - **定積分の一致.** 閉区間 $\left[-\dfrac\pi2,\dfrac\pi2\right]$ では、被積分関数は $r^2\cos^2\theta$ と値が一致するから、定積分も一致する。
+
+3. **計算する.** $\sin(-\pi)=-\sin\pi=0$ を使う。
+
+   $$
+   \begin{aligned}
+   \int_{-r}^{r}h(x)\,dx &= r^2\int_{-\pi/2}^{\pi/2}\cos^2\theta\,d\theta = r^2\left[\frac\theta2+\frac{\sin2\theta}{4}\right]_{-\pi/2}^{\pi/2} \\
+   &= r^2\left(\frac\pi4+\frac\pi4\right) = \frac{\pi r^2}{2}
+   \end{aligned}
+   $$
+
+手順 1 の式に代入すると、面積は $2\cdot\dfrac{\pi r^2}{2}=\pi r^2$ である。証明を終わる。
+
+手順 1 の 2 曲線の間の図形を、$r=1$ の場合で図 8 に描く。
+
+<figure>
+  <RiemannSumGraph
+    xMin={-1.4}
+    xMax={1.4}
+    yMin={-1.19}
+    yMax={1.19}
+    fn={(x) => -Math.sqrt(Math.max(0, 1 - x * x))}
+    curveDomain={[-1, 1]}
+    curveLabel="y=-h(x)"
+    upperFn={(x) => Math.sqrt(Math.max(0, 1 - x * x))}
+    upperLabel="y=h(x)"
+    betweenArea={[-1, 1]}
+    xTicks={[
+      { value: -1, label: "-r", dx: -11 },
+      { value: 1, label: "r", dx: 7 },
+    ]}
+    yTicks={[]}
+    ariaLabel="原点を中心とする円とその内部を塗った図。上半分の境界は緑の曲線 y=h(x)、下半分の境界は青の曲線 y=-h(x) である。2 本の曲線は x=-r と x=r で x 軸上の点に集まる。2 曲線の間の図形が、円とその内部を合わせた図形である。"
+  />
+  <figcaption>
+    <em>
+      図 8. 円とその内部を、2 曲線 $y=-h(x)$・$y=h(x)$ の間の図形として表す（図は $r=1$）。$-r\le x\le r$ を固定すると、図形の点の $y$ 座標は $-h(x)$ 以上 $h(x)$ 以下である。面積は $\int_{-r}^{r}2h(x)\,dx=\pi r^2$ である。
+    </em>
+  </figcaption>
+</figure>
+
+結果の位置づけを、論理の順序に沿って確かめる。
+
+- **使った結果.** 証明は、正弦の導関数（定理）$(\sin\theta)'=\cos\theta$ を使った。正弦の導関数は、重要な極限 $\displaystyle\lim_{x\to0}\frac{\sin x}{x}=1$ から導いた。
+- **極限の証明が使った事実.** 自然対数の底 e と重要な極限の章は、極限の証明に、前提とする知識の円の面積の公式と、扇形の面積が中心角に比例すること（承認事項）を使った。
+- **結論.** 本節の証明は、円の面積の公式の、論理的に独立した証明ではない。定積分で定めた面積が、前提とした公式 $\pi r^2$ と矛盾なく一致することの確認である。
+
+証明で使った角 $\dfrac\pi2$ は、弧度法で測った直角である。弧度法の $\pi$ は円周率であり、半径 $1$ の円の円周は $2\pi$ である。円周に現れる円周率 $\pi$ が、リーマン和の極限で定めた面積にも矛盾なく現れることを、定積分の言葉で確かめた。
+
+## 正弦の累乗の定積分
+
+### 漸化式の導出
+
+$0$ 以上の整数 $n$ について、次の定積分を考える。
+
+$$
+I_n = \int_0^{\pi/2}\sin^nx\,dx
+$$
+
+記号について、次の点を押さえる。
+
+- **読み方.** $I_n$ は「アイ・エヌ」と読む。
+- **意味.** $0$ 以上の整数 $n$ に、定積分の値を対応させる。
+- **区別.** 本章で使う便宜的な書き方である。開区間を表す文字 $I$ とは、添字の有無で見分ける。
+- **0 乗の読み方.** 微分の基本公式の章の 0 乗の約束にならい、$\sin^0x$ を定数 $1$ と読む。
+
+被積分関数は連続だから、$I_n$ は定まる。部分積分法の章と同じく、添字の異なる $I_n$ どうしの関係式も漸化式と呼ぶ。
+
+> **正弦の累乗の漸化式（定理）.** $n$ を $2$ 以上の整数とする。次が成り立つ。
+>
+> $$
+> I_n = \frac{n-1}{n}I_{n-2}
+> $$
+
+**証明.** $\sin^nx=\sin^{n-1}x\cdot\sin x$ と分け、$f(x)=\sin^{n-1}x$、$g'(x)=\sin x$ とおく。$g(x)=-\cos x$ が取れる。連鎖律の章の関数の整数乗の公式より、$f'(x)=(n-1)\sin^{n-2}x\cos x$ である（$n=2$ では $\sin^0x=1$ と読む）。$f'$・$g'$ は $(-\infty,\infty)$ で連続である。定積分の部分積分（定理）より、次の式を得る。
+
+$$
+I_n = \bigl[-\sin^{n-1}x\cos x\bigr]_0^{\pi/2}+(n-1)\int_0^{\pi/2}\sin^{n-2}x\cos^2x\,dx
+$$
+
+2 つ目の項では、$-f'g=(n-1)\sin^{n-2}x\cos^2x$ を使った。各項を調べる。
+
+- **境界の項.** $x=\dfrac\pi2$ では $\cos\dfrac\pi2=0$ である。$x=0$ では、$n-1\ge1$ だから $\sin^{n-1}0=0$ である。境界の項は $0$ である。
+- **残りの積分.** 相互関係より $\cos^2x=1-\sin^2x$ である。定積分の線形性より、$\displaystyle\int_0^{\pi/2}\sin^{n-2}x\cos^2x\,dx=I_{n-2}-I_n$ である。
+
+よって $I_n=(n-1)(I_{n-2}-I_n)$ である。$I_n$ は実数だから移項でき、$nI_n=(n-1)I_{n-2}$ となる。両辺を $n$ で割ると、定理の式を得る。証明を終わる。
+
+漸化式を使うたびに、添字は $2$ 減る。添字が $0$ または $1$ になると、計算が終わる。
+
+$$
+I_0 = \int_0^{\pi/2}1\,dx = \frac\pi2,\qquad I_1 = \int_0^{\pi/2}\sin x\,dx = \bigl[-\cos x\bigr]_0^{\pi/2} = 0+1 = 1
+$$
+
+### 値の一覧
+
+漸化式を順に使い、値を表にまとめる[^wallis]。
+
+| $n$   | $0$          | $1$ | $2$          | $3$        | $4$                | $5$             |
+| ----- | ------------ | --- | ------------ | ---------- | ------------------ | --------------- |
+| $I_n$ | $\dfrac\pi2$ | $1$ | $\dfrac\pi4$ | $\dfrac23$ | $\dfrac{3\pi}{16}$ | $\dfrac{8}{15}$ |
+
+表の値の求め方を補う。
+
+- **偶数の n.** $I_4=\dfrac34I_2=\dfrac34\cdot\dfrac12I_0=\dfrac34\cdot\dfrac12\cdot\dfrac\pi2=\dfrac{3\pi}{16}$ である。漸化式の係数 $\dfrac{n-1}{n}$ は有理数であり、$I_0=\dfrac\pi2$ から始まるから、値は $\pi$ の有理数倍になる。
+- **奇数の n.** $I_5=\dfrac45I_3=\dfrac45\cdot\dfrac23I_1=\dfrac{8}{15}$ である。係数は有理数であり、$I_1=1$ から始まるから、値は有理数になる。
+- **確かめ.** $I_2=\dfrac\pi4$ は、正弦・余弦の 2 乗の不定積分（定理）から求めた値 $\left[\dfrac x2-\dfrac{\sin2x}{4}\right]_0^{\pi/2}=\dfrac\pi4$ と一致する。
+
+## よくある誤り
+
+本章の積分で起こりやすい誤りを、表にまとめる。
+
+| 誤った計算・考え                                                          | 誤りの原因                                       | 正しい計算・考え                                                 |
+| ------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------- |
+| $\displaystyle\int\sin x\,dx=\cos x+C$                                    | 余弦の導関数の符号を落とした                     | $-\cos x+C$                                                      |
+| $\displaystyle\int e^{2x}\,dx=e^{2x}+C$                                   | 内側の導関数 $2$ で割っていない                  | $\dfrac12e^{2x}+C$                                               |
+| $\displaystyle\int2^x\,dx=\dfrac{2^{x+1}}{x+1}+C$                         | 累乗の公式を指数関数に使った                     | $\dfrac{2^x}{\ln2}+C$                                            |
+| $\displaystyle\int\tan x\,dx=\ln\lvert\cos x\rvert+C$                     | 分子が分母の導関数の $-1$ 倍であることを落とした | $-\ln\lvert\cos x\rvert+C$                                       |
+| $\displaystyle\int\sin^2x\,dx=\dfrac{\sin^3x}{3}+C$                       | 因数 $\cos x$ が無いのに累乗の形の公式を使った   | 半角の公式で $\dfrac x2-\dfrac{\sin2x}{4}+C$                     |
+| $\displaystyle\int xe^x\,dx=\dfrac{x^2}{2}e^x+C$                          | 因数ごとに原始関数を求めた                       | 部分積分で $(x-1)e^x+C$                                          |
+| $\displaystyle\int e^x\sin x\,dx=\dfrac12e^x(\sin x-\cos x)$              | 不定積分の式を数の等式のように移項した           | 積分定数 $C$ を付ける                                            |
+| すべての $\theta$ で $\sqrt{1-\sin^2\theta}=\cos\theta$                   | $\sqrt{a^2}=\lvert a\rvert$ を忘れた             | $\lvert\cos\theta\rvert$ に等しい。$\cos\theta\ge0$ の範囲で外す |
+| $\displaystyle\int_0^{2\pi}\sin x\,dx=0$ だから、囲まれた図形の面積は $0$ | 符号つきの面積と面積を混同した                   | 面積は $2+2=4$                                                   |
+
+表の各行を補う。
+
+- **1〜6 行目.** 不定積分の誤りは、右辺を微分すれば見つかる。例えば 5 行目の右辺を微分すると $\sin^2x\cos x$ になり、被積分関数に戻らない。
+- **7 行目.**「同じ積分が戻ってくる形」の節で確かめたとおり、左辺は関数の集合、右辺は 1 つの関数である。
+- **8 行目.**「四分円の定積分」の節の「θ の範囲の選び方」で見たとおり、範囲によっては $\cos\theta<0$ となる。
+- **9 行目.**「符号つきの面積で見る定積分」の節の図 2 の状況が、誤りの典型例である。
+
+## 例題
+
+### 例題 1
+
+次の不定積分を求めよ。(1) では、考える開区間も答えよ。
+
+**(1)** $\displaystyle\int\left(3e^x-2\sin x+\frac{1}{\cos^2x}\right)dx$
+
+**(2)** $\displaystyle\int\left(e^{-2x+1}+\cos\frac x3\right)dx$
+
+**解答.**
+
+**(1)** $\dfrac{1}{\cos^2x}$ は、$\dfrac\pi2+n\pi$（$n$ は整数）の形の点で定義されない。開区間 $\left(-\dfrac\pi2+k\pi,\dfrac\pi2+k\pi\right)$（$k$ は整数）のそれぞれで考える。不定積分の線形性と、基本の不定積分の表より、次が成り立つ。
+
+$$
+\int\left(3e^x-2\sin x+\frac{1}{\cos^2x}\right)dx = 3e^x+2\cos x+\tan x+C
+$$
+
+$-2\sin x$ の原始関数の 1 つは $-2\cdot(-\cos x)=2\cos x$ である。
+
+**(2)** 開区間 $(-\infty,\infty)$ で考える。一次式を代入した指数関数・三角関数（系）を、第 1 項では $a=-2$、第 2 項では $a=\dfrac13$ として使う。
+
+$$
+\int\left(e^{-2x+1}+\cos\frac x3\right)dx = -\frac12e^{-2x+1}+3\sin\frac x3+C
+$$
+
+各項を微分して検算する。
+
+$$
+\begin{aligned}
+\left(-\frac12e^{-2x+1}\right)' &= -\frac12e^{-2x+1}\cdot(-2) = e^{-2x+1} \\
+\left(3\sin\frac x3\right)' &= 3\cos\frac x3\cdot\frac13 = \cos\frac x3
+\end{aligned}
+$$
+
+### 例題 2
+
+**(1)** $\displaystyle\int\cos x\,e^{\sin x}\,dx$ を求めよ。
+
+**(2)** $\displaystyle\int\frac{\sin x}{2+\cos x}\,dx$ を求めよ。
+
+**(3)** $\displaystyle\int_0^{\pi/3}\sin x\cos^2x\,dx$ を求めよ。
+
+**解答.**
+
+**(1)** 開区間 $(-\infty,\infty)$ で考える。$u=\sin x$ とおくと、$du=\cos x\,dx$ である。置換積分法（定理）を、$f(u)=e^u$、$J=(-\infty,\infty)$ として使う。
+
+$$
+\int\cos x\,e^{\sin x}\,dx = \int e^u\,du = e^u+C = e^{\sin x}+C
+$$
+
+**(2)** $g(x)=2+\cos x$ とおくと、$g'(x)=-\sin x$ である。$\cos x\ge-1$ だから $g(x)\ge1>0$ であり、開区間 $(-\infty,\infty)$ で考えられる。分母の導関数が分子にある形（定理）と線形性より、次が成り立つ。
+
+$$
+\int\frac{\sin x}{2+\cos x}\,dx = -\int\frac{g'(x)}{g(x)}\,dx = -\ln(2+\cos x)+C
+$$
+
+**(3)** $u=\cos x$ とおくと、$g(x)=\cos x$、$g'(x)=-\sin x$ である。$g'$ と $f(u)=u^2$ は連続だから、定積分の置換（定理）の条件を満たす。被積分関数を $-(\cos x)^2\cdot(-\sin x)$ と見る。$\cos\dfrac\pi3=\dfrac12$ である。
+
+| 文字       | 下端 | 上端         |
+| ---------- | ---- | ------------ |
+| $x$        | $0$  | $\dfrac\pi3$ |
+| $u=\cos x$ | $1$  | $\dfrac12$   |
+
+$$
+\begin{aligned}
+\int_0^{\pi/3}\sin x\cos^2x\,dx &= -\int_1^{1/2}u^2\,du = \int_{1/2}^{1}u^2\,du \\
+&= \left[\frac{u^3}{3}\right]_{1/2}^{1} = \frac13-\frac{1}{24} = \frac{7}{24}
+\end{aligned}
+$$
+
+2 つ目の等号では、定積分とリーマン和の章の下端と上端の約束を使った。
+
+### 例題 3
+
+**(1)** $\displaystyle\int x\cos2x\,dx$ を求めよ。
+
+**(2)** $\displaystyle\int x^2\ln x\,dx$ を、開区間 $(0,\infty)$ で求めよ。
+
+**(3)** $\displaystyle\int_0^1xe^{-x}\,dx$ を求めよ。
+
+**解答.**
+
+**(1)** 開区間 $(-\infty,\infty)$ で考える。$f(x)=x$、$g'(x)=\cos2x$ とおくと、$f'(x)=1$、$g(x)=\dfrac{\sin2x}{2}$ である。$f'=1$ は連続だから、$f'g$ は原始関数を持つ。
+
+$$
+\begin{aligned}
+\int x\cos2x\,dx &= \frac{x\sin2x}{2}-\int\frac{\sin2x}{2}\,dx \\
+&= \frac{x\sin2x}{2}+\frac{\cos2x}{4}+C
+\end{aligned}
+$$
+
+**(2)** $f(x)=\ln x$、$g'(x)=x^2$ とおくと、$f'(x)=\dfrac1x$、$g(x)=\dfrac{x^3}{3}$ である。$f'$ は $(0,\infty)$ で連続だから、$f'g$ は原始関数を持つ。
+
+$$
+\begin{aligned}
+\int x^2\ln x\,dx &= \frac{x^3}{3}\ln x-\int\frac1x\cdot\frac{x^3}{3}\,dx \\
+&= \frac{x^3}{3}\ln x-\frac{x^3}{9}+C
+\end{aligned}
+$$
+
+**(3)** $f(x)=x$、$g'(x)=e^{-x}$ とおくと、$g(x)=-e^{-x}$ である。$f'$・$g'$ は $(-\infty,\infty)$ で連続である。
+
+$$
+\begin{aligned}
+\int_0^1xe^{-x}\,dx &= \bigl[-xe^{-x}\bigr]_0^1+\int_0^1e^{-x}\,dx = -e^{-1}+\bigl[-e^{-x}\bigr]_0^1 \\
+&= -e^{-1}-e^{-1}+1 = 1-\frac2e
+\end{aligned}
+$$
+
+### 例題 4
+
+開区間 $(-\infty,\infty)$ で $\displaystyle\int e^{2x}\cos x\,dx$ を求めよ。
+
+**解答.** $e^{2x}\cos x$ と $e^{2x}\sin x$ は、連続な関数の積だから $(-\infty,\infty)$ で連続である。連続関数の原始関数の存在（系）より、どちらも原始関数を持つ。原始関数を 1 つずつ選び、$H$・$K$ とする。どちらの回も $g'(x)=e^{2x}$、$g(x)=\dfrac12e^{2x}$ とする。
+
+1. **1 回目.** $f(x)=\cos x$ とおくと、$f'(x)=-\sin x$ である。$f'g=-\dfrac12e^{2x}\sin x$ は原始関数 $-\dfrac12K$ を持つ。部分積分法（定理）より、ある定数 $c_1$ で次が成り立つ。
+
+   $$
+   H(x) = \frac12e^{2x}\cos x+\frac12K(x)+c_1
+   $$
+
+2. **2 回目.** $f(x)=\sin x$ とおくと、$f'(x)=\cos x$ である。$f'g=\dfrac12e^{2x}\cos x$ は原始関数 $\dfrac12H$ を持つ。ある定数 $c_2$ で次が成り立つ。
+
+   $$
+   K(x) = \frac12e^{2x}\sin x-\frac12H(x)+c_2
+   $$
+
+3. **解く.** 手順 2 の式を手順 1 の式に代入する。$c=c_1+\dfrac12c_2$ とおく。
+
+   $$
+   H(x) = \frac12e^{2x}\cos x+\frac14e^{2x}\sin x-\frac14H(x)+c
+   $$
+
+   各 $x$ で両辺は実数だから、移項できる。
+
+   $$
+   \frac54H(x) = \frac14e^{2x}(2\cos x+\sin x)+c
+   $$
+
+   両辺に $\dfrac45$ を掛ける。
+
+   $$
+   H(x) = \frac15e^{2x}(2\cos x+\sin x)+\frac45c
+   $$
+
+原始関数の全体（定理）より、次が成り立つ。
+
+$$
+\int e^{2x}\cos x\,dx = \frac15e^{2x}(2\cos x+\sin x)+C
+$$
+
+積の微分で検算する。
+
+$$
+\begin{aligned}
+\left\{e^{2x}(2\cos x+\sin x)\right\}' &= 2e^{2x}(2\cos x+\sin x)+e^{2x}(-2\sin x+\cos x) \\
+&= 5e^{2x}\cos x
+\end{aligned}
+$$
+
+### 例題 5
+
+**(1)** $\displaystyle\int\sin3x\cos x\,dx$ を求めよ。
+
+**(2)** $\displaystyle\int_0^{2\pi}(\sin x+2\sin3x)^2\,dx$ を求めよ。
+
+**解答.**
+
+**(1)** 開区間 $(-\infty,\infty)$ で考える。積和の公式の 1 つ目の式で、$\alpha=3x$、$\beta=x$ とおく。
+
+$$
+\begin{aligned}
+\int\sin3x\cos x\,dx &= \frac12\int(\sin4x+\sin2x)\,dx \\
+&= -\frac{\cos4x}{8}-\frac{\cos2x}{4}+C
+\end{aligned}
+$$
+
+**(2)** 被積分関数を展開する。
+
+$$
+(\sin x+2\sin3x)^2 = \sin^2x+4\sin x\sin3x+4\sin^23x
+$$
+
+各項は連続だから、定積分の線形性を使える。整数倍の角の積の定積分（定理）の 1 つ目の式を使う。
+
+| 項              | 使う $m$・$n$ | $0$ から $2\pi$ までの定積分 |
+| --------------- | ------------- | ---------------------------- |
+| $\sin^2x$       | $m=n=1$       | $\pi$                        |
+| $4\sin x\sin3x$ | $m=1$、$n=3$  | $4\cdot0=0$                  |
+| $4\sin^23x$     | $m=n=3$       | $4\pi$                       |
+
+よって、$\displaystyle\int_0^{2\pi}(\sin x+2\sin3x)^2\,dx=\pi+0+4\pi=5\pi$ である。交差項 $4\sin x\sin3x$ の定積分が $0$ になるから、2 乗の項の定積分の和だけが残る。
+
+## 演習問題
+
+### 問題 1
+
+次の不定積分・定積分を求めよ。
+
+**(1)** $\displaystyle\int(e^x+e^{-x})\,dx$
+
+**(2)** $\displaystyle\int3^x\,dx$
+
+**(3)** $\displaystyle\int\sin\pi x\,dx$
+
+**(4)** $\displaystyle\int_0^{\pi/2}\cos x\,dx$
+
+**(5)** $\displaystyle\int_0^{\ln2}e^x\,dx$
+
+<details>
+<summary>解答を表示</summary>
+
+どれも開区間 $(-\infty,\infty)$ で考える。
+
+**(1)** 一次式を代入した指数関数・三角関数（系）より、$e^{-x}$ の原始関数の 1 つは $-e^{-x}$ である。
+
+$$
+\int(e^x+e^{-x})\,dx = e^x-e^{-x}+C
+$$
+
+**(2)** 一般の底の指数関数の不定積分（定理）を $a=3$ で使う。
+
+$$
+\int3^x\,dx = \frac{3^x}{\ln3}+C
+$$
+
+**(3)** $\sin\pi x$ は $\sin(\pi x)$ を表す。一次式を代入した指数関数・三角関数（系）を $a=\pi$、$b=0$ で使う。
+
+$$
+\int\sin\pi x\,dx = -\frac{\cos\pi x}{\pi}+C
+$$
+
+**(4)** $\cos x$ は微分可能だから連続であり、原始関数 $\sin x$ を持つ。
+
+$$
+\int_0^{\pi/2}\cos x\,dx = \bigl[\sin x\bigr]_0^{\pi/2} = 1-0 = 1
+$$
+
+**(5)** 性質の表の $e^{\ln x}=x$ より、$e^{\ln2}=2$ である。
+
+$$
+\int_0^{\ln2}e^x\,dx = \bigl[e^x\bigr]_0^{\ln2} = 2-1 = 1
+$$
+
+</details>
+
+### 問題 2
+
+**(1)** $\displaystyle\int x^2e^{x^3}\,dx$ を求めよ。
+
+**(2)** 開区間 $(0,\pi)$ で $\displaystyle\int\frac{\cos x}{\sin x}\,dx$ を求めよ。
+
+**(3)** $\displaystyle\int_0^{\pi/4}\tan x\,dx$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+**(1)** 開区間 $(-\infty,\infty)$ で考える。$u=x^3$ とおくと $du=3x^2\,dx$ だから、$x^2\,dx=\dfrac13\,du$ である。
+
+$$
+\int x^2e^{x^3}\,dx = \frac13\int e^u\,du = \frac13e^{x^3}+C
+$$
+
+**(2)** $g(x)=\sin x$ とおくと、$g'(x)=\cos x$ である。$0<x<\pi$ では、動径が第 1 象限・$y$ 軸の正の部分・第 2 象限のいずれかにあるから、$\sin x>0$ である。分母の導関数が分子にある形（定理）より、次が成り立つ。
+
+$$
+\int\frac{\cos x}{\sin x}\,dx = \ln(\sin x)+C
+$$
+
+**(3)** 開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ は $0$ と $\dfrac\pi4$ を含み、$\tan x$ は連続である。正接の不定積分（定理）より、$-\ln(\cos x)$ が原始関数である。$\cos\dfrac\pi4=\dfrac{\sqrt2}{2}=\dfrac{1}{\sqrt2}$ を使う。
+
+$$
+\begin{aligned}
+\int_0^{\pi/4}\tan x\,dx &= \bigl[-\ln(\cos x)\bigr]_0^{\pi/4} = -\ln\frac{1}{\sqrt2}+\ln1 \\
+&= \ln\sqrt2 = \frac12\ln2
+\end{aligned}
+$$
+
+使った変形は、性質の表による。
+
+- **商.** $\ln\dfrac{1}{\sqrt2}=\ln1-\ln\sqrt2=-\ln\sqrt2$ である。
+- **累乗.** $2\ln\sqrt2=\ln(\sqrt2)^2=\ln2$ だから、$\ln\sqrt2=\dfrac12\ln2$ である。
+
+</details>
+
+### 問題 3
+
+**(1)** $\displaystyle\int x\cos x\,dx$ を求めよ。
+
+**(2)** 開区間 $(0,\infty)$ で $\displaystyle\int(\ln x)^2\,dx$ を求めよ。
+
+**(3)** $\displaystyle\int e^{-x}\sin x\,dx$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+**(1)** 開区間 $(-\infty,\infty)$ で考える。$f(x)=x$、$g'(x)=\cos x$ とおくと、$g(x)=\sin x$ である。$f'=1$ は連続だから、$f'g$ は原始関数を持つ。
+
+$$
+\int x\cos x\,dx = x\sin x-\int\sin x\,dx = x\sin x+\cos x+C
+$$
+
+**(2)** $f(x)=(\ln x)^2$、$g'(x)=1$ とおく。連鎖律より $f'(x)=\dfrac{2\ln x}{x}$ であり、$g(x)=x$ である。$f'$ は $(0,\infty)$ で連続だから、$f'g$ は原始関数を持つ。
+
+$$
+\int(\ln x)^2\,dx = x(\ln x)^2-\int2\ln x\,dx
+$$
+
+$\ln x$ の原始関数の 1 つは $x\ln x-x$ だから、次が成り立つ。
+
+$$
+\int(\ln x)^2\,dx = x(\ln x)^2-2x\ln x+2x+C
+$$
+
+**(3)** 開区間 $(-\infty,\infty)$ で考える。$e^{-x}\sin x$・$e^{-x}\cos x$ は、連続な関数の積だから連続である。連続関数の原始関数の存在（系）より、原始関数を 1 つずつ選べる。選んだ原始関数を $H$・$K$ とする。どちらの回も $g'(x)=e^{-x}$、$g(x)=-e^{-x}$ とする。
+
+1. **1 回目.** $f(x)=\sin x$ とおく。$f'g=-e^{-x}\cos x$ は原始関数 $-K$ を持つ。部分積分法（定理）より、ある定数 $c_1$ で次が成り立つ。
+
+   $$
+   H(x) = -e^{-x}\sin x+K(x)+c_1
+   $$
+
+2. **2 回目.** $f(x)=\cos x$ とおく。$f'g=e^{-x}\sin x$ は原始関数 $H$ を持つ。ある定数 $c_2$ で次が成り立つ。
+
+   $$
+   K(x) = -e^{-x}\cos x-H(x)+c_2
+   $$
+
+3. **解く.** 手順 2 の式を手順 1 の式に代入し、移項して $2$ で割る。
+
+   $$
+   \begin{aligned}
+   H(x) &= -e^{-x}(\sin x+\cos x)-H(x)+c_1+c_2 \\
+   H(x) &= -\frac12e^{-x}(\sin x+\cos x)+\frac{c_1+c_2}{2}
+   \end{aligned}
+   $$
+
+原始関数の全体（定理）より、次が成り立つ。
+
+$$
+\int e^{-x}\sin x\,dx = -\frac12e^{-x}(\sin x+\cos x)+C
+$$
+
+積の微分で検算する。
+
+$$
+\begin{aligned}
+\left\{-\frac12e^{-x}(\sin x+\cos x)\right\}' &= \frac12e^{-x}(\sin x+\cos x)-\frac12e^{-x}(\cos x-\sin x) \\
+&= e^{-x}\sin x
+\end{aligned}
+$$
+
+</details>
+
+### 問題 4
+
+**(1)** $\displaystyle\int\sin2x\cos3x\,dx$ を求めよ。
+
+**(2)** $\displaystyle\int_0^{\pi}\sin^2x\,dx$ を求め、閉区間 $[0,\pi]$ における $\sin^2x$ の平均値を答えよ。
+
+**(3)** 自然数 $m$・$n$ について、整数倍の角の積の定積分（定理）の 2 つ目の式を示せ。
+
+<details>
+<summary>解答を表示</summary>
+
+**(1)** 開区間 $(-\infty,\infty)$ で考える。積和の公式の 1 つ目の式で $\alpha=2x$、$\beta=3x$ とおくと、$\sin2x\cos3x=\dfrac12\{\sin5x+\sin(-x)\}=\dfrac12(\sin5x-\sin x)$ である。
+
+$$
+\int\sin2x\cos3x\,dx = -\frac{\cos5x}{10}+\frac{\cos x}{2}+C
+$$
+
+**(2)** 正弦・余弦の 2 乗の不定積分（定理）より、次の値を得る。$\sin2\pi=0$ を使った。
+
+$$
+\int_0^{\pi}\sin^2x\,dx = \left[\frac x2-\frac{\sin2x}{4}\right]_0^{\pi} = \frac\pi2
+$$
+
+平均値は $\dfrac{1}{\pi}\cdot\dfrac\pi2=\dfrac12$ であり、閉区間 $[0,2\pi]$ における平均値と同じである。
+
+**(3)** 積和の公式の 2 つ目の式で、$\alpha=mx$、$\beta=nx$ とおく。
+
+$$
+\int_0^{2\pi}\cos mx\cos nx\,dx = \frac12\int_0^{2\pi}\cos(m+n)x\,dx+\frac12\int_0^{2\pi}\cos(m-n)x\,dx
+$$
+
+$m+n$ は $0$ でない整数だから、整数倍の角の定積分（定理）より、第 1 項は $0$ である。
+
+- **$m\neq n$ のとき.** $m-n$ は $0$ でない整数だから、第 2 項も $0$ である。
+- **$m=n$ のとき.** $\cos0x=1$ だから、第 2 項は $\dfrac12\cdot2\pi=\pi$ である。
+
+よって、2 つ目の式が成り立つ。
+
+</details>
+
+### 問題 5
+
+**(1)** $\dfrac{x^2}{4}+y^2\le1$ を満たす点 $(x,y)$ の集まりは、楕円 $\dfrac{x^2}{4}+y^2=1$ とその内部を合わせた図形である。図形の面積を求めよ。
+
+**(2)** 漸化式を使い、$I_6=\displaystyle\int_0^{\pi/2}\sin^6x\,dx$ を求めよ。
+
+**(3)** $0$ 以上の整数 $n$ について、$\displaystyle\int_0^{\pi/2}\cos^nx\,dx=I_n$ を示せ。
+
+<details>
+<summary>解答を表示</summary>
+
+**(1)** $r=2$ とした半円の関数 $h(x)$ を使う。円の面積（定理）の証明と同じ手順で求める。
+
+1. **x の範囲.** $y^2\ge0$ だから、図形の点では $\dfrac{x^2}{4}\le1$、すなわち $x^2\le4$ である。平方の大小（補題）より、$-2\le x\le2$ である。
+2. **y の範囲.** $-2\le x\le2$ を固定すると、条件は $y^2\le\dfrac{4-x^2}{4}=\left\{\dfrac12h(x)\right\}^2$ である。平方の大小（補題）を $a=\lvert y\rvert$、$b=\dfrac12h(x)$ に使うと、円の面積（定理）の証明の手順 1 と同じく、条件は $-\dfrac12h(x)\le y\le\dfrac12h(x)$ と同値である。図形は、2 曲線 $y=-\dfrac12h(x)$・$y=\dfrac12h(x)$ の間の部分である。
+3. **面積を求める.** 2 曲線の間の図形の面積（定義）と、円の面積（定理）の証明の手順 3（$r=2$）より、次の値を得る。
+
+   $$
+   \begin{aligned}
+   \int_{-2}^{2}\left\{\frac12h(x)-\left(-\frac12h(x)\right)\right\}dx &= \int_{-2}^{2}h(x)\,dx \\
+   &= \frac{\pi\cdot2^2}{2} = 2\pi
+   \end{aligned}
+   $$
+
+面積は、半径 $2$ の円の面積 $4\pi$ の半分である。図形は、半径 $2$ の円を $y$ 方向へ $\dfrac12$ 倍に縮めた形をしている。
+
+**(2)** 値の一覧の $I_4=\dfrac{3\pi}{16}$ と漸化式より、次の値を得る。
+
+$$
+I_6 = \frac56I_4 = \frac56\cdot\frac{3\pi}{16} = \frac{5\pi}{32}
+$$
+
+**(3)** 定積分の置換（定理）を、内側の関数 $g(t)=\dfrac\pi2-t$、積分変数 $t$ として使う。$g'(t)=-1$ は連続であり、$\cos^nx$ は $(-\infty,\infty)$ で連続である。$g(0)=\dfrac\pi2$、$g\left(\dfrac\pi2\right)=0$ である。
+
+| 文字             | 下端         | 上端         |
+| ---------------- | ------------ | ------------ |
+| $t$              | $\dfrac\pi2$ | $0$          |
+| $x=\dfrac\pi2-t$ | $0$          | $\dfrac\pi2$ |
+
+$$
+\begin{aligned}
+\int_0^{\pi/2}\cos^nx\,dx &= \int_{\pi/2}^{0}\cos^n\left(\frac\pi2-t\right)\cdot(-1)\,dt \\
+&= \int_0^{\pi/2}\sin^nt\,dt = I_n
+\end{aligned}
+$$
+
+2 つ目の等号では、下端と上端の約束と、加法定理の章の余角の関係 $\cos\left(\dfrac\pi2-t\right)=\sin t$ を使った。積分変数はダミー変数だから、最後の定積分は $I_n$ に等しい。
+
+</details>
+
+## まとめ
+
+本章は、指数関数と三角関数の基本の不定積分を導き、置換積分法・部分積分法と組み合わせた。三角関数の積の積分と三角関数による置換を扱い、円の面積を定積分で求めた。要点を振り返る。
+
+- **基本の不定積分**：導関数の公式を逆向きに読んで導いた。
+  - $(-\infty,\infty)$ で $\displaystyle\int e^x\,dx=e^x+C$、$\displaystyle\int a^x\,dx=\frac{a^x}{\ln a}+C$（$a>0$、$a\neq1$）である。
+  - $(-\infty,\infty)$ で $\displaystyle\int\sin x\,dx=-\cos x+C$、$\displaystyle\int\cos x\,dx=\sin x+C$ である。
+  - 開区間 $\left(-\dfrac\pi2+k\pi,\dfrac\pi2+k\pi\right)$ ごとに $\displaystyle\int\frac{1}{\cos^2x}\,dx=\tan x+C$ である。
+  - $a\neq0$ のとき、$e^{ax+b}$・$\sin(ax+b)$・$\cos(ax+b)$ の原始関数は、$a$ で割って求まる。
+- **置換積分法との組み合わせ**：外側の関数に基本の不定積分を使う。開区間 $\left(-\dfrac\pi2+k\pi,\dfrac\pi2+k\pi\right)$ ごとに $\displaystyle\int\tan x\,dx=-\ln\lvert\cos x\rvert+C$ である。
+- **部分積分法との組み合わせ**：多項式関数と $\ln x$ を $f$ に、$e^x$・$\sin x$・$\cos x$ を $g'$ に選ぶ。$(0,\infty)$ で $\displaystyle\int\ln x\,dx=x\ln x-x+C$ である。
+- **同じ積分が戻ってくる形**：原始関数を 1 つ固定し、関数の値の等式として解く。不定積分の式のまま移項すると、積分定数が抜ける。
+- **三角関数の積**：半角の公式で $\displaystyle\int\sin^2x\,dx=\frac x2-\frac{\sin2x}{4}+C$ を求めた。$\sin^2x$ の $[0,2\pi]$ における平均値は $\dfrac12$ である。
+  - 積和の公式を加法定理から導き、積を和に直して積分した。
+  - 自然数 $m$・$n$ について、$\displaystyle\int_0^{2\pi}\sin mx\sin nx\,dx$ は $m\neq n$ のとき $0$、$m=n$ のとき $\pi$ である。$\cos mx\cos nx$ も同じ値をとり、$\sin mx\cos nx$ の定積分はつねに $0$ である。
+- **三角関数による置換**：$\sqrt{r^2-x^2}$ を値 $0$ で広げた関数が連続であることを示し、定積分の置換の条件を満たした。
+  - 置換 $x=\sin\theta$ で $\displaystyle\int_0^1\sqrt{1-x^2}\,dx=\frac\pi4$ を求めた。$\cos\theta\ge0$ となる範囲を選び、$\sqrt{\cos^2\theta}=\lvert\cos\theta\rvert$ の絶対値を外した。
+  - 半径 $r$ の円の面積 $\pi r^2$ を求めた。正弦の導関数が円の面積の公式に依存するから、独立な証明ではなく整合性の確認である。
+- **正弦の累乗の定積分**：$I_n=\displaystyle\int_0^{\pi/2}\sin^nx\,dx$ は、$n\ge2$ で $I_n=\dfrac{n-1}{n}I_{n-2}$ を満たす。$I_0=\dfrac\pi2$、$I_1=1$ から順に値が求まる。
+
+## 参考文献
+
+指数・対数・三角関数の積分をさらに学ぶための一次資料を挙げる。
+
+- 高木貞治『解析概論（改訂第 3 版）』岩波書店、1983 年。初等関数の積分と、三角関数の積分の計算を扱う。
+- 杉浦光夫『解析入門 I』東京大学出版会、1980 年。原始関数の計算と、置換積分・部分積分の扱いを厳密に述べる。
+- T. M. Apostol, _Calculus, Volume 1_（2nd ed.）Wiley、1967 年。三角関数の積の積分と、面積としての定積分を扱う。
+- M. Spivak, _Calculus_（4th ed.）Publish or Perish、2008 年。三角関数の定義と積分、円の面積と円周率の関係を扱う。
+
+[^product-to-sum]: 積を和に直す公式を、積和の公式と呼ぶ。逆に、和を積に直す公式を和積の公式と呼ぶ。本章では積和の公式だけを使う。
+
+[^wallis]: $I_n$ の漸化式と値の式は、ウォリス（J. Wallis）の名を冠して呼ばれることがある。表の値は、$n$ が偶数か奇数かで形が分かれる。$n$ が偶数のときは $\dfrac\pi2$ に、奇数のときは $1$ に、連続する整数の比を掛け合わせた積で表せる。

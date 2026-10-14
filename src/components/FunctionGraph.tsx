@@ -370,11 +370,13 @@ export default function FunctionGraph({
     const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
     const perpX = -(b.y - a.y) / len; // 線分に直交する向き。
     const perpY = (b.x - a.x) / len;
+    // 当たり判定は広めの幅 w で行い、線分からの距離は実幅に近い幅で決める。
     const w = estimateTexWidth(s.label, 12);
+    const offset = normalLabelOffset(perpX, perpY, estimateTexWidthPrecise(s.label, 12));
     return choosePlacement(
       [
-        { x: mx + perpX * 13, y: my + perpY * 13, align: "center" },
-        { x: mx - perpX * 13, y: my - perpY * 13, align: "center" },
+        { x: mx + perpX * offset, y: my + perpY * offset, align: "center" },
+        { x: mx - perpX * offset, y: my - perpY * offset, align: "center" },
       ],
       w,
     );
@@ -390,11 +392,12 @@ export default function FunctionGraph({
     const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
     const perpX = -(b.y - a.y) / len; // 線分に直交する向き。
     const perpY = (b.x - a.x) / len;
-    const w = estimateTexWidth(v.label, 12);
+    const w = estimateTexWidth(v.label, 12); // segLabelPos と同じく、当たり判定用の広めの幅。
+    const offset = normalLabelOffset(perpX, perpY, estimateTexWidthPrecise(v.label, 12));
     return choosePlacement(
       [
-        { x: mx + perpX * 13, y: my + perpY * 13, align: "center" },
-        { x: mx - perpX * 13, y: my - perpY * 13, align: "center" },
+        { x: mx + perpX * offset, y: my + perpY * offset, align: "center" },
+        { x: mx - perpX * offset, y: my - perpY * offset, align: "center" },
       ],
       w,
     );
@@ -577,9 +580,10 @@ export default function FunctionGraph({
         />
 
         {/* 軸名。y 軸名は目盛り数字と同じ左側に置くと接触するため、軸の右上へ離す。
-          x 軸名は目盛り数字の右外へ離す。 */}
+          x 軸名は目盛り数字の右外へ離す。y 軸名は左寄せにし、幅広のラベル（例: a_n, c_n）
+          でも左半分が軸線や矢印へ食い込まないよう、右方向へだけ伸ばす。 */}
         <KatexLabel tex={xLabel} x={originX + plotW + 14} y={axisY - 11} fontSize={13} />
-        <KatexLabel tex={yLabel} x={axisX + 12} y={originY - 9} fontSize={13} />
+        <KatexLabel tex={yLabel} x={axisX + 8} y={originY - 9} fontSize={13} align="left" />
 
         {/* x 軸の目盛りの刻み線。数字は点・曲線より前面に描くため、最後にまとめて置く。 */}
         {xt.map((t, i) => (
@@ -788,6 +792,113 @@ function estimateTexWidth(tex: string, fontSize: number): number {
   return Math.max(visible.length * fontSize * 0.72, 24);
 }
 
+/** 字形を持たず、引数の中身だけが幅を持つ組版コマンド（\mathrm{A} は A の幅になる）。 */
+const LAYOUT_ONLY_COMMANDS = new Set([
+  "mathrm",
+  "mathit",
+  "mathbf",
+  "mathsf",
+  "mathcal",
+  "mathbb",
+  "text",
+  "operatorname",
+  "boldsymbol",
+  "vec",
+  "overline",
+  "overrightarrow",
+  "hat",
+  "bar",
+  "tilde",
+  "dot",
+  "left",
+  "right",
+  "displaystyle",
+  "textstyle",
+  "frac",
+  "dfrac",
+  "tfrac",
+]);
+
+/** コマンド名の綴りがそのまま立体で描かれる演算子名（\sin は sin の 3 字）。 */
+const OPERATOR_NAMES = new Set([
+  "sin",
+  "cos",
+  "tan",
+  "cot",
+  "sec",
+  "csc",
+  "log",
+  "ln",
+  "exp",
+  "lim",
+  "max",
+  "min",
+  "sup",
+  "inf",
+  "det",
+  "arg",
+]);
+
+/** 前後に広い空きが入る関係記号のコマンド名。 */
+const RELATION_COMMANDS = new Set(["le", "ge", "leq", "geq", "neq", "ne", "approx", "to", "equiv"]);
+
+/** 前後に空きが入る二項演算子のコマンド名。 */
+const BINARY_COMMANDS = new Set(["times", "cdot", "pm", "mp", "div"]);
+
+/**
+ * LaTeX 文字列の表示幅を、estimateTexWidth より実幅に近く見積もる（安全側に広めに取る点は同じ）。
+ *
+ * 線分・ベクトルのラベルを線分から離す距離（normalLabelOffset）の計算にだけ使う。
+ * estimateTexWidth はコマンド名の綴りまで字数に数えるため、|\vec{b}|\sin\theta を実幅の
+ * 2 倍以上と見積もり、急勾配の線分でラベルが線分から離れすぎる。
+ * 当たり判定の矩形は、すべてのラベルで estimateTexWidth のままにする。線分・ベクトル・
+ * 点の印を障害物として扱わない現状では、矩形を実幅へ縮めると、ラベルがそれらの線や印の
+ * 上へ逃げる配置が増えるためである（ド・モアブルの定理・ベクトルの演算の章の図で確認した）。
+ */
+function estimateTexWidthPrecise(tex: string, fontSize: number): number {
+  // 1 字形を 0.72em と広めに数え、枠からのはみ出しを防ぐ。コマンド名の綴りは字形にならない
+  // ため数えない（\mathrm{A} を 7 字と数えると、実幅の数倍に膨らむ）。KaTeX は関係記号（=）と
+  // 二項演算子（+）の前後に空きを入れるため、それらは 2 字ぶんと数える。単項のマイナス
+  // （(-2,-1) の -）には空きが入らないため 1 字とする。
+  let units = 0;
+  // 直前の字形が被演算子（文字・数字・閉じ括弧）か。+ や - が二項演算子として空きを伴うかを決める。
+  let afterOperand = false;
+  for (const m of tex.matchAll(/\\([a-zA-Z]+)|\\[^a-zA-Z]|[^{}^_$\s]/g)) {
+    const name = m[1];
+    if (name !== undefined) {
+      if (LAYOUT_ONLY_COMMANDS.has(name)) continue;
+      if (RELATION_COMMANDS.has(name) || BINARY_COMMANDS.has(name)) {
+        units += 2;
+        afterOperand = false;
+      } else {
+        units += OPERATOR_NAMES.has(name) ? name.length : 1;
+        afterOperand = true;
+      }
+      continue;
+    }
+    const ch = m[0];
+    if (ch.startsWith("\\")) {
+      // \{ \} \| は字形、\, や \; などは細い空きとみなす。
+      if ("{}|".includes(ch[1])) {
+        units += 1;
+        afterOperand = ch[1] !== "{";
+      }
+      continue;
+    }
+    if (ch === "=" || ch === "<" || ch === ">") {
+      units += 2;
+      afterOperand = false;
+    } else if (ch === "+" || ch === "-") {
+      units += afterOperand ? 2 : 1;
+      afterOperand = false;
+    } else {
+      units += 1;
+      afterOperand = !"([,".includes(ch);
+    }
+  }
+  return Math.max(units * fontSize * 0.72, 24);
+}
+
 /** 浮動小数の丸め誤差を抑え、目盛り数値を短い文字列にする（小数第 3 位まで）。 */
 function formatNum(v: number): string {
   return String(Math.round(v * 1000) / 1000);
@@ -824,8 +935,24 @@ type LabelPos = { x: number; y: number; align: "center" | "left" | "right" };
 /** 当たり判定に使う軸並行の矩形（左上 (x0,y0)・右下 (x1,y1)）。 */
 type Box = { x0: number; x1: number; y0: number; y1: number };
 
-/** ラベルの想定文字高（viewBox 単位）。当たり判定の縦幅に使う。 */
+/** ラベルの想定文字高（viewBox 単位）。フォントサイズ 12 の約 1.25 倍。当たり判定の縦幅に使う。 */
 const LABEL_H = 15;
+
+/** 線分・ベクトルとラベル矩形の間に空けるすきま（viewBox 単位）。 */
+const SEG_LABEL_GAP = 5.5;
+
+/**
+ * 線分・ベクトルの中点から法線方向へ、ラベル中心を離す距離を求める。
+ *
+ * 中央寄せのラベル矩形（幅 w・高さ LABEL_H）を、単位法線 (perpX, perpY) へ射影した半幅に
+ * すきまを足す。矩形が線分を含む直線から、傾きによらず SEG_LABEL_GAP だけ離れる。
+ * 水平な線分では文字高の半分、鉛直な線分では幅の半分が効く。幅の半分を一律に足すと、
+ * 水平に近い線分で横長のラベルが離れすぎるため、射影で傾きに応じて切り替える。
+ * すきまは、水平な線分で従来の固定オフセット 13 と一致する値にしてある。
+ */
+function normalLabelOffset(perpX: number, perpY: number, w: number): number {
+  return (Math.abs(perpX) * w) / 2 + (Math.abs(perpY) * LABEL_H) / 2 + SEG_LABEL_GAP;
+}
 
 /** 配置先と推定文字幅から、ラベルが占める矩形を求める。 */
 function boxFor(pos: LabelPos, w: number): Box {
