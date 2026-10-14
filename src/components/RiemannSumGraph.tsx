@@ -166,9 +166,12 @@ export default function RiemannSumGraph({
   // SVG は下向きが正のため反転する。
   const y = scaleLinear<number>({ domain: [yMin, yMax], range: [originY + plotH, originY] });
 
-  // 軸の交点（数学座標の原点が窓内にあればそこ、なければ近い端に寄せる）。
-  const axisX = x(clamp(0, xMin, xMax));
-  const axisY = y(clamp(0, yMin, yMax));
+  // 軸の交点（数学座標の原点が窓内にあればそこ、なければ近い端に寄せる）。外枠の辺と軸の
+  // 重なりの判定に使うため、数学座標の値も残す。
+  const axisXData = clamp(0, xMin, xMax);
+  const axisYData = clamp(0, yMin, yMax);
+  const axisX = x(axisXData);
+  const axisY = y(axisYData);
   // 長方形と領域の底辺は、数学座標の y=0 に置く（窓外でもクリップで切る）。
   const zeroY = y(0);
 
@@ -244,7 +247,7 @@ export default function RiemannSumGraph({
           (ex) =>
             Math.abs(fn(ex)) > 1e-9 &&
             // 外枠の縦辺と同じ位置の線は、破線のすき間から透けて縞に見えるため引かない。
-            !frames.some((f) => Math.abs(f.x0 - ex) < 1e-9 || Math.abs(f.x1 - ex) < 1e-9),
+            !frames.some((f) => near(f.x0, ex) || near(f.x1, ex)),
         );
 
   const [curveLo, curveHi] = curveDomain ?? [xMin, xMax];
@@ -376,7 +379,10 @@ export default function RiemannSumGraph({
           </g>
 
           {/* 外枠だけの長方形（評価の図）。底辺は x 軸と重なるため描かず、残る 3 辺を破線で引く。
-              縦辺はどちらも x 軸から上へ描き、別の枠と縦辺を共有しても破線の位置がそろうようにする。 */}
+              縦辺はどちらも x 軸から上へ描き、別の枠と縦辺を共有しても破線の位置がそろうようにする。
+              軸と同じ位置の辺も描かない。破線が軸線の下からはみ出して縞に見えるためである。軸線が
+              その辺の代わりに境界を示す。外枠を軸より後に描くと、曲線の上にも破線が重なるため、
+              描画順は変えずに辺を省く。 */}
           {frames.map((f, i) => {
             const x0 = x(f.x0);
             const x1 = x(f.x1);
@@ -390,9 +396,9 @@ export default function RiemannSumGraph({
                 strokeWidth={1.6}
                 strokeDasharray="5 4"
               >
-                <path d={`M ${x0} ${zeroY} L ${x0} ${top}`} />
-                <path d={`M ${x1} ${zeroY} L ${x1} ${top}`} />
-                <path d={`M ${x0} ${top} L ${x1} ${top}`} />
+                {!near(f.x0, axisXData) && <path d={`M ${x0} ${zeroY} L ${x0} ${top}`} />}
+                {!near(f.x1, axisXData) && <path d={`M ${x1} ${zeroY} L ${x1} ${top}`} />}
+                {!near(f.height, axisYData) && <path d={`M ${x0} ${top} L ${x1} ${top}`} />}
               </g>
             );
           })}
@@ -555,6 +561,11 @@ export default function RiemannSumGraph({
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+/** 数学座標の 2 値が同じ位置かを返す。計算で求めた座標の浮動小数の丸め誤差を許容する。 */
+function near(a: number, b: number): boolean {
+  return Math.abs(a - b) < 1e-9;
 }
 
 /** 浮動小数の丸め誤差を抑え、目盛り数値を短い文字列にする（小数第 3 位まで）。 */
