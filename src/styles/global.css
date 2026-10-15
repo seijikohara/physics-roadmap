@@ -112,6 +112,23 @@
 }
 
 /*
+ * 本文の表示数式（$$ ... $$）が本文の列より広いとき、数式ブロックの中だけを横にスクロールさせる。
+ *
+ * KaTeX の表示数式は折り返さない（`.katex-display > .katex` に white-space: nowrap）。幅 390px
+ * 前後の狭い画面では長い式が列からはみ出し、ページ全体が横にスクロールしていた。overflow-x を
+ * auto にすると、overflow-y は visible のままにできず auto になり、縦のスクロールバーが出うる。
+ * そのため hidden を明示する。KaTeX の行の箱の外へわずかに出る字形（\dfrac の分母の下端、
+ * cases の括弧、上付き・下付きの端）が切れないよう、上下に padding を足す。足した分だけ
+ * katex.css の margin（1em 0）を減らし、数式の前後の間隔を変えない。
+ */
+.sl-markdown-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.25em;
+  margin-block: 0.75em;
+}
+
+/*
  * 図コンポーネント共通の補助線の色（グリッド・軸・円・補助線）。淡色のため、暗テーマでは
  * 背景に対して明るすぎ、主役の曲線・図形より目立つ。テーマごとに色を切り替えて沈める。
  * 各コンポーネントはプレゼンテーション属性 stroke に変数を渡す（src/components/ を参照）。

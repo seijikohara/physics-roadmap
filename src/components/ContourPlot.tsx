@@ -30,7 +30,8 @@ import KatexLabel from "./KatexLabel";
  *
  * ラベルは KatexLabel で組版する。点・ベクトル・曲線・等高線のラベルは、候補位置を採点して、
  * 軸・目盛り数字・線・既出ラベルと重ならない位置を選ぶ（`FunctionGraph` と同じ考え方）。
- * 等高線のラベルは線の上に置き、ラベルの下だけ線をマスクで切り抜く。
+ * 等高線のラベルは線の上に置き、ラベルの下だけ線をマスクで切り抜く。格子線（目盛りに沿った
+ * 格子線と極座標の格子）は、すべてのラベルと目盛り数字の下でマスクで切り抜く。
  */
 
 /** 数学座標の点。 */
@@ -409,6 +410,17 @@ const CONTOUR_LABEL_H = 13;
 // 等高線を切り抜く幅の左右の余白（px）。ラベルの両端と線の切れ目の間にすきまを残す。
 const CONTOUR_GAP_PAD = 2;
 
+// 目盛りに沿った格子線を、ラベルの配置で避ける重み。淡い補助線のため他のどの障害物より軽くし、
+// 空いた位置が無いときは重なりを許す。重なった部分は格子線のマスクで切り抜く。
+const GRID_WEIGHT = 1;
+// 格子線を切り抜く範囲を、ラベルの推定の矩形からさらに広げる量（px）。推定幅と実際の字幅の差と、
+// ハローの広がりを吸収する。
+const GRID_CUT_PAD = 2;
+// 目盛り数字（フォントサイズ 11）の高さ。格子線を切り抜く矩形の縦幅に使う。
+const TICK_LABEL_H = 13;
+// 格子線を切り抜いた外側に残る線の長さの下限（px）。これより短く残るなら、縁まで切り抜く。
+const GRID_STUB_PX = 12;
+
 export default function ContourPlot({
   xMin,
   xMax,
@@ -439,6 +451,7 @@ export default function ContourPlot({
   const arrow = `cpArrow-${uid}`;
   const clip = `cpClip-${uid}`;
   const mask = `cpMask-${uid}`;
+  const gridMask = `cpGridMask-${uid}`;
 
   const xr = xMax - xMin;
   const yr = yMax - yMin;
@@ -585,7 +598,7 @@ export default function ContourPlot({
 
   // ---- ラベルの自動配置 ----
   // 候補位置を採点し、最も衝突の少ない位置を選ぶ。ビルド時に一度だけ走る。障害物は、軸・目盛り
-  // 数字・点の印（矩形）と、等高線・曲線・境界・矢印などの線（折れ線）である。
+  // 数字・点の印（矩形）と、等高線・曲線・境界・矢印などの線（折れ線）、目盛りに沿った格子線である。
   const viewBounds: Box = { x0: 2, x1: viewW - 2, y0: 2, y1: viewH - 2 };
   const plotBounds: Box = {
     x0: originX + 1,
@@ -664,8 +677,37 @@ export default function ContourPlot({
   if (polar !== null) {
     for (const ray of polar.rays) addLine("pl", [polar.center, ray.end], 1);
   }
+  // 目盛りに沿った格子線。格子線が式のラベルを貫くと、「=」が「≠」に、「−」が線と並走して読み
+  // にくくなる。他の線と分けて持ち、等高線のラベルだけが判定から外せるようにする。
+  const gridObstacles: LineObstacle[] = [];
+  if (grid) {
+    const gridLines: XY[][] = [
+      ...xt.map((t) => {
+        const gx = x(tickValue(t));
+        return [
+          { x: gx, y: originY },
+          { x: gx, y: originY + plotH },
+        ];
+      }),
+      ...yt.map((t) => {
+        const gy = y(tickValue(t));
+        return [
+          { x: originX, y: gy },
+          { x: originX + plotW, y: gy },
+        ];
+      }),
+    ];
+    for (const pts of gridLines) {
+      gridObstacles.push({ id: "gd", pts, weight: GRID_WEIGHT, bbox: bboxOf(pts) });
+    }
+  }
 
-  const penaltyOf = (b: Box, exclude: string | undefined, bounds: Box): number => {
+  const penaltyOf = (
+    b: Box,
+    exclude: string | undefined,
+    bounds: Box,
+    avoidGrid = true,
+  ): number => {
     let p = 0;
     if (b.x0 < bounds.x0 || b.x1 > bounds.x1 || b.y0 < bounds.y0 || b.y1 > bounds.y1) p += 1000;
     // 目盛り数字・軸名・点の印・既出のラベルとは、重なりに加えて接するほどの近さも軽く罰し、
@@ -681,7 +723,7 @@ export default function ContourPlot({
     }
     // 線との判定は矩形を少し広げて行い、ラベルの字形と線の間にすきまを残す。
     const padded = inflate(b, LINE_CLEARANCE);
-    for (const l of lineObstacles) {
+    for (const l of avoidGrid ? [...lineObstacles, ...gridObstacles] : lineObstacles) {
       if (l.id !== exclude && boxesOverlap(padded, l.bbox) && polylineHitsBox(l.pts, padded)) {
         p += l.weight;
       }
@@ -926,7 +968,9 @@ export default function ContourPlot({
         for (let s = margin; s <= total - margin; s += 4) {
           const p = pointAtLength(line.pts, cum, s, line.closed);
           const box: Box = { x0: p.x - w / 2, x1: p.x + w / 2, y0: p.y - h / 2, y1: p.y + h / 2 };
-          let pen = penaltyOf(box, lv.id, plotBounds);
+          // 等高線のラベルは格子線を避けない。線の上で置ける位置が限られ、格子線を避けると線の
+          // 中ほどから大きく外れるためである。重なった格子線は、下の線と同じくマスクで切り抜く。
+          let pen = penaltyOf(box, lv.id, plotBounds, false);
           if (pen >= bestP) continue;
           const padded = inflate(box, LINE_CLEARANCE);
           const ownHit = lv.lines.some((other, oi) =>
@@ -996,6 +1040,44 @@ export default function ContourPlot({
     ...pointLabels,
   ].filter((l): l is { tex: string; pos: LabelPos } => l !== null);
 
+  // 格子線（目盛りに沿った格子線と極座標の格子）を切り抜く矩形。すべてのラベルと目盛り数字の下で
+  // 補助線を切り、線が字形を貫かないようにする。ハローは字の輪郭から 2〜3px しか覆わず、字の
+  // すき間を通る線（「=」の 2 本の間、「−」に沿う線）を隠せないためである。背景色の矩形を重ねる
+  // 方式と違い、領域の塗りを隠さない。等高線のラベルは、等高線を切る矩形と同じ範囲で切る。
+  const tickCut = (cx: number, cy: number, t: Tick): Box => {
+    const w = estimateTexWidthPrecise(tickLabel(t), 11);
+    return inflate(
+      { x0: cx - w / 2, x1: cx + w / 2, y0: cy - TICK_LABEL_H / 2, y1: cy + TICK_LABEL_H / 2 },
+      GRID_CUT_PAD,
+    );
+  };
+  // 切り抜きとプロット矩形の縁の間に残る格子線が GRID_STUB_PX より短いときは、縁まで切り抜く。
+  // ラベルの脇に数 px だけ残った線が、「=1_」のように字の続きに見えるのを防ぐ。
+  const plotRight = originX + plotW;
+  const plotBottom = originY + plotH;
+  const toEdge = (b: Box): Box => ({
+    x0: b.x0 < originX + GRID_STUB_PX ? Math.min(b.x0, originX - 1) : b.x0,
+    x1: b.x1 > plotRight - GRID_STUB_PX ? Math.max(b.x1, plotRight + 1) : b.x1,
+    y0: b.y0 < originY + GRID_STUB_PX ? Math.min(b.y0, originY - 1) : b.y0,
+    y1: b.y1 > plotBottom - GRID_STUB_PX ? Math.max(b.y1, plotBottom + 1) : b.y1,
+  });
+  const gridCuts: Box[] =
+    grid || polar !== null
+      ? [
+          ...contourLabels.map((l) => l.box),
+          ...allLabels.map((l) =>
+            inflate(boxFor(l.pos, estimateTexWidthPrecise(l.tex, 12)), GRID_CUT_PAD),
+          ),
+          ...(axes
+            ? [
+                ...xt.map((t) => tickCut(x(tickValue(t)), axisY + 13, t)),
+                ...yt.map((t) => tickCut(axisX - 14, y(tickValue(t)), t)),
+              ]
+            : []),
+        ].map(toEdge)
+      : [];
+  const gridMaskRef = gridCuts.length > 0 ? `url(#${gridMask})` : undefined;
+
   return (
     <div className="contour-plot-figure" style={{ maxWidth: `${viewW}px` }}>
       <svg
@@ -1038,11 +1120,28 @@ export default function ContourPlot({
               ))}
             </mask>
           )}
+          {/* ラベル・目盛り数字の下だけ格子線を切り抜くマスク。等高線のマスクと同じ作りである。 */}
+          {gridCuts.length > 0 && (
+            <mask id={gridMask} maskUnits="userSpaceOnUse" x={0} y={0} width={viewW} height={viewH}>
+              <rect x={0} y={0} width={viewW} height={viewH} fill="#fff" />
+              {gridCuts.map((b, i) => (
+                <rect
+                  key={`gm-${i}`}
+                  x={round2(b.x0)}
+                  y={round2(b.y0)}
+                  width={round2(b.x1 - b.x0)}
+                  height={round2(b.y1 - b.y0)}
+                  rx={3}
+                  fill="#000"
+                />
+              ))}
+            </mask>
+          )}
         </defs>
 
         {/* 目盛りに沿った格子線。@visx/grid の GridColumns・GridRows で描く。 */}
         {grid && (
-          <>
+          <g mask={gridMaskRef}>
             <GridColumns
               scale={x}
               top={originY}
@@ -1059,13 +1158,13 @@ export default function ContourPlot({
               stroke={GRID}
               strokeWidth={1}
             />
-          </>
+          </g>
         )}
 
         <Group clipPath={`url(#${clip})`}>
           {/* 極座標の格子。軸と同じ淡い色の細線で描き、主役の曲線・領域より沈める。 */}
           {polar !== null && (
-            <g fill="none" stroke={AXIS} strokeWidth={1}>
+            <g fill="none" stroke={AXIS} strokeWidth={1} mask={gridMaskRef}>
               {polar.circles.map((c, i) => (
                 <ellipse
                   key={`pc-${i}`}
