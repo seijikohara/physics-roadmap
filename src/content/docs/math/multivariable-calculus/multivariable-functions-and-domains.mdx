@@ -392,17 +392,15 @@ $$
       },
     ]}
     points={[
-      { x: 0.6, y: 0.8, label: "\\mathrm{P}", highlight: true },
-      { x: -0.15, y: -0.4, label: "\\mathrm{Q}", highlight: true },
-      { x: 1.35, y: -1.05, label: "\\mathrm{T}", highlight: true },
+      { x: 0.6, y: 0.8, label: "\\mathrm{P}", highlight: true, labelDir: "above" },
+      { x: -0.15, y: -0.4, label: "\\mathrm{Q}", highlight: true, labelDir: "above" },
+      { x: 1.35, y: -1.05, label: "\\mathrm{T}", highlight: true, labelDir: "above" },
     ]}
     ariaLabel="原点を中心とする半径 1 の円と円の内側を塗った領域 D。円周上の点 P のまわりの小さな円は、領域の内側と外側にまたがる。内側の点 Q のまわりの小さな円は領域に収まり、外側の点 T のまわりの小さな円は領域の外に収まる。"
   />
   <figcaption>
     <em>
-      図 4. 境界点とそうでない点。円周上の点 $\mathrm{P}$ のまわりの小さな円（破線）は、領域の内側と外側にまたがる。
-      円をさらに小さくしても同じである。
-      内側の点 $\mathrm{Q}$ と外側の点 $\mathrm{T}$ のまわりには、片側だけに収まる小さな円が描ける。
+      図 4. 境界点とそうでない点。円周上の点 $\mathrm{P}$ のまわりの小さな円（破線）は、領域の内側と外側にまたがる。円をさらに小さくしても同じである。内側の点 $\mathrm{Q}$ と外側の点 $\mathrm{T}$ のまわりには、片側だけに収まる小さな円が描ける。
     </em>
   </figcaption>
 </figure>
@@ -721,8 +719,8 @@ $$
         u: [0, 2 * Math.PI],
         v: [0, Math.PI],
         opacity: 0.25,
-        resolution: [48, 24],
-        meshEvery: 4,
+        resolution: [72, 36],
+        meshEvery: 6,
       },
     ]}
     xRange={[-1.5, 2]}
@@ -787,12 +785,12 @@ $$
 
 <figure>
   <FlowChart
-    direction="LR"
+    direction="TB"
     ariaLabel="合成の流れ図。点 (x,y) に 2 変数関数 h を適用して中間の実数 t=h(x,y) を得て、さらに 1 変数の関数 g を適用して出力 g(h(x,y)) を得る。"
     nodes={[
-      { id: "A", label: "点 $(x,y)$" },
+      { id: "A", label: "入力：点 $(x,y)$" },
       { id: "B", label: "中間の実数 $t=h(x,y)$" },
-      { id: "C", label: "出力 $g(h(x,y))$" },
+      { id: "C", label: "出力：実数 $g(h(x,y))$" },
     ]}
     edges={[
       { from: "A", to: "B", label: "$h$" },
@@ -1244,17 +1242,27 @@ $$
       {
         kind: "polygon",
         points: [
-          { x: -5, y: -5 },
-          { x: 5, y: -5 },
-          { x: 5, y: 5 },
-          { x: -5, y: 5 },
+          { x: -5, y: 6 },
+          { x: 5, y: -4 },
+          { x: 5, y: 6 },
         ],
         boundary: "none",
         label: "D",
         labelAt: { x: 1.6, y: 1.6 },
       },
+      {
+        kind: "polygon",
+        points: [
+          { x: -5, y: 6 },
+          { x: 5, y: -4 },
+          { x: -5, y: -4 },
+        ],
+        boundary: "none",
+        label: "D",
+        labelAt: { x: -1.6, y: -1.6 },
+      },
     ]}
-    curves={[{ fn: (x) => 1 - x, dashed: true, label: "y=1-x", labelPlacement: "inline", labelAt: -1.3 }]}
+    curves={[{ fn: (x) => 1 - x, dashed: true, label: "y=1-x", labelPlacement: "inline", labelAt: -1.1 }]}
     ariaLabel="関数 1/(x+y−1) の定義域。平面全体を塗り、直線 y=1−x を破線で描く。直線上の点は定義域に含まれない。"
   />
   <figcaption>
