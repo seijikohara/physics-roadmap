@@ -63,7 +63,7 @@ import SurfacePlot from "../../../../components/SurfacePlot";
 - [微分の基本公式](../../calculus/basic-differentiation-rules/)：定数倍・和・差の微分、自然数乗の微分
 - [積・商の微分法](../../calculus/product-and-quotient-rules/)：積の微分（定理）、商の微分（定理）
 - [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律（定理）
-- [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$e^x$・$\ln x$・$\sin x$・$\cos x$ の導関数、「実数乗の微分」の節の $(x^\alpha)'=\alpha x^{\alpha-1}$（$x>0$）、自然対数の記号 $\ln$
+- [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$e^x$・$\ln x$・$\sin x$・$\cos x$ の導関数、「実数乗の微分」の節の $(x^\alpha)'=\alpha x^{\alpha-1}$（$x>0$）、自然対数の記号 $\ln$、自然数と実数の大小（承認事項）
 - [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：単位円による $\sin x$・$\cos x$ の定義（$-1\le\sin x\le1$）、周期性（$\sin x$・$\cos x$ の周期は $2\pi$）
 - [平面ベクトルの定義と成分表示](../../vectors/plane-vectors-and-components/)：有向線分の記号 $\overrightarrow{\mathrm{AB}}$（「ベクトル A B」と読む）と、成分は終点の座標から始点の座標を引いた差であること
 - [空間ベクトルと成分](../../vectors/space-vectors/)：空間ベクトルの成分表示、成分ごとの演算（和・差・スカラー倍）、内積の定義と成分公式、直交条件と記号 $\perp$（垂直）
@@ -71,7 +71,9 @@ import SurfacePlot from "../../../../components/SurfacePlot";
 - [ベクトルの和・差・スカラー倍](../../vectors/vector-operations/)：零ベクトル $\vec{0}$、スカラー倍、差の図形的意味（差は引く方の終点から引かれる方の終点へ向かう）
 - [必要条件と十分条件](../../set/necessary-and-sufficient-conditions/)：十分条件・必要条件
 - [証明の方法](../../set/methods-of-proof/)：対偶と、対偶による証明法、背理法
-- [平方根と絶対値](../../algebra/square-roots-and-absolute-value/)：絶対値、恒等式 $\sqrt{t^2}=\lvert t\rvert$、積の性質 $\lvert ab\rvert=\lvert a\rvert\lvert b\rvert$、三角不等式
+- [平方根と絶対値](../../algebra/square-roots-and-absolute-value/)：
+  - 絶対値、恒等式 $\sqrt{t^2}=\lvert t\rvert$、2 乗との関係 $\lvert t\rvert^2=t^2$
+  - 積の性質 $\lvert ab\rvert=\lvert a\rvert\lvert b\rvert$、三角不等式
 - [一次不等式](../../algebra/linear-inequalities/)：$\lvert x\rvert<a\iff-a<x<a$（$a>0$）
 - [多項式の展開](../../algebra/polynomial-expansion/)：乗法公式
 - [一次関数](../../functions/linear-functions/)：変化量の記号 $\Delta x$
@@ -630,7 +632,7 @@ $A=f_x(a,b)$・$B=f_y(a,b)$ とおく。$0<\rho<r_0$ を満たす $(h,k)$ を考
    $$
 
 2. **2 つの線分は $U_0$ に収まる.** 各線分の点と $\mathrm{P}_0$ の距離を調べる。
-   - **線分 $\mathrm{P}_1\mathrm{P}_2$.** 点は $(x,b+k)$ の形で、$x$ は $a$ と $a+h$ の間か両端にある。$\lvert x-a\rvert\le\lvert h\rvert$ である。多変数関数と定義域の章の「0 以上の数の大小と 2 乗」の定理より $(x-a)^2\le h^2$ だから、$(x-a)^2+k^2\le h^2+k^2$ である（$h=0$ なら $x=a$ で明らか）。同じ定理より、点と $\mathrm{P}_0$ の距離は $\rho$ 以下であり、$r_0$ より小さい。
+   - **線分 $\mathrm{P}_1\mathrm{P}_2$.** 点は $(x,b+k)$ の形で、$x$ は $a$ と $a+h$ の間か両端にある。$h=0$ なら $x=a$ だから、$(x-a)^2+k^2\le h^2+k^2$ は明らかである。$h\neq0$ のときは $\lvert x-a\rvert\le\lvert h\rvert$ である。多変数関数と定義域の章の「0 以上の数の大小と 2 乗」の定理を、$\lvert x-a\rvert$ と $\lvert h\rvert>0$ に当てはめる。2 乗との関係 $\lvert t\rvert^2=t^2$ も使うと、$(x-a)^2\le h^2$ である。よって $(x-a)^2+k^2\le h^2+k^2$ である。同じ定理より、点と $\mathrm{P}_0$ の距離は $\rho$ 以下であり、$r_0$ より小さい。
    - **線分 $\mathrm{P}_0\mathrm{P}_1$.** 点は $(a,y)$ の形である。点と $\mathrm{P}_0$ の距離は $\lvert y-b\rvert\le\lvert k\rvert\le\rho<r_0$ を満たす。
 3. **横の段に平均値の定理を使う.** 1 変数の関数 $\varphi(x)=f(x,b+k)$ を考える。記号 $\varphi$ は「ファイ」と読み、本証明で使う便宜的な名前である。
    - **微分可能.** 手順 2 より、$a$ と $a+h$ を両端とする閉区間の各点 $x$ で、点 $(x,b+k)$ は $U_0$ に属する。$f$ は $U_0$ の各点で $x$ について偏微分可能である。偏微分係数と 1 変数の微分係数の定理より、$\varphi$ は $x$ で微分可能であり、$\varphi'(x)=f_x(x,b+k)$ である。
@@ -715,7 +717,7 @@ $$
 $g$ は「ジー」と読む、本例の便宜的な名前である。2 変数関数を $f(x,y)=g(x)$ とおく。$f$ は原点で全微分可能だが、$f_x$ は原点で連続でない。手順に分けて示す。
 
 1. **全微分可能.** $A=B=0$ とすると、誤差は $R(h,k)=f(h,k)-f(0,0)=g(h)$ である。$(h,k)\neq(0,0)$ で、$\lvert R(h,k)\rvert$ を評価する。
-   - **$h\neq0$ の場合.** 単位円による定義より $-1\le\sin\dfrac1h\le1$ である。極限と連続性の章の同値 $\lvert w\rvert\le G\iff-G\le w\le G$ より、$\left\lvert\sin\dfrac1h\right\rvert\le1$ である。座標の差と距離の定理より $\lvert h\rvert\le\rho$ であり、「0 以上の数の大小と 2 乗」の定理より $h^2\le\rho^2$ である。よって $\lvert g(h)\rvert\le h^2\le\rho^2$ である。
+   - **$h\neq0$ の場合.** 単位円による定義より $-1\le\sin\dfrac1h\le1$ である。極限と連続性の章の同値 $\lvert w\rvert\le G\iff-G\le w\le G$ より、$\left\lvert\sin\dfrac1h\right\rvert\le1$ である。座標の差と距離の定理より $\lvert h\rvert\le\rho$ である。$\rho>0$ だから、「0 以上の数の大小と 2 乗」の定理と 2 乗との関係 $\lvert t\rvert^2=t^2$ より $h^2\le\rho^2$ である。よって $\lvert g(h)\rvert\le h^2\le\rho^2$ である。
    - **$h=0$ の場合.** $R(h,k)=g(0)=0$ である。
 
    どちらの場合も、次の不等式が成り立つ。
@@ -740,7 +742,7 @@ $g$ は「ジー」と読む、本例の便宜的な名前である。2 変数�
 
 3. **原点で連続でない.** 手順 1 と全微分可能ならば偏微分可能であるという定理より、$f_x(0,0)=A=0$ である。[証明の方法](../../set/methods-of-proof/)の章の背理法で示す。$f_x$ が原点で連続であったと仮定する。
    - 誤差を $\dfrac12$ に選ぶと、ある正の数 $r$ があり、原点との距離が $r$ より小さい点で $\lvert f_x(x,y)-0\rvert<\dfrac12$ となる。
-   - 自然数 $n$ を、$n>\dfrac{1}{2\pi r}$ を満たすように選ぶ。$n$ は「エヌ」と読む便宜的な文字である。すると $\dfrac{1}{2n\pi}<r$ だから、点 $\left(\dfrac{1}{2n\pi},\:0\right)$ と原点の距離は $r$ より小さい。
+   - 指数・対数・三角関数の微分の章の「自然数と実数の大小（承認事項）」の 1 つ目より、$n>\dfrac{1}{2\pi r}$ を満たす自然数 $n$ がある。$n$ は「エヌ」と読む便宜的な文字である。すると $\dfrac{1}{2n\pi}<r$ だから、点 $\left(\dfrac{1}{2n\pi},\:0\right)$ と原点の距離は $r$ より小さい。
    - 周期性より $\sin2n\pi=\sin0=0$、$\cos2n\pi=\cos0=1$ である。点での値は $f_x=0-1=-1$ であり、$\lvert-1\rvert=1$ は $\dfrac12$ より小さくない。矛盾する。
 
    よって $f_x$ は原点で連続でない。原点を含むどの集合 $U$ でも、$f$ は $C^1$ 級でない。
@@ -1034,7 +1036,7 @@ $$
   />
   <figcaption>
     <em>
-      図 7. 全微分 $dz$ と実際の変化量 $\Delta z$。点 $\mathrm{P}(1,1,2)$ から $dx=0.6$・$dy=0.5$ だけ進む。破線は、$\mathrm{P}$ と同じ高さのままの水平な移動である。赤の線分は接平面上の点 $\mathrm{T}$ までの高さの変化 $dz=2.2$、紫の線分は $\mathrm{T}$ から曲面上の点 $\mathrm{Q}$ までの差 $\Delta z-dz=0.61$ である。
+      図 7. 全微分 $dz$ と実際の変化量 $\Delta z$。点 $\mathrm{P}(1,1,2)$ から $dx=0.6$・$dy=0.5$ だけ進む。破線は、$\mathrm{P}$ と同じ高さのままの水平な移動である。赤の線分は接平面上の点 $\mathrm{T}$ までの高さの変化 $dz=2.2$、紫の線分は $\mathrm{T}$ から曲面上の点 $\mathrm{Q}$ までの差 $\Delta z-dz=0.61$ である。赤と紫を合わせた長さが $\Delta z=2.81$ である。
     </em>
   </figcaption>
 </figure>
@@ -1112,7 +1114,7 @@ $$
 
 **接平面の最良性（まとめ）.** 定義域が点 $(a,b)$ を中心とするある円の内側を含むとする。曲面との縦の差が距離より速く $0$ に近づく鉛直でない平面について、次が成り立つ。
 
-- **全微分可能な点**：点 $\mathrm{P}$ を通る平面では、接平面ただ 1 つである。$f$ は点 $(a,b)$ で連続だから、点 $\mathrm{P}$ を通らない平面は条件を満たさない。
+- **全微分可能な点**：点 $\mathrm{P}$ を通る平面では、接平面ただ 1 つである。全微分可能ならば連続という定理より $f$ は点 $(a,b)$ で連続だから、点 $\mathrm{P}$ を通らない平面は条件を満たさない。
 - **全微分可能でない点**：点 $\mathrm{P}$ を通る平面には存在しない。
 
 ### 法線ベクトルの候補
@@ -1133,7 +1135,7 @@ $$
 
   空間ベクトルと成分の章の成分表示より、$\overrightarrow{\mathrm{OQ}_2}$ の成分は点 $\mathrm{Q}_2$ の座標であり、$\overrightarrow{\mathrm{OQ}_1}$ も同様である。同章より差は成分ごとに計算するので、成分は終点の座標から始点の座標を引いた差である。
 
-外積で法線ベクトルの候補を作る。まず、2 本の断面の接線の向きを、ベクトルで表す。接線上の $t=0$ の点 $\mathrm{P}$ から $t=1$ の点へ向かうベクトルを、接線の**向きのベクトル**と呼ぶ。成分は、終点の座標から始点の座標を引いた差である。
+外積で法線ベクトルの候補を作る。まず、2 本の断面の接線の向きを、ベクトルで表す。接線上の $t=0$ の点 $\mathrm{P}$ から $t=1$ の点へ向かうベクトルを、本章では便宜的に接線の**向きのベクトル**と呼ぶ。成分は、終点の座標から始点の座標を引いた差である。
 
 - **1 本目の接線（平面 $y=b$ による断面の接線）**：$t$ が $1$ 増えると、点は $x$ 軸の向きに $1$ 進む。同時に、$z$ 軸の向きに $f_x(a,b)$ だけ進む。向きのベクトルは $\vec{u}=(1,\:0,\:f_x(a,b))$ である。
 - **2 本目の接線（平面 $x=a$ による断面の接線）**：同様に、向きのベクトルは $\vec{v}=(0,\:1,\:f_y(a,b))$ である。
@@ -1260,7 +1262,6 @@ $$
 - **連続であること.** 2 変数と同じ証明で成り立つ。
 - **$C^1$ 級.** 集合 $U$ の各点について、点を中心とするある球の内側が $U$ に含まれるとする。$f_x$・$f_y$・$f_z$ が $U$ のすべての点で存在し、$U$ のすべての点で連続であるとき、$f$ は $U$ で $C^1$ 級であるという。
 - **十分条件.** $U$ で $C^1$ 級ならば、$U$ の各点で全微分可能である。証明では、1 つの座標ずつ 3 段で動かし、平均値の定理を 3 回使う。
-- **変化量の近似.** 出力の変化量 $\Delta w$ について、$\Delta w\approx dw$ も 2 変数と同じ根拠で成り立つ。$dw$ は後述の全微分である。
 
 偏微分可能であることから、偏微分係数を使って全微分を定められる。
 
@@ -1275,6 +1276,14 @@ $$
 $$
 dw=\frac{\partial w}{\partial x}\,dx+\frac{\partial w}{\partial y}\,dy+\frac{\partial w}{\partial z}\,dz
 $$
+
+出力の変化量を次の $\Delta w$ で表す。
+
+$$
+\Delta w=f(x+\Delta x,\,y+\Delta y,\,z+\Delta z)-f(x,y,z)
+$$
+
+2 変数と同じく $dx=\Delta x$・$dy=\Delta y$・$dz=\Delta z$ として使うと、$\Delta w\approx dw$ が同じ根拠で成り立つ。3 変数の $\Delta z$ は入力 $z$ の変化量であり、2 変数の節の出力の変化量 $\Delta z$ とは異なる。
 
 ### 直方体の体積の例
 
@@ -1453,7 +1462,7 @@ $f(x,y)=\sqrt{x^2+y^2}$ が全微分可能な点をすべて求めよ。
 
 2. 偏微分の章の問題 4 より、根号の中が正の点では $f_x=-\dfrac{x}{\sqrt{9-x^2-y^2}}$・$f_y=-\dfrac{y}{\sqrt{9-x^2-y^2}}$ である。$\lvert x-1\rvert<\dfrac12$ かつ $\lvert y-2\rvert<\dfrac12$ を満たす点の全体を $U$ とし、$U$ で $C^1$ 級であることを示す。
    - **$U$ の条件.** $U$ の点 $(x_0,y_0)$ について、$\dfrac12-\lvert x_0-1\rvert$ と $\dfrac12-\lvert y_0-2\rvert$ の小さい方を $m$ とする。$m>0$ である。$x_0$・$y_0$・$m$ は「エックス・ゼロ」「ワイ・ゼロ」「エム」と読む、本問だけの便宜的な文字である。中心 $(x_0,y_0)$・半径 $m$ の円の内側の点 $(x,y)$ では、座標の差と距離の定理より $\lvert x-x_0\rvert<m$ である。三角不等式より $\lvert x-1\rvert\le\lvert x-x_0\rvert+\lvert x_0-1\rvert<\dfrac12$ であり、$y$ も同様である。よって円の内側は $U$ に含まれる。
-   - **根号の中が正.** $U$ の点では、三角不等式より $\lvert x\rvert<\dfrac32$・$\lvert y\rvert<\dfrac52$ である。「0 以上の数の大小と 2 乗」の定理より $x^2<\dfrac94$・$y^2<\dfrac{25}{4}$ だから、$x^2+y^2<\dfrac{17}{2}<9$ である。
+   - **根号の中が正.** $U$ の点では、三角不等式より $\lvert x\rvert<\dfrac32$・$\lvert y\rvert<\dfrac52$ である。「0 以上の数の大小と 2 乗」の定理と 2 乗との関係 $\lvert t\rvert^2=t^2$ より $x^2<\dfrac94$・$y^2<\dfrac{25}{4}$ だから、$x^2+y^2<\dfrac{17}{2}<9$ である。
    - **連続.** 分母は、多項式と連続な $\sqrt t$ の合成だから連続であり、$U$ で $0$ でない。分子も多項式だから、商は $U$ で連続である。
 
    点 $(1,2)$ は $U$ に属する。「$C^1$ 級ならば全微分可能」の定理より全微分可能であり、$f_x(1,2)=-\dfrac12$・$f_y(1,2)=-1$ である。接平面は次の平面である。
@@ -1554,7 +1563,7 @@ $$
 f(1+h,1+k)=(1+h)(1+2k+k^2)=1+h+2k+k^2+2hk+hk^2
 $$
 
-$f(1,1)=1$ だから、誤差は $R(h,k)=k^2+2hk+hk^2$ である。$\rho=\sqrt{h^2+k^2}$ について $\lvert h\rvert\le\rho$・$\lvert k\rvert\le\rho$ である。$(h,k)\neq(0,0)$ では $\rho>0$ だから、「0 以上の数の大小と 2 乗」の定理より $k^2\le\rho^2$ である。三角不等式と合わせて、次の不等式を得る。
+$f(1,1)=1$ だから、誤差は $R(h,k)=k^2+2hk+hk^2$ である。$\rho=\sqrt{h^2+k^2}$ について $\lvert h\rvert\le\rho$・$\lvert k\rvert\le\rho$ である。$(h,k)\neq(0,0)$ では $\rho>0$ だから、「0 以上の数の大小と 2 乗」の定理と 2 乗との関係 $\lvert t\rvert^2=t^2$ より $k^2\le\rho^2$ である。三角不等式と合わせて、次の不等式を得る。
 
 $$
 \left\lvert\frac{R(h,k)}{\rho}\right\rvert\le\frac{\rho^2+2\rho^2+\rho^3}{\rho}=3\rho+\rho^2
