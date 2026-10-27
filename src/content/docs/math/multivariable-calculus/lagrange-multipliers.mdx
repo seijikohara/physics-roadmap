@@ -664,14 +664,14 @@ $K$ に属さない点は、$K$ の境界点でない。対偶をとると、$K$
     ]}
     edges={[
       { from: "c1", to: "check" },
-      { from: "check", to: "exist", label: "はい" },
       { from: "check", to: "other", label: "いいえ" },
-      { from: "exist", to: "collect" },
+      { from: "check", to: "exist", label: "はい" },
       { from: "other", to: "collect", dashed: true },
-      { from: "collect", to: "sys" },
+      { from: "exist", to: "collect" },
       { from: "collect", to: "zero" },
-      { from: "sys", to: "cmp" },
+      { from: "collect", to: "sys" },
       { from: "zero", to: "cmp" },
+      { from: "sys", to: "cmp" },
     ]}
   />
   <figcaption>
@@ -973,7 +973,7 @@ $$
   />
   <figcaption>
     <em>
-      図 9. 曲線 $y^2=x^3$（緑）と、$f(x,y)=x$ の等高線（縦線。高さ $0$ の等高線は $y$ 軸）。曲線は $y$ 軸より右にあり、$f$ は原点で最小値 $0$ をとる。原点では $\nabla f=(1,0)$ だが（桃色の矢印、長さを $0.45$ 倍）、$\nabla g=\vec{0}$ であり、$\nabla f=\lambda\nabla g$ となる $\lambda$ はない。
+      図 9. 曲線 $y^2=x^3$（緑）と、$f(x,y)=x$ の等高線（縦線。高さ $0$ の等高線は $y$ 軸）。曲線は原点以外では $y$ 軸より右にあり、$f$ は原点で最小値 $0$ をとる。原点では $\nabla f=(1,0)$ だが（桃色の矢印、長さを $0.45$ 倍）、$\nabla g=\vec{0}$ であり、$\nabla f=\lambda\nabla g$ となる $\lambda$ はない。
     </em>
   </figcaption>
 </figure>
