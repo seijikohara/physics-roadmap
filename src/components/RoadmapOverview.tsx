@@ -26,6 +26,7 @@ const DONE = new Set([
   "M-CPX",
   "M-SEQ",
   "M-CALC",
+  "M-MVC",
 ]);
 // 到達目標の 2 カテゴリ。
 const GOALS = new Set(["P-SMD", "P-GR"]);
