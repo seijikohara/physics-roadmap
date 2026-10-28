@@ -1237,6 +1237,10 @@ export default function ContourPlot({
       GRID_CUT_PAD,
     );
   };
+  // 空ラベルの目盛り（格子線だけを残し数字を省く目盛り）は字形をもたないので、格子線の切り抜きと
+  // avoidLabels の判定から外す。外さないと、数字の無い位置で格子線が規則的に途切れて見える。
+  const xtLabeled = xt.filter((t) => tickLabel(t) !== "");
+  const ytLabeled = yt.filter((t) => tickLabel(t) !== "");
   // 切り抜きとプロット矩形の縁の間に残る格子線が GRID_STUB_PX より短いときは、縁まで切り抜く。
   // ラベルの脇に数 px だけ残った線が、「=1_」のように字の続きに見えるのを防ぐ。
   const plotRight = originX + plotW;
@@ -1256,8 +1260,8 @@ export default function ContourPlot({
           ),
           ...(axes
             ? [
-                ...xt.map((t) => tickCut(x(tickValue(t)), axisY + 13, t)),
-                ...yt.map((t) => tickCut(axisX - 14, y(tickValue(t)), t)),
+                ...xtLabeled.map((t) => tickCut(x(tickValue(t)), axisY + 13, t)),
+                ...ytLabeled.map((t) => tickCut(axisX - 14, y(tickValue(t)), t)),
               ]
             : []),
         ].map(toEdge)
@@ -1273,8 +1277,8 @@ export default function ContourPlot({
       ...allLabels.map((l) => inflate(boxFor(l.pos, estimateTexWidthPrecise(l.tex, 12)), 1)),
       ...(axes
         ? [
-            ...xt.map((t) => tickCut(x(tickValue(t)), axisY + 13, t)),
-            ...yt.map((t) => tickCut(axisX - 14, y(tickValue(t)), t)),
+            ...xtLabeled.map((t) => tickCut(x(tickValue(t)), axisY + 13, t)),
+            ...ytLabeled.map((t) => tickCut(axisX - 14, y(tickValue(t)), t)),
           ]
         : []),
     ];
