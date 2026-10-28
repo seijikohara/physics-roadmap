@@ -38,6 +38,18 @@ import type { ScreenPoint, Vec3 } from "./projection3d";
  *
  * 陰影は、各セルの法線と光源の向きのなす角で明暗をつける（ランバート反射）。光源は視点に
  * 固定し、視点を変えても左上手前から照らす。高さによる濃淡にも切り替えられる。
+ *
+ * ベクトル場（`fields`）は格子点または指定した点で関数を評価して矢印の群を描き、空間曲線の
+ * `arrows` は曲線の向きを矢じりで示す。例えば単位球面の上の外向き単位法線は次のように書く。
+ *
+ * ```mdx
+ * <SurfacePlot xRange={[-1.5, 1.5]} yRange={[-1.5, 1.5]} zRange={[-1.5, 1.5]} ariaLabel="…"
+ *   surfaces={[{ kind: "parametric", fn: (u, v) => ({ x: Math.sin(u) * Math.cos(v),
+ *     y: Math.sin(u) * Math.sin(v), z: Math.cos(u) }), u: [0, Math.PI], v: [0, 2 * Math.PI],
+ *     opacity: 0.3 }]}
+ *   fields={[{ fn: (x, y, z) => ({ x, y, z }), scale: 0.5,
+ *     at: [{ x: 0, y: 0, z: 1 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }] }]} />
+ * ```
  */
 
 /** 閉区間 [下端, 上端]。 */
@@ -269,6 +281,13 @@ type SpaceCurve = {
   labelAt?: number;
   /** 面に隠れた部分の描き方。既定 "fade"。 */
   hidden?: HiddenMode;
+  /**
+   * 向きを示す矢じり。数値 n なら t の範囲を n 等分した各小区間の中央に、配列なら各 t の位置に
+   * 置く。矢じりの中心を曲線の上に置き、t の範囲の [始端, 終端] の順に進む向きへ向ける。小区間の
+   * 中央に置くのは、閉曲線の始点と終点（同じ点）に矢じりが 2 つ重ならないためである。面に隠れた
+   * 矢じりは hidden に従って淡く描く（または描かない）。既定は矢じりなし。
+   */
+  arrows?: number | number[];
 };
 
 /** 空間の線分。arrow を付けると矢印（空間ベクトル）になる。 */
@@ -285,6 +304,59 @@ type SpaceSegment = {
   dashed?: boolean;
   /** 線分の中点付近に置く LaTeX ラベル。 */
   label?: string;
+  /** 面に隠れた部分の描き方。既定 "fade"。 */
+  hidden?: HiddenMode;
+};
+
+/**
+ * 空間のベクトル場。格子点（または `at` の各点）で関数を評価し、各点に矢印を描く。長さはすべて
+ * 座標の単位（zScale を掛ける前の座標）で決める。矢印は線分の矢印（segments の arrow）と同じ
+ * 見た目・同じ隠れ線の扱いで描く。
+ */
+type SpaceField = {
+  /**
+   * 場の関数。空間の点 (x, y, z) を受け取り、その点のベクトル（成分）を返す。null や有限でない
+   * 値を返した点（場が定義されない点）は描かない。
+   */
+  fn: (x: number, y: number, z: number) => Vec3 | null;
+  /**
+   * 格子の代わりに評価する点の列（座標）。曲面の上の点（球面の上の法線など）に矢印を置くときに
+   * 使う。
+   */
+  at?: Vec3[];
+  /** 格子の $x$ の範囲（両端を含む）。省略時は軸の範囲 xRange。 */
+  x?: Range;
+  /** 格子の $y$ の範囲（両端を含む）。省略時は軸の範囲 yRange。 */
+  y?: Range;
+  /** 格子の $z$ の範囲（両端を含む）。省略時は軸の範囲 zRange。 */
+  z?: Range;
+  /**
+   * 格子の各軸の分割数 [x, y, z]。各軸の範囲を等分し、両端を含む「分割数 + 1」個の格子点を
+   * 置く。0 なら範囲の下端の 1 点だけを置く（床の上の場など）。既定 [2, 2, 2]。
+   */
+  divisions?: [number, number, number];
+  /** 評価しない点のマスク。true を返した点には何も描かない（原点のまわりなど）。 */
+  hide?: (p: Vec3) => boolean;
+  /**
+   * 長さの倍率。矢印の成分（座標）をベクトルの scale 倍にする。省略時は、格子なら最も長い矢印が
+   * 最も狭い格子間隔の 0.8 倍になる値、`at` なら 1 とする。
+   */
+  scale?: number;
+  /**
+   * すべての矢印を同じ長さにそろえるか（向きだけを示す）。そろえた長さ（座標）は scale で、
+   * 省略時は格子なら最も狭い格子間隔の 0.6 倍、`at` なら 1 とする。既定 false。
+   */
+  normalize?: boolean;
+  /** 矢印の長さの上限（座標）。超える矢印は向きを保って縮める。 */
+  maxLength?: number;
+  /** 評価点に矢印のどこを合わせるか。"tail" は始点、"center" は中点。既定 "tail"。 */
+  pivot?: "tail" | "center";
+  /** 零ベクトルの点の描き方。"skip" は描かない、"dot" は小さな点で示す。既定 "skip"。 */
+  zero?: "skip" | "dot";
+  /** 矢印の色。既定は青緑（曲面の青・曲線の橙色・強調の琥珀色と区別する）。 */
+  color?: string;
+  /** 線の太さ（px）。既定 1.8（線分の矢印と同じ）。 */
+  width?: number;
   /** 面に隠れた部分の描き方。既定 "fade"。 */
   hidden?: HiddenMode;
 };
@@ -316,6 +388,8 @@ type SurfacePlotProps = {
   curves?: SpaceCurve[];
   /** 線分・矢印。 */
   segments?: SpaceSegment[];
+  /** ベクトル場（矢印の群）。空間曲線より前面、線分・点・ラベルより奥に描く。 */
+  fields?: SpaceField[];
   /** 点。 */
   points?: SpacePoint[];
   /** $x$ 軸の範囲。軸は下端から上端（矢じり）まで描く。既定 [0, 3]。 */
@@ -353,6 +427,20 @@ const BOX = "#10b981";
 const REGION = "#f59e0b";
 const CURVE = "#ea580c";
 const HIGHLIGHT = "#f59e0b";
+// ベクトル場の既定色。曲面（青）・曲線（橙色）・強調（琥珀色）のいずれとも見分けられる青緑にする。
+// 平面図（ContourPlot）のベクトル場と同じ色である。
+const FIELD = "#0d9488";
+// 零ベクトルを示す点の半径（px）。
+const FIELD_DOT_R = 1.8;
+// 画面上の長さがこれ（px）より短い矢印は、向きが読めないため零ベクトルと同じに扱う。
+const FIELD_MIN_PX = 0.5;
+// 格子の 1 軸あたりの分割数の上限。指定を誤ったときに、ビルドが止まらないようにする。
+const FIELD_MAX_DIVISIONS = 40;
+// ラベル配置で、ベクトル場の矢印 1 本に近づくごとの罰点と、1 つの場あたりの罰点の上限。上限を
+// 軸・線分・曲線の罰点（6）より小さくし、場が図全体を覆う場合も、ラベルは線を避けることを優先し、
+// そのうえで近い矢印の少ない位置を選ぶ。罰点が有限なので、ラベルが置けなくなることはない。
+const FIELD_WEIGHT = 1;
+const FIELD_MAX_PENALTY = 4;
 
 // 描画領域。幅は他の図と同じ 320 とし、高さは内容に合わせて決める（空白の帯を作らない）。
 const VIEW_W = 320;
@@ -399,6 +487,7 @@ export default function SurfacePlot({
   regions = [],
   curves = [],
   segments = [],
+  fields = [],
   points = [],
   xRange = [0, 3],
   yRange = [0, 3],
@@ -494,6 +583,8 @@ export default function SurfacePlot({
     return out;
   });
   const segPts = segments.map((s) => ({ from: toView(s.from), to: toView(s.to) }));
+  // ベクトル場の矢印。投影の当てはめより前に求め、矢印の先が図からはみ出さないよう投影範囲に含める。
+  const fieldPts = fields.map((f) => buildField(f, ctx));
   const pointPts = points.map((p) => toView(p));
   const dropLines = points.flatMap((p, i) =>
     p.drop && Math.abs(p.z) > 1e-9
@@ -511,6 +602,7 @@ export default function SurfacePlot({
     ...curvePts.flat().filter(isFiniteVec),
     ...segPts.flatMap((s) => [s.from, s.to]),
     ...pointPts,
+    ...fieldPts.flatMap((fp) => fp.flatMap((a) => [a.from, a.to])),
   ];
   if (boundsPts.length === 0) boundsPts.push({ x: 0, y: 0, z: 0 });
   const rawBounds = projectedBounds(boundsPts, basis);
@@ -583,6 +675,23 @@ export default function SurfacePlot({
     return visibilityLevel(occ.transmit(sp.sx, sp.sy, depth(p), depEps), mode);
   };
 
+  // ---- ベクトル場の矢印の振り分け ----
+  // 画面上で FIELD_MIN_PX より短い矢印は向きが読めないため、零ベクトルと同じに扱う。
+  const fieldDraws = fieldPts.map((fp, i) => {
+    const arrows: { from: Vec3; to: Vec3; sFrom: ScreenPoint; sTo: ScreenPoint }[] = [];
+    const dots: Vec3[] = [];
+    for (const a of fp) {
+      const sFrom = project(a.from);
+      const sTo = project(a.to);
+      if (Math.hypot(sTo.sx - sFrom.sx, sTo.sy - sFrom.sy) >= FIELD_MIN_PX) {
+        arrows.push({ from: a.from, to: a.to, sFrom, sTo });
+      } else if (fields[i].zero === "dot") {
+        dots.push(a.at);
+      }
+    }
+    return { arrows, dots };
+  });
+
   // ---- ラベルの配置 ----
   // 軸・線分・曲線を当たり判定の線分に積み、ラベルが線や既出のラベルに重ならない候補を選ぶ。
   const obstacleSegs: Seg[] = [
@@ -590,6 +699,9 @@ export default function SurfacePlot({
     ...segPts.map((s) => segOf(project(s.from), project(s.to))),
     ...curvePts.flatMap((pts) => polylineSegs(pts.filter(isFiniteVec).map(project), 40)),
   ];
+  // ベクトル場の矢印は、場ごとにまとめて別に持つ。近い本数の罰点に場ごとの上限を設けるためで
+  // ある（FIELD_MAX_PENALTY を参照）。
+  const fieldSegs: Seg[][] = fieldDraws.map((fd) => fd.arrows.map((a) => segOf(a.sFrom, a.sTo)));
   // 点そのものも小さな矩形として積み、ラベルが点の印を覆わないようにする。
   const placedBoxes: Box[] = pointPts.map((p) => {
     const s = project(p);
@@ -611,6 +723,25 @@ export default function SurfacePlot({
       // ラベル同士の重なりは最優先で避ける（線分近接より重く罰する）。
       for (const q of placedBoxes) if (boxesOverlap(box, q)) p += 15;
       for (const s of obstacleSegs) if (segBoxDist(s, box) < 3) p += 6;
+      for (const group of fieldSegs) {
+        let hits = 0;
+        for (const s of group) {
+          // 矢印は数百本になりうるため、外接矩形で遠い矢印を先に除き、標本化による距離の計算を省く。
+          if (
+            Math.max(s.ax, s.bx) < box.x0 - 3 ||
+            Math.min(s.ax, s.bx) > box.x1 + 3 ||
+            Math.max(s.ay, s.by) < box.y0 - 3 ||
+            Math.min(s.ay, s.by) > box.y1 + 3
+          ) {
+            continue;
+          }
+          if (segBoxDist(s, box) < 3) {
+            hits += FIELD_WEIGHT;
+            if (hits >= FIELD_MAX_PENALTY) break;
+          }
+        }
+        p += Math.min(hits, FIELD_MAX_PENALTY);
+      }
       if (p < bestP) {
         bestP = p;
         best = c;
@@ -798,6 +929,42 @@ export default function SurfacePlot({
     return [{ key: `pt-${i}`, tex: p.label, ...lp }];
   });
 
+  // ---- 空間曲線の向きの矢じり ----
+  // 矢じりの中心を曲線の上の点に合わせ、接線の向きは前後のごく近い 2 点を投影した差で求める。
+  // 差分の刻みは t の範囲に符号付きで比例させ、範囲を逆に与えた曲線でも進む向きを指す。
+  const curveHeads = curves.flatMap((c, i) => {
+    const [t0, t1] = c.t;
+    const h = (t1 - t0) * 1e-3;
+    const mode = c.hidden ?? "fade";
+    return arrowParams(c.arrows, t0, t1).flatMap((t, k) => {
+      const p = c.fn(t);
+      if (!isFiniteVec(p)) return [];
+      const pv = toView(p);
+      const level = pointLevel(pv, mode);
+      if (level <= 0) return [];
+      const sc = project(pv);
+      // 端の点では片側の差分に切り替え、範囲の外で値が定義されない曲線にも置けるようにする。
+      const before = c.fn(t - h);
+      const after = c.fn(t + h);
+      const a = isFiniteVec(before) ? project(toView(before)) : sc;
+      const b = isFiniteVec(after) ? project(toView(after)) : sc;
+      const len = Math.hypot(b.sx - a.sx, b.sy - a.sy);
+      if (!(len > 1e-9)) return [];
+      const ux = (b.sx - a.sx) / len;
+      const uy = (b.sy - a.sy) / len;
+      const back = { sx: sc.sx - (ux * HEAD_LEN) / 2, sy: sc.sy - (uy * HEAD_LEN) / 2 };
+      const tip = { sx: sc.sx + (ux * HEAD_LEN) / 2, sy: sc.sy + (uy * HEAD_LEN) / 2 };
+      return [
+        {
+          key: `ch-${i}-${k}`,
+          points: arrowHead(back, tip, HEAD_LEN, HEAD_HALF),
+          color: c.color ?? CURVE,
+          level,
+        },
+      ];
+    });
+  });
+
   // ---- 描画 ----
   // 最も多くの面が使う不透明度（親の g に置き、各面での記述を省く）。
   const opacityCount = new Map<number, number>();
@@ -970,6 +1137,70 @@ export default function SurfacePlot({
           />
         )),
       )}
+      {/* 空間曲線の向きを示す矢じり。面に隠れた矢じりは曲線と同じく淡く描く。 */}
+      {curveHeads.map((h) => (
+        <polygon
+          key={h.key}
+          points={h.points}
+          fill={h.color}
+          fillOpacity={h.level < 1 ? h.level : undefined}
+        />
+      ))}
+
+      {/* ベクトル場。1 本ずつ線分の矢印（segments の arrow）と同じ描き方・隠れ線の扱いで描く。 */}
+      {fieldDraws.map((fd, fi) => {
+        const f = fields[fi];
+        const color = f.color ?? FIELD;
+        const mode = f.hidden ?? "fade";
+        return (
+          <g key={`field-${fi}`}>
+            {fd.arrows.map((a, i) => {
+              const runs = visibleRuns([a.from, a.to], mode);
+              const len = Math.hypot(a.sTo.sx - a.sFrom.sx, a.sTo.sy - a.sFrom.sy) || 1;
+              // 矢じり長は矢印の画面上の長さを超えないよう上限を付ける（線分の矢印と同じ）。
+              const hl = Math.min(HEAD_LEN, len * 0.8);
+              const level = pointLevel(a.to, mode);
+              return (
+                <g key={`field-${fi}-${i}`}>
+                  {runs.map((run, k) => (
+                    <RunPath
+                      key={`field-${fi}-${i}-${k}`}
+                      run={run}
+                      stroke={color}
+                      width={f.width ?? 1.8}
+                      opacity={run.level}
+                      trimEnd={k === runs.length - 1 ? hl : 0}
+                      trimTo={a.sTo}
+                    />
+                  ))}
+                  {level > 0 && (
+                    <polygon
+                      points={arrowHead(a.sFrom, a.sTo, hl, HEAD_HALF * (hl / HEAD_LEN))}
+                      fill={color}
+                      fillOpacity={level < 1 ? level : undefined}
+                    />
+                  )}
+                </g>
+              );
+            })}
+            {fd.dots.map((d, i) => {
+              const level = pointLevel(d, mode);
+              if (level <= 0) return null;
+              const s = project(d);
+              return (
+                <circle
+                  key={`field-${fi}-z${i}`}
+                  cx={r1(s.sx)}
+                  cy={r1(s.sy)}
+                  r={FIELD_DOT_R}
+                  fill={color}
+                  fillOpacity={level < 1 ? level : undefined}
+                />
+              );
+            })}
+          </g>
+        );
+      })}
 
       {/* 線分・矢印。 */}
       {segments.map((s, i) => {
@@ -1466,6 +1697,62 @@ function buildRegion(r: FloorRegion, ctx: BuildCtx): { face: Face | null } {
 }
 
 // ---------------------------------------------------------------------------
+// ベクトル場
+// ---------------------------------------------------------------------------
+
+/** ベクトル場の 1 本の矢印（表示座標）。at は評価点で、零ベクトルの点を描く位置に使う。 */
+type FieldArrow = { at: Vec3; from: Vec3; to: Vec3 };
+
+/**
+ * ベクトル場を格子点（または at の点）で評価し、矢印の列（表示座標）にする。長さは数学の座標で
+ * 決めてから両端を表示座標へ写す。zScale を掛けた図でも、矢印の成分を座標どおりに保つためである。
+ * 零ベクトルの点は始点と終点の一致した矢印として返し、投影後に点として描くかを決める。
+ */
+function buildField(f: SpaceField, ctx: BuildCtx): FieldArrow[] {
+  const ranges: Range[] = [f.x ?? ctx.xRange, f.y ?? ctx.yRange, f.z ?? ctx.zRange];
+  const divs = (f.divisions ?? [2, 2, 2]).map((n) =>
+    clampInt(Number.isFinite(n) ? Math.round(n) : 0, 0, FIELD_MAX_DIVISIONS),
+  );
+  const values = ranges.map((r, k) =>
+    divs[k] === 0 || r[1] === r[0]
+      ? [r[0]]
+      : Array.from({ length: divs[k] + 1 }, (_, i) => r[0] + ((r[1] - r[0]) * i) / divs[k]),
+  );
+  const base: Vec3[] =
+    f.at ?? values[2].flatMap((z) => values[1].flatMap((y) => values[0].map((x) => ({ x, y, z }))));
+  const samples = base.flatMap((p) => {
+    if (f.hide?.(p) === true) return [];
+    const v = f.fn(p.x, p.y, p.z);
+    if (!isFiniteVec(v)) return [];
+    return [{ p, v, mag: Math.hypot(v.x, v.y, v.z) }];
+  });
+  // 自動の倍率は、最も長い矢印（normalize ならすべての矢印）を最も狭い格子間隔より短くし、隣の
+  // 格子点の矢印と重ならないようにする。投影で奥行き方向の間隔が縮んで見えるため、平面図より短く
+  // とる。点の列で渡したときは格子間隔が無いため、ベクトルをそのまま描く。
+  const spacings = ranges.flatMap((r, k) =>
+    divs[k] > 0 && r[1] !== r[0] ? [Math.abs(r[1] - r[0]) / divs[k]] : [],
+  );
+  const unit = spacings.length > 0 ? Math.min(...spacings) : 1;
+  const maxMag = samples.reduce((m, s) => Math.max(m, s.mag), 0);
+  const autoScale =
+    f.at !== undefined
+      ? 1
+      : f.normalize === true
+        ? 0.6 * unit
+        : maxMag > 0
+          ? (0.8 * unit) / maxMag
+          : 1;
+  const scale = f.scale ?? autoScale;
+  return samples.map(({ p, v, mag }) => {
+    let len = mag > 0 ? (f.normalize === true ? scale : scale * mag) : 0;
+    if (f.maxLength !== undefined) len = Math.min(len, f.maxLength);
+    const d = mag > 0 ? scale3(v, len / mag) : { x: 0, y: 0, z: 0 };
+    const start = f.pivot === "center" ? add(p, scale3(d, -0.5)) : p;
+    return { at: ctx.toView(p), from: ctx.toView(start), to: ctx.toView(add(start, d)) };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // 面の前後関係（BSP 木）
 // ---------------------------------------------------------------------------
 
@@ -1920,6 +2207,17 @@ function aroundCands(w: number): { dx: number; dy: number }[] {
     { dx: w / 2 + 8, dy: 0 },
     { dx: -(w / 2 + 8), dy: 0 },
   ];
+}
+
+/**
+ * 向きの矢じりの指定（数値なら等分の個数、配列なら位置）を、矢じりを置く媒介変数の値の列にする。
+ * 個数で与えたときは、範囲を等分した各小区間の中央の値を返す。
+ */
+function arrowParams(marks: number | number[] | undefined, lo: number, hi: number): number[] {
+  if (marks === undefined) return [];
+  if (typeof marks !== "number") return marks;
+  const n = Math.max(0, Math.round(marks));
+  return Array.from({ length: n }, (_, k) => lo + ((hi - lo) * (k + 0.5)) / n);
 }
 
 /** 始点 from から終点 to へ向かう矢じりの三角形（polygon の points 属性）。 */
