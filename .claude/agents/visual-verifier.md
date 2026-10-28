@@ -140,7 +140,8 @@ for (const route of routes) {
   const url = `${BASE}/${route}/`;
   let html;
   try {
-    html = execFileSync("curl", ["-fsS", url]).toString();
+    // 図の多いページの SSR HTML は数 MB になり、execFileSync の既定の上限 1 MB を超える。
+    html = execFileSync("curl", ["-fsS", url], { maxBuffer: 64 * 1024 * 1024 }).toString();
   } catch {
     console.error(`FETCH FAIL ${url}`);
     continue;

@@ -1,5 +1,7 @@
 import { Line } from "@visx/shape";
 import KatexLabel from "./KatexLabel";
+import { DEFAULT_VIEW, fitView, makeProjector, projectedBounds } from "./projection3d";
+import type { Vec3 } from "./projection3d";
 
 /**
  * インライン SVG として描く、ビルド時生成の静的な空間ベクトルの軸測図。
@@ -11,10 +13,11 @@ import KatexLabel from "./KatexLabel";
  * ハイドレーションなし）。軸・ベクトルは `@visx/shape` の `Line` で描き、矢じりは色を動的に
  * 変えられるよう polygon を手計算で置く。ラベルは KatexLabel を介して KaTeX で組版する。
  *
- * 投影は、方位角 AZIMUTH・仰角 ELEVATION を持つ正投影（ダイメトリック軸測）である。$y$ 軸を
+ * 投影は、既定の方位角・仰角を持つ正投影（ダイメトリック軸測）である。$y$ 軸を
  * 真横に寝かせる斜投影だと床面（$xy$ 平面）が線分に潰れて立体に見えない。そこで $x$ 軸を
  * 左手前へ、$y$ 軸を右奥へ、双方に下向きの傾きを与え、$xy$ 平面が「奥へ広がる床」に見える
- * 視点を取る。$z$ 軸は画面の上向きである。
+ * 視点を取る。$z$ 軸は画面の上向きである。投影の計算は 3 次元の図で共有するため
+ * `projection3d.ts` に置く。
  *
  * 奥行きの手がかりを 3 つ重ねる。
  * - 床グリッド: $z = 0$ の $xy$ 平面に淡いグリッドを敷き、地面の参照を与える。奥（原点側）の
@@ -88,25 +91,6 @@ const HIGHLIGHT = "#f59e0b";
 const VIEW_W = 320;
 const VIEW_H = 280;
 
-// 正投影の視点。方位角 AZIMUTH（鉛直軸まわりの回転）と仰角 ELEVATION（見下ろし角）で決める。
-// 35°・30° のダイメトリックは、床面が十分開いて見え、3 軸の成分も読み取りやすい。
-const AZIMUTH = (35 * Math.PI) / 180;
-const ELEVATION = (30 * Math.PI) / 180;
-const SIN_T = Math.sin(AZIMUTH);
-const COS_T = Math.cos(AZIMUTH);
-const SIN_P = Math.sin(ELEVATION);
-const COS_P = Math.cos(ELEVATION);
-
-// 空間の単位ベクトルを写す画面ベクトルの向き（1 単位あたりの画面 px は倍率 SCALE を掛けて決める）。
-// SVG は下向きが正のため、上向きの z 軸は画面の負の y へ向ける。x は左手前（左・下）、y は
-// 右奥（右・下、x より浅い）へ退かせ、xy 平面を床として見せる。
-const DIR_X = { sx: -SIN_T, sy: COS_T * SIN_P }; // x 軸: 左手前。
-const DIR_Y = { sx: COS_T, sy: SIN_T * SIN_P }; // y 軸: 右奥。
-const DIR_Z = { sx: 0, sy: -COS_P }; // z 軸: 上。
-
-// 視線方向（画面手前を正とする奥行き）。値が大きいほど視点に近い。床グリッドの濃淡に使う。
-const FWD = { x: COS_T * COS_P, y: SIN_T * COS_P, z: SIN_P };
-
 // 軸の周りに確保する余白（軸名ラベル・矢じりを収める）。
 const MARGIN = 32;
 
@@ -116,8 +100,6 @@ const HEAD_HALF = 3.6;
 
 // 座標が 0 とみなせる許容値（落とし込み線の退化を判定する）。
 const EPS = 1e-6;
-
-type Vec3 = { x: number; y: number; z: number };
 
 export default function SpaceVectorDiagram({
   vectors = [],
@@ -148,30 +130,10 @@ export default function SpaceVectorDiagram({
         ]
       : []),
   ];
-  const raw = boundsPts.map((p) => ({
-    sx: p.x * DIR_X.sx + p.y * DIR_Y.sx + p.z * DIR_Z.sx,
-    sy: p.x * DIR_X.sy + p.y * DIR_Y.sy + p.z * DIR_Z.sy,
-  }));
-  const minSx = Math.min(...raw.map((c) => c.sx));
-  const maxSx = Math.max(...raw.map((c) => c.sx));
-  const minSy = Math.min(...raw.map((c) => c.sy));
-  const maxSy = Math.max(...raw.map((c) => c.sy));
-  const spanX = maxSx - minSx || 1;
-  const spanY = maxSy - minSy || 1;
-  const scale = Math.min((VIEW_W - 2 * MARGIN) / spanX, (VIEW_H - 2 * MARGIN) / spanY);
-  // 投影範囲（倍率適用後）を viewBox 中央へ寄せるよう原点をずらす。
-  const originX = (VIEW_W - (minSx + maxSx) * scale) / 2;
-  const originY = (VIEW_H - (minSy + maxSy) * scale) / 2;
-
-  const EX = { sx: DIR_X.sx * scale, sy: DIR_X.sy * scale };
-  const EY = { sx: DIR_Y.sx * scale, sy: DIR_Y.sy * scale };
-  const EZ = { sx: DIR_Z.sx * scale, sy: DIR_Z.sy * scale };
-
-  const project = (p: Vec3): { sx: number; sy: number } => ({
-    sx: originX + p.x * EX.sx + p.y * EY.sx + p.z * EZ.sx,
-    sy: originY + p.x * EX.sy + p.y * EY.sy + p.z * EZ.sy,
-  });
-  const depth = (p: Vec3): number => p.x * FWD.x + p.y * FWD.y + p.z * FWD.z;
+  // 投影範囲（倍率適用後）を viewBox 中央へ寄せるよう原点をずらす。奥行き depth は値が
+  // 大きいほど視点に近く、床グリッドの濃淡に使う。
+  const fit = fitView(projectedBounds(boundsPts, DEFAULT_VIEW), VIEW_W, VIEW_H, MARGIN);
+  const { project, depth } = makeProjector(DEFAULT_VIEW, fit);
 
   // 各軸の正の向きの終点（軸名ラベルを少し外へ離して置く）。
   const axes: { dir: "x" | "y" | "z"; label: string; end: Vec3 }[] = [

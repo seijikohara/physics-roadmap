@@ -1,0 +1,1967 @@
+---
+title: 重積分の変数変換とヤコビアン
+description: 2×2・3×3 の行列式を局所的に導入し、平行四辺形の面積と平行六面体の体積として読む。1 次式の変換で長方形の面積が |ad−bc| 倍になることから、小さな長方形の像の面積の倍率としてヤコビアン J=∂(x,y)/∂(u,v) を定める。変数変換の公式を成立条件とともに承認し、極座標・円柱座標・球座標による二重積分と三重積分を計算する。
+sidebar:
+  order: 14
+---
+
+import ContourPlot from "../../../../components/ContourPlot";
+import FlowChart from "../../../../components/FlowChart";
+import SurfacePlot from "../../../../components/SurfacePlot";
+
+## 前提
+
+本章の前提は、次の章である。
+
+- [多変数関数と定義域](../multivariable-functions-and-domains/)：
+  - $\mathbb{R}^2$・$\mathbb{R}^3$、2 変数関数・3 変数関数（定義）、記法 $f\colon D\to\mathbb{R}$
+  - 組の相等（定義）、部分集合の記法 $\{(x,y)\mid\text{条件}\}$ と、条件を区切るコンマが「かつ」を表す約束
+  - 値域（定義）の記法 $\{f(x,y)\mid(x,y)\in D\}$
+  - 境界（定義）と、領域の境界を図から直観的に読み取る約束（承認事項）
+  - 0 以上の数の大小と 2 乗（定理）
+- [多変数関数のグラフと等高線](../graphs-and-level-curves/)：$xy$ 平面（床）、円錐形の曲面（承認事項）、「球面の等位面」の節（原点からの距離が一定の点全体が球面であること）
+- [多変数関数の極限と連続性](../limits-and-continuity/)：
+  - 十分近い点（約束）と円の内側、点での連続と連続関数（定義）
+  - 「誤差の言葉による言い換え」の節と、誤差を表す文字 $\varepsilon$
+  - 座標の差と距離（定理）
+  - 2 変数関数の連続性と四則演算（定理）、多項式と有理関数の連続性（定理）、1 変数の関数との合成の連続性（定理）と連続な 1 変数の関数の表
+  - 「3 変数以上の関数」の節：空間の 2 点の距離、球の内側、3 変数関数の連続、上の定理が 3 変数でも成り立つこと
+- [偏微分](../partial-derivatives/)：
+  - 偏微分係数（定義）・偏導関数（定義）、記法 $f_x$・$\dfrac{\partial f}{\partial x}$（$\partial$ は「ラウンドディー」と読む）、ほかの変数を定数とみなす計算
+  - 偏微分係数と 1 変数の微分係数（定理）
+  - 3 変数関数の偏微分係数（定義）
+- [重積分（二重積分）](../double-integrals/)：
+  - 長方形 $[a,b]\times[c,d]$ の記法、記号 $\displaystyle\iint_D f(x,y)\:dA$ と、$dx\:dy$ とも書き並びが積分の順序を表さないこと
+  - 二重の和（定義）と記法 $\displaystyle\sum_{i=1}^{m}\sum_{j=1}^{n}$、長方形の上のリーマン和（定義）
+  - 縦線領域・横線領域（定義）と、縦線と縦線領域の交わりが 1 本の線分であること、長方形が縦線領域であること
+  - 領域の上の二重積分（定義）、縦線領域・横線領域の上の二重積分（承認事項）
+  - 円板 $\{(x,y)\mid x^2+y^2\le r^2\}$ が縦線領域であること
+  - フビニの定理、変数を分けた関数の二重積分（系）
+  - 領域の面積（定義）と、半径 $r$ の円板の面積 $\pi r^2$
+- [三重積分](../triple-integrals/)：
+  - 直方体 $[a,b]\times[c,d]\times[p,q]$ の記法
+  - 記号 $\displaystyle\iiint_V f\:dV$ と体積要素 $dV$
+  - 直方体の上のフビニの定理、変数を分けた関数の三重積分（系）
+  - 縦線立体（定義）・向きを替えた縦線立体（定義）と、直方体が縦線立体であること
+  - 立体の上の三重積分（定義）、縦線立体の上の三重積分（承認事項）
+  - 立体の体積 $\operatorname{vol}(V)$（定義）、立体における平均値（定義）
+  - 例 5 の立体 $\{(x,y,z)\mid x^2+y^2\le z\le1\}$ の体積 $\dfrac\pi2$、例題 3 の値 $\dfrac\pi3$、問題 5 の円錐の体積 $\dfrac\pi3$
+- [置換積分法](../../calculus/integration-by-substitution/)：定積分の置換（定理）、「定積分での使い方」の節の式と書き換えの規則 $dx=\varphi'(t)\:dt$、規則が便宜的な書き方であること、文字 $\alpha$（アルファ）・$\beta$（ベータ）
+- [微分の近似と微小変化](../../calculus/linear-approximation/)：一次近似（定義）、記号 $\approx$、微小変化の見積もり（近似）
+- [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律（定理）、有理数乗の微分（定理）
+- [定積分とリーマン和](../../calculus/definite-integrals-and-riemann-sums/)：定積分、下端と上端の約束（定義）、定積分の線形性
+- [微分積分学の基本定理](../../calculus/fundamental-theorem-of-calculus/)：基本定理 2 と、差を表す角括弧の記号 $\bigl[F(x)\bigr]_a^b$
+- [不定積分の定義](../../calculus/indefinite-integrals/)：累乗の不定積分（定理）
+- [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$\sin x$・$\cos x$・$e^x$・$\ln x$ の導関数
+- [指数・対数・三角関数の積分](../../calculus/integrals-of-elementary-functions/)：正弦・余弦の不定積分（定理）
+- [微分係数と導関数の定義](../../calculus/derivative-definition/)：微分可能ならば連続（定理）
+- [高次導関数と関数の増減](../../calculus/higher-derivatives-and-monotonicity/)：狭義単調増加・狭義単調減少（定義）、導関数の符号と増減（定理）
+- [自然対数の底 e と重要な極限](../../calculus/euler-number-and-key-limits/)：扇形の面積が中心角に比例すること（承認事項）
+- [関数の極限](../../calculus/function-limits/)：区分的に定義された関数を波括弧でまとめる記法
+- [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：単位円による $\cos\theta$・$\sin\theta$ の定義（角 $\theta$ の動径と単位円の交点が $(\cos\theta,\sin\theta)$）と弧度法
+- [三角比](../../functions/trigonometric-ratios/)：直角三角形による余弦の定義（隣辺 ÷ 斜辺）、$45^\circ$ の値 $\sin45^\circ=\cos45^\circ=\dfrac{1}{\sqrt2}$（弧度法では $\dfrac\pi4$）
+- [三角比の拡張](../../functions/extension-of-trigonometric-ratios/)：始線・動径、座標による定義 $\cos\theta=\dfrac xr$・$\sin\theta=\dfrac yr$、「同じ動径を表す角」の節、「三角比の符号」の節
+- [加法定理](../../functions/addition-theorems/)：相互関係 $\cos^2\theta+\sin^2\theta=1$ と記号 $\cos^2\theta=(\cos\theta)^2$
+- [合成関数と逆関数](../../functions/composite-and-inverse-functions/)：1 対 1（異なる入力が異なる出力をもつこと）
+- [複素数の極形式](../../complex-numbers/polar-form/)：偏角（定義）、極形式と $a=r\cos\theta$・$b=r\sin\theta$、偏角の多価性（同じ点の偏角どうしは $2\pi$ の整数倍だけ異なること）、主値の範囲 $-\pi<\theta\le\pi$
+- [円錐曲線（楕円・放物線・双曲線）](../../coordinate-geometry/conic-sections/)：楕円と標準形 $\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}=1$
+- [平面ベクトルの定義と成分表示](../../vectors/plane-vectors-and-components/)：成分表示、記号 $\overrightarrow{\mathrm{AB}}$
+- [ベクトルの和・差・スカラー倍](../../vectors/vector-operations/)：平行四辺形法による和、スカラー倍、零ベクトル $\vec{0}$
+- [空間ベクトルと成分](../../vectors/space-vectors/)：成分表示、空間ベクトルの大きさの公式、空間での内積の定義・成分公式、なす角（$0\le\theta\le\pi$）を求める公式
+- [ベクトルの外積の初歩](../../vectors/cross-product/)：外積の定義、外積は両方に垂直であること、外積の大きさの公式と平行四辺形の面積との一致、反交換律、平行条件
+- [平方根と絶対値](../../algebra/square-roots-and-absolute-value/)：絶対値と、恒等式 $\sqrt{t^2}=\lvert t\rvert$
+- [集合と要素](../../set/sets-and-elements/)：記号 $\in$（に属する）・$\subset$（部分集合）
+- [前提とする知識](../../../prerequisites/knowledge/)：「面積と体積」（基本的な図形の面積と立体の体積の公式。本章では、平行四辺形の面積が底辺と高さの積であること、柱体の体積が底面積と高さの積であること、半径 $r$ の球の体積 $\dfrac43\pi r^3$ を使う）
+
+[三重積分](../triple-integrals/)の章までは、領域や立体を $x$・$y$・$z$ の不等式で表し、累次積分で計算した。円板や球のような丸い形では、累次積分の端に平方根の式が現れ、計算が長くなる。
+
+本章では、[置換積分法](../../calculus/integration-by-substitution/)の章の変数の置き換えを、二重積分と三重積分へ広げる。置き換えで面積や体積が何倍になるかを表す量が、ヤコビアンである。ヤコビアンを計算するため、行列式という計算を本章で導入する。
+
+## 学習目標
+
+本章を読むと、次の概念と数式を使えるようになる。
+
+- $2\times2$・$3\times3$ の行列式 $\det\begin{pmatrix}p&q\\r&s\end{pmatrix}=ps-qr$ の計算と、平行四辺形の面積・平行六面体の体積としての意味
+- 変数変換 $x=x(u,v)$、$y=y(u,v)$ と、$uv$ 平面の長方形の像
+- 1 次式の変換 $x=au+bv$、$y=cu+dv$ で、面積が $\lvert ad-bc\rvert$ 倍になること
+- ヤコビアン $J=\dfrac{\partial(x,y)}{\partial(u,v)}$ の定義と、2 次の行列式による計算
+- 小さな長方形の像の面積が、およそ $\lvert J\rvert\:\Delta u\:\Delta v$ であること
+- 2 変数の変数変換の公式（承認事項）と成立条件。公式は、$D$ の上の二重積分を、$f(x(u,v),y(u,v))\lvert J\rvert$ の $E$ の上の二重積分に書き直す
+- 極座標 $x=r\cos\theta$、$y=r\sin\theta$（$J=r$）による、円板・扇形・円環の一部の上の二重積分
+- 3 変数の変数変換の公式（承認事項）と、円柱座標（$J=r$）・球座標（ヤコビアンは原点からの距離の 2 乗と天頂角の正弦の積）による三重積分
+
+## 置換積分を 2 変数へ広げる
+
+### 円板の上の累次積分
+
+原点を中心とする半径 $1$ の円板 $D=\{(x,y)\mid x^2+y^2\le1\}$ の上で、次の二重積分を考える。
+
+$$
+\iint_D(x^2+y^2)\,dA
+$$
+
+[重積分（二重積分）](../double-integrals/)の章で確かめたとおり、$D$ は縦線領域であり、$-1\le x\le1$、$-\sqrt{1-x^2}\le y\le\sqrt{1-x^2}$ と書ける。累次積分の内側を計算する。
+
+$$
+\int_{-\sqrt{1-x^2}}^{\sqrt{1-x^2}}(x^2+y^2)\,dy=\left[x^2y+\frac{y^3}{3}\right]_{y=-\sqrt{1-x^2}}^{y=\sqrt{1-x^2}}=2x^2\sqrt{1-x^2}+\frac23(1-x^2)\sqrt{1-x^2}
+$$
+
+外側の積分では、$x^2\sqrt{1-x^2}$ と $(1-x^2)\sqrt{1-x^2}$ を $-1$ から $1$ まで積分する。本ロードマップで導いた公式でも計算できるが、置き換えを重ねる長い計算になる。
+
+円板の点を、原点からの距離 $r$ と角 $\theta$ で表すと、事情が変わる。
+
+- **領域.** 円板の点は、$0\le r\le1$、$0\le\theta\le2\pi$ の範囲の $r$・$\theta$ で表せる。$r$ と $\theta$ の範囲は、どちらも定数の区間である。
+- **被積分関数.** $x^2+y^2=r^2$ であり、式は $\theta$ を含まない。
+
+$r$ と $\theta$ を新しい変数にとれば、長方形の上の積分になり、計算が短くなりそうである。ただし、積分変数を取り替えると、面積要素 $dA$ の扱いが変わる。面積要素がどう替わるかを調べる必要がある。
+
+### 1 変数の置換積分の振り返り
+
+[置換積分法](../../calculus/integration-by-substitution/)の章の「定積分での使い方」の節では、積分変数 $x$ を新しい変数 $t$ の関数 $x=\varphi(t)$ で置き換えた。同じ章の条件のもとで、次が成り立つ。
+
+$$
+\int_{\varphi(\alpha)}^{\varphi(\beta)}f(x)\,dx=\int_\alpha^\beta f(\varphi(t))\,\varphi'(t)\,dt
+$$
+
+文字 $\alpha$・$\beta$ は、置換積分法の章と同じく、$t$ の範囲の両端を表す。書き換えの規則 $dx=\varphi'(t)\:dt$ は、積分記号の中の $dx$ を $\varphi'(t)\:dt$ に書き換える規則を表す、便宜的な書き方であった。
+
+規則の意味を、長さの倍率として読む。$\Delta t>0$ とし、$t$ から $t+\Delta t$ までの小さな区間を考える。[微分の近似と微小変化](../../calculus/linear-approximation/)の章の微小変化の見積もりより、次が成り立つ。
+
+$$
+\varphi(t+\Delta t)-\varphi(t)\approx\varphi'(t)\,\Delta t
+$$
+
+区間の両端 $t$・$t+\Delta t$ は、$x$ の数直線の上の 2 点 $\varphi(t)$・$\varphi(t+\Delta t)$ に写る。2 点の距離は、およそ $\lvert\varphi'(t)\rvert\:\Delta t$ である。$\lvert\varphi'(t)\rvert$ は、点 $t$ の近くで長さがおよそ何倍になるかを表す。
+
+2 変数でも、同じ考えで面積の倍率を調べる。$uv$ 平面の小さな長方形が、$xy$ 平面のどんな図形に写り、面積が何倍になるかを求めればよい。面積の倍率を与える量が、本章で定めるヤコビアンである。準備として、数の組から面積と体積を計算する行列式を導入する。
+
+## 行列と行列式
+
+### 行列
+
+数を縦と横に長方形の形に並べ、括弧で囲んだものを**行列**と呼ぶ。行列の横の並びを**行**、縦の並びを**列**と呼ぶ。行は上から 1 行目・2 行目、列は左から 1 列目・2 列目と数える。2 行 2 列の行列を、**$2\times2$ の行列**と呼ぶ。記号 $2\times2$ は「2 かける 2」と読む。行の数と列の数を並べた書き方であり、数の掛け算の値を表すものではない。
+
+$$
+\begin{pmatrix}p&q\\r&s\end{pmatrix}
+$$
+
+上の行列の 1 行目は $p$・$q$ であり、1 列目は $p$・$r$ である。本章では、行列を数を並べる書き方としてだけ使い、行列どうしの計算は扱わない。
+
+### 2 次の行列式
+
+> **2 次の行列式（定義）.** $2\times2$ の行列に対し、次の数を行列の**行列式**と呼ぶ。
+>
+> $$
+> \det\begin{pmatrix}p&q\\r&s\end{pmatrix}=ps-qr
+> $$
+
+記号と呼び名について、次の点を押さえる。
+
+- **読み方.** $\det$ は「デット」と読む。行列式を表す英語 determinant（デターミナント）の略である。
+- **計算の形.** 左上と右下の積から、右上と左下の積を引く。
+- **区別.** 広く使われる正式な記法である。行列式を縦線ではさんで書く流儀もある[^bars]。本章では、縦線を絶対値にだけ使い、行列式には $\det$ を使う。
+- **2 次.** $2\times2$ の行列の行列式を、**2 次の行列式**とも呼ぶ。
+
+例を 2 つ計算する。
+
+$$
+\det\begin{pmatrix}2&1\\1&2\end{pmatrix}=2\cdot2-1\cdot1=3,\qquad\det\begin{pmatrix}0&1\\1&0\end{pmatrix}=0\cdot0-1\cdot1=-1
+$$
+
+2 つ目の例のとおり、行列式は負の値にもなる。1 列目と 2 列目を入れ替えると、行列式は符号だけが変わる。次の計算で確かめられる。
+
+$$
+\det\begin{pmatrix}q&p\\s&r\end{pmatrix}=qr-ps=-(ps-qr)
+$$
+
+### 2 次の行列式と平行四辺形
+
+平面ベクトル $\vec{a}=(p,r)$ と $\vec{b}=(q,s)$ を考える。成分を縦に並べ、$\vec{a}$ を 1 列目、$\vec{b}$ を 2 列目に置くと、行列 $\begin{pmatrix}p&q\\r&s\end{pmatrix}$ になる。始点をそろえた 2 本のベクトルを 2 辺とする平行四辺形を、$\vec{a}$ と $\vec{b}$ が**張る平行四辺形**と呼ぶ。[ベクトルの外積の初歩](../../vectors/cross-product/)の章と同じ呼び名である。
+
+> **2 次の行列式と平行四辺形の面積（定理）.** 平面ベクトル $\vec{a}=(p,r)$・$\vec{b}=(q,s)$ は零ベクトルでなく、平行でないとする。$\vec{a}$ と $\vec{b}$ が張る平行四辺形の面積は、次の値である。
+>
+> $$
+> \left\lvert\det\begin{pmatrix}p&q\\r&s\end{pmatrix}\right\rvert=\lvert ps-qr\rvert
+> $$
+
+**証明.** 平面を、座標空間の床（$xy$ 平面）とみなす。$\vec{a}$ は、第 3 成分が $0$ の空間ベクトル $\vec{A}=(p,r,0)$ になる。$\vec{b}$ も同様に $\vec{B}=(q,s,0)$ になる。外積の定義より、次のとおりである。
+
+$$
+\vec{A}\times\vec{B}=(r\cdot0-0\cdot s,\ 0\cdot q-p\cdot0,\ ps-rq)=(0,\ 0,\ ps-qr)
+$$
+
+空間ベクトルの大きさの公式と恒等式 $\sqrt{t^2}=\lvert t\rvert$ より、$\lvert\vec{A}\times\vec{B}\rvert=\sqrt{(ps-qr)^2}=\lvert ps-qr\rvert$ である。外積の章より、外積の大きさは $\vec{A}$ と $\vec{B}$ が張る平行四辺形の面積に等しい。$\vec{A}$ と $\vec{B}$ が張る平行四辺形は床の上にあり、$\vec{a}$ と $\vec{b}$ が張る平行四辺形と同じ図形である。証明を終わる。
+
+$\vec{a}=(3,1)$・$\vec{b}=(1,2)$ の場合を図 1 に描く。面積は $\lvert3\cdot2-1\cdot1\rvert=5$ である。
+
+<figure>
+  <ContourPlot
+    xMin={-0.5}
+    xMax={4.6}
+    yMin={-0.5}
+    yMax={3.5}
+    grid={false}
+    xTicks={[1, 2, 3, 4]}
+    yTicks={[1, 2, 3]}
+    regions={[
+      {
+        kind: "polygon",
+        points: [
+          { x: 0, y: 0 },
+          { x: 3, y: 1 },
+          { x: 4, y: 3 },
+          { x: 1, y: 2 },
+        ],
+        color: "#f59e0b",
+        opacity: 0.3,
+      },
+    ]}
+    vectors={[
+      { from: { x: 0, y: 0 }, to: { x: 3, y: 1 }, label: "\\vec{a}=(3,1)", color: "#2563eb" },
+      { from: { x: 0, y: 0 }, to: { x: 1, y: 2 }, label: "\\vec{b}=(1,2)", color: "#ea580c" },
+    ]}
+    ariaLabel="原点から点 (3,1) への青い矢印 a と、原点から点 (1,2) への橙の矢印 b。2 本の矢印を 2 辺とする平行四辺形（頂点は原点・(3,1)・(4,3)・(1,2)）を琥珀色で塗ってある。"
+  />
+  <figcaption>
+    <em>
+      図 1. $\vec{a}=(3,1)$（青）と $\vec{b}=(1,2)$（橙）が張る平行四辺形（琥珀色）。行列 $\begin{pmatrix}3&1\\1&2\end{pmatrix}$ の 1 列目には $\vec{a}$ の成分が並ぶ。2 列目には $\vec{b}$ の成分が並ぶ。面積は行列式の絶対値 $\lvert3\cdot2-1\cdot1\rvert=5$ に等しい。
+    </em>
+  </figcaption>
+</figure>
+
+$\vec{a}$ と $\vec{b}$ が平行なときや、一方が零ベクトルのときは、平行四辺形はつぶれる。つぶれた場合の行列式は $0$ である。
+
+- **一方が零ベクトル.** 例えば $\vec{a}=\vec{0}$ なら $p=r=0$ であり、$ps-qr=0$ である。
+- **平行.** 外積の章の平行条件より、$\vec{A}\times\vec{B}=\vec{0}$ である。証明の計算より、$\vec{A}\times\vec{B}$ の第 3 成分は $ps-qr$ だから、$ps-qr=0$ である。
+
+言い換えると、行列式が $0$ でないとき、2 本のベクトルは零ベクトルでなく、平行でもない。
+
+### 3 次の行列式
+
+3 行 3 列の行列を、**$3\times3$ の行列**と呼ぶ。$3\times3$ の行列の行列式を、$2\times2$ の行列式を使って定める。
+
+> **3 次の行列式（定義）.** $3\times3$ の行列に対し、次の数を行列の**行列式**と呼ぶ。
+>
+> $$
+> \det\begin{pmatrix}a_1&b_1&c_1\\a_2&b_2&c_2\\a_3&b_3&c_3\end{pmatrix}=a_1\det\begin{pmatrix}b_2&c_2\\b_3&c_3\end{pmatrix}-b_1\det\begin{pmatrix}a_2&c_2\\a_3&c_3\end{pmatrix}+c_1\det\begin{pmatrix}a_2&b_2\\a_3&b_3\end{pmatrix}
+> $$
+>
+> $3\times3$ の行列の行列式を、**3 次の行列式**とも呼ぶ。
+
+右辺は、次の手順で作る。
+
+1. **成分を選ぶ.** 1 行目の 3 つの成分 $a_1$・$b_1$・$c_1$ を、左から順に選ぶ。
+2. **残った行列式を掛ける.** 選んだ成分を含む行と列を除くと、$2\times2$ の行列が残る。残った行列の行列式を、選んだ成分に掛ける。
+3. **符号を付けて足す.** 3 つの積に、左から符号 $+$・$-$・$+$ を付けて足す。
+
+右辺の 3 つの 2 次の行列式を計算すると、次の式になる。
+
+$$
+a_1(b_2c_3-c_2b_3)-b_1(a_2c_3-c_2a_3)+c_1(a_2b_3-b_2a_3)
+$$
+
+展開した式の各項は、1 列目・2 列目・3 列目の成分を 1 つずつ含む。よって、1 つの列の成分をすべて $k$ 倍すると、行列式も $k$ 倍になる。
+
+次の行列式を計算する。
+
+$$
+\det\begin{pmatrix}1&2&1\\1&0&2\\2&0&0\end{pmatrix}=1\cdot(0\cdot0-2\cdot0)-2\cdot(1\cdot0-2\cdot2)+1\cdot(1\cdot0-0\cdot2)=0+8+0=8
+$$
+
+### 3 次の行列式と平行六面体
+
+3 次の行列式は、外積と内積で書き直せる。
+
+> **3 次の行列式と外積（定理）.** 空間ベクトル $\vec{a}$・$\vec{b}$・$\vec{c}$ の成分を、次のように書く。
+>
+> $$
+> \vec{a}=(a_1,a_2,a_3),\qquad\vec{b}=(b_1,b_2,b_3),\qquad\vec{c}=(c_1,c_2,c_3)
+> $$
+>
+> すると、次が成り立つ。
+>
+> $$
+> \vec{a}\cdot(\vec{b}\times\vec{c})=\det\begin{pmatrix}a_1&b_1&c_1\\a_2&b_2&c_2\\a_3&b_3&c_3\end{pmatrix}
+> $$
+
+定理の左辺の内積は、空間ベクトルの内積の成分公式で計算した値とする。$\vec{b}\times\vec{c}$ が零ベクトルのときも、成分公式で値 $0$ が定まる。
+
+**証明.** 外積の定義より、$\vec{b}\times\vec{c}=(b_2c_3-b_3c_2,b_3c_1-b_1c_3,b_1c_2-b_2c_1)$ である。内積の成分公式より、左辺は次の値である。
+
+$$
+a_1(b_2c_3-b_3c_2)+a_2(b_3c_1-b_1c_3)+a_3(b_1c_2-b_2c_1)
+$$
+
+右辺の展開した式の第 2 項と第 3 項を、$a_2$ を含む項と $a_3$ を含む項に組み替える。
+
+$$
+-b_1(a_2c_3-c_2a_3)+c_1(a_2b_3-b_2a_3)=a_2(b_3c_1-b_1c_3)+a_3(b_1c_2-b_2c_1)
+$$
+
+第 1 項 $a_1(b_2c_3-c_2b_3)$ は、左辺の第 1 項に等しい。よって両辺は等しい。証明を終わる。
+
+始点をそろえた 3 本の空間ベクトル $\vec{a}$・$\vec{b}$・$\vec{c}$ を 3 辺とし、向かい合う 3 組の面がすべて平行四辺形である立体を考える。立体を、$\vec{a}$・$\vec{b}$・$\vec{c}$ が**張る平行六面体**と呼ぶ。
+
+> **3 次の行列式と平行六面体の体積（定理）.** 空間ベクトル $\vec{b}$・$\vec{c}$ は零ベクトルでなく、平行でないとする。始点をそろえたとき、$\vec{a}$ の終点は $\vec{b}$・$\vec{c}$ を含む平面の上にないとする。$\vec{a}$・$\vec{b}$・$\vec{c}$ が張る平行六面体の体積は、次の値である。
+>
+> $$
+> \left\lvert\det\begin{pmatrix}a_1&b_1&c_1\\a_2&b_2&c_2\\a_3&b_3&c_3\end{pmatrix}\right\rvert
+> $$
+
+**証明.** 平行六面体は、$\vec{b}$ と $\vec{c}$ が張る平行四辺形を底面とする柱体である。次の 3 段階で示す。$\vec{n}=\vec{b}\times\vec{c}$ とおく。
+
+1. **底面積.** 外積の章より、底面積は $\lvert\vec{n}\rvert$ である。$\vec{b}$・$\vec{c}$ は零ベクトルでなく平行でないから、2 本のなす角 $\theta$ は $0<\theta<\pi$ を満たし、$\sin\theta>0$ である。$\theta$ は本手順だけの便宜的な文字である。外積の大きさの公式より、$\lvert\vec{n}\rvert>0$ であり、$\vec{n}$ は零ベクトルでない。
+2. **高さ.** 次の 3 点で高さを求める。
+   - **垂直な向き.** 外積の章より、$\vec{n}$ は $\vec{b}$ と $\vec{c}$ の両方に垂直である。よって $\vec{n}$ は、底面を含む平面に垂直な向きを表す。
+   - **向きの選び方.** $\vec{n}$ と $-\vec{n}$ のうち、$\vec{a}$ との内積が $0$ 以上のほうを $\vec{m}$ と書く。$\vec{a}$ と $\vec{m}$ のなす角を $\gamma$（ガンマ）とする。$\vec{m}$・$\gamma$ は本証明だけの便宜的な文字である。なす角の公式より $\cos\gamma\ge0$ である。なす角の範囲 $0\le\gamma\le\pi$ のうち、$\cos\gamma\ge0$ となるのは $0\le\gamma\le\dfrac\pi2$ である。単位円の点 $(\cos\gamma,\sin\gamma)$ が、$y$ 軸と $y$ 軸より右側にあるときだからである。
+   - **直角三角形.** 高さは、$\vec{a}$ の終点から底面を含む平面へ下ろした垂線の長さである。垂線は $\vec{m}$ に平行である。$\vec{a}$ を斜辺とし、垂線を 1 辺とする直角三角形で、三角比の章の余弦の定義を使うと、高さは $\lvert\vec{a}\rvert\cos\gamma$ である。$\gamma=0$ のときは $\vec{a}$ 自身が垂線であり、高さ $\lvert\vec{a}\rvert$ は同じ式で表せる。
+3. **体積.** 前提とする知識の柱体の体積の公式と、空間での内積の定義より、次のとおりである。$\lvert\vec{m}\rvert=\lvert\vec{n}\rvert$ であり、$\vec{a}\cdot\vec{m}$ は $\vec{a}\cdot\vec{n}$ または $-\vec{a}\cdot\vec{n}$ である。
+
+   $$
+   \lvert\vec{n}\rvert\cdot\lvert\vec{a}\rvert\cos\gamma=\lvert\vec{a}\rvert\lvert\vec{m}\rvert\cos\gamma=\vec{a}\cdot\vec{m}=\lvert\vec{a}\cdot\vec{n}\rvert
+   $$
+
+   3 次の行列式と外積（定理）より、右辺は行列式の絶対値に等しい。
+
+証明を終わる。
+
+「3 次の行列式」の節で計算した行列式 $8$ の 3 つの列は、次のベクトルの成分である。
+
+$$
+\vec{a}=(1,1,2),\qquad\vec{b}=(2,0,0),\qquad\vec{c}=(1,2,0)
+$$
+
+3 本のベクトルが張る平行六面体を図 2 に描く。底面積は $\lvert\vec{b}\times\vec{c}\rvert=\lvert(0,0,4)\rvert=4$、高さは $2$ であり、体積 $8$ は行列式に一致する。
+
+<figure>
+  <SurfacePlot
+    planes={[
+      {
+        kind: "polygon",
+        vertices: [
+          { x: 0, y: 0, z: 0 },
+          { x: 2, y: 0, z: 0 },
+          { x: 3, y: 2, z: 0 },
+          { x: 1, y: 2, z: 0 },
+        ],
+        color: "#f59e0b",
+        opacity: 0.45,
+      },
+      {
+        kind: "polygon",
+        vertices: [
+          { x: 1, y: 1, z: 2 },
+          { x: 3, y: 1, z: 2 },
+          { x: 4, y: 3, z: 2 },
+          { x: 2, y: 3, z: 2 },
+        ],
+        color: "#93c5fd",
+        opacity: 0.25,
+      },
+      {
+        kind: "polygon",
+        vertices: [
+          { x: 0, y: 0, z: 0 },
+          { x: 2, y: 0, z: 0 },
+          { x: 3, y: 1, z: 2 },
+          { x: 1, y: 1, z: 2 },
+        ],
+        color: "#93c5fd",
+        opacity: 0.2,
+      },
+      {
+        kind: "polygon",
+        vertices: [
+          { x: 1, y: 2, z: 0 },
+          { x: 3, y: 2, z: 0 },
+          { x: 4, y: 3, z: 2 },
+          { x: 2, y: 3, z: 2 },
+        ],
+        color: "#93c5fd",
+        opacity: 0.2,
+      },
+      {
+        kind: "polygon",
+        vertices: [
+          { x: 0, y: 0, z: 0 },
+          { x: 1, y: 2, z: 0 },
+          { x: 2, y: 3, z: 2 },
+          { x: 1, y: 1, z: 2 },
+        ],
+        color: "#93c5fd",
+        opacity: 0.2,
+      },
+      {
+        kind: "polygon",
+        vertices: [
+          { x: 2, y: 0, z: 0 },
+          { x: 3, y: 2, z: 0 },
+          { x: 4, y: 3, z: 2 },
+          { x: 3, y: 1, z: 2 },
+        ],
+        color: "#93c5fd",
+        opacity: 0.2,
+      },
+    ]}
+    segments={[
+      { from: { x: 0, y: 0, z: 0 }, to: { x: 1, y: 1, z: 2 }, arrow: true, color: "#dc2626", width: 2.2, hidden: "show" },
+      { from: { x: 0, y: 0, z: 0 }, to: { x: 2, y: 0, z: 0 }, arrow: true, color: "#2563eb", width: 2.2, label: "\\vec{b}", hidden: "show" },
+      { from: { x: 0, y: 0, z: 0 }, to: { x: 1, y: 2, z: 0 }, arrow: true, color: "#ea580c", width: 2.2, hidden: "show" },
+      { from: { x: 1, y: 1, z: 2 }, to: { x: 1, y: 1, z: 0 }, dashed: true, color: "#64748b", label: "h", hidden: "show" },
+    ]}
+    points={[
+      { x: 1, y: 1, z: 0, color: "#64748b", hidden: "show" },
+      { x: 1, y: 1, z: 2, color: "#dc2626", label: "\\vec{a}", hidden: "show" },
+      { x: 1, y: 2, z: 0, color: "#ea580c", label: "\\vec{c}", hidden: "show" },
+    ]}
+    xRange={[0, 4.5]}
+    yRange={[0, 3.6]}
+    zRange={[0, 2.6]}
+    floorGrid={false}
+    elevation={20}
+    azimuth={30}
+    ariaLabel="原点から伸びる 3 本の矢印 a=(1,1,2)（赤）・b=(2,0,0)（青）・c=(1,2,0)（橙）が張る平行六面体。床の上の底面（b と c が張る平行四辺形）を琥珀色で塗り、ほかの 5 つの面を淡い青で描く。a の終点 (1,1,2) から床の点 (1,1,0) へ灰色の破線を下ろし、高さ h を示す。"
+  />
+  <figcaption>
+    <em>
+      図 2. 上の 3 本のベクトル $\vec{a}$（赤）・$\vec{b}$（青）・$\vec{c}$（橙）が張る平行六面体。底面（琥珀色）は $\vec{b}$ と $\vec{c}$ が張る平行四辺形で、面積は $4$ である。高さ $h$（灰色の破線）は、$\vec{a}$ の終点から床の点 $(1,1,0)$（灰色の点）までの距離 $2$ である。体積 $4\times2=8$ は行列式に等しい。
+    </em>
+  </figcaption>
+</figure>
+
+## 1 次式の変換と面積
+
+### 変数変換と像
+
+$uv$ 平面の点を、$xy$ 平面の点に対応させる規則を考える。横軸を $u$ 軸、縦軸を $v$ 軸とする座標平面を、**$uv$ 平面**と呼ぶ。
+
+> **変数変換（定義）.** $U\subset\mathbb{R}^2$ とし、2 つの 2 変数関数 $x(u,v)$・$y(u,v)$ が $U$ で定義されているとする。$U$ の各点に $xy$ 平面の点 $(x(u,v),y(u,v))$ を対応させる規則を、**変数変換**と呼ぶ。対応する点を、元の点の**像**と呼ぶ。$U$ に含まれる集合 $E$ について、$E$ の点の像をすべて集めた次の集合を、$E$ の**像**と呼ぶ。
+>
+> $$
+> \{(x(u,v),\,y(u,v))\mid(u,v)\in E\}
+> $$
+
+定義について、次の点を押さえる。
+
+- **文字の使い方.** 文字 $x$ を、$xy$ 平面の座標の名前と、$u$・$v$ の関数の名前の両方に使う。$y$ も同じである。広く使われる便宜的な書き方である。式 $x=x(u,v)$ は「$x$ 座標を $u$・$v$ の関数で表す」と読む。
+- **集合の記法.** 像の記法は、[多変数関数と定義域](../multivariable-functions-and-domains/)の章の値域の記法と同じ形である。
+- **1 対 1.** [合成関数と逆関数](../../functions/composite-and-inverse-functions/)の章の 1 対 1 を、点の対応に広げる。$E$ の異なる 2 点の像が必ず異なるとき、変数変換は $E$ で 1 対 1 であるという。
+
+### 1 次式の変換
+
+$a$・$b$・$c$・$d$ を定数とし、次の変数変換を考える。$U=\mathbb{R}^2$ である。
+
+$$
+x=au+bv,\qquad y=cu+dv
+$$
+
+点 $(1,0)$ の像は $(a,c)$ である。点 $(0,1)$ の像は $(b,d)$ である。2 つの像の成分を列に並べた行列の行列式は $ad-bc$ である。
+
+$uv$ 平面の長方形の像を調べる。設定を次のように置く。
+
+- **長方形.** $\Delta u>0$・$\Delta v>0$ とし、$K=[u_0,u_0+\Delta u]\times[v_0,v_0+\Delta v]$ とする。
+- **長方形の点.** $K$ の点は、$0\le s\le1$・$0\le t\le1$ を満たす数 $s$・$t$ を使って、$(u_0+s\Delta u,v_0+t\Delta v)$ と書ける。
+- **基準の点.** 点 $(u_0,v_0)$ の像を $(x_0,y_0)$ と書く。
+
+像の座標を計算する。
+
+$$
+\begin{aligned}
+x&=a(u_0+s\Delta u)+b(v_0+t\Delta v)=x_0+s\,a\Delta u+t\,b\Delta v\\
+y&=c(u_0+s\Delta u)+d(v_0+t\Delta v)=y_0+s\,c\Delta u+t\,d\Delta v
+\end{aligned}
+$$
+
+像の点は、点 $(x_0,y_0)$ から、ベクトル $(a\Delta u,c\Delta u)$ の向きに $s$ 倍、ベクトル $(b\Delta v,d\Delta v)$ の向きに $t$ 倍だけ進んだ点である。$s$・$t$ が $0$ から $1$ まで動くと、像の点は、2 本のベクトルが張る平行四辺形を埋めつくす。[ベクトルの和・差・スカラー倍](../../vectors/vector-operations/)の章の平行四辺形法で、2 本のベクトルを $s$ 倍・$t$ 倍して足した和を描くと読み取れる。
+
+> **1 次式の変換と面積（定理）.** $a$・$b$・$c$・$d$ を定数とし、$ad-bc\neq0$ とする。変数変換 $x=au+bv$、$y=cu+dv$ について、次の 2 つが成り立つ。
+>
+> 1. **1 対 1.** $uv$ 平面の異なる 2 点の像は異なる。
+> 2. **長方形の像.** $\Delta u>0$・$\Delta v>0$ とする。長方形 $K=[u_0,u_0+\Delta u]\times[v_0,v_0+\Delta v]$ の像は平行四辺形である。平行四辺形は、点 $(u_0,v_0)$ の像を頂点とし、ベクトル $(a\Delta u,c\Delta u)$・$(b\Delta v,d\Delta v)$ が張る。面積は $\lvert ad-bc\rvert\:\Delta u\:\Delta v$ である。
+
+**証明.** 主張ごとに示す。
+
+1. **1 対 1.** 2 点 $(u_1,v_1)$・$(u_2,v_2)$ の像が等しいとする。差を $h=u_1-u_2$、$k=v_1-v_2$ とおく。$h$・$k$ は本証明だけの便宜的な文字である。像の座標の差をとると、次の 2 式を得る。
+
+   $$
+   ah+bk=0,\qquad ch+dk=0
+   $$
+
+   1 つ目の式の $d$ 倍から 2 つ目の式の $b$ 倍を引くと、$(ad-bc)h=0$ である。$ad-bc\neq0$ だから $h=0$ である。2 つ目の式の $a$ 倍から 1 つ目の式の $c$ 倍を引くと、$(ad-bc)k=0$ であり、$k=0$ である。組の相等より、2 点は等しい。
+
+2. **長方形の像.** 像が平行四辺形であることは、上の計算で確かめた。2 本のベクトルの成分を列に並べた行列の行列式は、次の値である。
+
+   $$
+   \det\begin{pmatrix}a\Delta u&b\Delta v\\c\Delta u&d\Delta v\end{pmatrix}=a\Delta u\cdot d\Delta v-b\Delta v\cdot c\Delta u=(ad-bc)\,\Delta u\,\Delta v
+   $$
+
+   値は $0$ でないから、2 本のベクトルは零ベクトルでなく、平行でもない。2 次の行列式と平行四辺形の面積（定理）より、面積は $\lvert(ad-bc)\:\Delta u\:\Delta v\rvert=\lvert ad-bc\rvert\:\Delta u\:\Delta v$ である。
+
+証明を終わる。
+
+長方形 $K$ の面積は $\Delta u\:\Delta v$ である。1 次式の変換は、どの長方形の面積も同じ $\lvert ad-bc\rvert$ 倍にする。$x=2u+v$、$y=u+2v$ の場合を図 3 に描く。倍率は $\lvert2\cdot2-1\cdot1\rvert=3$ である。
+
+<figure>
+  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", columnGap: "1rem" }}>
+    <div style={{ flex: "1 1 260px", maxWidth: "320px" }}>
+      <ContourPlot
+        xMin={-0.5}
+        xMax={6.5}
+        yMin={-0.5}
+        yMax={6.5}
+        grid={false}
+        xLabel="u"
+        yLabel="v"
+        xTicks={[2, 4, 6]}
+        yTicks={[2, 4, 6]}
+        partition={{ x: [0, 2], y: [0, 2], m: 4, n: 4, highlight: [{ i: 3, j: 2, label: "K" }] }}
+        ariaLabel="uv 平面。正方形 0≤u≤2、0≤v≤2 を、縦横 4 等分した格子で小さな正方形に分けてある。u が 1 から 1.5、v が 0.5 から 1 の小さな正方形 K を琥珀色で塗ってある。"
+      />
+    </div>
+    <div style={{ flex: "1 1 260px", maxWidth: "320px" }}>
+      <ContourPlot
+        xMin={-0.5}
+        xMax={6.5}
+        yMin={-0.5}
+        yMax={6.5}
+        grid={false}
+        xTicks={[2, 4, 6]}
+        yTicks={[2, 4, 6]}
+        regions={[
+          {
+            kind: "polygon",
+            points: [
+              { x: 2.5, y: 2 },
+              { x: 3.5, y: 2.5 },
+              { x: 4, y: 3.5 },
+              { x: 3, y: 3 },
+            ],
+            color: "#f59e0b",
+            opacity: 0.45,
+          },
+        ]}
+        segments={[
+          ...[0, 0.5, 1, 1.5, 2].map((u) => ({
+            from: { x: 2 * u, y: u },
+            to: { x: 2 * u + 2, y: u + 4 },
+            dashed: false,
+            color: "#3b82f6",
+          })),
+          ...[0, 0.5, 1, 1.5, 2].map((v) => ({
+            from: { x: v, y: 2 * v },
+            to: { x: 4 + v, y: 2 + 2 * v },
+            dashed: false,
+            color: "#3b82f6",
+          })),
+        ]}
+        vectors={[
+          { from: { x: 2.5, y: 2 }, delta: { x: 1, y: 0.5 }, color: "#dc2626" },
+          { from: { x: 2.5, y: 2 }, delta: { x: 0.5, y: 1 }, color: "#7c3aed" },
+        ]}
+        ariaLabel="xy 平面。左の格子の像で、頂点が原点・(4,2)・(6,6)・(2,4) の平行四辺形が、斜めの格子線で小さな平行四辺形に分かれている。K の像の小さな平行四辺形（頂点は (2.5,2)・(3.5,2.5)・(4,3.5)・(3,3)）を琥珀色で塗ってある。頂点 (2.5,2) から、辺に沿う赤い矢印（成分 (1,0.5)）と紫の矢印（成分 (0.5,1)）を描く。"
+      />
+    </div>
+  </div>
+  <figcaption>
+    <em>
+      図 3. 変数変換 $x=2u+v$、$y=u+2v$ による格子の写り方。左右（狭い画面では上下）の図は、同じ縮尺で描いてある。左の $uv$ 平面の小さな正方形 $K$（面積 $\tfrac14$）は、右の $xy$ 平面の琥珀色の平行四辺形に写る。平行四辺形は、赤い矢印 $\Delta u\:(2,1)$ と紫の矢印 $\Delta v\:(1,2)$ が張る（$\Delta u=\Delta v=\tfrac12$）。面積は $3\times\tfrac14=\tfrac34$ である。
+    </em>
+  </figcaption>
+</figure>
+
+## ヤコビアン
+
+### 小さな長方形の像
+
+一般の変数変換 $x=x(u,v)$、$y=y(u,v)$ を考える。点 $(u_0,v_0)$ を中心とするある円の内側で、4 つの偏導関数 $x_u$・$x_v$・$y_u$・$y_v$ が存在して連続であるとする。記号 $x_u$ は、[偏微分](../partial-derivatives/)の章の記法 $f_x$ で、関数の名前を $x$、変数を $u$ にしたものである。$\dfrac{\partial x}{\partial u}$ とも書く。
+
+$\Delta u>0$・$\Delta v>0$ とし、長方形 $K=[u_0,u_0+\Delta u]\times[v_0,v_0+\Delta v]$ の像を調べる。像は、一般に辺が曲がった四辺形になる。本章では、像を「曲がった四辺形」と呼ぶ。便宜的な呼び名である。$K$ の 3 つの頂点の像を、次のように名付ける。
+
+| 頂点       | $uv$ 平面の点        | 像の名前       |
+| ---------- | -------------------- | -------------- |
+| 基準       | $(u_0,v_0)$          | $\mathrm{P}_0$ |
+| $u$ の向き | $(u_0+\Delta u,v_0)$ | $\mathrm{P}_1$ |
+| $v$ の向き | $(u_0,v_0+\Delta v)$ | $\mathrm{P}_2$ |
+
+$\mathrm{P}_0$ から $\mathrm{P}_1$ へのベクトル $\overrightarrow{\mathrm{P}_0\mathrm{P}_1}$ を見積もる。
+
+1. **断面の関数.** $v$ を $v_0$ に固定した関数 $g(u)=x(u,v_0)$ を考える。偏微分係数と 1 変数の微分係数（定理）より、$g$ は $u_0$ で微分可能であり、$g'(u_0)=x_u(u_0,v_0)$ である。
+2. **一次近似.** 微小変化の見積もりより、次が成り立つ。
+
+   $$
+   x(u_0+\Delta u,\ v_0)-x(u_0,v_0)\approx x_u(u_0,v_0)\,\Delta u
+   $$
+
+3. **$y$ 座標.** 同じ議論で、$y(u_0+\Delta u,v_0)-y(u_0,v_0)\approx y_u(u_0,v_0)\:\Delta u$ である。
+
+よって $\overrightarrow{\mathrm{P}_0\mathrm{P}_1}\approx\Delta u\:(x_u,y_u)$ である。同様に $\overrightarrow{\mathrm{P}_0\mathrm{P}_2}\approx\Delta v\:(x_v,y_v)$ である。偏微分係数は、すべて点 $(u_0,v_0)$ での値である。
+
+$\Delta u$・$\Delta v$ が小さいとき、曲がった四辺形は、$\mathrm{P}_0$ を頂点とし $\Delta u\:(x_u,y_u)$・$\Delta v\:(x_v,y_v)$ が張る平行四辺形にほぼ等しいと考えられる。残りの頂点と 2 辺が平行四辺形の形にほぼそろうことは、本章では直観として認める[^corner]。$x_uy_v-x_vy_u\neq0$ なら、2 本のベクトルは零ベクトルでなく平行でもない。2 次の行列式と平行四辺形の面積（定理）より、平行四辺形の面積は次の値である。$x_uy_v-x_vy_u=0$ のときは平行四辺形がつぶれ、面積を $0$ とみなすと同じ式で表せる。
+
+$$
+\left\lvert\det\begin{pmatrix}x_u\Delta u&x_v\Delta v\\y_u\Delta u&y_v\Delta v\end{pmatrix}\right\rvert=\lvert x_uy_v-x_vy_u\rvert\,\Delta u\,\Delta v
+$$
+
+### ヤコビアンの定義
+
+面積の倍率 $\lvert x_uy_v-x_vy_u\rvert$ の絶対値の中身に、名前を付ける。
+
+> **ヤコビアン（定義）.** 変数変換 $x=x(u,v)$、$y=y(u,v)$ を考える。点 $(u,v)$ で 4 つの偏微分係数 $x_u$・$x_v$・$y_u$・$y_v$ が存在するとき、次の値を、点 $(u,v)$ における変数変換の**ヤコビアン**と呼ぶ[^jacobi]。
+>
+> $$
+> \frac{\partial(x,y)}{\partial(u,v)}=\det\begin{pmatrix}x_u&x_v\\y_u&y_v\end{pmatrix}=x_uy_v-x_vy_u
+> $$
+
+記号と並べ方について、次の点を押さえる。
+
+- **読み方.** $\dfrac{\partial(x,y)}{\partial(u,v)}$ は「ラウンドディー・エックス・ワイ・ラウンドディー・ユー・ブイ」と読む。単に「ヤコビアン」とも読む。
+- **区別.** 広く使われる正式な記法である。分数の形をしているが、分数ではなく 1 つの記号である。
+- **並べ方.** 1 列目には、$u$ で偏微分した値 $(x_u,y_u)$ を並べる。2 列目には、$v$ で偏微分した値 $(x_v,y_v)$ を並べる。列の順は、$u$ の向きの辺と $v$ の向きの辺の見積もりの順に対応する。
+- **文字 $J$.** 本章では、ヤコビアンを文字 $J$ でも表し、点 $(u,v)$ での値を $J(u,v)$ と書く。本章の便宜的な書き方である。
+
+前節の見積もりを、ヤコビアンでまとめる。
+
+> **小さな長方形の像の面積（近似）.** 点 $(u_0,v_0)$ を中心とするある円の内側で、4 つの偏導関数が存在して連続であるとする。$\Delta u>0$・$\Delta v>0$ が $0$ に近いとき、長方形 $[u_0,u_0+\Delta u]\times[v_0,v_0+\Delta v]$ の像の面積について、次の近似が成り立つ。
+>
+> $$
+> (\text{像の面積})\approx\lvert J(u_0,v_0)\rvert\,\Delta u\,\Delta v
+> $$
+
+近似は、辺の向きの一次近似と、曲がった四辺形を平行四辺形とみなす直観に基づく。偏導関数の連続性を仮定に含めるのは、1 点で偏微分係数が存在するだけでは近似が成り立たない変換もあるからである。
+
+### ヤコビアンの例
+
+3 つの変数変換で、ヤコビアンを計算する。
+
+- **1 次式の変換.** $x=au+bv$、$y=cu+dv$ では、$x_u=a$・$x_v=b$・$y_u=c$・$y_v=d$ である。よって $J=ad-bc$ であり、どの点でも同じ値である。1 次式の変換と面積（定理）のとおり、近似は等号で成り立つ。
+- **入れ替え.** $x=v$、$y=u$ では、$x_u=0$・$x_v=1$・$y_u=1$・$y_v=0$ である。よって $J=0\cdot0-1\cdot1=-1$ である。変数変換は点 $(u,v)$ を直線 $y=x$ について折り返した位置に写し、面積を変えない。面積の倍率は $\lvert J\rvert=1$ である。
+- **原点からの距離と角.** 導入の $r$・$\theta$ を $u$・$v$ の代わりの変数にとり、$x=r\cos\theta$、$y=r\sin\theta$ とする。$\theta$ を定数とみなして $r$ で偏微分し、$r$ を定数とみなして $\theta$ で偏微分する。
+
+  $$
+  x_r=\cos\theta,\quad x_\theta=-r\sin\theta,\quad y_r=\sin\theta,\quad y_\theta=r\cos\theta
+  $$
+
+  [加法定理](../../functions/addition-theorems/)の章の相互関係より、ヤコビアンは次の値である。
+
+  $$
+  J=\cos\theta\cdot r\cos\theta-(-r\sin\theta)\cdot\sin\theta=r(\cos^2\theta+\sin^2\theta)=r
+  $$
+
+3 つ目の変数変換で、近似の精度を確かめる。設定と準備を次にまとめる。
+
+- **長方形.** $r_0>0$、$0<\Delta\theta<2\pi$ とし、$r$・$\theta$ を変数とする平面の長方形 $[r_0,r_0+\Delta r]\times[\theta_0,\theta_0+\Delta\theta]$ を考える。
+- **像の形.** 長方形の像は、半径 $r_0$ と $r_0+\Delta r$ の 2 つの扇形の差である。2 つの扇形の中心角は、どちらも $\Delta\theta$ である。
+- **扇形の面積.** [自然対数の底 e と重要な極限](../../calculus/euler-number-and-key-limits/)の章では、扇形の面積が中心角に比例することを承認した。半径 $R$ の円の面積 $\pi R^2$ に比 $\dfrac{\Delta\theta}{2\pi}$ を掛けると、半径 $R$・中心角 $\Delta\theta$ の扇形の面積は次の値である。$R$ は本項目だけの便宜的な文字である。
+
+  $$
+  \frac{R^2\Delta\theta}{2}
+  $$
+
+像の面積は次の値になる。
+
+$$
+\frac{(r_0+\Delta r)^2\Delta\theta}{2}-\frac{r_0^2\Delta\theta}{2}=\left(r_0\Delta r+\frac{(\Delta r)^2}{2}\right)\Delta\theta
+$$
+
+近似の値は $\lvert J\rvert\:\Delta r\:\Delta\theta=r_0\:\Delta r\:\Delta\theta$ である。$r_0=1$、$\Delta r=\Delta\theta$ として比べる。
+
+| $\Delta r=\Delta\theta$ | 像の面積       | 近似 $r_0\:\Delta r\:\Delta\theta$ | 比       |
+| ----------------------- | -------------- | ---------------------------------- | -------- |
+| $0.1$                   | $0.0105$       | $0.01$                             | $1.05$   |
+| $0.01$                  | $0.0001005$    | $0.0001$                           | $1.005$  |
+| $0.001$                 | $0.0000010005$ | $0.000001$                         | $1.0005$ |
+
+比は $1+\dfrac{\Delta r}{2r_0}$ であり、$\Delta r$ を $0$ に近づけると $1$ に近づく。図 4 に、曲がった四辺形と、近似に使う平行四辺形を描く。
+
+<figure>
+  <ContourPlot
+    xMin={-0.15}
+    xMax={1.75}
+    yMin={-0.15}
+    yMax={1.55}
+    grid={false}
+    xTicks={[1]}
+    yTicks={[1]}
+    polarGrid={{ angles: [Math.PI / 6, Math.PI / 6 + 0.45] }}
+    regions={[
+      { kind: "polar", r: [1, 1.5], theta: [Math.PI / 6, Math.PI / 6 + 0.45], color: "#f59e0b", opacity: 0.4 },
+      {
+        kind: "polygon",
+        points: [
+          { x: Math.cos(Math.PI / 6), y: Math.sin(Math.PI / 6) },
+          { x: 1.5 * Math.cos(Math.PI / 6), y: 1.5 * Math.sin(Math.PI / 6) },
+          {
+            x: 1.5 * Math.cos(Math.PI / 6) - 0.45 * Math.sin(Math.PI / 6),
+            y: 1.5 * Math.sin(Math.PI / 6) + 0.45 * Math.cos(Math.PI / 6),
+          },
+          {
+            x: Math.cos(Math.PI / 6) - 0.45 * Math.sin(Math.PI / 6),
+            y: Math.sin(Math.PI / 6) + 0.45 * Math.cos(Math.PI / 6),
+          },
+        ],
+        color: "#7c3aed",
+        opacity: 0.12,
+        boundary: "dashed",
+      },
+    ]}
+    vectors={[
+      {
+        from: { x: Math.cos(Math.PI / 6), y: Math.sin(Math.PI / 6) },
+        delta: { x: 0.5 * Math.cos(Math.PI / 6), y: 0.5 * Math.sin(Math.PI / 6) },
+        color: "#dc2626",
+        label: "\\Delta r\\,(x_r,y_r)",
+      },
+      {
+        from: { x: Math.cos(Math.PI / 6), y: Math.sin(Math.PI / 6) },
+        delta: { x: -0.45 * Math.sin(Math.PI / 6), y: 0.45 * Math.cos(Math.PI / 6) },
+        color: "#7c3aed",
+        label: "\\Delta\\theta\\,(x_\\theta,y_\\theta)",
+        labelAt: { x: 0.4, y: 1.2 },
+      },
+    ]}
+    points={[{ x: Math.cos(Math.PI / 6), y: Math.sin(Math.PI / 6), label: "\\mathrm{P}_0", labelDir: "below-right" }]}
+    ariaLabel="原点を中心とする半径 1 と 1.5 の円弧と、原点から出る角 π/6 と π/6+0.45 の 2 本の半直線（細線）で囲まれた曲がった四辺形を琥珀色で塗ってある。角 π/6・半径 1 の頂点 P0 から、半径の向きの赤い矢印 Δr(x_r,y_r) と、円の接線の向きの紫の矢印 Δθ(x_θ,y_θ) を描く。2 本の矢印が張る平行四辺形を、紫の破線で縁取ってある。"
+  />
+  <figcaption>
+    <em>
+      図 4. $x=r\cos\theta$、$y=r\sin\theta$ による長方形 $[1,1.5]\times\left[\tfrac\pi6,\tfrac\pi6+0.45\right]$ の像（琥珀色の曲がった四辺形）。頂点 $\mathrm{P}_0$ から出る赤と紫の矢印は、偏微分係数で見積もった 2 辺である。2 本の矢印が張る平行四辺形（紫の破線）は、曲がった四辺形に近い。$\Delta r$・$\Delta\theta$ を小さくするほど、2 つの図形の面積の比は $1$ に近づく。
+    </em>
+  </figcaption>
+</figure>
+
+## 変数変換の公式
+
+### 内部の点
+
+公式の条件を述べるため、集合の内部の点を定める。
+
+> **内部の点（定義）.** $E\subset\mathbb{R}^2$ とする。$E$ に属し、$E$ の境界点でない点を、$E$ の**内部の点**と呼ぶ。
+
+内部の点は、円の内側で言い換えられる。
+
+- **内部の点ならば.** 内部の点 $\mathrm{P}$ は境界点でない。[多変数関数と定義域](../multivariable-functions-and-domains/)の章の境界の定義より、$\mathrm{P}$ を中心とするある円の内側には、$E$ に属する点と属さない点がともに現れることはない。中心の $\mathrm{P}$ は $E$ に属するので、円の内側の点はすべて $E$ に属する。
+- **円の内側が含まれるならば.** $E$ の点 $\mathrm{P}$ を中心とするある円の内側が $E$ に含まれるとする。円の内側の点はすべて $E$ に属するので、$\mathrm{P}$ は境界点でなく、内部の点である。
+
+例えば長方形 $[a,b]\times[c,d]$ の内部の点は、$a<u<b$ かつ $c<v<d$ を満たす点 $(u,v)$ である。2 つの向きを確かめる。
+
+- **辺の上の点は境界点.** 例えば $u=a$ の点を中心とする円の内側には、どんなに小さな円でも $u<a$ の点が現れる。$u<a$ の点は長方形に属さず、中心は長方形に属するので、点は境界点である。ほかの辺も同様である。
+- **辺の上にない点は内部の点.** $a<u<b$、$c<v<d$ とする。4 つの数 $u-a$・$b-u$・$v-c$・$d-v$ のうち最小の値を $m$ とする（$m>0$）。中心 $(u,v)$・半径 $m$ の円の内側の点を $(u_{\mathrm{Q}},v_{\mathrm{Q}})$ とする。座標の差と距離（定理）より $\lvert u_{\mathrm{Q}}-u\rvert<m$ だから、$a<u_{\mathrm{Q}}<b$ である。同様に $c<v_{\mathrm{Q}}<d$ である。円の内側は長方形に含まれるので、点は内部の点である。
+
+$m$ と添字 $\mathrm{Q}$ は、本節だけの便宜的な書き方である。
+
+### 代入した関数の連続性
+
+公式の右辺に現れる関数の連続性を、先に確かめる。
+
+> **2 変数関数への代入の連続性（補題）.** 2 変数関数 $x(u,v)$・$y(u,v)$ が点 $(u_0,v_0)$ で連続であるとする。$x_0=x(u_0,v_0)$、$y_0=y(u_0,v_0)$ とおく。2 変数関数 $f\colon D\to\mathbb{R}$ が点 $(x_0,y_0)$ で連続であるとする。すると、次の $u$・$v$ の関数は点 $(u_0,v_0)$ で連続である。
+>
+> $$
+> f(x(u,v),\,y(u,v))
+> $$
+>
+> 代入した関数の定義域は、像が $D$ に属する点 $(u,v)$ 全体とする。[多変数関数の極限と連続性](../limits-and-continuity/)の章の 1 変数の関数との合成と同じく、定義域について極限の約束が成り立つとする。
+
+**証明.** 誤差 $\varepsilon$ を決める。誤差の言葉による言い換えを使う。
+
+1. **外側の $f$.** $f$ は $(x_0,y_0)$ で連続だから、ある正の数 $s$ がある。$D$ の点で、$(x_0,y_0)$ との距離が $s$ より小さい点では、$\lvert f(x,y)-f(x_0,y_0)\rvert<\varepsilon$ となる。
+2. **内側の $x$・$y$.** $x(u,v)$ は $(u_0,v_0)$ で連続だから、誤差を $\dfrac s2$ として、ある正の数 $r_1$ がある。距離が $r_1$ より小さい点では、$\lvert x(u,v)-x_0\rvert<\dfrac s2$ となる。$y(u,v)$ についても、同じく正の数 $r_2$ がある。$r_1$ と $r_2$ の小さい方を $r$ とする。
+3. **合わせる.** 定義域の点 $(u,v)$ で、$(u_0,v_0)$ との距離が $r$ より小さいものを考える。像を $(x,y)$ とすると、座標の差と距離（定理）の 2 行目より、次が成り立つ。
+
+   $$
+   \sqrt{(x-x_0)^2+(y-y_0)^2}\le\lvert x-x_0\rvert+\lvert y-y_0\rvert<\frac s2+\frac s2=s
+   $$
+
+   像は $D$ に属するので、手順 1 より $\lvert f(x,y)-f(x_0,y_0)\rvert<\varepsilon$ となる。
+
+証明を終わる。
+
+3 変数関数への代入も、同じ証明で連続である。距離を空間の距離に替え、手順 2 の誤差 $\dfrac s2$ を $\dfrac s3$ に替える。手順 3 では、座標の差と距離（定理）の 3 変数版 $\sqrt{X^2+Y^2+Z^2}\le\lvert X\rvert+\lvert Y\rvert+\lvert Z\rvert$ を使う。3 変数版は、両辺の 2 乗を比べれば示せる。$X$・$Y$・$Z$ は座標の差を表す、本段落だけの便宜的な文字である。
+
+### 2 変数の公式
+
+> **2 変数の変数変換の公式（承認事項）.** 変数変換 $x=x(u,v)$、$y=y(u,v)$ について、次の 5 つの条件を考える。
+>
+> 1. **積分領域.** $E$ は $uv$ 平面の縦線領域または横線領域である。$D$ は $xy$ 平面の縦線領域または横線領域である。
+> 2. **関数の条件.** $U$ は $E$ を含む集合であり、$U$ の各点について、点を中心とするある円の内側が $U$ に含まれる。$x(u,v)$・$y(u,v)$ は $U$ で連続である。4 つの偏導関数 $x_u$・$x_v$・$y_u$・$y_v$ は、$U$ のすべての点で存在し、$U$ で連続である。
+> 3. **像.** $E$ の像は $D$ に等しい。
+> 4. **内部で 1 対 1.** $E$ の内部の異なる 2 点の像は異なる。
+> 5. **内部でヤコビアンが 0 でない.** $E$ の内部のすべての点で、$J(u,v)\neq0$ である。
+>
+> 5 つの条件が成り立つとき、$D$ で連続な関数 $f\colon D\to\mathbb{R}$ について、次が成り立つ。
+>
+> $$
+> \iint_D f(x,y)\,dx\,dy=\iint_E f(x(u,v),\,y(u,v))\,\lvert J(u,v)\rvert\,du\,dv
+> $$
+
+主張について、次の点を補う。
+
+- **記号.** 左辺の $dx\:dy$ は $xy$ 平面の面積要素 $dA$ を表し、右辺の $du\:dv$ は $uv$ 平面の面積要素を表す。重積分の章と同じく、並びは積分の順序を表さない。
+- **右辺の被積分関数の連続性.** 右辺の被積分関数が $E$ で連続であることは、承認しなくても示せる。
+  - $f(x(u,v),y(u,v))$ は、2 変数関数への代入の連続性（補題）より、$E$ の各点で連続である。条件 3 より、$E$ の点の像は $D$ に属する。
+  - $J=x_uy_v-x_vy_u$ は、条件 2 と四則演算の定理より、$E$ で連続である。$\lvert t\rvert=\sqrt{t^2}$ は、多項式 $t^2$ と $\sqrt{t}$ の合成だから連続である。合成の連続性より、$\lvert J\rvert$ も連続である。
+  - 連続な関数の積は連続である。
+
+  よって、縦線領域・横線領域の上の二重積分（承認事項）により、右辺が定まる。
+
+- **境界の例外.** 条件 4・5 は、$E$ の境界の上では成り立たなくてよい。例えば $E$ の辺の全体が $xy$ 平面の 1 点に写ってもよい。
+
+条件の役割を表にまとめる。
+
+| 条件                           | 役割                                             |
+| ------------------------------ | ------------------------------------------------ |
+| 1. 積分領域                    | 両辺の二重積分が、重積分の章の定義で定まる       |
+| 2. 関数の条件                  | $E$ のすべての点でヤコビアンが定まり、連続になる |
+| 3. 像                          | $E$ の像が $D$ を過不足なく覆う                  |
+| 4. 内部で 1 対 1               | 小さな長方形の像どうしが重ならない               |
+| 5. 内部でヤコビアンが 0 でない | 小さな長方形の像が、線や点につぶれない           |
+
+### 公式の直観
+
+公式が正しいと考えられる理由を、$E$ が長方形の場合で述べる。
+
+1. **分割.** $E$ を横 $m$ 等分・縦 $n$ 等分して、小さな長方形 $K_{ij}$（$1\le i\le m$、$1\le j\le n$）を作る。各 $K_{ij}$ の左下の頂点を $(u_i,v_j)$ とし、横幅を $\Delta u$、縦幅を $\Delta v$ とする。記号は本節だけの便宜的な書き方である。
+2. **像の面積.** 小さな長方形の像の面積（近似）より、$K_{ij}$ の像の面積はおよそ $\lvert J(u_i,v_j)\rvert\:\Delta u\:\Delta v$ である。
+3. **像で $D$ を分ける.** 条件 3・4 より、$K_{ij}$ の像どうしは境目の線を除いて重ならず、全体で $D$ を埋めつくす。
+4. **和を比べる.** $D$ の上の積分は、像ごとに「値 × 像の面積」を足した和で近似できると考えられる。
+
+   $$
+   \iint_D f\,dA\approx\sum_{i=1}^{m}\sum_{j=1}^{n}f(x(u_i,v_j),\,y(u_i,v_j))\,\lvert J(u_i,v_j)\rvert\,\Delta u\,\Delta v
+   $$
+
+   右辺は、公式の右辺の被積分関数の、$E$ の上のリーマン和である。重積分の章の二重の和の記法で書いた。分割を細かくすると、右辺は公式の右辺の二重積分に近づく。
+
+手順 2 と手順 4 の近似の誤差を評価するには、本章の範囲を超える議論が要る。本章では、公式を承認事項として扱う。
+
+条件 4 が要る理由を、例で確かめる。$x=r\cos\theta$、$y=r\sin\theta$ で、$E=[0,1]\times[0,4\pi]$ とする。$E$ の像は半径 $1$ の円板 $D$ であるが、$\theta$ が 2 周するので、$D$ の点は 2 回ずつ覆われる。例えば内部の 2 点 $\left(\tfrac12,\tfrac\pi2\right)$ と $\left(\tfrac12,\tfrac{5\pi}{2}\right)$ は、同じ点 $\left(0,\tfrac12\right)$ に写る。$f=1$ として右辺を計算する。
+
+$$
+\iint_E r\,dr\,d\theta=\int_0^{4\pi}\left(\int_0^1 r\,dr\right)d\theta=\int_0^{4\pi}\frac12\,d\theta=2\pi
+$$
+
+左辺は円板の面積 $\pi$ である。本例では、条件 4 が破れて右辺が面積を重ねて数えるので、等号が成り立たない。
+
+### 1 変数の置換積分との対応
+
+2 変数の公式と、1 変数の置換積分を比べる。
+
+| 項目           | 1 変数                             | 2 変数                          |
+| -------------- | ---------------------------------- | ------------------------------- |
+| 置き換え       | $x=\varphi(t)$                     | $x=x(u,v)$、$y=y(u,v)$          |
+| 倍率           | $\varphi'(t)$                      | $\lvert J(u,v)\rvert$           |
+| 書き換えの規則 | $dx=\varphi'(t)\:dt$               | $dx\:dy=\lvert J\rvert\:du\:dv$ |
+| 範囲の対応     | 下端と上端を対応させる             | 領域 $E$ の像を $D$ にする      |
+| 負の倍率の扱い | 区間の向き（下端と上端）で調整する | 絶対値をとる                    |
+
+最後の行を、$x=1-t$ の例で確かめる。$\varphi(t)=1-t$ とすると $\varphi'(t)=-1$ であり、$\varphi(1)=0$・$\varphi(0)=1$ である。連続な $f$ について、置換の式と下端と上端の約束より、次のとおりである。
+
+$$
+\int_0^1 f(x)\,dx=\int_1^0 f(1-t)\cdot(-1)\,dt=\int_0^1 f(1-t)\cdot\lvert-1\rvert\,dt
+$$
+
+1 変数では、区間に向きがある。例の $\varphi'$ の負の符号は、下端と上端を入れ替えたときの符号と打ち消し合う。$\varphi'$ の符号が区間で一定のとき、下端を上端より小さくそろえると、倍率は絶対値 $\lvert\varphi'(t)\rvert$ で現れる。2 変数の領域には向きが無いので、倍率として初めから絶対値 $\lvert J\rvert$ を掛ける。
+
+書き換えの規則 $dx\:dy=\lvert J\rvert\:du\:dv$ は、$dx=\varphi'(t)\:dt$ と同じく、数の等式ではない。「積分記号の中の $dx\:dy$ を $\lvert J\rvert\:du\:dv$ に書き換えてよい」という規則を表す、便宜的な書き方である。根拠は、2 変数の変数変換の公式（承認事項）である。
+
+### 計算の手順
+
+変数変換による二重積分は、次の手順で求める。
+
+1. **変換を選ぶ.** $D$ の形と被積分関数を見て、変数変換を選ぶ。
+2. **$E$ を求める.** $D$ の点を $u$・$v$ で表し、$E$ を求める。$E$ の像が $D$ であることを確かめる。
+3. **条件を確かめる.** 関数の連続性と偏導関数を確かめる。$E$ の内部で 1 対 1 であり、ヤコビアンが $0$ でないことを確かめる。
+4. **ヤコビアンを求める.** $J$ と $\lvert J\rvert$ を計算する。
+5. **書き換えて積分する.** 被積分関数に $x(u,v)$・$y(u,v)$ を代入して $\lvert J\rvert$ を掛け、$E$ の上で累次積分する。
+
+手順を図 5 にまとめる。
+
+<figure>
+  <FlowChart
+    direction="TB"
+    ariaLabel="変数変換による二重積分を求める手順の流れ図。D の形と被積分関数から変換を選び、E を求めて像が D であることを確かめる。内部で 1 対 1 かつヤコビアンが 0 でないかを判断し、満たさなければ変換や E を選び直す。満たせば J の絶対値を求め、被積分関数に代入して J の絶対値を掛け、E の上で累次積分して二重積分の値を得る。"
+    nodes={[
+      { id: "c", label: "$D$ の形と被積分関数を見て\n変数変換を選ぶ" },
+      { id: "e", label: "$E$ を求め\n$E$ の像が $D$ か確かめる" },
+      { id: "q", label: "内部で 1 対 1 かつ\n$J\\neq0$ か", shape: "diamond" },
+      { id: "j", label: "$J$ と $\\lvert J\\rvert$ を求める" },
+      { id: "i", label: "$f(x(u,v),y(u,v))\\,\\lvert J\\rvert$ を\n$E$ の上で累次積分する" },
+      { id: "r", label: "二重積分の値", tone: "goal" },
+    ]}
+    edges={[
+      { from: "c", to: "e" },
+      { from: "e", to: "q" },
+      { from: "q", to: "j", label: "満たす" },
+      { from: "q", to: "c", label: "満たさない", dashed: true },
+      { from: "j", to: "i" },
+      { from: "i", to: "r" },
+    ]}
+  />
+  <figcaption>
+    <em>
+      図 5. 変数変換による二重積分を求める手順。条件を満たさないときは、変換や $E$ を選び直す。
+    </em>
+  </figcaption>
+</figure>
+
+**例 1.** 次の領域 $D$ の上で、$\displaystyle\iint_D(x^2-y^2)\:dA$ を求める。
+
+$$
+D=\{(x,y)\mid 0\le x+y\le2,\ 0\le x-y\le2\}
+$$
+
+$D$ は、原点・$(1,1)$・$(2,0)$・$(1,-1)$ を頂点とする正方形である。図 6 に描く。
+
+<figure>
+  <ContourPlot
+    xMin={-1.3}
+    xMax={3.0}
+    yMin={-1.5}
+    yMax={1.5}
+    grid={false}
+    xTicks={[1, 2]}
+    yTicks={[-1, 1]}
+    regions={[
+      {
+        kind: "polygon",
+        points: [
+          { x: 0, y: 0 },
+          { x: 1, y: 1 },
+          { x: 2, y: 0 },
+          { x: 1, y: -1 },
+        ],
+        label: "D",
+      },
+    ]}
+    curves={[
+      { fn: (x) => -x, domain: [-1.0, 0], color: "#64748b", dashed: true, label: "x+y=0", labelPlacement: "inline", labelAt: -0.75 },
+      { fn: (x) => 2 - x, domain: [2, 2.7], color: "#64748b", dashed: true, label: "x+y=2", labelPlacement: "inline", labelAt: 2.45 },
+      { fn: (x) => x, domain: [-1.0, 0], color: "#64748b", dashed: true, label: "x-y=0", labelPlacement: "inline", labelAt: -0.75 },
+      { fn: (x) => x - 2, domain: [2, 2.7], color: "#64748b", dashed: true, label: "x-y=2", labelPlacement: "inline", labelAt: 2.45 },
+    ]}
+    ariaLabel="xy 平面の正方形 D。頂点は原点・(1,1)・(2,0)・(1,-1) で、青く塗ってある。4 本の辺は、直線 x+y=0・x+y=2・x-y=0・x-y=2 の一部であり、各直線の正方形の外への延長を灰色の破線で描いてある。"
+  />
+  <figcaption>
+    <em>
+      図 6. 例 1 の領域 $D$。4 本の辺は、直線 $x+y=0$・$x+y=2$・$x-y=0$・$x-y=2$ の一部である。灰色の破線は、直線の正方形の外への延長である。$u=x+y$・$v=x-y$ とおくと、$D$ は $uv$ 平面の正方形 $[0,2]\times[0,2]$ に対応する。
+    </em>
+  </figcaption>
+</figure>
+
+まず、$D$ が縦線領域であることを確かめる。$D$ の条件は、4 つの不等式 $y\ge-x$・$y\le2-x$・$y\le x$・$y\ge x-2$ と同じである。$x$ の範囲で場合を分けると、条件は次の表のようになる。
+
+| $x$ の範囲         | 残る 2 つの不等式     | $y$ の範囲              |
+| ------------------ | --------------------- | ----------------------- |
+| $0\le x\le1$       | $y\ge-x$・$y\le x$    | $-x\le y\le x$          |
+| $1\le x\le2$       | $y\ge x-2$・$y\le2-x$ | $x-2\le y\le2-x$        |
+| $x<0$ または $x>2$ | なし                  | 条件を満たす $y$ は無い |
+
+表の各行の理由は、次のとおりである。
+
+- **$0\le x\le1$.** $x-2\le-x$ かつ $x\le2-x$ である。よって $y\ge-x$ ならば $y\ge x-2$ であり、$y\le x$ ならば $y\le2-x$ である。
+- **$1\le x\le2$.** 大小が逆になり、$y\ge x-2$ と $y\le2-x$ が残りの 2 つの不等式を含む。
+- **$x<0$ または $x>2$.** $x<0$ では、$y\ge-x>0>x\ge y$ となり矛盾する。$x>2$ でも、$y\ge x-2>0>2-x\ge y$ となり矛盾する。
+
+よって $D$ は、次の $g_1$・$g_2$ による縦線領域である。
+
+$$
+g_1(x)=\begin{cases}-x&(0\le x\le1)\\x-2&(1\le x\le2)\end{cases},\qquad g_2(x)=\begin{cases}x&(0\le x\le1)\\2-x&(1\le x\le2)\end{cases}
+$$
+
+$g_1$・$g_2$ は $x=1$ で値がつながり、$[0,2]$ で連続である。$0\le x\le1$ では $-x\le x$、$1\le x\le2$ では $x-2\le2-x$ だから、$[0,2]$ のすべての $x$ で $g_1(x)\le g_2(x)$ である。
+
+計算の手順に従って求める。
+
+1. **変換を選ぶ.** 条件と被積分関数に、$x+y$ と $x-y$ が現れる。被積分関数は $x^2-y^2=(x+y)(x-y)$ と書ける。$u=x+y$、$v=x-y$ とおく。2 式を $x$・$y$ について解くと、次の変数変換を得る。
+
+   $$
+   x=\frac{u+v}{2},\qquad y=\frac{u-v}{2}
+   $$
+
+2. **$E$ を求める.** $E=[0,2]\times[0,2]$ とする。2 つの向きを確かめる。
+   - **$E$ の像は $D$ に含まれる.** $(u,v)\in E$ の像 $(x,y)$ では、$x+y=u$・$x-y=v$ だから、$D$ の条件を満たす。
+   - **$D$ の点は $E$ の像である.** $(x,y)\in D$ について、$u=x+y$・$v=x-y$ とおくと、$(u,v)\in E$ である。点 $(u,v)$ の像は $\left(\dfrac{u+v}{2},\dfrac{u-v}{2}\right)=(x,y)$ である。
+3. **条件を確かめる.**
+   - **積分領域.** $E$ は長方形だから縦線領域である。$D$ は、上で確かめたとおり縦線領域である。
+   - **関数の条件.** $U=\mathbb{R}^2$ とする。$x(u,v)$・$y(u,v)$ は多項式だから連続であり、偏導関数は定数だから連続である。
+   - **1 対 1 とヤコビアン.** 1 次式の変換で、$a=b=c=\dfrac12$、$d=-\dfrac12$ である。$ad-bc=-\dfrac14-\dfrac14=-\dfrac12\neq0$ だから、1 次式の変換と面積（定理）より、異なる 2 点の像は異なる。
+4. **ヤコビアン.** $J=ad-bc=-\dfrac12$ であり、$\lvert J\rvert=\dfrac12$ である。
+5. **書き換えて積分する.** 被積分関数は $x^2-y^2=uv$ である。変数を分けた関数の二重積分（系）を使う。
+
+   $$
+   \iint_D(x^2-y^2)\,dA=\iint_E uv\cdot\frac12\,du\,dv=\frac12\left(\int_0^2u\,du\right)\left(\int_0^2v\,dv\right)=\frac12\cdot2\cdot2=2
+   $$
+
+求める値は $2$ である。$f=1$ とすると、$D$ の面積は $\dfrac12\cdot2\cdot2=2$ である。2 本の対角線の長さがともに $2$ の正方形の面積 $\dfrac{2\cdot2}{2}=2$ と一致する。
+
+## 極座標による二重積分
+
+### 極座標
+
+導入の $r$・$\theta$ に名前を付ける。[三角比の拡張](../../functions/extension-of-trigonometric-ratios/)の章と同じく、始線は原点から $x$ 軸の正の向きへ取った半直線である。動径は、始線を原点のまわりに回した半直線である。
+
+> **極座標（定義）.** 原点と異なる点 $\mathrm{P}(x,y)$ について、原点からの距離を $r$（$r>0$）とする。始線から動径 $\mathrm{OP}$ まで測った角を $\theta$（弧度法）とする。組 $(r,\theta)$ を、点 $\mathrm{P}$ の**極座標**と呼ぶ。点の座標は次の式で表される。
+>
+> $$
+> x=r\cos\theta,\qquad y=r\sin\theta
+> $$
+
+極座標について、次の点を押さえる。
+
+- **読み方.** $r$ は「アール」、$\theta$ は「シータ」と読む。$\mathrm{P}(x,y)$ は座標が $(x,y)$ の点 $\mathrm{P}$ を表し、$\mathrm{O}$ は原点を表す。
+- **座標の式.** 三角比の拡張の章の座標による定義より、$\cos\theta=\dfrac xr$、$\sin\theta=\dfrac yr$ である。両辺に $r$ を掛けると、定義の式になる。
+- **$r$ と $x$・$y$.** $r$ は原点からの距離だから、$r=\sqrt{x^2+y^2}$ である。
+- **$\theta$ は 1 つに決めない.** $\theta$ と、$\theta$ に $2\pi$ の整数倍を足した角は、同じ動径を表す。本章では $\theta$ を 1 つに決めず、$2\pi$ の整数倍の違いを許す。
+- **偏角との関係.** 点 $\mathrm{P}$ を複素数 $x+yi$ とみなすと、$r$ は絶対値、$\theta$ は[複素数の極形式](../../complex-numbers/polar-form/)の章の偏角である。偏角の多価性より、同じ点を表す角どうしは $2\pi$ の整数倍だけ異なる。以下では、$\theta$ を点の偏角とも呼ぶ。
+- **範囲を決めると 1 つ.** 例えば $0\le\theta<2\pi$ の範囲に限ると、$\theta$ はただ 1 つに決まる。極形式の章の主値は $-\pi<\theta\le\pi$ の範囲であったが、本章では積分の範囲に合わせて範囲を選ぶ。
+- **原点.** 原点には動径が定まらないので、極座標を定めない。
+
+偏角の範囲を読むときは、単位円の点 $(\cos\theta,\sin\theta)$ の位置から、$\cos\theta$・$\sin\theta$ の符号を読み取る。[三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)の章の定義と、三角比の拡張の章の「三角比の符号」の節による。軸の上の角では、単位円の点は軸の上にある。次の表を、偏角の範囲の表と呼ぶ。
+
+| 偏角の範囲                          | 単位円の点の位置        | 符号             |
+| ----------------------------------- | ----------------------- | ---------------- |
+| $0\le\theta\le\pi$                  | $x$ 軸と $x$ 軸より上側 | $\sin\theta\ge0$ |
+| $\pi<\theta<2\pi$                   | $x$ 軸より下側          | $\sin\theta<0$   |
+| $-\dfrac\pi2\le\theta\le\dfrac\pi2$ | $y$ 軸と $y$ 軸より右側 | $\cos\theta\ge0$ |
+| $\dfrac\pi2<\theta<\dfrac{3\pi}{2}$ | $y$ 軸より左側          | $\cos\theta<0$   |
+
+### 極座標による変数変換
+
+積分では、原点を含む円板なども扱う。そこで、$r=0$ の点も含めた変数変換を使う。
+
+> **極座標による変数変換（定義）.** $r$・$\theta$ を変数とする平面の点 $(r,\theta)$ に、$xy$ 平面の点 $(r\cos\theta,r\sin\theta)$ を対応させる変数変換を、**極座標による変数変換**と呼ぶ。
+
+変数変換について、次の点を押さえる。
+
+- **$r\theta$ 平面.** 変数を $(r,\theta)$ とする平面を、$r\theta$ 平面と呼ぶ。「アール・シータ平面」と読む。横軸を $r$ 軸、縦軸を $\theta$ 軸として描く。
+- **$r>0$ の点.** 像の点と原点の距離は $r$ であり、動径の向きは単位円の点 $(\cos\theta,\sin\theta)$ の向きである。よって、像の点の極座標の 1 つは $(r,\theta)$ である。
+- **$r=0$ の点.** 点 $(0,\theta)$ の像は、$\theta$ によらず原点である。極座標は $r>0$ の点だけで定めたが、変数変換では $r=0$ の点も使う。本章で積分する集合 $E$ では、$r=0$ の点は $E$ の境界の上にある。後述の「極座標で表した公式」の節で確かめる。変数変換の公式は境界の上で 1 対 1 でなくてよいので、原点を含む領域の積分にも使える。
+- **$r<0$ の点.** 変数変換は $r<0$ の点でも式としては定まる。公式の条件 2 で $U=\mathbb{R}^2$ にとるため、変数変換を平面全体で定めておく。積分に使う集合 $E$ は、$r\ge0$ の点だけからなる。
+
+極座標による変数変換で、$r\theta$ 平面の格子がどう写るかを図 7 に描く。
+
+- **横の線.** $\theta$ 一定の横の線は、原点から出る線分に写る。
+- **縦の線.** $r$ 一定の縦の線は、原点を中心とする円に写る。
+- **境界.** $r=0$ の縦の線全体は、原点の 1 点に写る。$\theta=0$ と $\theta=2\pi$ の横の線は、同じ線分に写る。
+
+<figure>
+  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", columnGap: "1rem" }}>
+    <div style={{ flex: "1 1 260px", maxWidth: "320px" }}>
+      <ContourPlot
+        xMin={-0.3}
+        xMax={2.5}
+        yMin={-0.5}
+        yMax={6.9}
+        equalScale={false}
+        height={300}
+        grid={false}
+        xLabel="r"
+        yLabel={"\\theta"}
+        xTicks={[1, 2]}
+        yTicks={[
+          { value: Math.PI / 2, label: "\\dfrac{\\pi}{2}" },
+          { value: Math.PI, label: "\\pi" },
+          { value: (3 * Math.PI) / 2, label: "\\dfrac{3\\pi}{2}" },
+          { value: 2 * Math.PI, label: "2\\pi" },
+        ]}
+        partition={{ x: [0, 2], y: [0, 2 * Math.PI], m: 4, n: 8, highlight: [{ i: 3, j: 2, label: "K" }] }}
+        segments={[
+          { from: { x: 0, y: 0 }, to: { x: 0, y: 2 * Math.PI }, dashed: false, color: "#dc2626" },
+          { from: { x: 0, y: 0 }, to: { x: 2, y: 0 }, dashed: false, color: "#059669" },
+          { from: { x: 0, y: 2 * Math.PI }, to: { x: 2, y: 2 * Math.PI }, dashed: false, color: "#059669" },
+        ]}
+        ariaLabel="rθ 平面。長方形 0≤r≤2、0≤θ≤2π を、r 方向に 4 等分・θ 方向に 8 等分した格子で分けてある。r が 1 から 1.5、θ が π/4 から π/2 の小さな長方形 K を琥珀色で塗ってある。左の辺 r=0 を赤、上の辺 θ=2π と下の辺 θ=0 を緑で描く。"
+      />
+    </div>
+    <div style={{ flex: "1 1 260px", maxWidth: "320px" }}>
+      <ContourPlot
+        xMin={-2.4}
+        xMax={2.4}
+        yMin={-2.4}
+        yMax={2.4}
+        grid={false}
+        xTicks={[]}
+        yTicks={[]}
+        polarGrid={{ radii: [0.5, 1, 1.5, 2], angles: Array.from({ length: 8 }, (_, k) => (k * Math.PI) / 4) }}
+        regions={[{ kind: "polar", r: [1, 1.5], theta: [Math.PI / 4, Math.PI / 2], color: "#f59e0b", opacity: 0.5 }]}
+        segments={[{ from: { x: 0, y: 0 }, to: { x: 2, y: 0 }, dashed: false, color: "#059669" }]}
+        points={[{ x: 0, y: 0, color: "#dc2626" }]}
+        ariaLabel="xy 平面。原点を中心とする半径 0.5・1・1.5・2 の円と、原点から 45 度おきに出る 8 本の線分で、半径 2 の円板が分けてある。半径 1 から 1.5、角 π/4 から π/2 の扇形の差の部分を琥珀色で塗ってある。原点を赤い点で、x 軸の 0≤x≤2 の部分を緑の線分で示す。"
+      />
+    </div>
+  </div>
+  <figcaption>
+    <em>
+      図 7. 極座標による変数変換での格子の写り方。左（狭い画面では上）の $r\theta$ 平面の長方形 $[0,2]\times[0,2\pi]$ は、右の半径 $2$ の円板に写る。小さな長方形 $K=\left[1,1.5\right]\times\left[\tfrac\pi4,\tfrac\pi2\right]$ は、琥珀色の扇形の差の部分に写る。左の辺 $r=0$（赤）は原点（赤い点）に写る。上下の辺 $\theta=0$ と $\theta=2\pi$（緑）は、ともに $x$ 軸の $0\le x\le2$ の部分（緑の線分）に写る。
+    </em>
+  </figcaption>
+</figure>
+
+図 7 の左の長方形の境界では、変数変換は 1 対 1 でない。$r=0$ の点はすべて原点に写り、$\theta=0$ と $\theta=2\pi$ の点は同じ点に写る。変数変換の公式は境界の例外を許すので、円板の上の積分にも使える。
+
+### 極座標で表した公式
+
+> **極座標による二重積分（定理）.** $\alpha<\beta$、$\beta-\alpha\le2\pi$ とする。関数 $h_1$・$h_2$ は閉区間 $[\alpha,\beta]$ で連続であり、$[\alpha,\beta]$ のすべての $\theta$ で $0\le h_1(\theta)\le h_2(\theta)$ であるとする。$r\theta$ 平面の集合 $E$ を次のように定め、極座標による変数変換による $E$ の像を $D$ とする。
+>
+> $$
+> E=\{(r,\theta)\mid\alpha\le\theta\le\beta,\ h_1(\theta)\le r\le h_2(\theta)\}
+> $$
+>
+> $D$ が縦線領域または横線領域であるとき、$D$ で連続な関数 $f$ について、次が成り立つ。
+>
+> $$
+> \iint_D f(x,y)\,dA=\int_\alpha^\beta\left(\int_{h_1(\theta)}^{h_2(\theta)}f(r\cos\theta,\ r\sin\theta)\,r\,dr\right)d\theta
+> $$
+
+$\alpha$・$\beta$ は、「1 変数の置換積分の振り返り」の節と同じ文字であり、偏角の範囲の両端を表す。
+
+**証明.** 2 変数の変数変換の公式（承認事項）の 5 つの条件を確かめる。$U=\mathbb{R}^2$ とする。
+
+1. **積分領域.** $E$ は、重積分の章の横線領域の定義で、縦の変数を $\theta$、横の変数を $r$ に読み替えた集合である。$D$ は仮定より縦線領域または横線領域である。
+2. **関数の条件.** $\cos\theta$ は微分可能だから連続である。$(r,\theta)$ の関数 $\cos\theta$ は、多項式 $\theta$ と $\cos$ の合成だから、1 変数の関数との合成の連続性（定理）より連続である。$r$ との積 $r\cos\theta$ も連続である。偏導関数 $\cos\theta$・$-r\sin\theta$・$\sin\theta$・$r\cos\theta$ も、同じ理由で連続である。
+3. **像.** $D$ の定め方による。
+4. **内部で 1 対 1.** 次の 3 段階で示す。
+   - **内部の点の範囲.** $E$ の内部の点 $(r_0,\theta_0)$ は、$r_0>0$ かつ $\alpha<\theta_0<\beta$ を満たす。$\theta_0=\alpha$ なら、点を中心とするどんな円の内側にも、$E$ に属さない $\theta<\alpha$ の点が現れ、点は境界点になる。$\theta_0=\beta$ も同様である。$r_0=0$ なら、どんな円の内側にも $r<0$ の点が現れる。$E$ の点は $r\ge h_1(\theta)\ge0$ を満たすので、点は境界点になる。
+   - **$r$.** 内部の 2 点 $(r_{\mathrm{A}},\theta_{\mathrm{A}})$・$(r_{\mathrm{B}},\theta_{\mathrm{B}})$ の像が、同じ点 $(x,y)$ であるとする。添字の $\mathrm{A}$・$\mathrm{B}$ は 2 点を区別する、本証明だけの便宜的な書き方である。$r_{\mathrm{A}}=\sqrt{x^2+y^2}=r_{\mathrm{B}}$ であり、値は正である。
+   - **$\theta$.**「$r>0$ の点」の項目より、$\theta_{\mathrm{A}}$ と $\theta_{\mathrm{B}}$ は、どちらも点 $(x,y)$ の偏角である。同じ点を表す角どうしは、$2\pi$ の整数倍だけ異なる。2 つの角はともに $\alpha$ より大きく $\beta$ より小さいので、差の絶対値は $\beta-\alpha$ より小さく、$2\pi$ より小さい。差は $0$ であり、2 点は等しい。
+5. **ヤコビアン.**「ヤコビアンの例」の節より $J=r$ であり、内部の点では $r>0$ である。
+
+公式より、$\displaystyle\iint_D f\:dA=\iint_E f(r\cos\theta,r\sin\theta)\:\lvert r\rvert\:dr\:d\theta$ である。$E$ の点では $r\ge0$ だから、$\lvert r\rvert=r$ である。$E$ は横線領域だから、縦線領域・横線領域の上の二重積分（承認事項）より、右辺は定理の累次積分に等しい。証明を終わる。
+
+$h_1$・$h_2$ が定数 $r_1$・$r_2$（$0\le r_1<r_2$）のとき、$E$ は長方形 $[r_1,r_2]\times[\alpha,\beta]$ である。$0<r_1<r_2$ のとき、原点を中心とする半径 $r_1$ と $r_2$ の 2 つの円にはさまれた領域を、**円環**と呼ぶ。$E$ の像は、次の表のような領域になる。円環の行では $0<r_1$ とする。
+
+| $E$                                        | $E$ の像                                      | 名前            |
+| ------------------------------------------ | --------------------------------------------- | --------------- |
+| $[0,R]\times[0,2\pi]$                      | $x^2+y^2\le R^2$                              | 円板            |
+| $[0,R]\times[\alpha,\beta]$                | 中心角 $\beta-\alpha$ の扇形                  | 扇形            |
+| $[r_1,r_2]\times[0,\pi]$                   | $r_1^2\le x^2+y^2\le r_2^2$、$y\ge0$          | 円環の上半分    |
+| $[r_1,r_2]\times\left[0,\tfrac\pi2\right]$ | $r_1^2\le x^2+y^2\le r_2^2$、$x\ge0$、$y\ge0$ | 円環の 4 分の 1 |
+
+重積分の章で確かめたとおり、縦線と縦線領域の交わりは 1 本の線分である。円環の全体では、縦線 $x=0$ との交わりが 2 本の線分に分かれるので、円環は縦線領域でない。横線 $y=0$ との交わりも 2 本に分かれるので、横線領域でもない。本章では、円環の上半分などの一部を扱う。
+
+### 円板と円環の一部
+
+**例 2.** 半径 $R$ の円板 $D=\{(x,y)\mid x^2+y^2\le R^2\}$ の面積を、極座標で求める。$E=[0,R]\times[0,2\pi]$ とする。
+
+- **$E$ の像は $D$.** $E$ の点の像では、$x^2+y^2=r^2\le R^2$ である。逆に、$D$ の点 $(x,y)$ を考える。原点は $(0,0)$ の像である。原点以外の点では、$r=\sqrt{x^2+y^2}$ は $0<r\le R$ を満たし、偏角 $\theta$ を $0\le\theta<2\pi$ にとれる。点 $(r,\theta)$ は $E$ に属し、像は $(x,y)$ である。
+- **$D$ は縦線領域.** 重積分の章で確かめた。
+
+$f=1$ として、極座標による二重積分（定理）を使う。
+
+$$
+\iint_D 1\,dA=\int_0^{2\pi}\left(\int_0^R r\,dr\right)d\theta=\int_0^{2\pi}\frac{R^2}{2}\,d\theta=\pi R^2
+$$
+
+重積分の章で求めた円板の面積 $\pi R^2$ と一致する。同じ計算で、扇形が縦線領域または横線領域のとき、半径 $R$・中心角 $\beta-\alpha$ の扇形の面積は $\dfrac{R^2(\beta-\alpha)}{2}$ である。
+
+**例 3.** 導入の二重積分を、半径 $R$ の円板で求める。$x^2+y^2=r^2$ だから、被積分関数は $r^2$ になる。
+
+$$
+\iint_{x^2+y^2\le R^2}(x^2+y^2)\,dA=\int_0^{2\pi}\left(\int_0^R r^2\cdot r\,dr\right)d\theta=\int_0^{2\pi}\frac{R^4}{4}\,d\theta=\frac{\pi R^4}{2}
+$$
+
+積分の下に書いた不等式は、領域 $\{(x,y)\mid x^2+y^2\le R^2\}$ を短く表す、便宜的な書き方である。$R=1$ のとき、導入の値は $\dfrac\pi2$ である。$x$・$y$ のままの累次積分より、計算がはるかに短い。
+
+**例 4.** 半径 $R$ の円板の上で、$\displaystyle\iint_{x^2+y^2\le R^2}e^{-(x^2+y^2)}\:dA$ を求める。$e^{-(x^2+y^2)}$ は、多項式 $-(x^2+y^2)$ と $e^t$ の合成だから連続である。被積分関数は $e^{-r^2}$ になる。
+
+- **原始関数.** 連鎖律より、$\left(-\dfrac12e^{-r^2}\right)'=-\dfrac12e^{-r^2}\cdot(-2r)=re^{-r^2}$ である。
+- **内側の積分.** 基本定理 2 より、次のとおりである。
+
+  $$
+  \int_0^R e^{-r^2}r\,dr=\left[-\frac12e^{-r^2}\right]_0^R=\frac12\left(1-e^{-R^2}\right)
+  $$
+
+- **外側の積分.** 内側の値は $\theta$ によらない定数だから、$2\pi$ 倍する。
+
+  $$
+  \iint_{x^2+y^2\le R^2}e^{-(x^2+y^2)}\,dA=\pi\left(1-e^{-R^2}\right)
+  $$
+
+$x$・$y$ のままでは、内側の積分 $\displaystyle\int e^{-y^2}\:dy$ の原始関数が、本ロードマップで導いた公式では求まらない。極座標では、ヤコビアン $r$ が因数として加わり、原始関数が求まる。
+
+**例 5.** 円環の上半分 $D=\{(x,y)\mid 1\le x^2+y^2\le4,\ y\ge0\}$ の上で、$\displaystyle\iint_D y\:dA$ を求める。$D$ を図 8 に描く。
+
+<figure>
+  <ContourPlot
+    xMin={-2.5}
+    xMax={2.5}
+    yMin={-0.5}
+    yMax={2.5}
+    grid={false}
+    xTicks={[-2, -1, 1, 2]}
+    yTicks={[]}
+    regions={[{ kind: "polar", r: [1, 2], theta: [0, Math.PI], label: "D", labelAt: { x: 0, y: 1.5 } }]}
+    segments={[
+      { from: { x: 0, y: 0 }, to: { x: 2 * Math.cos(1.0), y: 2 * Math.sin(1.0) }, dashed: true, color: "#64748b" },
+      { from: { x: Math.cos(1.0), y: Math.sin(1.0) }, to: { x: 2 * Math.cos(1.0), y: 2 * Math.sin(1.0) }, dashed: false, color: "#ea580c" },
+    ]}
+    ariaLabel="xy 平面の円環の上半分 D。原点を中心とする半径 1 と半径 2 の半円にはさまれ、x 軸より上の部分を青く塗ってある。原点から斜めに出る半直線の上で、半径 1 から 2 までの部分を橙の線分で示す。"
+  />
+  <figcaption>
+    <em>
+      図 8. 例 5 の円環の上半分 $D$。極座標では長方形 $[1,2]\times[0,\pi]$ に対応する。偏角 $\theta$ を固定すると、$r$ は $1$ から $2$ まで動く（橙の線分）。
+    </em>
+  </figcaption>
+</figure>
+
+1. **$D$ は縦線領域.** $D$ の点は $-2\le x\le2$ を満たす。$x$ を固定し、$y\ge0$ のもとで $y$ の条件を調べる。
+   - **外側の円.** $x^2+y^2\le4$ は $y^2\le4-x^2$ と同じである。$\lvert x\rvert<2$ なら、0 以上の数の大小と 2 乗（定理）より、$y\le\sqrt{4-x^2}$ と同値である。$\lvert x\rvert=2$ なら、$y^2\le0$ は $y=0=\sqrt{4-x^2}$ と同値である。
+   - **内側の円.** $\lvert x\rvert\ge1$ のときは、$1-x^2\le0\le y^2$ だから、$x^2+y^2\ge1$ はつねに成り立つ。$\lvert x\rvert<1$ のときは、0 以上の数の大小と 2 乗（定理）より、$y^2\ge1-x^2$ は $y\ge\sqrt{1-x^2}$ と同値である。
+
+   よって $D$ は、$g_2(x)=\sqrt{4-x^2}$ と次の $g_1$ による縦線領域である。
+
+   $$
+   g_1(x)=\begin{cases}\sqrt{1-x^2}&(\lvert x\rvert\le1)\\0&(1\le\lvert x\rvert\le2)\end{cases}
+   $$
+
+   $g_1$ は $x=\pm1$ で値 $0$ がつながり、連続である。$\lvert x\rvert\le1$ では $1-x^2\le4-x^2$ だから $g_1\le g_2$ であり、$1\le\lvert x\rvert\le2$ では $g_1=0\le g_2$ である。
+
+2. **$E$ の像は $D$.** $E=[1,2]\times[0,\pi]$ とする。2 つの向きを確かめる。
+   - **$E$ の像は $D$ に含まれる.** $x^2+y^2=r^2$ は $1$ 以上 $4$ 以下である。$0\le\theta\le\pi$ では、偏角の範囲の表より $\sin\theta\ge0$ だから、$y=r\sin\theta\ge0$ である。
+   - **$D$ の点は $E$ の像.** $D$ の点は原点でなく、$r=\sqrt{x^2+y^2}$ は $1\le r\le2$ を満たす。偏角を $0\le\theta<2\pi$ にとると、$\sin\theta=\dfrac yr\ge0$ である。表より $\pi<\theta<2\pi$ では $\sin\theta<0$ だから、$0\le\theta\le\pi$ である。
+3. **計算する.** 被積分関数は $y=r\sin\theta$ である。$E$ は長方形だから、変数を分けた関数の二重積分（系）を使う。$\theta$ の積分は $\bigl[-\cos\theta\bigr]_0^\pi=2$、$r$ の積分は $\dfrac{8-1}{3}=\dfrac73$ である。
+
+   $$
+   \iint_D y\,dA=\iint_E r\sin\theta\cdot r\,dr\,d\theta=\left(\int_0^\pi\sin\theta\,d\theta\right)\left(\int_1^2r^2\,dr\right)=2\cdot\frac73=\frac{14}{3}
+   $$
+
+求める値は $\dfrac{14}{3}$ である。
+
+## 3 変数の変数変換
+
+### 3 変数のヤコビアン
+
+3 変数でも、変数変換を同じく定める。$u$・$v$・$w$ を座標とする空間を、**$uvw$ 空間**と呼ぶ。
+
+> **3 変数の変数変換（定義）.** $U\subset\mathbb{R}^3$ とし、3 つの 3 変数関数 $x$・$y$・$z$ が $U$ で定義されているとする。$U$ の各点 $(u,v,w)$ に次の点を対応させる規則を、**3 変数の変数変換**と呼ぶ。
+>
+> $$
+> (x(u,v,w),\ y(u,v,w),\ z(u,v,w))
+> $$
+>
+> 像と 1 対 1 は、2 変数の場合と同じく定める。
+
+> **3 変数のヤコビアン（定義）.** 3 変数の変数変換を考える。点 $(u,v,w)$ で 9 つの偏微分係数が存在するとき、次の値を、点における変数変換の**ヤコビアン**と呼ぶ。
+>
+> $$
+> \frac{\partial(x,y,z)}{\partial(u,v,w)}=\det\begin{pmatrix}x_u&x_v&x_w\\y_u&y_v&y_w\\z_u&z_v&z_w\end{pmatrix}
+> $$
+
+2 変数と同じく、本章ではヤコビアンを $J$ とも書く。1 列目は $u$、2 列目は $v$、3 列目は $w$ で偏微分した値である。
+
+ヤコビアンの意味も、2 変数と同じ考えで読む。$\Delta u$・$\Delta v$・$\Delta w$ を正の数とし、直方体 $[u_0,u_0+\Delta u]\times[v_0,v_0+\Delta v]\times[w_0,w_0+\Delta w]$ の像を考える。9 つの偏導関数は、点 $(u_0,v_0,w_0)$ を中心とするある球の内側で存在して連続であるとする。
+
+- **辺の見積もり.** 像の 3 辺は、一次近似によりおよそ次の 3 本のベクトルになる。
+
+  $$
+  \Delta u\,(x_u,y_u,z_u),\qquad\Delta v\,(x_v,y_v,z_v),\qquad\Delta w\,(x_w,y_w,z_w)
+  $$
+
+- **体積.** 像は、3 本のベクトルが張る平行六面体にほぼ等しいと考えられる。2 変数と同じく、直観として認める。
+- **倍率.** 3 次の行列式では、1 つの列を $k$ 倍すると行列式も $k$ 倍になる。$J\neq0$ のとき、3 次の行列式と平行六面体の体積（定理）より、平行六面体の体積は $\lvert J\rvert\:\Delta u\:\Delta v\:\Delta w$ である。$J=0$ のときは平行六面体がつぶれ、体積を $0$ とみなせば同じ式で表せる。
+
+> **空間の集合の内部の点（定義）.** 境界（定義）と内部の点（定義）の「円」を「球」に、$\mathbb{R}^2$ を $\mathbb{R}^3$ に替えて、空間の集合の境界点・境界・内部の点を定める。
+
+長方形と同じ議論で、直方体 $[a,b]\times[c,d]\times[p,q]$ の内部の点は、3 つの座標がすべて区間の両端の間に真にある点である。
+
+### 3 変数の公式
+
+> **3 変数の変数変換の公式（承認事項）.** 3 変数の変数変換について、次の 5 つの条件を考える。
+>
+> 1. **積分立体.** $W$ は $uvw$ 空間の、いずれかの向きの縦線立体である。$V$ は $xyz$ 空間の、いずれかの向きの縦線立体である。
+> 2. **関数の条件.** $U$ は $W$ を含む集合であり、$U$ の各点について、点を中心とするある球の内側が $U$ に含まれる。$x$・$y$・$z$ は $U$ で連続であり、9 つの偏導関数は $U$ のすべての点で存在し、$U$ で連続である。
+> 3. **像.** $W$ の像は $V$ に等しい。
+> 4. **内部で 1 対 1.** $W$ の内部の異なる 2 点の像は異なる。
+> 5. **内部でヤコビアンが 0 でない.** $W$ の内部のすべての点で、$J\neq0$ である。
+>
+> 5 つの条件が成り立つとき、$V$ で連続な関数 $f$ について、次が成り立つ。
+>
+> $$
+> \iiint_V f(x,y,z)\,dx\,dy\,dz=\iiint_W f(x(u,v,w),\,y(u,v,w),\,z(u,v,w))\,\lvert J\rvert\,du\,dv\,dw
+> $$
+
+左辺の $dx\:dy\:dz$ は体積要素 $dV$ を表す。三重積分の章と同じく、並びは積分の順序を表さない。右辺の被積分関数が $W$ で連続であることは、2 変数と同じく、3 変数関数への代入の連続性から示せる。
+
+### 円柱座標
+
+> **円柱座標（定義）.** 空間の点 $\mathrm{P}=(x,y,z)$ が、$r\ge0$ と実数 $\theta$ によって次のように書けるとする。組 $(r,\theta,z)$ を、$\mathrm{P}$ の**円柱座標**と呼ぶ。
+>
+> $$
+> x=r\cos\theta,\qquad y=r\sin\theta,\qquad z=z
+> $$
+
+円柱座標について、次の点を押さえる。
+
+- **床への影.** 床への影 $(x,y)$ が原点でなければ、$(r,\theta)$ は影の極座標である。影が原点なら $r=0$ であり、$\theta$ はどんな値でもよい。
+- **高さ.** 高さ $z$ は変えずに使う。式 $z=z$ は、高さの座標を変えないことを表す便宜的な書き方である。
+- **$z$ 軸からの距離.** $r=\sqrt{x^2+y^2}$ は、点から $z$ 軸までの距離である。
+- **名前の由来.** $r$ を一定にした点全体は、$z$ 軸を軸とする円柱の側面になる。名前は円柱に由来する。
+
+点の円柱座標を図 9 に描く。
+
+<figure>
+  <SurfacePlot
+    surfaces={[
+      {
+        kind: "parametric",
+        fn: (t, h) => ({ x: 1.6 * Math.cos(t), y: 1.6 * Math.sin(t), z: h }),
+        u: [0, Math.PI / 2],
+        v: [0, 1.4],
+        color: "#93c5fd",
+        opacity: 0.18,
+        mesh: false,
+        resolution: [16, 2],
+      },
+    ]}
+    curves={[
+      { fn: (t) => ({ x: 0.55 * Math.cos(t), y: 0.55 * Math.sin(t), z: 0 }), t: [0, 0.9], color: "#7c3aed", label: "\\theta", labelAt: 0.45, hidden: "show" },
+    ]}
+    segments={[
+      { from: { x: 0, y: 0, z: 0 }, to: { x: 1.6 * Math.cos(0.9), y: 1.6 * Math.sin(0.9), z: 0 }, color: "#ea580c", width: 2.2, label: "r", hidden: "show" },
+      { from: { x: 1.6 * Math.cos(0.9), y: 1.6 * Math.sin(0.9), z: 0 }, to: { x: 1.6 * Math.cos(0.9), y: 1.6 * Math.sin(0.9), z: 1.4 }, color: "#2563eb", width: 2.2, label: "z", hidden: "show" },
+    ]}
+    points={[
+      { x: 1.6 * Math.cos(0.9), y: 1.6 * Math.sin(0.9), z: 1.4, label: "\\mathrm{P}", color: "#dc2626", hidden: "show" },
+      { x: 1.6 * Math.cos(0.9), y: 1.6 * Math.sin(0.9), z: 0, color: "#64748b", hidden: "show" },
+    ]}
+    xRange={[0, 2]}
+    yRange={[0, 2]}
+    zRange={[0, 2]}
+    floorGrid={false}
+    ariaLabel="点 P の円柱座標。原点から床の上の点（P の真下の点、灰色）まで橙の線分 r を引き、x 軸の正の向きから橙の線分までの角 θ を紫の弧で示す。床の点から P まで青い鉛直な線分 z を引く。P を通る z 軸まわりの円柱の側面の一部を淡い青で描く。"
+  />
+  <figcaption>
+    <em>
+      図 9. 点 $\mathrm{P}$（赤）の円柱座標 $(r,\theta,z)$。$\mathrm{P}$ の真下の床の点（灰色の点）は極座標 $(r,\theta)$ をもつ。$r$（橙）は $z$ 軸からの距離、$\theta$（紫の弧）は床の上の角、$z$（青）は高さである。$r$ が一定の点全体は円柱の側面をなし、淡い青は円柱の側面の一部である。
+    </em>
+  </figcaption>
+</figure>
+
+円柱座標による変数変換のヤコビアンを、3 次の行列式で計算する。変数の順を $(r,\theta,z)$ とする。
+
+$$
+J=\det\begin{pmatrix}\cos\theta&-r\sin\theta&0\\\sin\theta&r\cos\theta&0\\0&0&1\end{pmatrix}=\cos\theta\cdot(r\cos\theta\cdot1-0\cdot0)-(-r\sin\theta)\cdot(\sin\theta\cdot1-0\cdot0)+0=r
+$$
+
+最後の等号では、相互関係を使った。極座標と同じく $J=r$ である。
+
+### 円柱座標による三重積分
+
+円柱座標による三重積分は、三重積分の章の承認事項と、極座標による二重積分（定理）から導ける。3 変数の変数変換の公式（承認事項）を使わずに済む。
+
+> **円柱座標による三重積分（定理）.** 極座標による二重積分（定理）の条件を満たす $\alpha$・$\beta$・$h_1$・$h_2$ と $E$・$D$ を考える。2 変数関数 $u_1$・$u_2$ は $D$ で連続であり、$D$ のすべての点で $u_1(x,y)\le u_2(x,y)$ であるとする。$V$ を次の縦線立体とする。
+>
+> $$
+> V=\{(x,y,z)\mid(x,y)\in D,\ u_1(x,y)\le z\le u_2(x,y)\}
+> $$
+>
+> $V$ で連続な関数 $f$ について、次が成り立つ。
+>
+> $$
+> \iiint_V f(x,y,z)\,dV=\int_\alpha^\beta\left(\int_{h_1(\theta)}^{h_2(\theta)}\left(\int_{u_1(r\cos\theta,\,r\sin\theta)}^{u_2(r\cos\theta,\,r\sin\theta)}f(r\cos\theta,\ r\sin\theta,\ z)\,dz\right)r\,dr\right)d\theta
+> $$
+
+**証明.** 内側の積分を、次のように書く。
+
+$$
+F(x,y)=\int_{u_1(x,y)}^{u_2(x,y)}f(x,y,z)\,dz
+$$
+
+三重積分の章の縦線立体の上の三重積分（承認事項）より、$F$ は $D$ で連続であり、$\displaystyle\iiint_V f\:dV=\iint_D F(x,y)\:dA$ である。極座標による二重積分（定理）を $F$ に使うと、$\displaystyle\iint_D F\:dA$ は $F(r\cos\theta,r\sin\theta)\:r$ の累次積分に等しい。$F$ の定義を代入すると、定理の式を得る。証明を終わる。
+
+**例 6.** 三重積分の章の例 5 の立体 $V=\{(x,y,z)\mid x^2+y^2\le z\le1\}$ を、円柱座標で調べる。$V$ は、半径 $1$ の円板 $D$ の上の縦線立体であり、$u_1=x^2+y^2$・$u_2=1$ である。$D$ は、$E=[0,1]\times[0,2\pi]$ の像である（例 2 で $R=1$ とした場合）。$u_1(r\cos\theta,r\sin\theta)=r^2$ である。
+
+- **体積.** $f=1$ とする。
+
+  $$
+  \operatorname{vol}(V)=\int_0^{2\pi}\left(\int_0^1(1-r^2)\,r\,dr\right)d\theta=2\pi\left(\frac12-\frac14\right)=\frac\pi2
+  $$
+
+- **$z$ の三重積分.** $f=z$ とする。内側の積分は $\displaystyle\int_{r^2}^1z\:dz=\frac{1-r^4}{2}$ である。
+
+  $$
+  \iiint_V z\,dV=\int_0^{2\pi}\left(\int_0^1\frac{1-r^4}{2}\,r\,dr\right)d\theta=2\pi\cdot\frac12\left(\frac12-\frac16\right)=\frac\pi3
+  $$
+
+どちらも、三重積分の章で切り口の面積から求めた値 $\dfrac\pi2$・$\dfrac\pi3$ と一致する。
+
+### 球座標
+
+球座標では、原点からの距離と 2 つの角で、空間の点を表す。角の名前と文字を、次の表のように決める。
+
+| 文字      | 読み方 | 名前           | 意味                                                       | 主に使う範囲        |
+| --------- | ------ | -------------- | ---------------------------------------------------------- | ------------------- |
+| $\rho$    | ロー   | 原点からの距離 | 原点 $\mathrm{O}$ から点 $\mathrm{P}$ までの距離           | $\rho\ge0$          |
+| $\varphi$ | ファイ | 天頂角         | $\overrightarrow{\mathrm{OP}}$ と $z$ 軸の正の向きのなす角 | $0\le\varphi\le\pi$ |
+| $\theta$  | シータ | 方位角         | 床への影 $(x,y)$ の偏角                                    | $0\le\theta\le2\pi$ |
+
+文字と名前について、次の点を押さえる。
+
+- **文字.** $\rho$ と $\varphi$ はギリシャ文字の小文字である。
+- **天頂角.** 真上（天頂）の向きから測った角である。
+- **方位角.** 円柱座標の $\theta$ と同じ角である。
+- **文字の役割.** 本章では、方位角を $\theta$、天頂角を $\varphi$ と書く。文献によっては、文字の役割が入れ替わる[^iso]。
+
+点 $\mathrm{P}=(x,y,z)$ の座標を、$\rho$・$\varphi$・$\theta$ で表す。$\mathrm{P}$ は原点でないとする。
+
+1. **高さ.** $\vec{e}=(0,0,1)$ とおく。$\vec{e}$ は $z$ 軸の正の向きの、大きさ $1$ のベクトルである。空間での内積の成分公式より、$\overrightarrow{\mathrm{OP}}\cdot\vec{e}=z$ である。内積の定義より、$\overrightarrow{\mathrm{OP}}\cdot\vec{e}=\rho\cdot1\cdot\cos\varphi$ である。よって $z=\rho\cos\varphi$ である。
+2. **$z$ 軸からの距離.** $x^2+y^2=\rho^2-z^2=\rho^2(1-\cos^2\varphi)=\rho^2\sin^2\varphi$ である。$0\le\varphi\le\pi$ では、極座標の節の偏角の範囲の表より $\sin\varphi\ge0$ である。よって $\sqrt{x^2+y^2}=\rho\sin\varphi$ である。
+3. **床への影.** 影 $(x,y)$ は、円柱座標の $r=\rho\sin\varphi$ と方位角 $\theta$ で表せる。
+
+まとめると、次の関係を得る。
+
+> **球座標（定義）.** 空間の点 $\mathrm{P}=(x,y,z)$ が、$\rho\ge0$、$0\le\varphi\le\pi$ と実数 $\theta$ によって次のように書けるとする。組 $(\rho,\varphi,\theta)$ を、$\mathrm{P}$ の**球座標**と呼ぶ。
+>
+> $$
+> x=\rho\sin\varphi\cos\theta,\qquad y=\rho\sin\varphi\sin\theta,\qquad z=\rho\cos\varphi
+> $$
+
+球座標について、次の点を押さえる。
+
+- **原点以外の点.** 上の 3 段階より、原点以外の点は球座標をもつ。
+- **$z$ 軸の上の点.** $\sin\varphi=0$ であり、$\theta$ はどんな値でもよい。
+- **原点.** $\rho=0$ であり、$\varphi$ と $\theta$ はどんな値でもよい。
+- **名前の由来.** $\rho$ を一定にした点全体は、原点を中心とする球面である。名前は球に由来する。
+
+点の球座標を図 10 に描く。
+
+<figure>
+  <SurfacePlot
+    curves={[
+      { fn: (t) => ({ x: 0.5 * Math.cos(t), y: 0.5 * Math.sin(t), z: 0 }), t: [0, 0.9], color: "#7c3aed", label: "\\theta", labelAt: 0.45, hidden: "show" },
+      {
+        fn: (t) => ({ x: 0.7 * Math.sin(t) * Math.cos(0.9), y: 0.7 * Math.sin(t) * Math.sin(0.9), z: 0.7 * Math.cos(t) }),
+        t: [0, 0.75],
+        color: "#059669",
+        label: "\\varphi",
+        labelAt: 0.4,
+        hidden: "show",
+      },
+    ]}
+    segments={[
+      {
+        from: { x: 0, y: 0, z: 0 },
+        to: { x: 2 * Math.sin(0.75) * Math.cos(0.9), y: 2 * Math.sin(0.75) * Math.sin(0.9), z: 2 * Math.cos(0.75) },
+        color: "#ea580c",
+        width: 2.2,
+        label: "\\rho",
+        hidden: "show",
+      },
+      {
+        from: { x: 0, y: 0, z: 0 },
+        to: { x: 2 * Math.sin(0.75) * Math.cos(0.9), y: 2 * Math.sin(0.75) * Math.sin(0.9), z: 0 },
+        dashed: true,
+        color: "#64748b",
+        hidden: "show",
+      },
+      {
+        from: { x: 2 * Math.sin(0.75) * Math.cos(0.9), y: 2 * Math.sin(0.75) * Math.sin(0.9), z: 0 },
+        to: { x: 2 * Math.sin(0.75) * Math.cos(0.9), y: 2 * Math.sin(0.75) * Math.sin(0.9), z: 2 * Math.cos(0.75) },
+        dashed: true,
+        color: "#64748b",
+        hidden: "show",
+      },
+    ]}
+    points={[
+      {
+        x: 2 * Math.sin(0.75) * Math.cos(0.9),
+        y: 2 * Math.sin(0.75) * Math.sin(0.9),
+        z: 2 * Math.cos(0.75),
+        label: "\\mathrm{P}",
+        color: "#dc2626",
+        hidden: "show",
+      },
+      { x: 2 * Math.sin(0.75) * Math.cos(0.9), y: 2 * Math.sin(0.75) * Math.sin(0.9), z: 0, color: "#64748b", hidden: "show" },
+    ]}
+    xRange={[0, 2]}
+    yRange={[0, 2]}
+    zRange={[0, 2.2]}
+    floorGrid={false}
+    ariaLabel="点 P の球座標。原点から P まで橙の線分 ρ を引く。z 軸の正の向きから線分 OP までの角 φ を緑の弧で示す。P の真下の床の点（灰色）まで灰色の破線を下ろし、原点から床の点までも灰色の破線を引く。x 軸の正の向きから床の破線までの角 θ を紫の弧で示す。"
+  />
+  <figcaption>
+    <em>
+      図 10. 点 $\mathrm{P}$（赤）の球座標 $(\rho,\varphi,\theta)$。$\rho$（橙）は原点からの距離、$\varphi$（緑の弧）は $z$ 軸の正の向きから測った天頂角、$\theta$（紫の弧）は床への影の偏角（方位角）である。原点から影（灰色の点）までの距離は $\rho\sin\varphi$、影から $\mathrm{P}$ までの高さは $\rho\cos\varphi$ である（灰色の破線）。
+    </em>
+  </figcaption>
+</figure>
+
+球座標による変数変換のヤコビアンを計算する。変数の順を $(\rho,\varphi,\theta)$ とする。9 つの偏導関数は次のとおりである。
+
+| 関数                          | $\rho$ で偏微分         | $\varphi$ で偏微分          | $\theta$ で偏微分            |
+| ----------------------------- | ----------------------- | --------------------------- | ---------------------------- |
+| $x=\rho\sin\varphi\cos\theta$ | $\sin\varphi\cos\theta$ | $\rho\cos\varphi\cos\theta$ | $-\rho\sin\varphi\sin\theta$ |
+| $y=\rho\sin\varphi\sin\theta$ | $\sin\varphi\sin\theta$ | $\rho\cos\varphi\sin\theta$ | $\rho\sin\varphi\cos\theta$  |
+| $z=\rho\cos\varphi$           | $\cos\varphi$           | $-\rho\sin\varphi$          | $0$                          |
+
+表の 3 行を行列の 3 行とし、3 次の行列式の定義に従って 1 行目で展開する。残る 3 つの 2 次の行列式を、先に計算する。
+
+$$
+\begin{aligned}
+\det\begin{pmatrix}\rho\cos\varphi\sin\theta&\rho\sin\varphi\cos\theta\\-\rho\sin\varphi&0\end{pmatrix}&=0-\rho\sin\varphi\cos\theta\cdot(-\rho\sin\varphi)=\rho^2\sin^2\varphi\cos\theta\\
+\det\begin{pmatrix}\sin\varphi\sin\theta&\rho\sin\varphi\cos\theta\\\cos\varphi&0\end{pmatrix}&=0-\rho\sin\varphi\cos\theta\cos\varphi=-\rho\sin\varphi\cos\varphi\cos\theta\\
+\det\begin{pmatrix}\sin\varphi\sin\theta&\rho\cos\varphi\sin\theta\\\cos\varphi&-\rho\sin\varphi\end{pmatrix}&=-\rho\sin^2\varphi\sin\theta-\rho\cos^2\varphi\sin\theta=-\rho\sin\theta
+\end{aligned}
+$$
+
+3 つ目の計算では、相互関係を使った。1 行目の成分を掛けて、符号 $+$・$-$・$+$ で足す。
+
+$$
+\begin{aligned}
+J&=\sin\varphi\cos\theta\cdot\rho^2\sin^2\varphi\cos\theta-\rho\cos\varphi\cos\theta\cdot(-\rho\sin\varphi\cos\varphi\cos\theta)+(-\rho\sin\varphi\sin\theta)\cdot(-\rho\sin\theta)\\
+&=\rho^2\sin\varphi\left(\sin^2\varphi\cos^2\theta+\cos^2\varphi\cos^2\theta+\sin^2\theta\right)\\
+&=\rho^2\sin\varphi\left(\cos^2\theta+\sin^2\theta\right)=\rho^2\sin\varphi
+\end{aligned}
+$$
+
+2 行目から 3 行目では、相互関係 $\sin^2\varphi+\cos^2\varphi=1$ を使い、最後にもう一度相互関係を使った。球座標のヤコビアンは $\rho^2\sin\varphi$ である。
+
+### 球座標による三重積分
+
+球座標の角の大小を扱うため、三角関数の増減を確かめる。
+
+- **$\cos$ の増減.** $0<\varphi<\pi$ では、単位円の点が $x$ 軸より上側にあるので $\sin\varphi>0$ である。$\cos\varphi$ の導関数 $-\sin\varphi$ は負だから、導関数の符号と増減（定理）より、$\cos$ は $[0,\pi]$ で狭義単調減少である。とくに $\cos$ は $[0,\pi]$ で 1 対 1 である。
+- **$\sin$ の増減.** $0<\varphi<\dfrac\pi2$ では、単位円の点が第 1 象限にあるので $\cos\varphi>0$ である。$\sin\varphi$ の導関数 $\cos\varphi$ は正だから、$\sin$ は $\left[0,\dfrac\pi2\right]$ で狭義単調増加である。
+
+> **球座標による三重積分（定理）.** $0\le\rho_1<\rho_2$、$0\le\varphi_1<\varphi_2\le\pi$、$\alpha<\beta$、$\beta-\alpha\le2\pi$ とする。$\rho\varphi\theta$ 空間の直方体 $W=[\rho_1,\rho_2]\times[\varphi_1,\varphi_2]\times[\alpha,\beta]$ の、球座標による変数変換の像を $V$ とする。$V$ がいずれかの向きの縦線立体であるとき、$V$ で連続な関数 $f$ について、次が成り立つ。
+>
+> $$
+> \iiint_V f\,dV=\int_\alpha^\beta\left(\int_{\varphi_1}^{\varphi_2}\left(\int_{\rho_1}^{\rho_2}f(\rho\sin\varphi\cos\theta,\ \rho\sin\varphi\sin\theta,\ \rho\cos\varphi)\,\rho^2\sin\varphi\,d\rho\right)d\varphi\right)d\theta
+> $$
+
+記号と呼び名について、次の点を補う。
+
+- **$\rho\varphi\theta$ 空間.** $\rho$・$\varphi$・$\theta$ を座標とする空間を表す、本章の便宜的な呼び名である。「ロー・ファイ・シータ空間」と読む。
+- **球座標による変数変換.** 点 $(\rho,\varphi,\theta)$ に、球座標の式で定まる $xyz$ 空間の点を対応させる、3 変数の変数変換である。
+
+**証明.** 3 変数の変数変換の公式（承認事項）の 5 つの条件を確かめる。$U=\mathbb{R}^3$ とする。
+
+1. **積分立体.** 三重積分の章で確かめたとおり、直方体 $W$ は縦線立体である。$V$ は仮定より縦線立体である。
+2. **関数の条件.** $x$・$y$・$z$ と表の 9 つの偏導関数は、$\rho$ と、$\sin$・$\cos$ に $\varphi$ や $\theta$ を代入した関数の積である。極座標の場合と同じ理由で、すべて連続である。
+3. **像.** $V$ の定め方による。
+4. **内部で 1 対 1.** $W$ の内部の点では、3 つの座標がすべて区間の両端の間に真にある。とくに $\rho>0$、$0<\varphi<\pi$ である。内部の 2 点を、次のように書く。添字の $\mathrm{A}$・$\mathrm{B}$ は、極座標の場合と同じく 2 点を区別する便宜的な書き方である。
+
+   $$
+   (\rho_{\mathrm{A}},\varphi_{\mathrm{A}},\theta_{\mathrm{A}}),\qquad(\rho_{\mathrm{B}},\varphi_{\mathrm{B}},\theta_{\mathrm{B}})
+   $$
+
+   2 点の像が同じ点 $(x,y,z)$ であるとする。
+   - **$\rho$.** 相互関係を 2 回使うと、$x^2+y^2+z^2=\rho^2$ である。よって $\rho_{\mathrm{A}}$ と $\rho_{\mathrm{B}}$ は、ともに $\sqrt{x^2+y^2+z^2}$ に等しい。
+   - **$\varphi$.** $\cos\varphi_{\mathrm{A}}=\dfrac{z}{\rho_{\mathrm{A}}}=\cos\varphi_{\mathrm{B}}$ である。$\cos$ は $[0,\pi]$ で 1 対 1 だから、$\varphi_{\mathrm{A}}=\varphi_{\mathrm{B}}$ である。
+   - **$\theta$.** $\sin\varphi_{\mathrm{A}}>0$ だから、$z$ 軸からの距離 $r=\rho_{\mathrm{A}}\sin\varphi_{\mathrm{A}}$ は正である。$(x,y)=r(\cos\theta_{\mathrm{A}},\sin\theta_{\mathrm{A}})$ である。同様に $(x,y)=r(\cos\theta_{\mathrm{B}},\sin\theta_{\mathrm{B}})$ である。よって 2 つの角は、どちらも点 $(x,y)$ の偏角である。極座標による二重積分（定理）の証明の手順 4 と同じく、$\theta_{\mathrm{A}}=\theta_{\mathrm{B}}$ である。
+
+5. **ヤコビアン.** 内部の点では $\rho>0$、$\sin\varphi>0$ だから、$J=\rho^2\sin\varphi>0$ である。
+
+右辺の被積分関数は $W$ で連続である。$W$ は直方体だから、直方体の上のフビニの定理より、三重積分は定理の累次積分に等しい。証明を終わる。
+
+**例 7.** 半径 $R$ の球 $V=\{(x,y,z)\mid x^2+y^2+z^2\le R^2\}$ の体積を求める。$W=[0,R]\times[0,\pi]\times[0,2\pi]$ とする。
+
+- **$V$ は縦線立体.** $V$ は、円板 $x^2+y^2\le R^2$ の上で、$-\sqrt{R^2-x^2-y^2}\le z\le\sqrt{R^2-x^2-y^2}$ の範囲の点全体である。$\sqrt{R^2-x^2-y^2}$ は円板で連続だから、$V$ は縦線立体である。
+- **$W$ の像は $V$.** $W$ の点の像では、$x^2+y^2+z^2=\rho^2\le R^2$ である。逆に、$V$ の点は球座標 $(\rho,\varphi,\theta)$ をもち、$\rho\le R$ である。$\theta$ を $0\le\theta<2\pi$ にとれる。$z$ 軸の上の点では $\theta=0$、原点では $\varphi=\theta=0$ ととればよい。
+
+球座標による三重積分（定理）を $f=1$ で使う。被積分関数 $\rho^2\sin\varphi$ は変数を分けた形だから、変数を分けた関数の三重積分（系）より、3 つの定積分の積になる。$\displaystyle\int_0^\pi\sin\varphi\:d\varphi=\bigl[-\cos\varphi\bigr]_0^\pi=2$ である。
+
+$$
+\operatorname{vol}(V)=\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^\pi\sin\varphi\,d\varphi\right)\left(\int_0^R\rho^2\,d\rho\right)=2\pi\cdot2\cdot\frac{R^3}{3}=\frac43\pi R^3
+$$
+
+前提とする知識の球の体積の公式 $\dfrac43\pi R^3$ と一致する。
+
+**例 8.** 上半分の球 $V=\{(x,y,z)\mid x^2+y^2+z^2\le R^2,\ z\ge0\}$ における、高さ $z$ の平均値を求める。$V$ は、円板 $x^2+y^2\le R^2$ の上で $0\le z\le\sqrt{R^2-x^2-y^2}$ の縦線立体である。$W=[0,R]\times\left[0,\tfrac\pi2\right]\times[0,2\pi]$ とし、$W$ の像が $V$ であることを確かめる。
+
+- **$W$ の像は $V$ に含まれる.** 例 7 より $x^2+y^2+z^2\le R^2$ である。$0\le\varphi\le\dfrac\pi2$ では、偏角の範囲の表より $\cos\varphi\ge0$ だから、$z=\rho\cos\varphi\ge0$ である。
+- **$V$ の点は $W$ の像.** 例 7 より、$V$ の点は $\rho\le R$ の球座標をもつ。原点以外の点では $\cos\varphi=\dfrac z\rho\ge0=\cos\dfrac\pi2$ である。$\cos$ は $[0,\pi]$ で狭義単調減少だから、$\varphi\le\dfrac\pi2$ である。
+
+像を確かめたので、球座標による三重積分（定理）で計算する。
+
+- **体積.** 例 7 と同じ計算で、$\varphi$ の積分が $\displaystyle\int_0^{\pi/2}\sin\varphi\:d\varphi=1$ に替わる。$\operatorname{vol}(V)=2\pi\cdot1\cdot\dfrac{R^3}{3}=\dfrac23\pi R^3$ である。
+- **$z$ の三重積分.** $z=\rho\cos\varphi$ だから、被積分関数は $\rho^3\sin\varphi\cos\varphi$ である。$\varphi$ の積分は、$u=\sin\varphi$ と置換すると $\displaystyle\int_0^{\pi/2}\sin\varphi\cos\varphi\:d\varphi=\int_0^1u\:du=\frac12$ である。
+
+  $$
+  \iiint_V z\,dV=\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^{\pi/2}\sin\varphi\cos\varphi\,d\varphi\right)\left(\int_0^R\rho^3\,d\rho\right)=2\pi\cdot\frac12\cdot\frac{R^4}{4}=\frac{\pi R^4}{4}
+  $$
+
+- **平均値.** $\dfrac{\pi R^4/4}{2\pi R^3/3}=\dfrac38R$ である。
+
+高さの平均値は、真ん中の $\dfrac R2$ より小さい。上半分の球は、低い位置ほど水平な切り口が大きく、体積が下に多く集まるからである。
+
+## 例題
+
+### 例題 1
+
+$a>0$・$b>0$ とする。楕円 $\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}=1$ と楕円の内側を合わせた領域 $D$ の面積を、変数変換 $x=ar\cos\theta$、$y=br\sin\theta$ で求めよ。
+
+**解答.** $E=[0,1]\times[0,2\pi]$ とし、2 変数の変数変換の公式（承認事項）の条件を確かめる。$U=\mathbb{R}^2$ とする。$X=\dfrac xa$、$Y=\dfrac yb$ とおく。$X$・$Y$ は本解答だけの便宜的な文字である。
+
+1. **積分領域.** $E$ は長方形である。$D$ の条件は $X^2+Y^2\le1$ であり、$y^2\le b^2\left(1-\dfrac{x^2}{a^2}\right)$ と同じである。右辺が $0$ 以上になるのは $-a\le x\le a$ のときである。よって $D$ は、$-a\le x\le a$、$-b\sqrt{1-\dfrac{x^2}{a^2}}\le y\le b\sqrt{1-\dfrac{x^2}{a^2}}$ の縦線領域である。
+2. **関数の条件.** 極座標による変数変換の $x$・$y$ を、定数 $a$・$b$ 倍しただけである。極座標の場合と同じ理由で、関数と偏導関数は連続である。
+3. **像.** 点 $(x,y)$ が $D$ に属することは、点 $(X,Y)$ が半径 $1$ の円板に属することと同じである。$X=r\cos\theta$、$Y=r\sin\theta$ だから、例 2 より、$E$ の像は $D$ である。
+4. **内部で 1 対 1.** 2 点の像 $(x,y)$ が等しければ、$(X,Y)$ も等しい。極座標による二重積分（定理）の証明の手順 4 より、$E$ の内部の 2 点は等しい。
+5. **ヤコビアン.** $x_r=a\cos\theta$・$x_\theta=-ar\sin\theta$・$y_r=b\sin\theta$・$y_\theta=br\cos\theta$ である。
+
+   $$
+   J=a\cos\theta\cdot br\cos\theta-(-ar\sin\theta)\cdot b\sin\theta=abr
+   $$
+
+   内部の点では $r>0$ だから、$J>0$ である。
+
+公式より、面積は次の値である。
+
+$$
+\iint_D 1\,dA=\int_0^{2\pi}\left(\int_0^1abr\,dr\right)d\theta=2\pi\cdot\frac{ab}{2}=\pi ab
+$$
+
+$a=b$ のとき、半径 $a$ の円板の面積 $\pi a^2$ に一致する。
+
+### 例題 2
+
+円板 $D=\{(x,y)\mid(x-1)^2+y^2\le1\}$ の上で、$\displaystyle\iint_D\sqrt{x^2+y^2}\:dA$ を求めよ。
+
+**解答.** $D$ は、中心 $(1,0)$・半径 $1$ の円板であり、原点を通る。図 11 に描く。
+
+<figure>
+  <ContourPlot
+    xMin={-0.5}
+    xMax={2.5}
+    yMin={-1.4}
+    yMax={1.4}
+    grid={false}
+    xTicks={[1]}
+    yTicks={[-1, 1]}
+    regions={[{ kind: "polar", r: [0, (t) => 2 * Math.cos(t)], theta: [-Math.PI / 2, Math.PI / 2], label: "D", labelAt: { x: 1.3, y: -0.45 } }]}
+    segments={[
+      {
+        from: { x: 0, y: 0 },
+        to: { x: 2 * Math.cos(0.6) * Math.cos(0.6), y: 2 * Math.cos(0.6) * Math.sin(0.6) },
+        dashed: false,
+        color: "#ea580c",
+        label: "r\\le2\\cos\\theta",
+        labelAt: { x: 1.05, y: 0.3 },
+      },
+    ]}
+    ariaLabel="xy 平面の円板 D。中心 (1,0)・半径 1 の円の内側を青く塗ってあり、円は原点を通る。原点から斜め上へ、円周まで橙の線分を引き、偏角 θ の向きで r が 0 から 2cosθ まで動くことを示す。"
+  />
+  <figcaption>
+    <em>
+      図 11. 例題 2 の円板 $D$。偏角 $\theta$（$-\tfrac\pi2\le\theta\le\tfrac\pi2$）を固定すると、$r$ は原点から円周まで、$0\le r\le2\cos\theta$ の範囲を動く（橙の線分）。
+    </em>
+  </figcaption>
+</figure>
+
+1. **$D$ は縦線領域.** $D$ は、重積分の章の円板を中心 $(1,0)$ へ移した図形である。同じ議論で、$D$ は $0\le x\le2$、$-\sqrt{1-(x-1)^2}\le y\le\sqrt{1-(x-1)^2}$ の縦線領域である。
+2. **極座標で表す.** $(x-1)^2+y^2\le1$ を展開すると、$x^2+y^2\le2x$ である。極座標では $r^2\le2r\cos\theta$ になる。
+   - **原点以外の点.** $r>0$ で割ると、$r\le2\cos\theta$ である。$r>0$ だから $\cos\theta>0$ である。偏角を主値の範囲 $-\pi<\theta\le\pi$ にとり、$\cos\theta>0$ となる範囲を調べる。
+     - **$\dfrac\pi2\le\theta\le\pi$.** $\theta=\dfrac\pi2$ では、単位円の点が $(0,1)$ だから $\cos\theta=0$ である。$\dfrac\pi2<\theta\le\pi$ では、偏角の範囲の表より $\cos\theta<0$ である。
+     - **$-\pi<\theta\le-\dfrac\pi2$.** $\theta+2\pi$ は $\pi<\theta+2\pi\le\dfrac{3\pi}{2}$ にあり、同じ動径を表す。$\theta+2\pi=\dfrac{3\pi}{2}$ では単位円の点が $(0,-1)$ であり、ほかは表より $\cos$ が負である。よって $\cos\theta\le0$ である。
+
+     残りの $-\dfrac\pi2<\theta<\dfrac\pi2$ が、偏角の範囲である。
+
+   - **原点.** $r=0$ で表せる。
+
+   よって $D$ の点は、$h_1=0$・$h_2(\theta)=2\cos\theta$・$\alpha=-\dfrac\pi2$・$\beta=\dfrac\pi2$ とした $E$ の点の像である。逆に、$E$ の点の像は $r^2\le2r\cos\theta$ を満たし、$D$ に属する。$h_2$ は連続であり、偏角の範囲の表より $[\alpha,\beta]$ で $0\le h_2$ である。$\beta-\alpha=\pi\le2\pi$ である。
+
+3. **計算する.** 被積分関数は $\sqrt{x^2+y^2}=r$ である。極座標による二重積分（定理）より、次のとおりである。
+
+   $$
+   \iint_D\sqrt{x^2+y^2}\,dA=\int_{-\pi/2}^{\pi/2}\left(\int_0^{2\cos\theta}r\cdot r\,dr\right)d\theta=\int_{-\pi/2}^{\pi/2}\frac{8\cos^3\theta}{3}\,d\theta
+   $$
+
+4. **$\cos^3\theta$ の積分.** 相互関係より $\cos^3\theta=(1-\sin^2\theta)\cos\theta$ である。$u=\sin\theta$ と置換する。
+
+   $$
+   \int_{-\pi/2}^{\pi/2}\cos^3\theta\,d\theta=\int_{-1}^{1}(1-u^2)\,du=2-\frac23=\frac43
+   $$
+
+求める値は $\dfrac83\cdot\dfrac43=\dfrac{32}{9}$ である。
+
+### 例題 3
+
+半径 $R$ の球と、$z$ 軸のまわりの円錐ではさまれた、次の立体 $V$ の体積を求めよ。
+
+$$
+V=\{(x,y,z)\mid\sqrt{x^2+y^2}\le z,\ x^2+y^2+z^2\le R^2\}
+$$
+
+球座標と円柱座標の 2 通りで求め、結果を比べよ。
+
+**解答.** 立体を図 12 に描く。境界は、円錐形の曲面 $z=\sqrt{x^2+y^2}$ の一部と、球面 $x^2+y^2+z^2=R^2$ の一部である。
+
+<figure>
+  <SurfacePlot
+    surfaces={[
+      {
+        kind: "parametric",
+        fn: (s, t) => ({ x: s * Math.sin(Math.PI / 4) * Math.cos(t), y: s * Math.sin(Math.PI / 4) * Math.sin(t), z: s * Math.cos(Math.PI / 4) }),
+        u: [0, 1.5],
+        v: [0, 2 * Math.PI],
+        color: "#10b981",
+        opacity: 0.35,
+        resolution: [6, 32],
+        meshEvery: 2,
+      },
+      {
+        kind: "parametric",
+        fn: (p, t) => ({ x: 1.5 * Math.sin(p) * Math.cos(t), y: 1.5 * Math.sin(p) * Math.sin(t), z: 1.5 * Math.cos(p) }),
+        u: [0, Math.PI / 4],
+        v: [0, 2 * Math.PI],
+        color: "#3b82f6",
+        opacity: 0.35,
+        resolution: [6, 32],
+        meshEvery: 2,
+      },
+    ]}
+    curves={[
+      {
+        fn: (t) => ({ x: 0.25 * Math.sin(t), y: 0, z: 0.25 * Math.cos(t) }),
+        t: [0, Math.PI / 4],
+        color: "#7c3aed",
+        label: "\\tfrac{\\pi}{4}",
+        labelAt: Math.PI / 12,
+        hidden: "show",
+      },
+    ]}
+    segments={[
+      {
+        from: { x: 0, y: 0, z: 0 },
+        to: { x: 1.5 * Math.sin(Math.PI / 4), y: 0, z: 1.5 * Math.cos(Math.PI / 4) },
+        color: "#ea580c",
+        width: 2.2,
+        hidden: "show",
+      },
+    ]}
+    xRange={[-1.6, 1.8]}
+    yRange={[-1.6, 1.8]}
+    zRange={[0, 1.9]}
+    floorGrid={false}
+    ariaLabel="原点を頂点とし z 軸のまわりに上へ開く円錐の面（緑）と、円錐の上にかぶさる球面の一部（青）で囲まれた立体。円錐の母線の 1 本に沿って、原点から縁まで長さ R の橙の線分を引く。z 軸と橙の線分の間の角 π/4 を紫の弧で示す。上のふたは、原点を中心とする半径 1.5 の球面のうち、z 軸から 45 度以内の部分である。"
+  />
+  <figcaption>
+    <em>
+      図 12. 例題 3 の立体（$R=1.5$）。下側の境界は、$z$ 軸と角 $\tfrac\pi4$（紫の弧）をなす円錐形の面 $z=\sqrt{x^2+y^2}$（緑）である。上側の境界は、球面 $x^2+y^2+z^2=R^2$ のうち天頂角が $\tfrac\pi4$ 以下の部分（青）である。橙の線分は、原点から縁までの長さ $R$ の線分である。球座標では $0\le\rho\le R$、$0\le\varphi\le\tfrac\pi4$、$0\le\theta\le2\pi$ の直方体に対応する。
+    </em>
+  </figcaption>
+</figure>
+
+まず、$V$ が縦線立体であることを確かめる。$V$ は、円板 $x^2+y^2\le\dfrac{R^2}{2}$ の上で、$\sqrt{x^2+y^2}\le z\le\sqrt{R^2-x^2-y^2}$ の範囲の点全体である。
+
+- **$V$ の点は範囲に入る.** $V$ の点では $z\ge\sqrt{x^2+y^2}\ge0$ であり、$z^2\le R^2-x^2-y^2$ である。0 以上の数の大小と 2 乗（定理）より、$z\le\sqrt{R^2-x^2-y^2}$ である。右辺が $0$ のときは、$z^2\le0$ より $z=0$ となり、同じ不等式が成り立つ。さらに $x^2+y^2\le z^2\le R^2-x^2-y^2$ だから、$x^2+y^2\le\dfrac{R^2}{2}$ である。
+- **範囲の点は $V$ の点.** 0 以上の数の不等式 $\sqrt{x^2+y^2}\le z\le\sqrt{R^2-x^2-y^2}$ の両辺を 2 乗すると、$z^2\le R^2-x^2-y^2$ を得る。
+- **下端と上端.** 2 つの関数は円板で連続である。円板の点では $R^2-x^2-y^2\ge\dfrac{R^2}{2}>0$ であり、$x^2+y^2\le R^2-x^2-y^2$ である。0 以上の数の大小と 2 乗（定理）より、下端は上端以下である。
+
+2 つの方法で体積を求める。
+
+- **球座標.** $W=[0,R]\times\left[0,\tfrac\pi4\right]\times[0,2\pi]$ とする。$W$ の像が $V$ であることを確かめる。
+  - **$W$ の像は $V$ に含まれる.** $\rho\le R$ だから $x^2+y^2+z^2\le R^2$ である。$\sin$ の増減と $\cos$ の増減より、$0\le\varphi\le\dfrac\pi4$ では $\sin\varphi\le\sin\dfrac\pi4=\cos\dfrac\pi4\le\cos\varphi$ である。よって $\sqrt{x^2+y^2}=\rho\sin\varphi\le\rho\cos\varphi=z$ である。
+  - **$V$ の点は $W$ の像.** 原点は $\rho=0$ の点の像である。原点以外の $V$ の点では $z\ge\sqrt{x^2+y^2}\ge0$ だから、$2z^2\ge x^2+y^2+z^2=\rho^2>0$ である。0 以上の数の大小と 2 乗（定理）より $\sqrt2\:z\ge\rho$ であり、$\cos\varphi=\dfrac z\rho\ge\dfrac{1}{\sqrt2}=\cos\dfrac\pi4$ である。$\cos$ は $[0,\pi]$ で狭義単調減少だから、$\varphi\le\dfrac\pi4$ である。
+
+  球座標による三重積分（定理）と、変数を分けた関数の三重積分（系）より、次のとおりである。$\varphi$ の積分は $\bigl[-\cos\varphi\bigr]_0^{\pi/4}=1-\dfrac{\sqrt2}{2}$ である。
+
+  $$
+  \operatorname{vol}(V)=\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^{\pi/4}\sin\varphi\,d\varphi\right)\left(\int_0^R\rho^2\,d\rho\right)=2\pi\left(1-\frac{\sqrt2}{2}\right)\frac{R^3}{3}=\frac{(2-\sqrt2)\pi R^3}{3}
+  $$
+
+- **円柱座標.** 底面の円板は、$E=\left[0,\tfrac{R}{\sqrt2}\right]\times[0,2\pi]$ の像である。円柱座標による三重積分（定理）より、次のとおりである。
+
+  $$
+  \operatorname{vol}(V)=\int_0^{2\pi}\left(\int_0^{R/\sqrt2}\left(\sqrt{R^2-r^2}-r\right)r\,dr\right)d\theta
+  $$
+
+  連鎖律より $\left(-\dfrac13(R^2-r^2)^{3/2}\right)'=r\sqrt{R^2-r^2}$ である。$\left(\dfrac{R^2}{2}\right)^{3/2}=\dfrac{R^3}{2\sqrt2}$ を使う。
+
+  $$
+  \int_0^{R/\sqrt2}r\sqrt{R^2-r^2}\,dr=\frac{R^3}{3}-\frac{R^3}{6\sqrt2},\qquad\int_0^{R/\sqrt2}r^2\,dr=\frac{R^3}{6\sqrt2}
+  $$
+
+  差は $\dfrac{R^3}{3}\left(1-\dfrac{1}{\sqrt2}\right)$ である。$\dfrac{1}{\sqrt2}=\dfrac{\sqrt2}{2}$ だから、$2\pi$ 倍すると次の値になる。
+
+  $$
+  \frac{2\pi R^3}{3}\left(1-\frac{\sqrt2}{2}\right)=\frac{(2-\sqrt2)\pi R^3}{3}
+  $$
+
+2 通りの値は一致する。球座標では $\rho$・$\varphi$・$\theta$ の範囲がすべて定数になり、計算が短い。
+
+## 演習問題
+
+### 問題 1
+
+次の値を求めよ。
+
+1. $\det\begin{pmatrix}3&1\\2&4\end{pmatrix}$
+2. $\det\begin{pmatrix}1&2&0\\0&1&3\\2&0&1\end{pmatrix}$
+3. 平面ベクトル $(4,1)$・$(1,3)$ が張る平行四辺形の面積
+4. 次の 3 本の空間ベクトルが張る平行六面体の体積
+
+   $$
+   \vec{a}=(1,1,3),\qquad\vec{b}=(1,0,0),\qquad\vec{c}=(1,2,0)
+   $$
+
+<details>
+<summary>解答を表示</summary>
+
+1. $3\cdot4-1\cdot2=10$ である。
+2. 1 行目で展開する。
+
+   $$
+   1\cdot(1\cdot1-3\cdot0)-2\cdot(0\cdot1-3\cdot2)+0=1+12=13
+   $$
+
+3. 2 本のベクトルを列に並べた行列式は $4\cdot3-1\cdot1=11$ であり、$0$ でない。2 次の行列式と平行四辺形の面積（定理）より、面積は $11$ である。
+4. $\vec{a}$・$\vec{b}$・$\vec{c}$ の成分を、順に 1 列目・2 列目・3 列目へ並べる。1 行目で展開する。
+
+   $$
+   \det\begin{pmatrix}1&1&1\\1&0&2\\3&0&0\end{pmatrix}=1\cdot(0\cdot0-2\cdot0)-1\cdot(1\cdot0-2\cdot3)+1\cdot(1\cdot0-0\cdot3)=6
+   $$
+
+   $\vec{b}$・$\vec{c}$ は零ベクトルでなく平行でない。$\vec{b}$・$\vec{c}$ を含む平面は床（$z=0$ の平面）であり、$\vec{a}$ の終点 $(1,1,3)$ は床の上にない。3 次の行列式と平行六面体の体積（定理）より、体積は $6$ である。
+
+</details>
+
+### 問題 2
+
+次の変数変換のヤコビアンを求めよ。
+
+1. $x=3u-v$、$y=u+2v$
+2. $x=u^2-v^2$、$y=2uv$
+3. 球座標で、変数の順を $(\rho,\theta,\varphi)$ に替えたもの
+
+<details>
+<summary>解答を表示</summary>
+
+1. $J=3\cdot2-(-1)\cdot1=7$ である。
+2. $x_u=2u$・$x_v=-2v$・$y_u=2v$・$y_v=2u$ である。
+
+   $$
+   J=2u\cdot2u-(-2v)\cdot2v=4(u^2+v^2)
+   $$
+
+3. 変数の順を替えると、行列の 2 列目と 3 列目が入れ替わる。3 次の行列式と外積（定理）より、行列式は $\vec{a}\cdot(\vec{b}\times\vec{c})$ と書ける。2 列目と 3 列目の入れ替えは、$\vec{b}$ と $\vec{c}$ の入れ替えである。反交換律より $\vec{c}\times\vec{b}=-(\vec{b}\times\vec{c})$ だから、行列式は符号だけが変わる。ヤコビアンは $-\rho^2\sin\varphi$ である。絶対値 $\rho^2\sin\varphi$ は変わらないので、三重積分の値は変数の順によらない。
+
+</details>
+
+### 問題 3
+
+円環の 4 分の 1 の領域 $D=\{(x,y)\mid 1\le x^2+y^2\le4,\ x\ge0,\ y\ge0\}$ の上で、$\displaystyle\iint_D xy\:dA$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+まず、定理の条件を確かめる。
+
+- **縦線領域.** $D$ の点は $0\le x\le2$ を満たす。例 5 と同じ議論で、$D$ は $g_2(x)=\sqrt{4-x^2}$ と、$0\le x\le1$ で $\sqrt{1-x^2}$・$1\le x\le2$ で $0$ をとる $g_1$ による縦線領域である。
+- **$E$ の像は $D$ に含まれる.** $E=[1,2]\times\left[0,\tfrac\pi2\right]$ とする。$E$ の点の像は $1\le x^2+y^2\le4$ を満たす。偏角の範囲の表より、$0\le\theta\le\dfrac\pi2$ では $\cos\theta\ge0$・$\sin\theta\ge0$ だから、$x\ge0$・$y\ge0$ である。
+- **$D$ の点は $E$ の像.** $D$ の点の偏角を $0\le\theta<2\pi$ にとる。$\sin\theta=\dfrac yr\ge0$ だから、表より $0\le\theta\le\pi$ である。さらに $\cos\theta=\dfrac xr\ge0$ だから、表より $\dfrac\pi2<\theta\le\pi$ は除かれ、$0\le\theta\le\dfrac\pi2$ である。
+
+被積分関数は $xy=r^2\cos\theta\sin\theta$ である。極座標による二重積分（定理）と、変数を分けた関数の二重積分（系）を使う。
+
+$$
+\iint_D xy\,dA=\left(\int_0^{\pi/2}\sin\theta\cos\theta\,d\theta\right)\left(\int_1^2r^3\,dr\right)
+$$
+
+$u=\sin\theta$ と置換すると、$\displaystyle\int_0^{\pi/2}\sin\theta\cos\theta\:d\theta=\int_0^1u\:du=\frac12$ である。$\displaystyle\int_1^2r^3\:dr=\frac{16-1}{4}=\frac{15}{4}$ である。求める値は $\dfrac12\cdot\dfrac{15}{4}=\dfrac{15}{8}$ である。
+
+</details>
+
+### 問題 4
+
+半径 $1$ の円板 $D=\{(x,y)\mid x^2+y^2\le1\}$ の上で、$\displaystyle\iint_D\frac{1}{1+x^2+y^2}\:dA$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+$\dfrac{1}{1+x^2+y^2}$ は、分母が $0$ にならない有理関数だから、多項式と有理関数の連続性（定理）より連続である。$D$ と $E=[0,1]\times[0,2\pi]$ は、例 2 で $R=1$ とした場合と同じであり、定理の条件を満たす。被積分関数は $\dfrac{1}{1+r^2}$ になる。
+
+$$
+\iint_D\frac{1}{1+x^2+y^2}\,dA=\int_0^{2\pi}\left(\int_0^1\frac{r}{1+r^2}\,dr\right)d\theta
+$$
+
+自然対数の導関数と連鎖律より、$\left(\dfrac12\ln(1+r^2)\right)'=\dfrac12\cdot\dfrac{2r}{1+r^2}=\dfrac{r}{1+r^2}$ である。内側の積分は $\dfrac12\ln2-\dfrac12\ln1=\dfrac12\ln2$ である。求める値は $2\pi\cdot\dfrac12\ln2=\pi\ln2$ である。
+
+</details>
+
+### 問題 5
+
+$x=r\cos\theta$、$y=r\sin\theta$、$E=[0,1]\times[0,4\pi]$ とする。$\displaystyle\iint_E r\:dr\:d\theta$ の値と、$E$ の像の面積を比べよ。2 つが一致しない理由を、変数変換の公式の条件で説明せよ。
+
+<details>
+<summary>解答を表示</summary>
+
+$\displaystyle\iint_E r\:dr\:d\theta=\int_0^{4\pi}\frac12\:d\theta=2\pi$ である。$E$ の像は半径 $1$ の円板であり、面積は $\pi$ である。
+
+$\theta$ の範囲の幅が $4\pi$ あり、円板の点が 2 回ずつ覆われる。例えば $E$ の内部の 2 点 $\left(\tfrac12,\tfrac\pi2\right)$・$\left(\tfrac12,\tfrac{5\pi}{2}\right)$ は、同じ点 $\left(0,\tfrac12\right)$ に写る。条件 4（内部で 1 対 1）が成り立たないので、公式は使えない。極座標による二重積分（定理）の条件 $\beta-\alpha\le2\pi$ も満たさない。
+
+</details>
+
+### 問題 6
+
+円錐の立体 $V=\{(x,y,z)\mid\sqrt{x^2+y^2}\le z\le1\}$ について、体積と、高さ $z$ の平均値を円柱座標で求めよ。体積を、三重積分の章の問題 5 の値と比べよ。
+
+<details>
+<summary>解答を表示</summary>
+
+$V$ の点では $z\le1$ だから $\sqrt{x^2+y^2}\le1$ である。$V$ は、半径 $1$ の円板 $D$ の上で $\sqrt{x^2+y^2}\le z\le1$ の縦線立体である。$\sqrt{x^2+y^2}$ は連続であり、$D$ で $1$ 以下である。$D$ は $E=[0,1]\times[0,2\pi]$ の像であり、下側の関数は $r$ になる。
+
+- **体積.** 円柱座標による三重積分（定理）より、次のとおりである。
+
+  $$
+  \operatorname{vol}(V)=\int_0^{2\pi}\left(\int_0^1(1-r)\,r\,dr\right)d\theta=2\pi\left(\frac12-\frac13\right)=\frac\pi3
+  $$
+
+  三重積分の章の問題 5 の値 $\dfrac\pi3$ と一致する。
+
+- **$z$ の三重積分.** 内側の積分は $\displaystyle\int_r^1z\:dz=\frac{1-r^2}{2}$ である。
+
+  $$
+  \iiint_V z\,dV=\int_0^{2\pi}\left(\int_0^1\frac{1-r^2}{2}\,r\,dr\right)d\theta=2\pi\cdot\frac12\left(\frac12-\frac14\right)=\frac\pi4
+  $$
+
+- **平均値.** $\dfrac{\pi/4}{\pi/3}=\dfrac34$ である。円錐は上ほど広がるので、高さの平均値は真ん中の $\dfrac12$ より大きい。
+
+</details>
+
+### 問題 7
+
+半径 $R$ の球 $V=\{(x,y,z)\mid x^2+y^2+z^2\le R^2\}$ の上で、$\displaystyle\iiint_V(x^2+y^2+z^2)\:dV$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+例 7 と同じく、$W=[0,R]\times[0,\pi]\times[0,2\pi]$ の像が $V$ である。被積分関数は $x^2+y^2+z^2=\rho^2$ になる。球座標による三重積分（定理）と、変数を分けた関数の三重積分（系）を使う。
+
+$$
+\iiint_V(x^2+y^2+z^2)\,dV=\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^\pi\sin\varphi\,d\varphi\right)\left(\int_0^R\rho^4\,d\rho\right)=2\pi\cdot2\cdot\frac{R^5}{5}=\frac{4\pi R^5}{5}
+$$
+
+</details>
+
+## まとめ
+
+本章は、行列式を局所的に導入し、変数の置き換えで面積と体積が何倍になるかをヤコビアンで表した。置換積分を二重積分・三重積分へ広げ、極座標・円柱座標・球座標で計算した。要点を振り返る。
+
+- **行列式**：$\det\begin{pmatrix}p&q\\r&s\end{pmatrix}=ps-qr$ である。3 次の行列式は、1 行目で展開して定めた。
+  - 2 次の行列式の絶対値は、列のベクトルが張る平行四辺形の面積である。外積の大きさから導いた。
+  - 3 次の行列式は $\vec{a}\cdot(\vec{b}\times\vec{c})$ に等しく、絶対値は平行六面体の体積である。
+- **1 次式の変換**：$x=au+bv$、$y=cu+dv$（$ad-bc\neq0$）は 1 対 1 であり、長方形を平行四辺形に写して面積を $\lvert ad-bc\rvert$ 倍にする。
+- **ヤコビアン**：$J=\dfrac{\partial(x,y)}{\partial(u,v)}=x_uy_v-x_vy_u$ である。小さな長方形の像の面積は、およそ $\lvert J\rvert\:\Delta u\:\Delta v$ である。偏微分係数による辺の一次近似と、像を平行四辺形とみなす直観から導いた。
+- **2 変数の変数変換の公式**（承認事項）：$\displaystyle\iint_D f\:dx\:dy=\iint_E f(x(u,v),y(u,v))\:\lvert J\rvert\:du\:dv$ である。
+  - 条件は 5 つある。積分領域・関数の連続性と偏導関数・像・内部の 1 対 1・内部の $J\neq0$ である。境界の上の例外は許される。
+  - 1 変数の $dx=\varphi'(t)\:dt$ に対し、領域に向きが無いので $\lvert J\rvert$ を掛ける。
+- **極座標**：原点と異なる点を、原点からの距離 $r$ と始線からの角 $\theta$ で表す。積分では $r=0$ も含めた変数変換 $x=r\cos\theta$、$y=r\sin\theta$ を使い、$J=r$ である。円板の面積 $\pi R^2$ を再び導き、$e^{-(x^2+y^2)}$ のように $x$・$y$ のままでは原始関数が求まらない積分も計算した。
+- **3 変数**：ヤコビアンは 3 次の行列式であり、公式は承認事項とした。
+  - 円柱座標 $(r,\theta,z)$ では $J=r$ である。三重積分の章の値 $\dfrac\pi2$・$\dfrac\pi3$ を再び導いた。
+  - 球座標 $(\rho,\varphi,\theta)$（$\varphi$ は天頂角、$\theta$ は方位角）では $J=\rho^2\sin\varphi$ である。球の体積 $\dfrac43\pi R^3$ が、前提とする知識の公式と一致した。
+
+## 参考文献
+
+重積分の変数変換をさらに学ぶための一次資料を挙げる。
+
+- C. G. J. Jacobi, _De determinantibus functionalibus_, J. Reine Angew. Math. 22（1841 年）、319–359 頁。関数の組から作る行列式（ヤコビアン）を体系的に論じた論文である。
+- 高木貞治『解析概論（改訂第 3 版）』岩波書店、1983 年。重積分の変数変換と、極座標・球座標による計算を扱う。
+- 杉浦光夫『解析入門 I』東京大学出版会、1980 年。変数変換の公式を、一般の次元で成立条件とともに証明する。
+- T. M. Apostol, _Calculus, Vol. II_（2nd ed.）Wiley、1969 年。行列式の幾何的な意味と、二重積分・三重積分の変数変換を扱う標準的な教科書である。
+- ISO 80000-2:2019, _Quantities and units — Part 2: Mathematics_. 数学の記号の国際規格であり、球座標の記号の約束を含む。
+
+[^bars]: 縦線の書き方では、2 次の行列式を $\begin{vmatrix}p&q\\r&s\end{vmatrix}$ と書く。絶対値の記号 $\lvert\ \rvert$ と形が似ているため、本章では使わない。
+
+[^corner]: 4 つ目の頂点 $(u_0+\Delta u,v_0+\Delta v)$ の像の位置を見積もるには、2 つの変数を同時に動かしたときの変化を見積もる必要がある。偏微分係数は 1 つの変数だけを動かしたときの変化を表すので、本章の道具だけでは見積もりを示せない。見積もりには、偏導関数が点の近くで連続であるといった条件も要る。1 点で偏微分係数が存在するだけでは、4 つ目の頂点の像が大きくずれる変換もある。
+
+[^jacobi]: 名前は、ドイツの数学者ヤコビ（C. G. J. Jacobi）にちなむ。ヤコビは 1841 年の論文で、関数の組の偏微分係数から作る行列式を体系的に調べた。日本語では関数行列式とも呼ぶ。
+
+[^iso]: 数学の記号の国際規格 ISO 80000-2 は、球座標を $(r,\vartheta,\varphi)$ と書き、$\vartheta$（シータの別の字形）を天頂角、$\varphi$ を方位角とする。本章とは $\theta$ と $\varphi$ の役割が入れ替わる。文献の式を読むときは、角の定義を確かめる。

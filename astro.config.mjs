@@ -83,6 +83,10 @@ export default defineConfig({
               label: "微分積分",
               items: [{ autogenerate: { directory: "math/calculus" } }],
             },
+            {
+              label: "多変数微積分",
+              items: [{ autogenerate: { directory: "math/multivariable-calculus" } }],
+            },
           ],
         },
       ],
