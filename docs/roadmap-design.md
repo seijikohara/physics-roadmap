@@ -220,17 +220,17 @@
 
 ### ベクトル解析（M-VCAL）
 
-| ID        | タイトル                   | 扱う内容                                                                                                                                                                          | 前提                      |
-| --------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| M-VCAL-01 | スカラー場とベクトル場     | スカラー場 $\phi(\mathbf{r})$、ベクトル場 $\mathbf{F}(\mathbf{r})$、場の可視化、場としての勾配 $\nabla\phi$                                                                       | M-MVC-08                  |
-| M-VCAL-02 | 発散                       | ナブラ演算子 $\nabla$ の導入、発散 $\nabla\cdot\mathbf{F}$、湧き出しの密度としての意味                                                                                            | M-VCAL-01                 |
-| M-VCAL-03 | 回転                       | 回転 $\nabla\times\mathbf{F}$、渦の密度としての意味                                                                                                                               | M-VCAL-02、ベクトルの外積 |
-| M-VCAL-04 | ベクトル微分公式           | $\nabla\times(\nabla\phi)=\mathbf{0}$、$\nabla\cdot(\nabla\times\mathbf{F})=0$、ラプラシアン $\nabla^2\phi$                                                                       | M-VCAL-02、M-VCAL-03      |
-| M-VCAL-05 | 線積分                     | スカラー・ベクトルの線積分 $\int_C\mathbf{F}\cdot d\mathbf{r}$、仕事                                                                                                              | M-MVC-12、媒介変数表示    |
-| M-VCAL-06 | 保存場とポテンシャル       | 保存場、$\mathbf{F}=\nabla\phi$、経路非依存、$\nabla\times\mathbf{F}=\mathbf{0}$                                                                                                  | M-VCAL-03、M-VCAL-05      |
-| M-VCAL-07 | 面積分とフラックス         | 面積分 $\iint_S\mathbf{F}\cdot d\mathbf{S}$、法線ベクトル、フラックス                                                                                                             | M-MVC-13、M-VCAL-05       |
-| M-VCAL-08 | グリーンの定理             | $\oint_C(P\,dx+Q\,dy)=\iint_D(Q_x-P_y)\,dA$                                                                                                                                       | M-VCAL-05、M-MVC-12       |
-| M-VCAL-09 | ストークスの定理と発散定理 | ストークス $\iint_S(\nabla\times\mathbf{F})\cdot d\mathbf{S}=\oint_C\mathbf{F}\cdot d\mathbf{r}$、発散定理 $\iiint_V\nabla\cdot\mathbf{F}\,dV=\iint_S\mathbf{F}\cdot d\mathbf{S}$ | M-VCAL-07、M-VCAL-08      |
+| ID        | タイトル                   | 扱う内容                                                                                                                                                                          | 前提                           |
+| --------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| M-VCAL-01 | スカラー場とベクトル場     | スカラー場 $\phi(\mathbf{r})$、ベクトル場 $\mathbf{F}(\mathbf{r})$、場の可視化、場としての勾配 $\nabla\phi$                                                                       | M-MVC-08                       |
+| M-VCAL-02 | 発散                       | ナブラ演算子 $\nabla$ の導入、発散 $\nabla\cdot\mathbf{F}$、湧き出しの密度としての意味                                                                                            | M-VCAL-01                      |
+| M-VCAL-03 | 回転                       | 回転 $\nabla\times\mathbf{F}$、渦の密度としての意味                                                                                                                               | M-VCAL-02、ベクトルの外積      |
+| M-VCAL-04 | ベクトル微分公式           | $\nabla\times(\nabla\phi)=\mathbf{0}$、$\nabla\cdot(\nabla\times\mathbf{F})=0$、ラプラシアン $\nabla^2\phi$                                                                       | M-VCAL-02、M-VCAL-03、M-MVC-05 |
+| M-VCAL-05 | 線積分                     | スカラー・ベクトルの線積分 $\int_C\mathbf{F}\cdot d\mathbf{r}$、弧長、曲線の向きと符号                                                                                            | M-VCAL-01、M-MVC-12            |
+| M-VCAL-06 | 保存場とポテンシャル       | 保存場、$\mathbf{F}=\nabla\phi$、経路非依存、$\nabla\times\mathbf{F}=\mathbf{0}$                                                                                                  | M-VCAL-04、M-VCAL-05           |
+| M-VCAL-07 | 面積分とフラックス         | 面積分 $\iint_S\mathbf{F}\cdot d\mathbf{S}$、法線ベクトル、フラックス                                                                                                             | M-MVC-14、M-VCAL-05            |
+| M-VCAL-08 | グリーンの定理             | $\oint_C(P\,dx+Q\,dy)=\iint_D(Q_x-P_y)\,dA$、循環と湧き出しの密度としての回転・発散                                                                                               | M-VCAL-05、M-VCAL-03、M-MVC-12 |
+| M-VCAL-09 | ストークスの定理と発散定理 | ストークス $\iint_S(\nabla\times\mathbf{F})\cdot d\mathbf{S}=\oint_C\mathbf{F}\cdot d\mathbf{r}$、発散定理 $\iiint_V\nabla\cdot\mathbf{F}\,dV=\iint_S\mathbf{F}\cdot d\mathbf{S}$ | M-VCAL-07、M-VCAL-08、M-MVC-05 |
 
 ### 線形代数（M-LIN）
 
