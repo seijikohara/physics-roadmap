@@ -1,0 +1,2183 @@
+---
+title: 面積分とフラックス
+description: 曲面を媒介変数表示 r(u,v)（(u,v)∈E）で表し、接ベクトル r_u・r_v と法線ベクトル r_u×r_v、滑らかな曲面・区分的に滑らかな曲面を定める。曲面積 ∬_E|r_u×r_v|dudv を定めて球面・円柱面・円錐面・グラフの曲面で計算し、媒介変数の取り替えで値が変わらないことを示す。スカラー場の面積分 ∬_S f dS と曲面に沿った平均値、曲面の向きと外向き、ベクトル場の面積分であるフラックス ∬_S F·n dS を定め、向きを反転すると符号が変わることを調べる。球面・半球面・円柱の表面・立方体の表面を通るフラックスを計算する。
+sidebar:
+  order: 7
+---
+
+import ContourPlot from "../../../../components/ContourPlot";
+import FlowChart from "../../../../components/FlowChart";
+import SurfacePlot from "../../../../components/SurfacePlot";
+
+export const sph = (a, p, t) => ({ x: a * Math.sin(p) * Math.cos(t), y: a * Math.sin(p) * Math.sin(t), z: a * Math.cos(p) });
+export const sphPhi = (a, p, t) => ({ x: a * Math.cos(p) * Math.cos(t), y: a * Math.cos(p) * Math.sin(t), z: -a * Math.sin(p) });
+export const sphTheta = (a, p, t) => ({ x: -a * Math.sin(p) * Math.sin(t), y: a * Math.sin(p) * Math.cos(t), z: 0 });
+export const plus = (p, q, s) => ({ x: p.x + s * q.x, y: p.y + s * q.y, z: p.z + s * q.z });
+export const tangentPatch = (a, p, t, s) =>
+  [
+    [1, 1],
+    [1, -1],
+    [-1, -1],
+    [-1, 1],
+  ].map(([i, j]) => plus(plus(sph(a, p, t), sphPhi(a, p, t), i * s), sphTheta(a, p, t), j * s));
+export const mobius = (u, v) => ({ x: (1 + v * Math.cos(u / 2)) * Math.cos(u), y: (1 + v * Math.cos(u / 2)) * Math.sin(u), z: v * Math.sin(u / 2) });
+export const mobiusN = (u) => ({ x: Math.cos(u) * Math.sin(u / 2), y: Math.sin(u) * Math.sin(u / 2), z: -Math.cos(u / 2) });
+export const sphGrid = (a, phis, thetas) => phis.flatMap((p) => thetas.map((t) => sph(a, p, t)));
+export const inverseSquare = (x, y, z) => {
+  const s = Math.pow(x * x + y * y + z * z, 1.5);
+  return s < 1e-9 ? null : { x: x / s, y: y / s, z: z / s };
+};
+export const hemiPts = [
+  { x: 0, y: 0, z: 1 },
+  ...[0, 1, 2, 3].map((k) => ({ x: 0.6 * Math.cos((k * Math.PI) / 2), y: 0.6 * Math.sin((k * Math.PI) / 2), z: 0.8 })),
+  ...[0, 1, 2, 3].map((k) => ({ x: 0.9 * Math.cos(Math.PI / 4 + (k * Math.PI) / 2), y: 0.9 * Math.sin(Math.PI / 4 + (k * Math.PI) / 2), z: Math.sqrt(0.19) })),
+];
+export const inK = (p, uv) => uv.u > Math.PI / 4 && Math.PI / 2 > uv.u && Math.PI / 4 > uv.v;
+export const silhouette = (a, n) => {
+  const A = (35 * Math.PI) / 180;
+  const E = (30 * Math.PI) / 180;
+  const e1 = { x: -Math.sin(A), y: Math.cos(A), z: 0 };
+  const e2 = { x: -Math.cos(A) * Math.sin(E), y: -Math.sin(A) * Math.sin(E), z: Math.cos(E) };
+  return Array.from({ length: n }, (_, k) => {
+    const t = (2 * Math.PI * k) / n;
+    return { x: a * (Math.cos(t) * e1.x + Math.sin(t) * e2.x), y: a * (Math.cos(t) * e1.y + Math.sin(t) * e2.y), z: a * Math.sin(t) * e2.z };
+  });
+};
+export const cylinderPts = [
+  ...[0.35, 0.75, 1.15].flatMap((z) => [1, 3].map((k) => ({ x: Math.cos((k * Math.PI) / 2 + 0.4), y: Math.sin((k * Math.PI) / 2 + 0.4), z }))),
+  ...[1.4, 0].flatMap((z) => [{ x: 0, y: 0, z }, { x: 0.55, y: 0, z }, { x: -0.55, y: 0, z }, { x: 0, y: 0.55, z }, { x: 0, y: -0.55, z }]),
+];
+
+## 前提
+
+本章の前提は、次の章である。
+
+- [線積分](../line-integrals/)：
+  - 曲線の媒介変数表示（定義）と、$[a,b]$ を含む開区間 $I$ で関数を定義する工夫、曲線の接ベクトルの記法 $\vec{r}\:'(t)$
+  - 滑らかな曲線・区分的に滑らかな曲線（定義）、曲線の向き（定義）、逆向きの曲線 $-C$（定義）
+  - 弧長（定義）、媒介変数の取り替え（定義）と同じ向き・逆向きの取り替え、「曲線は表示とともに決まる」という扱い
+  - 線積分の仮定（約束）、曲線の上での場の値の連続性（補題）
+  - スカラー場の線積分（定義）と記号 $ds$、曲線に沿った平均値（定義）、「曲線の上に立てた柵」の節
+  - 単位接ベクトル $\vec{T}$（定義）、進む向きの成分（定義）、ベクトル場の線積分（定義）と、向きを反転すると符号が変わること
+  - 「円に沿った循環」の節（距離に反比例して回る場の循環が、半径によらず $2\pi$ であること）、折れ線の長さと弧長（承認事項）
+  - 閉曲線に沿った線積分の記号（約束）$\oint$ と循環（定義）、スカラー場の線積分と媒介変数の取り替え（定理）
+- [スカラー場とベクトル場](../scalar-and-vector-fields/)：
+  - 位置ベクトル（定義）と位置ベクトルによる書き方（約束）$f(\vec{r})$・$\vec{F}(\vec{r})$
+  - スカラー場（定義）・ベクトル場（定義）・ベクトル場の成分（定義）、記法 $\vec{F}=(P,Q,R)$、式で与えたベクトル場の定義域（約束）
+  - ベクトル場の連続性（定義）、ベクトル場の大きさ（定義）、矢印の図の描き方（約束）
+  - 空間の放射状の場 $(x,y,z)$ と、便宜的な書き方 $\dfrac{\vec{r}}{\lvert\vec{r}\rvert}$
+  - 空間で軸のまわりを回る場 $(-y,x,0)$
+- [多変数関数と定義域](../../multivariable-calculus/multivariable-functions-and-domains/)：$\mathbb{R}^2$・$\mathbb{R}^3$、2 変数関数・3 変数関数（定義）、記法 $f\colon D\to\mathbb{R}$、集合の記法 $\{(x,y)\mid\text{条件}\}$、境界（定義）
+- [多変数関数のグラフと等高線](../../multivariable-calculus/graphs-and-level-curves/)：曲面としてのグラフ（承認事項）、$xy$ 平面（床）、円錐形の曲面（承認事項）、球面
+- [多変数関数の極限と連続性](../../multivariable-calculus/limits-and-continuity/)：
+  - 点での連続と連続関数（定義）、2 変数関数の連続性と四則演算（定理）、多項式と有理関数の連続性（定理）、座標の差と距離（定理）
+  - 1 変数の関数との合成の連続性（定理）と、$\sqrt{t}$ が $t\ge0$ の各点で連続であること
+  - 「3 変数以上の関数」の節（3 変数関数の連続性）
+- [偏微分](../../multivariable-calculus/partial-derivatives/)：偏微分係数・偏導関数（定義）、記法 $f_x$・$\dfrac{\partial f}{\partial x}$、偏微分係数と 1 変数の微分係数（定理）
+- [全微分と接平面](../../multivariable-calculus/total-differential-and-tangent-planes/)：
+  - $C^1$ 級（定義）、$C^1$ 級ならば全微分可能（定理）、全微分可能ならば連続（定理）
+  - 接平面（定義）、法線ベクトル（定義）、接平面の法線ベクトル（定理）
+  - 「法線ベクトルの候補」の節の外積の計算（結果が $(-f_x,-f_y,1)$ になること）と、「法線ベクトルの向き」の節
+- [連鎖律（合成関数の偏微分）](../../multivariable-calculus/multivariable-chain-rule/)：曲線に沿った連鎖律（定理）、偏微分の連鎖律（定理）
+- [勾配ベクトル](../../multivariable-calculus/gradient/)：法線ベクトルと 1 点で定まる平面（承認事項）
+- [重積分（二重積分）](../../multivariable-calculus/double-integrals/)：
+  - 長方形 $[a,b]\times[c,d]$ の記法、縦線領域・横線領域（定義）
+  - 二重の和の記法 $\displaystyle\sum_{i}\sum_{j}$ と、長方形の上のリーマン和（定義）
+  - 領域の上の二重積分（定義）、縦線領域・横線領域の上の二重積分（承認事項）、記号 $dA$ と、$dx\:dy$ の並びが積分の順序を表さないこと
+  - 二重積分の線形性（定理）、変数を分けた関数の二重積分（系）、領域の面積（定義）と円板の面積 $\pi r^2$、領域における平均値（定義）
+- [三重積分](../../multivariable-calculus/triple-integrals/)：直方体 $[a,b]\times[c,d]\times[p,q]$ の記法、立体の体積の記号 $\operatorname{vol}(V)$
+- [重積分の変数変換とヤコビアン](../../multivariable-calculus/change-of-variables-and-jacobians/)：
+  - $uv$ 平面、変数変換（定義）と像、1 対 1、2 次の行列式（定義）、ヤコビアン（定義）と記号 $\dfrac{\partial(x,y)}{\partial(u,v)}$
+  - 3 次の行列式と外積（定理）、3 次の行列式と平行六面体の体積（定理）
+  - 「小さな長方形の像」の節（曲がった四辺形と、辺の一次近似）
+  - 内部の点（定義）と長方形の内部の点、2 変数関数への代入の連続性（補題）と、3 変数関数への代入も同じ証明で連続であるという注意
+  - 2 変数の変数変換の公式（承認事項）、極座標（定義）と偏角、極座標による二重積分（定理）
+  - 円柱座標（定義）、球座標（定義）と文字 $\rho$・$\varphi$（天頂角）・$\theta$（方位角）、「球座標による三重積分」の節の $\cos$ の増減と、定理の証明の手順 4（内部で 1 対 1）
+- [ベクトルの外積の初歩](../../vectors/cross-product/)：外積の定義（成分式）、外積は両方に垂直であること、大きさの公式と平行四辺形の面積との一致、右手の法則、反交換律、平行条件、三角形の面積の公式
+- [空間ベクトルと成分](../../vectors/space-vectors/)：成分表示、大きさの公式、成分ごとの演算、内積の定義と成分公式
+- [平面ベクトルの内積](../../vectors/dot-product/)：なす角と内積の定義、直交条件、分配律
+- [ベクトルの和・差・スカラー倍](../../vectors/vector-operations/)：スカラー倍の大きさ $\lvert k\vec{a}\rvert=\lvert k\rvert\:\lvert\vec{a}\rvert$、零ベクトル $\vec{0}$、逆ベクトル
+- [平面ベクトルの定義と成分表示](../../vectors/plane-vectors-and-components/)：単位ベクトル
+- [微分の近似と微小変化](../../calculus/linear-approximation/)：微小変化の見積もり（近似）と記号 $\approx$
+- [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律（定理）、有理数乗の微分（定理）
+- [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$(\sin t)'=\cos t$・$(\cos t)'=-\sin t$
+- [定積分とリーマン和](../../calculus/definite-integrals-and-riemann-sums/)：リーマン和（定義）、定積分の線形性（定理）
+- [不定積分の定義](../../calculus/indefinite-integrals/)：累乗の不定積分
+- [微分積分学の基本定理](../../calculus/fundamental-theorem-of-calculus/)：基本定理 2 と、差を表す角括弧の記号
+- [指数・対数・三角関数の積分](../../calculus/integrals-of-elementary-functions/)：正弦・余弦の不定積分（定理）、正弦・余弦の 2 乗の不定積分（定理）
+- [置換積分法](../../calculus/integration-by-substitution/)：定積分の置換（定理）
+- [関数の連続性](../../calculus/continuity-of-functions/)：閉区間・開区間の記法
+- [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：$\cos$・$\sin$ の代表的な値
+- [加法定理](../../functions/addition-theorems/)：複号 $\pm$ の記法、相互関係 $\cos^2\theta+\sin^2\theta=1$
+- [平方根と絶対値](../../algebra/square-roots-and-absolute-value/)：絶対値と $\sqrt{a^2}=\lvert a\rvert$
+- [集合と要素](../../set/sets-and-elements/)：記号 $\in$（に属する）・$\subset$（部分集合）
+- [前提とする知識](../../../prerequisites/knowledge/)：「面積と体積」（基本的な図形の面積と、立体の体積・表面積を公式で求められること。本章では、円柱の側面積、円錐の側面積、半径 $r$ の球の表面積 $4\pi r^2$ を使う）
+
+## 学習目標
+
+本章を読むと、次の概念と数式を使えるようになる。
+
+- 曲面の媒介変数表示 $\vec{r}(u,v)$（$(u,v)\in E$）と、接ベクトル $\vec{r}_u$・$\vec{r}_v$
+- 表示の法線ベクトル $\vec{r}_u\times\vec{r}_v$ と接平面、滑らかな曲面・区分的に滑らかな曲面
+- 曲面積 $\displaystyle\iint_E\lvert\vec{r}_u\times\vec{r}_v\rvert\:du\:dv$ と、球面の面積 $4\pi a^2$
+- グラフの曲面積 $\displaystyle\iint_D\sqrt{1+g_x^2+g_y^2}\:dA$
+- 媒介変数の取り替えで、曲面積と面積分の値がどう変わるか
+- スカラー場の面積分 $\displaystyle\iint_S f\:dS$ と、曲面に沿った平均値
+- 単位法線ベクトル $\vec{n}$、曲面の向き、閉じた曲面の外向き
+- フラックス $\displaystyle\iint_S\vec{F}\cdot\vec{n}\:dS=\iint_S\vec{F}\cdot d\vec{S}$ と、向きを反転すると符号が変わること
+- 閉じた曲面を通るフラックスの記号 $\displaystyle\oiint_S$ と、球面・円柱の表面・立方体の表面での計算
+
+## 曲面に沿った量
+
+### 曲面に沿って足し合わせる
+
+[線積分](../line-integrals/)の章では、曲線を細かく分け、「値 $\times$ 小さな弧の長さ」を足し合わせて線積分を定めた。本章では、曲線の代わりに空間の曲面を細かく分けて足し合わせる。
+
+曲面に沿って足し合わせたい量の例を、表にまとめる。
+
+| 場面                             | 曲面の各点で使う量                       | 足し合わせる量                         |
+| -------------------------------- | ---------------------------------------- | -------------------------------------- |
+| 丸い屋根の面積                   | なし                                     | 小さな面の面積                         |
+| 丸い屋根の温度の平均             | 温度（スカラー場の値）                   | 値 $\times$ 小さな面の面積             |
+| 流れの中に張った網を通り抜ける水 | 流れ（ベクトル場の値）と、網に垂直な向き | 網に垂直な成分 $\times$ 小さな面の面積 |
+
+表の 3 行目を補う。
+
+- **垂直な流れ.** 網に垂直に流れる水は、網をまっすぐ通り抜ける。
+- **網に沿う流れ.** 網に沿って流れる水は、網を通り抜けない。
+- **斜めの流れ.** 斜めに流れる水は、網に垂直な成分の分だけ通り抜ける。
+
+通り抜ける量を足し合わせるには、流れのうち「網に垂直な成分」を取り出す必要がある。さらに、網を表から裏へ通り抜ける量と、裏から表へ通り抜ける量を区別するため、曲面の表と裏を決める必要がある。
+
+本章では、次の順に進める。
+
+1. 曲面を、2 つの媒介変数を使って式で表す。曲面に垂直なベクトルを、外積で作る。
+2. 曲面の面積（曲面積）を、二重積分で定める。
+3. 曲面に沿ってスカラー場の値を足し合わせる、スカラー場の面積分を定める。
+4. 曲面の表と裏を区別する、曲面の向きを定める。
+5. 曲面に垂直な成分を足し合わせる、ベクトル場の面積分（フラックス）を定める。
+
+### 本章で扱う概念の関係
+
+本章の概念の関係を、図 1 に示す。
+
+<figure>
+  <FlowChart
+    direction="TB"
+    ariaLabel="本章の概念の関係図。曲面の媒介変数表示から、接ベクトルと表示の法線ベクトルを作る。法線ベクトルから、滑らかな曲面を定める。滑らかな曲面から、曲面積、媒介変数の取り替え、曲面の向きを導く。曲面積とスカラー場から、スカラー場の面積分を作る。曲面の向きとベクトル場から、フラックスを作る。フラックスから、閉じた曲面を外向きに通るフラックスを作る。"
+    nodes={[
+      { id: "param", label: "曲面の媒介変数表示\n$\\vec{r}(u,v)$, $(u,v)\\in E$" },
+      { id: "normal", label: "接ベクトル $\\vec{r}_u$・$\\vec{r}_v$\n法線ベクトル $\\vec{r}_u\\times\\vec{r}_v$" },
+      { id: "smooth", label: "滑らかな曲面" },
+      { id: "area", label: "曲面積\n$\\iint_E\\lvert\\vec{r}_u\\times\\vec{r}_v\\rvert\\,du\\,dv$" },
+      { id: "reparam", label: "媒介変数の取り替え\n（値の変わり方）" },
+      { id: "orient", label: "曲面の向き\n単位法線ベクトル $\\vec{n}$" },
+      { id: "sfield", label: "スカラー場 $f$" },
+      { id: "vfield", label: "ベクトル場 $\\vec{F}$" },
+      { id: "scalar", label: "スカラー場の面積分\n$\\iint_S f\\,dS$", tone: "goal" },
+      { id: "flux", label: "フラックス\n$\\iint_S\\vec{F}\\cdot\\vec{n}\\,dS$", tone: "goal" },
+      { id: "closed", label: "閉じた曲面と外向き\n$\\oiint_S\\vec{F}\\cdot d\\vec{S}$", tone: "goal" },
+    ]}
+    edges={[
+      { from: "param", to: "normal" },
+      { from: "normal", to: "smooth" },
+      { from: "smooth", to: "area" },
+      { from: "smooth", to: "reparam" },
+      { from: "smooth", to: "orient" },
+      { from: "area", to: "scalar" },
+      { from: "sfield", to: "scalar" },
+      { from: "orient", to: "flux" },
+      { from: "vfield", to: "flux" },
+      { from: "flux", to: "closed" },
+    ]}
+  />
+  <figcaption>
+    <em>
+      図 1. 本章の概念の関係。矢印は「矢印の元から、矢印の先を作る、または導く」ことを表す。媒介変数の取り替えの箱は、表示を取り替えたときに、曲面積と 2 つの面積分の値がどう変わるかを調べることを表す。強調した 3 つの箱が、本章の中心となる概念である。
+    </em>
+  </figcaption>
+</figure>
+
+## 曲面の媒介変数表示
+
+### 媒介変数表示
+
+空間の曲面を、2 つの変数 $u$・$v$ の値の組に点を対応させる規則で表す。[重積分の変数変換とヤコビアン](../../multivariable-calculus/change-of-variables-and-jacobians/)の章と同じく、横軸を $u$ 軸、縦軸を $v$ 軸とする座標平面を、$uv$ 平面と呼ぶ。
+
+> **曲面の媒介変数表示（定義）.** $E$ を $uv$ 平面の縦線領域または横線領域とする。$U$ は $E$ を含む集合であり、$U$ の各点について、点を中心とするある円の内側が $U$ に含まれるとする。$U$ で定義された 3 つの 2 変数関数 $x(u,v)$・$y(u,v)$・$z(u,v)$ を考える。$E$ の各点 $(u,v)$ に、次の空間の点を対応させる。
+>
+> $$
+> \bigl(x(u,v),\ y(u,v),\ z(u,v)\bigr)
+> $$
+>
+> 3 つの関数の組を**媒介変数表示**と呼び、$u$・$v$ を**媒介変数**と呼ぶ。対応する点の全体を、媒介変数表示とあわせて、空間の**曲面**と呼ぶ。
+
+用語と記号について、次の点を押さえる。
+
+- **曲面の名前.** 曲面を $S$（「エス」）・$S_1$（「エス・イチ」）などの文字で表す。曲面 $S$ を表示とともに書くときは、「曲面 $S$：$\vec{r}(u,v)$（$(u,v)\in E$）」のように書く。
+- **曲面の点.** $E$ の点に対応する点を、曲面 $S$ の点と呼ぶ。$U$ のうち $E$ の外の点は、$E$ の境界の点での偏微分を扱うための補助であり、曲面の点を決めない[^open-set]。線積分の章で、$[a,b]$ を含む開区間 $I$ で関数を定義したのと同じ工夫である。
+- **縦線領域・横線領域.** [重積分（二重積分）](../../multivariable-calculus/double-integrals/)の章の定義による。長方形は、どちらにも当てはまる。$E$ をどちらかに限るのは、後述の曲面積と面積分を、$E$ の上の二重積分で定めるためである。
+- **曲面は表示とともに決まる.** 線積分の章の曲線と同じく、本章の曲面は、点の集まりと媒介変数表示を合わせて決まる。表示を取り替えたときの扱いは、後述の「媒介変数の取り替え」の節で定める。
+- **グラフとの関係.** [多変数関数のグラフと等高線](../../multivariable-calculus/graphs-and-level-curves/)の章の曲面としてのグラフ（承認事項）では、2 変数関数のグラフを直観的に曲面と呼んだ。本章の定義は、グラフ以外の曲面も式で扱うためのものである。後述の表のとおり、グラフは本章の意味の曲面でもある。
+
+**位置ベクトルで書く.** [スカラー場とベクトル場](../scalar-and-vector-fields/)の章の位置ベクトルを使う。点 $(u,v)$ に対応する点の位置ベクトルを、次のように書く。
+
+$$
+\vec{r}(u,v)=\bigl(x(u,v),\ y(u,v),\ z(u,v)\bigr)
+$$
+
+記号 $\vec{r}(u,v)$ について、次の点を押さえる。
+
+- **読み方**：「ベクトル・アール・ユー・ブイ」と読む。
+- **意味**：$E$ の点 $(u,v)$ に対応する曲面の点の、位置ベクトルを表す。
+- **区別**：点 $(u,v)$ にベクトルを対応させる関数を表す、正式な記法である。線積分の章の曲線の $\vec{r}(t)$ と同じ文字を使う。
+
+代表的な曲面の媒介変数表示を、表にまとめる。媒介変数の文字は $u$・$v$ に限らず、曲面に合わせて選ぶ。$a$・$h$ は正の定数である。
+
+| 曲面                     | 媒介変数            | 媒介変数表示                                                       | 範囲 $E$                   |
+| ------------------------ | ------------------- | ------------------------------------------------------------------ | -------------------------- |
+| 関数 $z=g(x,y)$ のグラフ | $x$・$y$            | $(x,\ y,\ g(x,y))$                                                 | 縦線領域または横線領域 $D$ |
+| 円柱面                   | $\theta$・$z$       | $(a\cos\theta,\ a\sin\theta,\ z)$                                  | $[0,2\pi]\times[0,h]$      |
+| 球面                     | $\varphi$・$\theta$ | $(a\sin\varphi\cos\theta,\ a\sin\varphi\sin\theta,\ a\cos\varphi)$ | $[0,\pi]\times[0,2\pi]$    |
+| 円錐面                   | $t$・$\theta$       | $(t\cos\theta,\ t\sin\theta,\ t)$                                  | $[0,1]\times[0,2\pi]$      |
+
+表の各行を補う。
+
+- **グラフ.** 媒介変数に、座標と同じ文字 $x$・$y$ を使う。重積分の変数変換とヤコビアンの章で、文字 $x$ を座標の名前と関数の名前の両方に使ったのと同じく、便宜的な書き方である。$g$ は、$D$ を含み円の内側の条件を満たす集合 $U$ で定義されているとする。
+- **円柱面.** 重積分の変数変換とヤコビアンの章の円柱座標で、$r=a$ とした点の全体である。$z$ 軸を軸とする半径 $a$ の円柱の側面のうち、$0\le z\le h$ の部分である。
+- **球面.** 同じ章の球座標で、$\rho=a$ とした点の全体である。文字 $\varphi$（天頂角）・$\theta$（方位角）は、同じ章の文字に合わせた。原点からの距離はつねに $a$ である。
+- **円錐面.** $t\ge0$ だから、$z$ 軸からの距離 $\sqrt{x^2+y^2}$ は $t$ に等しく、高さ $z=t$ に等しい。グラフと等高線の章の円錐形の曲面（承認事項）で $R=1$ とした、頂点が原点・高さ $1$ の円錐の側面である。
+
+円柱面・球面・円錐面の成分は、$uv$ 平面全体で定義される。$U$ は、平面全体 $\mathbb{R}^2$ にとれる。
+
+球面の表示で、$E$ の格子が球面にどう写るかを図 2 に描く。$E$ は、横軸を $\varphi$、縦軸を $\theta$ として描く。
+
+- **縦の線.** $\varphi$ が一定の縦の線は、高さ $a\cos\varphi$ の水平な円（緯線）に写る。
+- **横の線.** $\theta$ が一定の横の線は、北極から南極への半円（経線）に写る。北極は点 $(0,0,a)$ である。南極は点 $(0,0,-a)$ である。
+- **境界.** $\varphi=0$ の辺全体は北極の 1 点に、$\varphi=\pi$ の辺全体は南極の 1 点に写る。$\theta=0$ の辺と $\theta=2\pi$ の辺は、同じ経線に写る。
+
+<figure>
+  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", columnGap: "1rem" }}>
+    <div style={{ flex: "1 1 260px", maxWidth: "320px" }}>
+      <ContourPlot
+        xMin={-0.4}
+        xMax={3.8}
+        yMin={-0.5}
+        yMax={6.9}
+        equalScale={false}
+        height={340}
+        grid={false}
+        xLabel={"\\varphi"}
+        yLabel={"\\theta"}
+        xTicks={[
+          { value: Math.PI / 2, label: "\\dfrac{\\pi}{2}" },
+          { value: Math.PI, label: "\\pi" },
+        ]}
+        yTicks={[
+          { value: Math.PI, label: "\\pi" },
+          { value: 2 * Math.PI, label: "2\\pi" },
+        ]}
+        partition={{ x: [0, Math.PI], y: [0, 2 * Math.PI], m: 4, n: 8, highlight: [{ i: 2, j: 1, label: "K" }] }}
+        segments={[
+          { from: { x: 0, y: 0 }, to: { x: 0, y: 2 * Math.PI }, dashed: false, color: "#dc2626" },
+          { from: { x: 0, y: 0 }, to: { x: Math.PI, y: 0 }, dashed: false, color: "#059669" },
+          { from: { x: 0, y: 2 * Math.PI }, to: { x: Math.PI, y: 2 * Math.PI }, dashed: false, color: "#059669" },
+        ]}
+        ariaLabel="φθ 平面。長方形 0≤φ≤π、0≤θ≤2π を、φ 方向に 4 等分・θ 方向に 8 等分した格子で分けてある。φ が π/4 から π/2、θ が 0 から π/4 の小さな長方形 K を琥珀色で塗ってある。左の辺 φ=0 を赤、下の辺 θ=0 と上の辺 θ=2π を緑で描く。"
+      />
+    </div>
+    <div style={{ flex: "1 1 260px", maxWidth: "320px" }}>
+      <SurfacePlot
+        xRange={[-1.4, 1.4]}
+        yRange={[-1.4, 1.4]}
+        zRange={[-1.4, 1.4]}
+        floorGrid={false}
+        surfaces={[
+          { kind: "parametric", fn: (p, t) => sph(1, p, t), u: [0, Math.PI], v: [0, 2 * Math.PI], opacity: 0.25, resolution: [16, 32], meshEvery: 4, hide: inK },
+          { kind: "parametric", fn: (p, t) => sph(1.01, p, t), u: [Math.PI / 4, Math.PI / 2], v: [0, Math.PI / 4], color: "#f59e0b", opacity: 0.9, resolution: [4, 4], mesh: false },
+        ]}
+        curves={[{ fn: (p) => sph(1.01, p, 0), t: [0, Math.PI], color: "#059669", width: 2.2 }]}
+        points={[{ x: 0, y: 0, z: 1, color: "#dc2626", hidden: "show" }]}
+        ariaLabel="半径 1 の球面を、緯線と経線の網で描いた図。網は、左の図の格子の線の像である。左の小さな長方形 K の像は、北極と赤道の間で x 軸の正の側にある、緯線と経線で囲まれた曲がった四辺形であり、琥珀色で塗ってある。北極を赤い点で、x 軸を含む経線（θ=0）を緑の線で示す。"
+      />
+    </div>
+  </div>
+  <figcaption>
+    <em>
+      図 2. 球面の表示 $\vec{r}(\varphi,\theta)$（半径 $1$）による格子の写り方。左（狭い画面では上）の $E=[0,\pi]\times[0,2\pi]$ の格子の縦の線は緯線に、横の線は経線に写る。小さな長方形 $K=\left[\tfrac\pi4,\tfrac\pi2\right]\times\left[0,\tfrac\pi4\right]$ は、右の琥珀色の曲がった四辺形に写る。左の辺 $\varphi=0$（赤）は北極（赤い点）に写る。下の辺 $\theta=0$ と上の辺 $\theta=2\pi$（緑）は、ともに緑の経線に写る。
+    </em>
+  </figcaption>
+</figure>
+
+### 接ベクトル
+
+$v$ を定数 $v_0$ に固定して $u$ だけを動かすと、点 $\vec{r}(u,v_0)$ は曲面の上の曲線を描く。本章では、$v$ を固定して得る曲線を **$u$ 曲線**と呼ぶ。$u$ を固定して $v$ を動かした曲線を、**$v$ 曲線**と呼ぶ。どちらも本章の便宜的な呼び名である。球面では、$\varphi$ 曲線は経線であり、$\theta$ 曲線は緯線である。
+
+曲面の上の曲線の接ベクトルを、偏微分で表す。
+
+> **曲面の接ベクトル（定義）.** 曲面 $S$ の媒介変数表示 $\vec{r}(u,v)$ の成分が、点 $(u,v)$ で $u$ について偏微分可能であるとする。成分を $u$ で偏微分したベクトルを、次のように書く。
+>
+> $$
+> \vec{r}_u(u,v)=\bigl(x_u(u,v),\ y_u(u,v),\ z_u(u,v)\bigr)
+> $$
+>
+> $v$ についても同じく、成分を $v$ で偏微分したベクトルを $\vec{r}_v(u,v)$ と書く。点 $(u,v)$ が $E$ に属するとき、2 つのベクトルを、点 $\vec{r}(u,v)$ における $S$ の**接ベクトル**と呼ぶ。
+
+記号について、次の点を押さえる。
+
+- **読み方**：$\vec{r}_u$ は「ベクトル・アール・ユー」、$\vec{r}_v$ は「ベクトル・アール・ブイ」と読む。
+- **意味**：[偏微分](../../multivariable-calculus/partial-derivatives/)の章の記法 $f_x$ を、ベクトルの成分ごとに使ったものである。$\dfrac{\partial\vec{r}}{\partial u}$ とも書く。
+- **区別**：成分ごとの偏微分を表す、正式な記法である。点を省いて $\vec{r}_u$ と書くのは、便宜的な書き方である。
+
+名前の理由を確かめる。点 $(u_0,v_0)$ を $E$ の点とし、$u$ 曲線 $\vec{r}(u,v_0)$ を考える。偏微分の章の偏微分係数と 1 変数の微分係数（定理）より、1 変数の関数 $x(u,v_0)$ は $u_0$ で微分可能であり、微分係数は $x_u(u_0,v_0)$ である。$y$・$z$ の成分も同様である。$u$ 曲線の $u=u_0$ における接ベクトルは、$\vec{r}_u(u_0,v_0)$ に等しい。同様に、$\vec{r}_v(u_0,v_0)$ は $v$ 曲線の接ベクトルである。
+
+**球面の接ベクトル.** 球面 $\vec{r}(\varphi,\theta)=(a\sin\varphi\cos\theta,\ a\sin\varphi\sin\theta,\ a\cos\varphi)$ の接ベクトルは、次のとおりである。
+
+$$
+\begin{aligned}
+\vec{r}_\varphi&=\bigl(a\cos\varphi\cos\theta,\ a\cos\varphi\sin\theta,\ -a\sin\varphi\bigr)\\
+\vec{r}_\theta&=\bigl(-a\sin\varphi\sin\theta,\ a\sin\varphi\cos\theta,\ 0\bigr)
+\end{aligned}
+$$
+
+2 つの接ベクトルの向きは、次のように読める。
+
+- **$\vec{r}_\varphi$.** $0<\varphi<\pi$ では、$z$ 成分 $-a\sin\varphi$ が負である。$\vec{r}_\varphi$ は、経線に沿って南極の側へ下る向きを指す。
+- **$\vec{r}_\theta$.** $z$ 成分が $0$ だから、水平である。$\vec{r}_\theta$ は、緯線に沿って、真上から見て反時計回りに進む向きを指す。
+
+$a=1$・$\varphi=\tfrac\pi3$・$\theta=\tfrac{11\pi}{6}$ の点での接ベクトルを、図 3 に描く。
+
+<figure>
+  <SurfacePlot
+    xRange={[-1.3, 1.7]}
+    yRange={[-0.5, 1.7]}
+    zRange={[-1.3, 1.7]}
+    floorGrid={false}
+    surfaces={[{ kind: "parametric", fn: (p, t) => sph(1, p, t), u: [0, Math.PI], v: [0, 2 * Math.PI], opacity: 0.18, resolution: [16, 32], meshEvery: 4 }]}
+    planes={[{ kind: "polygon", vertices: tangentPatch(1, Math.PI / 3, (11 * Math.PI) / 6, 0.45), color: "#10b981", opacity: 0.3 }]}
+    curves={[
+      { fn: (p) => sph(1, p, (11 * Math.PI) / 6), t: [0, Math.PI], color: "#ea580c", width: 2, arrows: [0.6, 2.4] },
+      { fn: (t) => sph(1, Math.PI / 3, t), t: [0, 2 * Math.PI], color: "#7c3aed", width: 2, arrows: [1.3, 4.4] },
+    ]}
+    segments={[
+      { from: sph(1, Math.PI / 3, (11 * Math.PI) / 6), to: plus(sph(1, Math.PI / 3, (11 * Math.PI) / 6), sphPhi(1, Math.PI / 3, (11 * Math.PI) / 6), 0.6), arrow: true, color: "#dc2626", width: 2.4, label: "\\vec{r}_\\varphi", hidden: "show" },
+      { from: sph(1, Math.PI / 3, (11 * Math.PI) / 6), to: plus(sph(1, Math.PI / 3, (11 * Math.PI) / 6), sphTheta(1, Math.PI / 3, (11 * Math.PI) / 6), 0.6), arrow: true, color: "#2563eb", width: 2.4, label: "\\vec{r}_\\theta", hidden: "show" },
+      { from: sph(1, Math.PI / 3, (11 * Math.PI) / 6), to: plus(sph(1, Math.PI / 3, (11 * Math.PI) / 6), sph(Math.sin(Math.PI / 3), Math.PI / 3, (11 * Math.PI) / 6), 0.7), arrow: true, color: "#0f766e", width: 2.4, label: "\\vec{N}", hidden: "show" },
+    ]}
+    points={[{ ...sph(1, Math.PI / 3, (11 * Math.PI) / 6), highlight: true, label: "\\mathrm{P}", hidden: "show" }]}
+    ariaLabel="半径 1 の球面の上の点 P（天頂角 π/3・方位角 11π/6）で、2 本の接ベクトルと法線ベクトルを描いた図。P を通る経線（橙）と緯線（紫）を描き、矢じりで媒介変数が増える向きを示す。P から、経線に沿って下る赤い矢印 r_φ と、緯線に沿って進む青い矢印 r_θ を描く。2 本の矢印を含む緑の平行四辺形は P における接平面の一部である。P から、接平面に垂直に球面の外へ向かう青緑の矢印 N を描く。"
+  />
+  <figcaption>
+    <em>
+      図 3. 球面（半径 $1$）の点 $\mathrm{P}$（$\varphi=\tfrac\pi3$・$\theta=\tfrac{11\pi}{6}$）における接ベクトル。橙の線は $\mathrm{P}$ を通る経線（$\varphi$ 曲線）、紫の線は緯線（$\theta$ 曲線）であり、矢じりは媒介変数が増える向きを表す。赤の $\vec{r}_\varphi$ は経線に、青の $\vec{r}_\theta$ は緯線に接する。緑の平行四辺形は、後述の接平面の一部である。青緑の $\vec{N}=\vec{r}_\varphi\times\vec{r}_\theta$ は次節で定める表示の法線ベクトルであり、接平面に垂直である。矢印は長さを縮めて描いた。
+    </em>
+  </figcaption>
+</figure>
+
+### 表示の法線ベクトル
+
+2 つの接ベクトルの外積で、曲面に垂直なベクトルを作る。
+
+> **表示の法線ベクトル（定義）.** 曲面 $S$ の媒介変数表示 $\vec{r}(u,v)$ について、点 $(u,v)$ で $\vec{r}_u$・$\vec{r}_v$ が存在するとする。次の外積を、点 $(u,v)$ における表示の**法線ベクトル**と呼び、$\vec{N}(u,v)$ と書く。
+>
+> $$
+> \vec{N}(u,v)=\vec{r}_u(u,v)\times\vec{r}_v(u,v)
+> $$
+
+記号 $\vec{N}(u,v)$ について、次の点を押さえる。
+
+- **読み方**：「ベクトル・エヌ・ユー・ブイ」と読む。
+- **意味**：点 $(u,v)$ での 2 つの接ベクトルの外積を表す。点を省いて $\vec{N}$ とも書く。
+- **区別**：本章の便宜的な文字である。
+
+表示の法線ベクトルの性質を、次にまとめる。
+
+- **両方に垂直.** [ベクトルの外積の初歩](../../vectors/cross-product/)の章より、$\vec{N}$ は $\vec{r}_u$ と $\vec{r}_v$ の両方に垂直である。成分の計算で、$\vec{N}\cdot\vec{r}_u=0$・$\vec{N}\cdot\vec{r}_v=0$ が成り立つ。$\vec{N}$ が零ベクトルの場合も、内積は $0$ である。
+- **名前の理由.** 後述の接平面の定義で、$\vec{N}\neq\vec{0}$ のとき、$\vec{N}$ は[全微分と接平面](../../multivariable-calculus/total-differential-and-tangent-planes/)の章の意味の法線ベクトルになる。
+- **表示による.**「表示の」と付けるのは、同じ曲面でも、表示を替えると $\vec{N}$ が変わりうるからである。変わり方は、後述の「媒介変数の取り替え」の節で調べる。
+
+**球面の法線ベクトル.** 前節の $\vec{r}_\varphi$・$\vec{r}_\theta$ を外積の成分式に入れる。成分を $N_1$・$N_2$・$N_3$ と書く。便宜的な文字であり、本章では表示の法線ベクトルの成分を、つねに同じ文字で書く。
+
+$$
+\begin{aligned}
+N_1&=a\cos\varphi\sin\theta\cdot0-(-a\sin\varphi)\cdot a\sin\varphi\cos\theta=a^2\sin^2\varphi\cos\theta\\
+N_2&=(-a\sin\varphi)\cdot(-a\sin\varphi\sin\theta)-a\cos\varphi\cos\theta\cdot0=a^2\sin^2\varphi\sin\theta\\
+N_3&=a\cos\varphi\cos\theta\cdot a\sin\varphi\cos\theta-a\cos\varphi\sin\theta\cdot(-a\sin\varphi\sin\theta)=a^2\sin\varphi\cos\varphi
+\end{aligned}
+$$
+
+$N_3$ の計算では、[加法定理](../../functions/addition-theorems/)の章の相互関係 $\cos^2\theta+\sin^2\theta=1$ を使った。3 つの成分から $a^2\sin\varphi$ をくくり出すと、次の式を得る。
+
+$$
+\vec{N}(\varphi,\theta)=a^2\sin\varphi\,\bigl(\sin\varphi\cos\theta,\ \sin\varphi\sin\theta,\ \cos\varphi\bigr)=a\sin\varphi\;\vec{r}(\varphi,\theta)
+$$
+
+$0\le\varphi\le\pi$ では $\sin\varphi\ge0$ である。$\vec{N}$ は位置ベクトル $\vec{r}(\varphi,\theta)$ の $0$ 以上の数倍であり、$\sin\varphi>0$ の点では原点から遠ざかる向きを指す。北極（$\varphi=0$）と南極（$\varphi=\pi$）では、$\vec{N}=\vec{0}$ である。
+
+### 曲面の上の曲線と接平面
+
+$\vec{N}$ は、2 本の接ベクトルだけでなく、曲面の上の曲線 $\vec{r}(u(t),v(t))$ の接ベクトルにも垂直である。
+
+> **曲面の上の曲線と法線ベクトル（定理）.** 曲面 $S$ の表示 $\vec{r}(u,v)$ の成分が、集合 $U$ で $C^1$ 級であるとする。1 変数の関数 $u(t)$・$v(t)$ が $t=t_0$ で微分可能であり、点 $(u_0,v_0)=(u(t_0),v(t_0))$ は $U$ に属するとする。すると、$\vec{c}(t)=\vec{r}(u(t),v(t))$ は $t_0$ を含むある開区間で定義され、$t=t_0$ で微分可能である。接ベクトルは、次の式で与えられる。
+>
+> $$
+> \vec{c}\,'(t_0)=u'(t_0)\,\vec{r}_u(u_0,v_0)+v'(t_0)\,\vec{r}_v(u_0,v_0)
+> $$
+>
+> さらに、$\vec{N}(u_0,v_0)\cdot\vec{c}\:'(t_0)=0$ が成り立つ。
+
+$\vec{c}(t)$ は「ベクトル・シー・ティー」と読む、本定理だけの便宜的な文字である。
+
+**証明.** 次の 2 段階で示す。
+
+1. **成分ごとの連鎖律.** $x(u,v)$ は $U$ で $C^1$ 級だから、全微分と接平面の章の定理より、点 $(u_0,v_0)$ で全微分可能である。[連鎖律（合成関数の偏微分）](../../multivariable-calculus/multivariable-chain-rule/)の章の曲線に沿った連鎖律（定理）を、外側の関数を $x$、内側の関数を $u(t)$・$v(t)$ として使う。$x(u(t),v(t))$ は $t_0$ を含むある開区間で定義され、$t_0$ で微分可能であり、微分係数は $x_u\:u'(t_0)+x_v\:v'(t_0)$ である。$y$・$z$ の成分も同様である。3 つの開区間の共通部分も、$t_0$ を含む開区間である。成分をまとめると、接ベクトルの式を得る。
+2. **内積.** $\vec{N}\cdot\vec{r}_u=0$・$\vec{N}\cdot\vec{r}_v=0$ である。[平面ベクトルの内積](../../vectors/dot-product/)の章の分配律と成分公式より、次のとおりである。
+
+   $$
+   \vec{N}\cdot\vec{c}\,'(t_0)=u'(t_0)\,\bigl(\vec{N}\cdot\vec{r}_u\bigr)+v'(t_0)\,\bigl(\vec{N}\cdot\vec{r}_v\bigr)=0
+   $$
+
+証明を終わる。
+
+定理を踏まえ、曲面の接平面を定める。
+
+> **曲面の接平面（定義）.** 曲面 $S$ の表示 $\vec{r}(u,v)$ について、$E$ の点 $(u_0,v_0)$ で $\vec{N}(u_0,v_0)\neq\vec{0}$ であるとする。点 $\vec{r}(u_0,v_0)$ を $\mathrm{P}_0$ とし、座標を $(x_0,y_0,z_0)$ とおく。$\vec{N}(u_0,v_0)$ の成分を $(N_1,N_2,N_3)$ とおく。次の方程式を満たす点 $(x,y,z)$ の全体を、点 $\mathrm{P}_0$ における $S$ の**接平面**と呼ぶ。
+>
+> $$
+> N_1(x-x_0)+N_2(y-y_0)+N_3(z-z_0)=0
+> $$
+
+定義について、次の点を押さえる。
+
+- **記号.** $\mathrm{P}_0$ は「ピー・ゼロ」と読む、点の便宜的な名前である。
+- **平面であること.** [勾配ベクトル](../../multivariable-calculus/gradient/)の章の法線ベクトルと 1 点で定まる平面（承認事項）より、方程式を満たす点の全体は、点 $(x_0,y_0,z_0)$ を通る平面である。
+- **$\vec{N}$ は法線ベクトル.** 平面上の異なる 2 点を $\mathrm{Q}_1$・$\mathrm{Q}_2$ とする。2 点の方程式を辺々引くと、$\vec{N}\cdot\overrightarrow{\mathrm{Q}_1\mathrm{Q}_2}=0$ を得る。全微分と接平面の章の接平面の法線ベクトル（定理）の証明と同じ計算である。$\vec{N}$ は、全微分と接平面の章の意味で、接平面の法線ベクトルである。
+- **接ベクトルを含む.** $\vec{N}\cdot\vec{r}_u=0$ だから、点 $(x_0,y_0,z_0)$ を始点とする $\vec{r}_u$ の終点は、接平面の上にある。$\vec{r}_v$ と、定理の $\vec{c}\:'(t_0)$ も同様である。曲面の上の曲線の接ベクトルは、始点を $\mathrm{P}_0$ に置くと接平面に沿う。
+
+### グラフの曲面の法線ベクトル
+
+全微分と接平面の章では、グラフの接平面を一次式で定めた。本章の接平面と一致することを確かめる。
+
+> **グラフの曲面の法線ベクトル（定理）.** 2 変数関数 $g$ が集合 $U$ で $C^1$ 級であるとする。グラフ $z=g(x,y)$ の表示 $\vec{r}(x,y)$（$(x,y)\in D$）を考える。$D$ は $U$ に含まれる縦線領域または横線領域である。次の 2 つが成り立つ。
+>
+> 1. 表示の法線ベクトルは次のとおりであり、つねに零ベクトルでない。
+>
+>    $$
+>    \vec{N}(x,y)=\bigl(-g_x(x,y),\ -g_y(x,y),\ 1\bigr)
+>    $$
+>
+> 2. $D$ の点 $(a,b)$ に対応する曲面の点を $\mathrm{P}$ とする。$\mathrm{P}$ における本章の接平面は、全微分と接平面の章の接平面に一致する。
+
+**証明.** 主張ごとに示す。
+
+1. **法線ベクトル.** 接ベクトルは、次の 2 つである。
+
+   $$
+   \vec{r}_x=(1,\ 0,\ g_x),\qquad\vec{r}_y=(0,\ 1,\ g_y)
+   $$
+
+   全微分と接平面の章の「法線ベクトルの候補」の節の $\vec{u}$・$\vec{v}$ と同じベクトルであり、外積は $(-g_x,\:-g_y,\:1)$ である。$z$ 成分が $1$ だから、零ベクトルでない。
+
+2. **接平面.** 本章の接平面の方程式と、移項した式は次のとおりである。
+
+   $$
+   \begin{aligned}
+   &-g_x(a,b)(x-a)-g_y(a,b)(y-b)+\bigl(z-g(a,b)\bigr)=0\\
+   &z=g(a,b)+g_x(a,b)(x-a)+g_y(a,b)(y-b)
+   \end{aligned}
+   $$
+
+   2 行目は、全微分と接平面の章の接平面の方程式である。
+
+証明を終わる。
+
+全微分と接平面の章の法線ベクトル $\vec{n}=(g_x,\:g_y,\:-1)$ は、$-\vec{N}$ に等しい。同章の「法線ベクトルの向き」の節のとおり、同章の $\vec{n}$ は下を向き、$\vec{N}$ は上を向く。本章では、グラフの表示の法線ベクトルとして、$z$ 成分が $1$ の $\vec{N}$ を使う。
+
+### 滑らかな曲面
+
+本章で面積や面積分を考える曲面に、次の条件を課す。
+
+> **滑らかな曲面（定義）.** 曲面 $S$ の媒介変数表示 $\vec{r}(u,v)$（$(u,v)\in E$）が、集合 $U$ で定義されているとする。次の 3 つが成り立つとき、$S$ を**滑らかな曲面**と呼ぶ。
+>
+> 1. $x(u,v)$・$y(u,v)$・$z(u,v)$ は、$U$ で $C^1$ 級である。
+> 2. $E$ の内部のすべての点 $(u,v)$ で、$\vec{N}(u,v)\neq\vec{0}$ である。
+> 3. $E$ の内部の異なる 2 点は、$S$ の異なる点に対応する。
+
+$C^1$ 級は、全微分と接平面の章の定義による。内部の点は、重積分の変数変換とヤコビアンの章の内部の点（定義）による。条件の役割は、次のとおりである。
+
+- **条件 1.** 接ベクトルが $u$・$v$ とともに連続に変わることを保証する。後述の曲面積や面積分の被積分関数が連続になり、二重積分が定まる。
+- **条件 2.** $E$ の内部の点で、接平面が定まる。後述の単位法線ベクトルを作るのに使う。
+- **条件 3.** $E$ の内部の点どうしが、曲面の同じ点に重ならない。後述の曲面積で、同じ部分を重ねて数えないために使う。
+
+**境界の例外.** 条件 2・3 は、$E$ の境界の上では成り立たなくてよい。線積分の章の滑らかな曲線では、開区間 $I$ のすべての点で $\vec{r}\:'(t)\neq\vec{0}$ を求めた。曲面で境界の例外を許すのは、球面と円錐面の自然な表示が、境界の上で条件 2・3 を満たさないからである。
+
+- **球面.** 北極と南極では $\vec{N}=\vec{0}$ である。$\theta=0$ の辺と $\theta=2\pi$ の辺は、同じ経線に対応する。
+- **円錐面.** 後述のとおり、頂点（$t=0$）で $\vec{N}=\vec{0}$ である。
+
+重積分の変数変換とヤコビアンの章の 2 変数の変数変換の公式（承認事項）も、条件 4・5 で境界の例外を許した。本章の条件 2・3 は、公式の条件 5・4 にそれぞれ対応する。
+
+### 代表的な曲面が滑らかであること
+
+「媒介変数表示」の節の表の 4 つの曲面について、$\vec{N}$ を表にまとめる。
+
+| 曲面              | $\vec{N}$                               | $\lvert\vec{N}\rvert$  | $E$ の内部の点                       |
+| ----------------- | --------------------------------------- | ---------------------- | ------------------------------------ |
+| グラフ $z=g(x,y)$ | $(-g_x,\ -g_y,\ 1)$                     | $\sqrt{1+g_x^2+g_y^2}$ | $D$ の内部の点                       |
+| 円柱面            | $(a\cos\theta,\ a\sin\theta,\ 0)$       | $a$                    | $0<\theta<2\pi$ かつ $0<z<h$         |
+| 球面              | $a\sin\varphi\;\vec{r}(\varphi,\theta)$ | $a^2\sin\varphi$       | $0<\varphi<\pi$ かつ $0<\theta<2\pi$ |
+| 円錐面            | $(-t\cos\theta,\ -t\sin\theta,\ t)$     | $\sqrt2\:t$            | $0<t<1$ かつ $0<\theta<2\pi$         |
+
+内部の点の範囲は、重積分の変数変換とヤコビアンの章の長方形の内部の点の例による。表の $\vec{N}$ を、次のように求める。
+
+- **円柱面.** $\vec{r}_\theta=(-a\sin\theta,\ a\cos\theta,\ 0)$ である。$\vec{r}_z=(0,0,1)$ である。外積の成分式より、$\vec{N}$ の成分は次のとおりである。
+
+  $$
+  \begin{aligned}
+  N_1&=a\cos\theta\cdot1-0\cdot0=a\cos\theta\\
+  N_2&=0\cdot0-(-a\sin\theta)\cdot1=a\sin\theta\\
+  N_3&=(-a\sin\theta)\cdot0-a\cos\theta\cdot0=0
+  \end{aligned}
+  $$
+
+- **円錐面.** $\vec{r}_t=(\cos\theta,\ \sin\theta,\ 1)$ である。$\vec{r}_\theta=(-t\sin\theta,\ t\cos\theta,\ 0)$ である。外積の成分式より、$\vec{N}$ の成分は次のとおりである。
+
+  $$
+  \begin{aligned}
+  N_1&=\sin\theta\cdot0-1\cdot t\cos\theta=-t\cos\theta\\
+  N_2&=1\cdot(-t\sin\theta)-\cos\theta\cdot0=-t\sin\theta\\
+  N_3&=\cos\theta\cdot t\cos\theta-\sin\theta\cdot(-t\sin\theta)=t
+  \end{aligned}
+  $$
+
+  大きさは $\sqrt{t^2\cos^2\theta+t^2\sin^2\theta+t^2}=\sqrt{2t^2}$ であり、$t\ge0$ では $\sqrt2\:t$ に等しい。
+
+3 つの条件を、次のように確かめる。
+
+- **条件 1.** グラフでは、$g$ が $U$ で $C^1$ 級であると仮定する。残りの 3 つの曲面の成分は、定数・変数と、$\cos$・$\sin$ に変数を代入した関数の積である。偏導関数も同じ形だから、重積分の変数変換とヤコビアンの章の極座標の場合と同じ理由で、$\mathbb{R}^2$ のすべての点で連続である。
+- **条件 2.** 表の $\lvert\vec{N}\rvert$ は、$E$ の内部の点でどれも正である。球面では $0<\varphi<\pi$ で $\sin\varphi>0$ であり、円錐面では $t>0$ だからである。
+- **条件 3.** 曲面ごとに確かめる。
+  - **グラフ.** 異なる点 $(x,y)$ には、$x$ 座標または $y$ 座標の異なる点が対応する。
+  - **円柱面.** $E$ の内部の 2 点 $(\theta_{\mathrm{A}},z_{\mathrm{A}})$・$(\theta_{\mathrm{B}},z_{\mathrm{B}})$ が、同じ点に対応するとする。添字の $\mathrm{A}$・$\mathrm{B}$ は、2 点を区別する便宜的な書き方である。高さを比べて $z_{\mathrm{A}}=z_{\mathrm{B}}$ である。床への影 $(a\cos\theta,a\sin\theta)$ は原点と異なるので、$\theta_{\mathrm{A}}$・$\theta_{\mathrm{B}}$ はどちらも影の偏角である。重積分の変数変換とヤコビアンの章の極座標による二重積分（定理）の証明の手順 4 と同じく、2 つの角はともに $0$ より大きく $2\pi$ より小さいので、等しい。
+  - **球面.** 同じ章の球座標による三重積分（定理）の証明の手順 4 で、$\rho$ を $a$ に固定した場合である。
+  - **円錐面.** 高さ $z=t$ を比べると、$t$ が等しい。$t>0$ だから、円柱面と同じ議論で $\theta$ も等しい。
+
+4 つの曲面は、どれも滑らかな曲面である。円錐面の $\vec{N}$ を、図 4 に描く。$\vec{N}=(-x,-y,z)$ だから、$\vec{N}$ は $z$ 軸の側へ傾きながら上を向く。
+
+<figure>
+  <SurfacePlot
+    xRange={[-1.3, 1.3]}
+    yRange={[-1.3, 1.3]}
+    zRange={[0, 1.8]}
+    floorGrid={false}
+    surfaces={[{ kind: "parametric", fn: (t, th) => ({ x: t * Math.cos(th), y: t * Math.sin(th), z: t }), u: [0, 1], v: [0, 2 * Math.PI], opacity: 0.35, resolution: [8, 32], meshEvery: 2 }]}
+    fields={[
+      {
+        fn: (x, y, z) => ({ x: -x, y: -y, z }),
+        at: Array.from({ length: 6 }, (_, k) => ({ x: 0.75 * Math.cos((k * Math.PI) / 3), y: 0.75 * Math.sin((k * Math.PI) / 3), z: 0.75 })),
+        scale: 0.45,
+      },
+    ]}
+    points={[{ x: 0, y: 0, z: 0, highlight: true, hidden: "show" }]}
+    ariaLabel="頂点を原点に置いた高さ 1 の円錐の側面（青い半透明の面）と、高さ 0.75 の円の上の 6 点で描いた表示の法線ベクトル N（青緑の矢印）。どの矢印も、z 軸の側へ傾きながら上を向く。奥の矢印は円錐の内側にあり、はっきり見える。手前の矢印は、根元が面に隠れて淡く見える。頂点を琥珀色の点で示す。"
+  />
+  <figcaption>
+    <em>
+      図 4. 円錐面（$0\le t\le1$）と、高さ $0.75$ の 6 点での表示の法線ベクトル $\vec{N}=(-x,-y,z)$（青緑。長さを $0.45$ 倍に縮めて描いた）。$\vec{N}$ は円錐の内側（$z$ 軸の側）へ傾きながら上を向く。頂点（琥珀色の点）では $\vec{N}=\vec{0}$ である。
+    </em>
+  </figcaption>
+</figure>
+
+### 滑らかでない表示
+
+滑らかでない例を挙げる。$E=[-1,1]\times[0,1]$ とする。表示 $(u^3,\ v,\ u^2)$ を考える。成分は多項式だから、条件 1 は成り立つ。接ベクトルの一方は $\vec{r}_u=(3u^2,\ 0,\ 2u)$ である。もう一方は $\vec{r}_v=(0,1,0)$ であり、外積は次のとおりである。
+
+$$
+\begin{aligned}
+N_1&=0\cdot0-2u\cdot1=-2u\\
+N_2&=2u\cdot0-3u^2\cdot0=0\\
+N_3&=3u^2\cdot1-0\cdot0=3u^2
+\end{aligned}
+$$
+
+$u=0$ のとき $\vec{N}=\vec{0}$ である。$E$ の内部の点 $(0,v)$（$0<v<1$）で条件 2 が破れるので、滑らかな曲面ではない。$v$ を固定した断面は、線積分の章の尖った曲線 $(t^3,t^2)$ と同じ形である。図 5 のとおり、曲面は $y$ 軸の線分に沿って折れ曲がる。
+
+<figure>
+  <SurfacePlot
+    xRange={[-1.3, 1.3]}
+    yRange={[-0.2, 1.5]}
+    zRange={[0, 1.3]}
+    azimuth={60}
+    elevation={20}
+    surfaces={[{ kind: "parametric", fn: (u, v) => ({ x: u * u * u, y: v, z: u * u }), u: [-1, 1], v: [0, 1], opacity: 0.6, resolution: [32, 6] }]}
+    curves={[{ fn: (t) => ({ x: 0, y: t, z: 0 }), t: [0, 1], color: "#dc2626", width: 2.6, hidden: "show" }]}
+    ariaLabel="表示 (u^3, v, u^2) の曲面を青い面で描いた図。y 軸の向きに一様に伸びた面で、y 軸に垂直な断面は、原点で下向きに尖った曲線である。面は y 軸の線分 0≤y≤1 に沿って折れ曲がり、折り目を赤い線で示す。"
+  />
+  <figcaption>
+    <em>
+      図 5. 表示 $(u^3,v,u^2)$（$-1\le u\le1$・$0\le v\le1$）の曲面。$y$ 軸に垂直な断面は、原点で尖った曲線 $(t^3,t^2)$ と同じ形である。赤い線（$y$ 軸の線分）の上では $\vec{N}=\vec{0}$ であり、曲面は赤い線に沿って折れ曲がる。
+    </em>
+  </figcaption>
+</figure>
+
+条件 3 が破れる例も挙げる。球面の表示で、$E=[0,\pi]\times[0,4\pi]$ とする。$0<\theta<2\pi$ のとき、内部の 2 点 $(\varphi,\theta)$・$(\varphi,\theta+2\pi)$ は同じ点に対応する。表示は球面を 2 回覆う。後述の曲面積の例で、面積を重ねて数えることを確かめる。
+
+### 区分的に滑らかな曲面
+
+立方体の表面のように、辺や角のある曲面も扱いたい。滑らかな曲面を張り合わせて表す。
+
+> **区分的に滑らかな曲面（定義）.** $n$ を $1$ 以上の整数とし、滑らかな曲面 $S_1,\dots,S_n$ を考える。$n\ge2$ のときは、異なる 2 つの曲面 $S_i$・$S_j$ に共通する点は、$S_i$ の表示でも $S_j$ の表示でも、$E$ の境界の点にだけ対応するとする。$S_1$ から $S_n$ までを合わせたものを**区分的に滑らかな曲面**と呼び、次のように書く。
+>
+> $$
+> S_1+S_2+\cdots+S_n
+> $$
+
+定義について、次の点を押さえる。
+
+- **記号.** $i$・$j$ は「アイ」「ジェイ」と読む、部分の番号を表す文字である。$S_1+S_2$ は「エス・イチ・プラス・エス・ニ」と読む。曲面を張り合わせることを表す、便宜的な書き方であり、ベクトルの和ではない。線積分の章の $C_1+C_2$ と違い、並べる順序は問わない。
+- **部分どうしの関係.** 部分どうしは、縁（$E$ の境界に対応する点）でだけ接する。内部の点どうしで重なり合うことはない。
+- **滑らかな曲面も含まれる.** $n=1$ の場合は、滑らかな曲面 $S_1$ 自身である。
+
+**立方体の表面.** [三重積分](../../multivariable-calculus/triple-integrals/)の章の記法で、立方体 $[0,1]\times[0,1]\times[0,1]$ を考える。表面は、6 つの正方形の面でできる。例えば $x=1$ の面は、表示 $(1,\ u,\ v)$ の曲面である。範囲は $E=[0,1]\times[0,1]$ である。接ベクトルと表示の法線ベクトルは、次のとおりである。
+
+$$
+\vec{r}_u=(0,1,0),\qquad\vec{r}_v=(0,0,1),\qquad\vec{N}=(1,0,0)
+$$
+
+$x=1$ の面は滑らかな曲面である。2 つの面に共通する点は立方体の辺の上の点であり、どちらの面の表示でも $E$ の境界の点に対応する。立方体の表面は、6 つの面を張り合わせた区分的に滑らかな曲面である。
+
+**ふたつきの円柱.** 半径 $a$・高さ $h$ の円柱の表面は、次の 3 つの曲面を張り合わせた区分的に滑らかな曲面である。$D=\{(x,y)\mid x^2+y^2\le a^2\}$ は、重積分の章で確かめたとおり縦線領域である。
+
+| 部分           | 媒介変数表示                      | 範囲 $E$              |
+| -------------- | --------------------------------- | --------------------- |
+| 側面 $S_1$     | $(a\cos\theta,\ a\sin\theta,\ z)$ | $[0,2\pi]\times[0,h]$ |
+| 上のふた $S_2$ | $(x,\ y,\ h)$                     | $D$                   |
+| 下のふた $S_3$ | $(x,\ y,\ 0)$                     | $D$                   |
+
+2 つのふたは、定数関数 $g(x,y)=h$・$g(x,y)=0$ のグラフであり、滑らかな曲面である。部分どうしに共通する点は、高さ $0$ と $h$ の 2 つの円の上の点である。側面の表示では $E$ の辺 $z=0$・$z=h$ に対応し、ふたの表示では $D$ の境界の円の点に対応する。図 6 に描く。
+
+<figure>
+  <SurfacePlot
+    xRange={[-1.6, 1.6]}
+    yRange={[-1.6, 1.6]}
+    zRange={[0, 2.3]}
+    floorGrid={false}
+    surfaces={[
+      { kind: "parametric", fn: (th, z) => ({ x: Math.cos(th), y: Math.sin(th), z }), u: [0, 2 * Math.PI], v: [0, 1.4], opacity: 0.3, resolution: [32, 4], label: "S_1", labelAt: { x: 0.3, y: -1.35, z: 0.8 } },
+      { kind: "graph", f: () => 1.4, disk: { r: 1 }, color: "#10b981", opacity: 0.45, label: "S_2", labelAt: { x: 0, y: 0.2, z: 1.6 } },
+      { kind: "graph", f: () => 0, disk: { r: 1 }, color: "#f59e0b", opacity: 0.45, label: "S_3", labelAt: { x: 1.45, y: 0.9, z: 0 } },
+    ]}
+    ariaLabel="半径 1・高さ 1.4 の円柱の表面を、3 つの部分に塗り分けた図。側面 S1 は青い半透明の面、上のふた S2 は緑の円板、下のふた S3 は琥珀色の円板である。3 つの部分は、上下の 2 つの円で接する。"
+  />
+  <figcaption>
+    <em>
+      図 6. ふたつきの円柱の表面 $S_1+S_2+S_3$（$a=1$・$h=1.4$）。側面 $S_1$（青）、上のふた $S_2$（緑）、下のふた $S_3$（琥珀色）は、上下の 2 つの円の上でだけ接する。
+    </em>
+  </figcaption>
+</figure>
+
+## 曲面積
+
+### 外積と 1 次結合
+
+曲面積を定める準備として、外積の計算規則を 1 つ用意する。
+
+> **外積と 1 次結合（補題）.** 空間ベクトル $\vec{a}$・$\vec{b}$ と、数 $\alpha$・$\beta$・$\gamma$・$\delta$ について、次が成り立つ。
+>
+> $$
+> (\alpha\vec{a}+\beta\vec{b})\times(\gamma\vec{a}+\delta\vec{b})=(\alpha\delta-\beta\gamma)\,(\vec{a}\times\vec{b})
+> $$
+
+$\alpha$・$\beta$・$\gamma$・$\delta$ は「アルファ」「ベータ」「ガンマ」「デルタ」と読む、本補題の便宜的な文字である。係数 $\alpha\delta-\beta\gamma$ は、重積分の変数変換とヤコビアンの章の 2 次の行列式で、次のように書ける。
+
+$$
+\alpha\delta-\beta\gamma=\det\begin{pmatrix}\alpha&\gamma\\\beta&\delta\end{pmatrix}
+$$
+
+**証明.** 成分を、次のように書く。
+
+$$
+\vec{a}=(a_1,a_2,a_3),\qquad\vec{b}=(b_1,b_2,b_3)
+$$
+
+$\vec{p}=\alpha\vec{a}+\beta\vec{b}$・$\vec{q}=\gamma\vec{a}+\delta\vec{b}$ とおく。$\vec{p}$・$\vec{q}$ は本証明だけの便宜的な文字である。外積の定義より、$\vec{p}\times\vec{q}$ の第 1 成分は $p_2q_3-p_3q_2$ である。2 つの積を展開する。
+
+$$
+\begin{aligned}
+p_2q_3&=\alpha\gamma\,a_2a_3+\alpha\delta\,a_2b_3+\beta\gamma\,b_2a_3+\beta\delta\,b_2b_3\\
+p_3q_2&=\alpha\gamma\,a_3a_2+\alpha\delta\,a_3b_2+\beta\gamma\,b_3a_2+\beta\delta\,b_3b_2
+\end{aligned}
+$$
+
+差をとると、$\alpha\gamma$ と $\beta\delta$ の項は打ち消し合う。残りは次のとおりである。
+
+$$
+p_2q_3-p_3q_2=\alpha\delta\,(a_2b_3-a_3b_2)-\beta\gamma\,(a_2b_3-a_3b_2)=(\alpha\delta-\beta\gamma)\,(a_2b_3-a_3b_2)
+$$
+
+$a_2b_3-a_3b_2$ は、$\vec{a}\times\vec{b}$ の第 1 成分である。第 2・第 3 成分も、添字を $2\to3\to1$ の順に送った同じ計算で示せる。証明を終わる。
+
+$\beta=\gamma=0$ とすると、$(\alpha\vec{a})\times(\delta\vec{b})=\alpha\delta\,(\vec{a}\times\vec{b})$ を得る。
+
+### 小さな平行四辺形で近似する
+
+曲面の面積を求めるため、曲面を小さな平行四辺形で近似する。滑らかな曲面 $S$：$\vec{r}(u,v)$（$(u,v)\in E$）を考える。$E$ は長方形であるとして、見当を立てる。
+
+1. **分ける.** [重積分（二重積分）](../../multivariable-calculus/double-integrals/)の章と同じく、$E$ を小さな長方形に分ける。小さな長方形 $K=[u_0,u_0+\Delta u]\times[v_0,v_0+\Delta v]$ の像は、曲面の上の曲がった四辺形である（図 2 の琥珀色の部分）。
+2. **辺を見積もる.** 重積分の変数変換とヤコビアンの章の「小さな長方形の像」の節と同じく、成分ごとに[微分の近似と微小変化](../../calculus/linear-approximation/)の章の見積もりを使う。次の近似が成り立つと読める。
+
+   $$
+   \begin{aligned}
+   \vec{r}(u_0+\Delta u,v_0)-\vec{r}(u_0,v_0)&\approx\Delta u\,\vec{r}_u(u_0,v_0)\\
+   \vec{r}(u_0,v_0+\Delta v)-\vec{r}(u_0,v_0)&\approx\Delta v\,\vec{r}_v(u_0,v_0)
+   \end{aligned}
+   $$
+
+3. **平行四辺形に置き換える.** 曲がった四辺形を、$\Delta u\:\vec{r}_u$ と $\Delta v\:\vec{r}_v$ が張る平行四辺形で置き換える。外積の章より、平行四辺形の面積は外積の大きさに等しい。補題とスカラー倍の大きさの公式より、面積は次の値である。
+
+   $$
+   \bigl\lvert(\Delta u\,\vec{r}_u)\times(\Delta v\,\vec{r}_v)\bigr\rvert=\lvert\vec{r}_u\times\vec{r}_v\rvert\,\Delta u\,\Delta v
+   $$
+
+4. **足し合わせる.** すべての小さな長方形について足すと、関数 $\lvert\vec{r}_u\times\vec{r}_v\rvert$ の、$E$ の上のリーマン和になる。分割を細かくすると、リーマン和は二重積分 $\displaystyle\iint_E\lvert\vec{r}_u\times\vec{r}_v\rvert\:du\:dv$ に近づく。
+
+以上は、直観による見当である。曲がった四辺形の面積は、まだ定めていない。見当に基づき、次節で曲面積を二重積分で定める[^lantern]。図 2 の小さな長方形 $K$ の像と、近似に使う平行四辺形を、図 7 に描く。
+
+<figure>
+  <SurfacePlot
+    xRange={[0, 1.6]}
+    yRange={[0, 1.1]}
+    zRange={[0, 1.1]}
+    azimuth={20}
+    elevation={35}
+    floorGrid={false}
+    surfaces={[
+      { kind: "parametric", fn: (p, t) => sph(1, p, t), u: [0, Math.PI / 2], v: [0, Math.PI / 2], opacity: 0.15, resolution: [16, 16], meshEvery: 4, hide: inK },
+      { kind: "parametric", fn: (p, t) => sph(1.005, p, t), u: [Math.PI / 4, Math.PI / 2], v: [0, Math.PI / 4], color: "#f59e0b", opacity: 0.75, resolution: [6, 6], mesh: false },
+    ]}
+    planes={[
+      {
+        kind: "polygon",
+        vertices: [
+          sph(1, Math.PI / 4, 0),
+          plus(sph(1, Math.PI / 4, 0), sphPhi(1, Math.PI / 4, 0), Math.PI / 4),
+          plus(plus(sph(1, Math.PI / 4, 0), sphPhi(1, Math.PI / 4, 0), Math.PI / 4), sphTheta(1, Math.PI / 4, 0), Math.PI / 4),
+          plus(sph(1, Math.PI / 4, 0), sphTheta(1, Math.PI / 4, 0), Math.PI / 4),
+        ],
+        color: "#7c3aed",
+        opacity: 0.25,
+      },
+    ]}
+    segments={[
+      { from: sph(1, Math.PI / 4, 0), to: plus(sph(1, Math.PI / 4, 0), sphPhi(1, Math.PI / 4, 0), Math.PI / 4), arrow: true, color: "#dc2626", width: 2.4, label: "\\Delta\\varphi\\,\\vec{r}_\\varphi", hidden: "show" },
+      { from: sph(1, Math.PI / 4, 0), to: plus(sph(1, Math.PI / 4, 0), sphTheta(1, Math.PI / 4, 0), Math.PI / 4), arrow: true, color: "#2563eb", width: 2.4, label: "\\Delta\\theta\\,\\vec{r}_\\theta", hidden: "show" },
+    ]}
+    points={[{ ...sph(1, Math.PI / 4, 0), label: "\\mathrm{P}_0", hidden: "show" }]}
+    ariaLabel="半径 1 の球面の一部（淡い青）の上に、図 2 の小さな長方形 K の像である曲がった四辺形を琥珀色で塗った図。四辺形の頂点 P0（天頂角 π/4・方位角 0 の点）から、経線の向きの赤い矢印 Δφ r_φ と、緯線の向きの青い矢印 Δθ r_θ を描く。2 本の矢印が張る平行四辺形を紫で塗ってある。平行四辺形は P0 で球面に接し、四辺形から少し外へずれる。"
+  />
+  <figcaption>
+    <em>
+      図 7. 図 2 の $K$ の像（琥珀色の曲がった四辺形）と、近似に使う平行四辺形（紫）。平行四辺形は、頂点 $\mathrm{P}_0$ から出る 2 本の矢印 $\Delta\varphi\:\vec{r}_\varphi$（赤）・$\Delta\theta\:\vec{r}_\theta$（青）が張る。$\Delta\varphi=\Delta\theta=\tfrac\pi4$ である。見やすさのため $K$ を大きくとったので、2 つの図形はずれている。$K$ を小さくするほど、2 つの図形は近づくと考えられる。
+    </em>
+  </figcaption>
+</figure>
+
+### 曲面積の定義
+
+被積分関数の連続性を、補題として確かめる。
+
+> **法線ベクトルの大きさの連続性（補題）.** 滑らかな曲面 $S$ の表示 $\vec{r}(u,v)$ が、集合 $U$ で定義されているとする。$\vec{N}$ の 3 つの成分と $\lvert\vec{N}\rvert$ は、$U$ で連続である。さらに、$E$ の内部の点では $\lvert\vec{N}\rvert>0$ である。
+
+**証明.** 次の 3 段階で示す。
+
+1. **成分.** $\vec{N}$ の第 1 成分は $y_uz_v-z_uy_v$ である。4 つの偏導関数は、条件 1 より $U$ で連続である。[多変数関数の極限と連続性](../../multivariable-calculus/limits-and-continuity/)の章の 2 変数関数の連続性と四則演算（定理）より、第 1 成分は $U$ で連続である。第 2・第 3 成分も同様である。
+2. **大きさ.** $\lvert\vec{N}\rvert=\sqrt{N_1^2+N_2^2+N_3^2}$ である。根号の中は、手順 1 と四則演算の定理より連続であり、$0$ 以上の値をとる。同じ章の表のとおり $\sqrt{t}$ は $t\ge0$ の各点で連続だから、1 変数の関数との合成の連続性（定理）より、$\lvert\vec{N}\rvert$ は $U$ で連続である。
+3. **正であること.** 滑らかな曲面の条件 2 による。
+
+証明を終わる。
+
+> **曲面積（定義）.** 滑らかな曲面 $S$：$\vec{r}(u,v)$（$(u,v)\in E$）について、次の値を $S$ の**曲面積**と呼び、$\operatorname{area}(S)$ と書く。
+>
+> $$
+> \operatorname{area}(S)=\iint_E\lvert\vec{r}_u\times\vec{r}_v\rvert\,du\,dv
+> $$
+>
+> 区分的に滑らかな曲面 $S_1+\cdots+S_n$ の曲面積は、各部分の曲面積の和と定める。
+
+定義について、次の点を押さえる。
+
+- **記号.** $\operatorname{area}(S)$ は「エリア・エス」と読む。三重積分の章の $\operatorname{vol}(V)$ にならった、便宜的な書き方である。
+- **$du\:dv$.** 重積分の変数変換とヤコビアンの章と同じく、$uv$ 平面の面積要素を表す。並びは積分の順序を表さない。
+- **存在.** 補題より、被積分関数は $E$ で連続である。重積分の章の縦線領域・横線領域の上の二重積分（承認事項）より、二重積分が定まる。
+- **弧長との対応.** 線積分の章の弧長の被積分関数 $\lvert\vec{r}\:'(t)\rvert$ を、$\lvert\vec{r}_u\times\vec{r}_v\rvert$ に替えた形である。
+- **平面の領域の面積との一致.** 水平な平面 $z=c$ の一部を、グラフの表示 $(x,y,c)$（$(x,y)\in D$）で表す。$\vec{N}=(0,0,1)$ だから、曲面積は $\displaystyle\iint_D1\:dA$ であり、重積分の章の領域の面積に等しい。
+
+### 曲面積の例
+
+定義した曲面積を、代表的な曲面で計算する。
+
+**球面.** $\lvert\vec{N}\rvert=a^2\sin\varphi$ である。重積分の章の変数を分けた関数の二重積分（系）より、次を得る。
+
+$$
+\operatorname{area}(S)=a^2\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^\pi\sin\varphi\,d\varphi\right)=a^2\cdot2\pi\cdot\Bigl[-\cos\varphi\Bigr]_0^\pi=a^2\cdot2\pi\cdot2=4\pi a^2
+$$
+
+[前提とする知識](../../../prerequisites/knowledge/)の球の表面積の公式 $4\pi r^2$ と一致する。
+
+**2 回覆う表示.** 条件 3 が破れる $E=[0,\pi]\times[0,4\pi]$ で同じ計算をすると、$\theta$ の積分が $4\pi$ になり、値は $8\pi a^2$ である。球面の面積の 2 倍であり、同じ部分を重ねて数えている。曲面積が点の集まりの広さを表すには、条件 3 が要る。
+
+**円柱面.** $\lvert\vec{N}\rvert=a$ だから、$\operatorname{area}(S)=a\cdot2\pi\cdot h=2\pi ah$ である。前提とする知識の円柱の側面積（底面の円周 $2\pi a$ と高さ $h$ の積）と一致する。
+
+**円錐面.** $\lvert\vec{N}\rvert=\sqrt2\:t$ だから、次を得る。
+
+$$
+\operatorname{area}(S)=\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^1\sqrt2\,t\,dt\right)=2\pi\cdot\frac{\sqrt2}{2}=\sqrt2\,\pi
+$$
+
+円錐の頂点から底面の円周の点までの長さ（母線の長さ）は、原点から点 $(1,0,1)$ までの距離 $\sqrt2$ である。前提とする知識の円錐の側面積（$\pi\times$ 底面の半径 $\times$ 母線の長さ）は $\pi\cdot1\cdot\sqrt2$ であり、一致する。
+
+### グラフの曲面積
+
+グラフでは、曲面積の式が次の形になる。
+
+> **グラフの曲面積（定理）.** 2 変数関数 $g$ が集合 $U$ で $C^1$ 級であり、$D$ は $U$ に含まれる縦線領域または横線領域であるとする。$g$ のグラフを、表示 $\vec{r}(x,y)$（$(x,y)\in D$）で表した曲面を $S$ とする。$S$ の曲面積は、次の値である。
+>
+> $$
+> \operatorname{area}(S)=\iint_D\sqrt{1+g_x^2+g_y^2}\,dA
+> $$
+
+**証明.**「代表的な曲面が滑らかであること」の節で確かめたとおり、$S$ は滑らかな曲面であり、$\lvert\vec{N}\rvert=\sqrt{g_x^2+g_y^2+1}$ である。曲面積の定義に代入すればよい。証明を終わる。
+
+被積分関数は $1$ 以上である。グラフの曲面積は、床への影 $D$ の面積以上である。傾いた部分ほど、影より広い。
+
+**例.** 平面 $z=1-x-y$ のうち、$x\ge0$・$y\ge0$・$z\ge0$ の部分 $S$ を考える。$S$ は、次の 3 点を頂点とする三角形である。
+
+$$
+\mathrm{A}(1,0,0),\qquad\mathrm{B}(0,1,0),\qquad\mathrm{C}(0,0,1)
+$$
+
+$g(x,y)=1-x-y$ とし、$D=\{(x,y)\mid0\le x\le1,\ 0\le y\le1-x\}$ とする。$g_x=g_y=-1$ だから、被積分関数は $\sqrt3$ である。$D$ の面積は $\dfrac12$ だから、次を得る。
+
+$$
+\operatorname{area}(S)=\iint_D\sqrt3\,dA=\frac{\sqrt3}{2}
+$$
+
+外積の章の三角形の面積の公式で確かめる。2 本の辺のベクトルと外積は、次のとおりである。
+
+$$
+\overrightarrow{\mathrm{AB}}=(-1,1,0),\qquad\overrightarrow{\mathrm{AC}}=(-1,0,1),\qquad\overrightarrow{\mathrm{AB}}\times\overrightarrow{\mathrm{AC}}=(1,1,1)
+$$
+
+三角形の面積は $\dfrac12\lvert(1,1,1)\rvert=\dfrac{\sqrt3}{2}$ であり、一致する。
+
+### 柵の面積
+
+線積分の章の「曲線の上に立てた柵」の節では、単位円の 4 分の 1 の上に高さ $x+y$ の柵を立て、面積を線積分 $\displaystyle\int_C(x+y)\:ds=2$ で読んだ。曲がった面の面積は、線積分の章では定めていなかった。本章の曲面積で確かめる。柵を、次の表示で表す。$w$ は高さを表す、本例だけの便宜的な文字である。
+
+$$
+\vec{r}(t,w)=(\cos t,\ \sin t,\ w),\qquad E=\Bigl\{(t,w)\Bigm|0\le t\le\frac\pi2,\ 0\le w\le\cos t+\sin t\Bigr\}
+$$
+
+$[0,\tfrac\pi2]$ では $\cos t+\sin t\ge0$ だから、$E$ は縦線領域である。接ベクトルと表示の法線ベクトルは、次のとおりである。
+
+$$
+\vec{r}_t=(-\sin t,\ \cos t,\ 0),\qquad\vec{r}_w=(0,0,1),\qquad\vec{N}=(\cos t,\ \sin t,\ 0)
+$$
+
+$\lvert\vec{N}\rvert=1$ である。柵が滑らかな曲面であることを確かめる。成分は $\mathbb{R}^2$ で $C^1$ 級であり、$\vec{N}$ はつねに零ベクトルでない。$E$ の内部の点では $0<t<\tfrac\pi2$ である。$\cos$ は $[0,\pi]$ で 1 対 1 だから、点の $x$ 座標から $t$ が決まり、高さ $z=w$ から $w$ も決まる。曲面積は次のとおりである。
+
+$$
+\operatorname{area}(S)=\iint_E1\,dt\,dw=\int_0^{\pi/2}(\cos t+\sin t)\,dt=2
+$$
+
+線積分の値と一致する。柵の面積という読み方は、曲面積で正しく裏付けられる。一般の曲線の上の柵は、演習問題 4 で扱う。
+
+### 媒介変数の取り替え
+
+同じ点の集まりを、別の表示で表せることがある。例えば、「グラフの曲面積」の節の三角形 $S$ は、グラフの表示のほかに、次の表示でも表せる。
+
+$$
+\vec{q}(s,t)=\bigl(s(1-t),\ st,\ 1-s\bigr)\qquad\bigl((s,t)\in[0,1]\times[0,1]\bigr)
+$$
+
+$\vec{q}$ は「ベクトル・キュー」と読む。$\vec{q}$ と媒介変数 $s$・$t$ は、取り替えを扱う箇所だけで使う便宜的な文字である。線積分の章の媒介変数の取り替えで、取り替えた表示を $\vec{q}$ と書いたのと同じ役割である。2 つの表示の関係を、一般に定める。
+
+> **曲面の媒介変数の取り替え（定義）.** 滑らかな曲面 $S$ の表示を $\vec{r}(u,v)$（$(u,v)\in E$）とし、集合 $U$ で定義されているとする。$st$ 平面の縦線領域または横線領域 $\tilde{E}$ と、2 変数関数 $u(s,t)$・$v(s,t)$ を考える。次の変数変換を $\Phi$ と書く。
+>
+> $$
+> \Phi(s,t)=\bigl(u(s,t),\ v(s,t)\bigr)
+> $$
+>
+> $u$・$v$ と $\Phi$ が、次の 6 つを満たすとする。
+>
+> 1. **関数の条件.** $\tilde{U}$ は $\tilde{E}$ を含む集合であり、$\tilde{U}$ の各点について、点を中心とするある円の内側が $\tilde{U}$ に含まれる。$u(s,t)$・$v(s,t)$ は $\tilde{U}$ で $C^1$ 級である。
+> 2. **定義される範囲.** $\tilde{U}$ のすべての点 $(s,t)$ で、点 $\Phi(s,t)$ は $U$ に属する。
+> 3. **像.** $\Phi$ による $\tilde{E}$ の像は、$E$ に等しい。
+> 4. **内部で 1 対 1.** $\tilde{E}$ の内部の異なる 2 点の像は異なる。
+> 5. **ヤコビアンの符号.** ヤコビアン $J=\dfrac{\partial(u,v)}{\partial(s,t)}$ について、次のどちらかが成り立つ。
+>    - **同じ向き.** $\tilde{E}$ のすべての点で $J\ge0$ であり、$\tilde{E}$ の内部のすべての点で $J>0$ である。
+>    - **逆向き.** $\tilde{E}$ のすべての点で $J\le0$ であり、$\tilde{E}$ の内部のすべての点で $J<0$ である。
+> 6. **内部の像.** $\tilde{E}$ の内部の点の像は、$E$ の内部の点である。
+>
+> 条件を満たすとき、表示 $\vec{q}(s,t)=\vec{r}(\Phi(s,t))$（$(s,t)\in\tilde{E}$）を、$\vec{r}$ の**媒介変数の取り替え**と呼ぶ。条件 5 の前者を**同じ向きの取り替え**、後者を**逆向きの取り替え**と呼ぶ。
+
+定義について、次の点を押さえる。
+
+- **記号.** $\tilde{E}$・$\tilde{U}$ は「イー・チルダ」「ユー・チルダ」と読む、本章の便宜的な文字である。$st$ 平面は、横軸を $s$ 軸、縦軸を $t$ 軸とする座標平面である。$\Phi$ は「ファイ」と読むギリシャ文字の大文字であり、取り替えに使う変数変換を表す本章の便宜的な文字である。
+- **ヤコビアン.** 重積分の変数変換とヤコビアンの章の定義で、$x$・$y$ を $u$・$v$ に、$u$・$v$ を $s$・$t$ に読み替えたものである。$J=u_sv_t-u_tv_s$ である。
+- **変数変換の公式との対応.** 本章の条件 1・3・4 と、内部で $J\neq0$ であることは、同じ章の 2 変数の変数変換の公式（承認事項）の条件 2・3・4・5 にあたる。条件 6 は、取り替えた表示が滑らかであることを示すのに使う。
+- **表示の扱い.** 後述の定理のとおり、取り替えた表示も滑らかな曲面の表示である。
+  - **同じ向きの取り替え.** 線積分の章と同じく、得た表示を同じ曲面 $S$ の表示として扱う。
+  - **逆向きの取り替え.** 線積分の章と違い、得た表示も同じ曲面 $S$ の表示として扱う。本章では、曲面の向きを表示と切り離して定めるからである。向きとの関係は、後述の「曲面の向き」の節で調べる。
+- **媒介変数の入れ替え.** $u(s,t)=t$・$v(s,t)=s$ とすると、$J=0\cdot0-1\cdot1=-1$ である。媒介変数の順を入れ替える取り替えは、逆向きの取り替えである。
+
+取り替えると、表示の法線ベクトルはヤコビアン倍になる。
+
+> **取り替えと法線ベクトル（定理）.** 媒介変数の取り替え $\vec{q}(s,t)=\vec{r}(\Phi(s,t))$ について、$\tilde{U}$ のすべての点 $(s,t)$ で次が成り立つ。
+>
+> $$
+> \vec{q}_s\times\vec{q}_t=J(s,t)\,\vec{N}\bigl(\Phi(s,t)\bigr)
+> $$
+
+**証明.** 次の 2 段階で示す。
+
+1. **偏微分の連鎖律.** $x(u,v)$ は $U$ で $C^1$ 級だから、点 $\Phi(s,t)$ で全微分可能である。$u$・$v$ は偏微分可能である。連鎖律（合成関数の偏微分）の章の偏微分の連鎖律（定理）より、$x(\Phi(s,t))$ の $s$ による偏微分係数は $x_u\:u_s+x_v\:v_s$ である。$y$・$z$ と、$t$ による偏微分も同様である。成分をまとめると、次の式を得る。
+
+   $$
+   \vec{q}_s=u_s\,\vec{r}_u+v_s\,\vec{r}_v,\qquad\vec{q}_t=u_t\,\vec{r}_u+v_t\,\vec{r}_v
+   $$
+
+2. **補題.** 外積と 1 次結合（補題）を、$\alpha=u_s$・$\beta=v_s$・$\gamma=u_t$・$\delta=v_t$ として使う。係数は $u_sv_t-v_su_t=J$ である。
+
+証明を終わる。
+
+取り替えた表示も、滑らかな曲面の表示である。
+
+> **取り替えた表示の滑らかさ（定理）.** 媒介変数の取り替え $\vec{q}(s,t)$（$(s,t)\in\tilde{E}$）は、集合 $\tilde{U}$ で定義された表示として、滑らかな曲面の 3 つの条件を満たす。
+
+**証明.** 条件ごとに示す。
+
+1. **$C^1$ 級.** 前の定理の証明より、$\tilde{U}$ の各点で $\vec{q}_s=u_s\:\vec{r}_u(\Phi(s,t))+v_s\:\vec{r}_v(\Phi(s,t))$ である。$x_u$ などは $U$ で連続であり、$u$・$v$ は $\tilde{U}$ で連続である。重積分の変数変換とヤコビアンの章の 2 変数関数への代入の連続性（補題）より、$x_u(\Phi(s,t))$ などは $\tilde{U}$ で連続である。連続性と四則演算の定理より、$\vec{q}_s$ の成分は連続である。$\vec{q}_t$ も同様であり、$\vec{q}$ の成分は $\tilde{U}$ で $C^1$ 級である。
+2. **内部で法線ベクトルが零でない.** $\tilde{E}$ の内部の点 $(s,t)$ では $J\neq0$ である。条件 6 より $\Phi(s,t)$ は $E$ の内部の点だから、$\vec{N}(\Phi(s,t))\neq\vec{0}$ である。前の定理より、$\vec{q}_s\times\vec{q}_t\neq\vec{0}$ である。
+3. **内部で 1 対 1.** $\tilde{E}$ の内部の異なる 2 点の像は、条件 4 より異なり、条件 6 より $E$ の内部の点である。$S$ は滑らかだから、2 つの像に対応する $S$ の点も異なる。
+
+証明を終わる。
+
+### 曲面積は表示によらない
+
+取り替えても、曲面積は変わらない。
+
+> **曲面積と媒介変数の取り替え（定理）.** 媒介変数の取り替え $\vec{q}(s,t)$ について、同じ向き・逆向きのどちらの取り替えでも、次が成り立つ。
+>
+> $$
+> \iint_{\tilde{E}}\lvert\vec{q}_s\times\vec{q}_t\rvert\,ds\,dt=\iint_E\lvert\vec{r}_u\times\vec{r}_v\rvert\,du\,dv
+> $$
+
+**証明.** $h(u,v)=\lvert\vec{N}(u,v)\rvert$ とおく。$h$ は本証明だけの便宜的な名前である。法線ベクトルの大きさの連続性（補題）より、$h$ は $E$ で連続である。前の定理とスカラー倍の大きさの公式より、次が成り立つ。
+
+$$
+\lvert\vec{q}_s\times\vec{q}_t\rvert=\lvert J(s,t)\rvert\,h\bigl(\Phi(s,t)\bigr)
+$$
+
+重積分の変数変換とヤコビアンの章の 2 変数の変数変換の公式（承認事項）を使う。公式の $x$・$y$ を $u$・$v$ に、$u$・$v$ を $s$・$t$ に、$D$ を $E$ に、$E$ を $\tilde{E}$ に、$f$ を $h$ に読み替える。公式の 5 つの条件は、次のとおり満たされる。
+
+1. **積分領域.** $\tilde{E}$ と $E$ は、どちらも縦線領域または横線領域である。
+2. **関数の条件.** $u$・$v$ は $\tilde{U}$ で $C^1$ 級である。全微分と接平面の章の定理より、$u$・$v$ は $\tilde{U}$ で連続であり、偏導関数も $\tilde{U}$ で連続である。
+3. **像.** 取り替えの条件 3 による。
+4. **内部で 1 対 1.** 取り替えの条件 4 による。
+5. **内部でヤコビアンが 0 でない.** 取り替えの条件 5 より、内部の点で $J>0$ または $J<0$ である。
+
+公式より、次が成り立つ。
+
+$$
+\iint_E h\,du\,dv=\iint_{\tilde{E}}h(\Phi(s,t))\,\lvert J\rvert\,ds\,dt
+$$
+
+右辺は、結論の左辺に等しい。証明を終わる。
+
+**例.** 三角形 $S$ の 2 つの表示で確かめる。定理の $u$・$v$ を $x$・$y$ に読み替え、グラフの表示 $\vec{r}(x,y)=(x,\ y,\ 1-x-y)$ を使う。取り替えの関数は $x=s(1-t)$・$y=st$ であり、$\tilde{E}=[0,1]\times[0,1]$ である。6 つの条件を確かめる。
+
+1. **関数の条件.** $x$・$y$ は多項式だから、$\tilde{U}=\mathbb{R}^2$ で $C^1$ 級である。
+2. **定義される範囲.** グラフの表示は $\mathbb{R}^2$ 全体で定義されるので、$U=\mathbb{R}^2$ にとれる。
+3. **像.** $\tilde{E}$ の点の像は $x\ge0$・$y\ge0$・$x+y=s\le1$ を満たし、$D$ に属する。逆に $D$ の点 $(x,y)$ は、$s=x+y$ とおくと $0\le s\le1$ を満たす。$s>0$ なら $t=\dfrac ys$ とおくと $0\le t\le1$ であり、像は $(x,y)$ である。$s=0$ なら $(x,y)=(0,0)$ であり、点 $(0,0)$ の像である。
+4. **内部で 1 対 1.** $\tilde{E}$ の内部の点では $0<s<1$ である。像から $s=x+y$、$t=\dfrac ys$ が決まるので、異なる 2 点の像は異なる。
+5. **ヤコビアンの符号.** $J=x_sy_t-x_ty_s=(1-t)\cdot s-(-s)\cdot t=s$ である。$\tilde{E}$ では $s\ge0$、内部では $s>0$ だから、同じ向きの取り替えである。
+6. **内部の像.** 内部の点の像 $(x,y)$ は、$x>0$・$y>0$・$x+y<1$ を満たす。3 つの数 $x$・$y$・$\tfrac{1-x-y}{2}$ のうち最小の値を $m$ とすると、$m>0$ である。中心 $(x,y)$・半径 $m$ の円の内側の点は、座標の差と距離（定理）より、座標の差がどちらも $m$ より小さい。円の内側の点も 3 つの不等式を満たすので、像は $D$ の内部の点である。$m$ は本項目だけの便宜的な文字である。
+
+取り替えた表示と接ベクトルは、次のとおりである。
+
+$$
+\begin{aligned}
+\vec{q}(s,t)&=\bigl(s(1-t),\ st,\ 1-s\bigr)\\
+\vec{q}_s&=(1-t,\ t,\ -1)\\
+\vec{q}_t&=(-s,\ s,\ 0)
+\end{aligned}
+$$
+
+外積の第 1・第 2・第 3 成分は、上から順に次のとおりである。
+
+$$
+\begin{aligned}
+t\cdot0-(-1)\cdot s&=s\\
+(-1)\cdot(-s)-(1-t)\cdot0&=s\\
+(1-t)\cdot s-t\cdot(-s)&=s
+\end{aligned}
+$$
+
+よって、$\vec{q}_s\times\vec{q}_t=s\:(1,1,1)$ である。グラフの表示の $\vec{N}=(1,1,1)$ の $J=s$ 倍であり、定理と一致する。曲面積は、次のとおりである。
+
+$$
+\iint_{\tilde{E}}\sqrt3\,s\,ds\,dt=\sqrt3\left(\int_0^1s\,ds\right)\left(\int_0^11\,dt\right)=\frac{\sqrt3}{2}
+$$
+
+グラフの表示で求めた値と一致する。
+
+## スカラー場の面積分
+
+### 曲面に沿って値を足す
+
+曲面の各点で値の決まるスカラー場を、曲面に沿って足し合わせる。滑らかな曲面 $S$：$\vec{r}(u,v)$（$(u,v)\in E$）と、$S$ の点で値の決まるスカラー場 $f$ を考える。$E$ は長方形であるとして、曲面積の見当と同じ手順で和を作る。
+
+1. **分ける.** $E$ を、横幅 $\Delta u$・縦幅 $\Delta v$ の小さな長方形に分ける。小さな長方形の左下の頂点を $(u_i,v_j)$ とする。記号は、重積分の章の二重の和と同じ添字の付け方である。
+2. **値と面積を掛ける.** 小さな長方形の像の面積は、およそ $\lvert\vec{N}(u_i,v_j)\rvert\:\Delta u\:\Delta v$ である。像の上の点 $\vec{r}(u_i,v_j)$ での値 $f(\vec{r}(u_i,v_j))$ を掛ける。
+3. **足し合わせる.** すべての小さな長方形について足す。
+
+$$
+\sum_{i}\sum_{j}f\bigl(\vec{r}(u_i,v_j)\bigr)\,\bigl\lvert\vec{N}(u_i,v_j)\bigr\rvert\,\Delta u\,\Delta v
+$$
+
+和は、関数 $f(\vec{r}(u,v))\:\lvert\vec{N}(u,v)\rvert$ の $E$ の上のリーマン和である。被積分関数が連続なら、分割を細かくすると二重積分に近づく。「値 $\times$ 小さな面の面積」の和の行き先を、面積分と定める。
+
+### 面積分の仮定と定義
+
+本章で面積分を考えるときの仮定を、約束としてまとめる。
+
+> **面積分の仮定（約束）.** 本章で曲面 $S$ の上の面積分を考えるときは、次の 3 つを仮定する。
+>
+> 1. $S$ は滑らかな曲面であり、媒介変数表示 $\vec{r}(u,v)$（$(u,v)\in E$）は集合 $U$ で定義される。
+> 2. スカラー場 $f$、またはベクトル場 $\vec{F}$ は、定義域のすべての点で連続である。
+> 3. $E$ のすべての点 $(u,v)$ で、点 $\vec{r}(u,v)$ は場の定義域に属する。
+>
+> 区分的に滑らかな曲面では、各部分について 1〜3 を仮定する。
+
+線積分の章の線積分の仮定（約束）と同じ形である。ただし、項目 3 は $E$ の点だけに課す。線積分の章では開区間 $I$ 全体に課したのに対し、本章の二重積分は $E$ で連続な関数について定まるからである。被積分関数の連続性を、補題として確かめる。
+
+> **曲面の上での場の値の連続性（補題）.** 面積分の仮定のもとで、スカラー場 $f$ を考える。$u$・$v$ の関数 $f(\vec{r}(u,v))$ は、$E$ で連続である。
+
+**証明.** 次の 3 段階で示す。
+
+1. **成分の連続性.** $x(u,v)$・$y(u,v)$・$z(u,v)$ は $U$ で $C^1$ 級である。全微分と接平面の章の 2 つの定理（$C^1$ 級ならば全微分可能、全微分可能ならば連続）より、3 つの成分は $E$ の各点で連続である。
+2. **代入の補題の読み替え.** 重積分の変数変換とヤコビアンの章の 2 変数関数への代入の連続性（補題）を、外側の関数を 3 変数関数 $f$ に替えて使う。同じ章の注意のとおり、証明の手順 2 の誤差 $\dfrac s2$ を $\dfrac s3$ に替える。手順 3 では、空間の距離の不等式 $\sqrt{X^2+Y^2+Z^2}\le\lvert X\rvert+\lvert Y\rvert+\lvert Z\rvert$ を使う。$X$・$Y$・$Z$ は座標の差を表す、同じ章の便宜的な文字である。
+3. **像が定義域に属する.** 面積分の仮定 3 より、$E$ の点の像は場の定義域に属する。手順 2 の補題より、$f(\vec{r}(u,v))$ は $E$ の各点で連続である。
+
+証明を終わる。
+
+> **スカラー場の面積分（定義）.** 面積分の仮定のもとで、次の値を、曲面 $S$ の上のスカラー場 $f$ の**面積分**と呼ぶ[^surface-integral-name]。
+>
+> $$
+> \iint_S f\,dS=\iint_E f(\vec{r}(u,v))\,\lvert\vec{r}_u\times\vec{r}_v\rvert\,du\,dv
+> $$
+>
+> 区分的に滑らかな曲面 $S=S_1+\cdots+S_n$ では、各部分の面積分の和と定める。
+>
+> $$
+> \iint_S f\,dS=\iint_{S_1}f\,dS+\iint_{S_2}f\,dS+\cdots+\iint_{S_n}f\,dS
+> $$
+
+記号 $\displaystyle\iint_S f\:dS$ について、次の点を押さえる。
+
+- **読み方**：「ダブルインテグラル・エス・エフ・ディー・エス」と読む。
+- **意味**：曲面 $S$ に沿って、「$f$ の値 $\times$ 小さな面の面積」を足し合わせた値を表す。右辺の二重積分で定まる 1 つの実数である。
+- **区別**：記号全体は、右辺の値を表す正式な記法である。$dS$ は、書き換えの規則 $dS=\lvert\vec{r}_u\times\vec{r}_v\rvert\:du\:dv$ を思い出させる部分であり、単独では値をもたない。便宜的な書き方であり、曲面の面積要素とも呼ぶ。
+- **存在**：2 つの補題より、$f(\vec{r}(u,v))$ と $\lvert\vec{N}\rvert$ は $E$ で連続であり、積も連続である。縦線領域・横線領域の上の二重積分（承認事項）より、右辺が定まる。
+- **$f=1$ の場合**：$\displaystyle\iint_S1\:dS$ は曲面積 $\operatorname{area}(S)$ に等しい。$\displaystyle\iint_S dS$ とも書く。
+- **式で書く場合**：線積分と同じく、$f$ を $\displaystyle\iint_S z^2\:dS$ のように式で書いてもよい。被積分関数の $f(\vec{r}(u,v))$ は、式の $x$・$y$・$z$ に表示の成分を代入した式である。
+
+面積分は、場について線形である。
+
+> **面積分の線形性（定理）.** $k$・$l$ を定数とする。スカラー場 $f$・$g$ は同じ定義域をもち、どちらも曲面 $S$ について面積分の仮定を満たすとする。すると、次が成り立つ。
+>
+> $$
+> \iint_S(kf+lg)\,dS=k\iint_S f\,dS+l\iint_S g\,dS
+> $$
+
+**証明.** 多変数関数の極限と連続性の章の連続性と四則演算の定理（3 変数でも同じ形で成り立つ）より、$kf+lg$ は定義域で連続であり、面積分の仮定を満たす。被積分関数は $k\:f(\vec{r})\:\lvert\vec{N}\rvert+l\:g(\vec{r})\:\lvert\vec{N}\rvert$ と分かれる。重積分の章の二重積分の線形性（定理）より、結論が従う。区分的に滑らかな曲面では、各部分の等式を足す。証明を終わる。
+
+**例.** 半径 $a$ の球面 $S$ の上で、$f(x,y,z)=z^2$ の面積分を求める。表示は $\vec{r}(\varphi,\theta)$ であり、$f(\vec{r}(\varphi,\theta))=a^2\cos^2\varphi$・$\lvert\vec{N}\rvert=a^2\sin\varphi$ である。
+
+$$
+\iint_S z^2\,dS=a^4\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^\pi\cos^2\varphi\sin\varphi\,d\varphi\right)
+$$
+
+$\varphi$ の積分は、[置換積分法](../../calculus/integration-by-substitution/)の章の定積分の置換（定理）で求める。$w=\cos\varphi$ とおくと、$\dfrac{dw}{d\varphi}=-\sin\varphi$ である。$w$ は本例だけの便宜的な文字である。
+
+$$
+\int_0^\pi\cos^2\varphi\sin\varphi\,d\varphi=-\int_0^\pi(\cos\varphi)^2\,(-\sin\varphi)\,d\varphi=-\int_1^{-1}w^2\,dw=\int_{-1}^1w^2\,dw=\frac23
+$$
+
+よって、$\displaystyle\iint_S z^2\:dS=a^4\cdot2\pi\cdot\frac23=\frac{4\pi a^4}{3}$ である。
+
+### 曲面に沿った平均値
+
+重積分の章の領域における平均値にならい、曲面に沿った平均値を定める。
+
+> **曲面に沿った平均値（定義）.** 区分的に滑らかな曲面 $S$ の曲面積は正であるとする。面積分の仮定のもとで、次の値を、$S$ に沿った $f$ の**平均値**と呼ぶ。
+>
+> $$
+> \frac{1}{\operatorname{area}(S)}\iint_S f\,dS
+> $$
+
+曲面積が正であることを条件にするのは、割り算のためである。平均値について、次の点を押さえる。
+
+- **定数の場合.** $f$ が定数 $c$ なら、$\displaystyle\iint_S c\:dS=c\:\operatorname{area}(S)$ だから、平均値は $c$ である。
+- **重みの意味.** 平均値は、曲面の点を面積に応じて平等に扱う。媒介変数の進み方の偏りは、$\lvert\vec{N}\rvert$ の重みで打ち消される。
+
+**例.** 前節の例より、半径 $a$ の球面に沿った $z^2$ の平均値は、次のとおりである。
+
+$$
+\frac{1}{4\pi a^2}\cdot\frac{4\pi a^4}{3}=\frac{a^2}{3}
+$$
+
+球面の上では $x^2+y^2+z^2=a^2$ である。面積分の線形性より、$x^2$・$y^2$・$z^2$ の平均値の和は、定数 $a^2$ の平均値 $a^2$ に等しい。$x^2$ の平均値も $\dfrac{a^2}{3}$ であることを、演習問題 3 で確かめる。
+
+### 取り替えによらないこと
+
+スカラー場の面積分は、媒介変数の取り替えによらない。
+
+> **スカラー場の面積分と媒介変数の取り替え（定理）.** 面積分の仮定のもとで、表示 $\vec{r}(u,v)$ と、媒介変数の取り替え $\vec{q}(s,t)$ を考える。同じ向き・逆向きのどちらの取り替えでも、次が成り立つ。
+>
+> $$
+> \iint_{\tilde{E}}f(\vec{q}(s,t))\,\lvert\vec{q}_s\times\vec{q}_t\rvert\,ds\,dt=\iint_E f(\vec{r}(u,v))\,\lvert\vec{r}_u\times\vec{r}_v\rvert\,du\,dv
+> $$
+
+**証明.** 曲面積と媒介変数の取り替え（定理）の証明で、$h(u,v)$ を $f(\vec{r}(u,v))\:\lvert\vec{N}(u,v)\rvert$ に替える。2 つの補題より、$h$ は $E$ で連続である。$f(\vec{q}(s,t))=f(\vec{r}(\Phi(s,t)))$ だから、左辺の被積分関数は $h(\Phi(s,t))\:\lvert J\rvert$ に等しい。証明は同じ形で進む。証明を終わる。
+
+小さな面の面積は、表示の向きによらず正である。スカラー場の面積分は「値 $\times$ 面積」の和だから、取り替えの向きによらない。線積分の章のスカラー場の線積分と媒介変数の取り替え（定理）と同じ性質である。
+
+## 曲面の向き
+
+### 単位法線ベクトル
+
+曲面を通り抜ける量を数えるには、曲面の表と裏を区別する必要がある。曲面に垂直な向きは、各点で 2 つある。2 つの向きを、大きさ $1$ のベクトルで表す。
+
+> **単位法線ベクトル（定義）.** 滑らかな曲面 $S$ の表示 $\vec{r}(u,v)$ と、$\vec{N}(u,v)\neq\vec{0}$ を満たす $E$ の点 $(u,v)$ を考える。次の 2 つのベクトルを、点 $\vec{r}(u,v)$ における $S$ の**単位法線ベクトル**と呼ぶ。
+>
+> $$
+> \frac{\vec{N}(u,v)}{\lvert\vec{N}(u,v)\rvert},\qquad-\frac{\vec{N}(u,v)}{\lvert\vec{N}(u,v)\rvert}
+> $$
+
+用語と記号について、次の点を押さえる。
+
+- **記号 $\vec{n}$.** 単位法線ベクトルの一方を、$\vec{n}$（「ベクトル・エヌ」）と書く。全微分と接平面の章では、$\vec{n}$ を $(f_x,f_y,-1)$ の便宜的な名前に使った。本章の $\vec{n}$ は、大きさ $1$ の単位法線ベクトルを表す。
+- **分数の形.** 線積分の章の単位接ベクトル $\vec{T}=\dfrac{\vec{r}\:'}{\lvert\vec{r}\:'\rvert}$ と同じく、正の数倍を表す便宜的な書き方である。
+- **性質.** 2 つのベクトルは、どちらも大きさ $1$ であり、接平面に垂直である。互いに逆ベクトルである。
+
+曲面の 1 つの点に、$E$ の 2 つ以上の点が対応する場合もある。扱う曲面を、次のように限る。
+
+> **重なる点の単位法線ベクトル（約束）.** 本章では、曲面の 1 つの点に $E$ の 2 つ以上の点が対応するとき、$\vec{N}\neq\vec{0}$ となるどの点から作っても、同じ 2 つの単位法線ベクトルが得られる曲面だけを扱う。
+
+本章の例は、約束を満たす。例えば球面の $\theta=0$ と $\theta=2\pi$ の経線を考える。経線の点では、$\vec{N}(\varphi,0)$ と $\vec{N}(\varphi,2\pi)$ がどちらも $a\sin\varphi\:\vec{r}(\varphi,0)$ に等しい。円柱面・円錐面の継ぎ目でも同様である。
+
+### 向きの定義
+
+各点で 2 つの単位法線ベクトルの一方を、つじつまが合うように選ぶ。
+
+> **曲面の向き（定義）.** 滑らかな曲面 $S$ の単位法線ベクトルが定まる点 $\mathrm{P}$ のそれぞれに、$\mathrm{P}$ における 2 つの単位法線ベクトルの一方 $\vec{n}(\mathrm{P})$ を選ぶ。$\vec{n}(\mathrm{P})$ が $\mathrm{P}$ とともに連続に変わるとき、選び方 $\vec{n}$ を $S$ の**向き**と呼ぶ。向きを 1 つ選んだ曲面を、**向きを決めた曲面**と呼ぶ。
+
+定義について、次の点を押さえる。
+
+- **連続に変わる.** $\vec{n}$ を、単位法線ベクトルが定まる点の全体を定義域とするベクトル場とみる。スカラー場とベクトル場の章のベクトル場の連続性（定義）の意味で、連続であることをいう。
+- **2 つの向き.** $\vec{n}$ が向きなら、逆ベクトルを選ぶ $-\vec{n}$ も向きである。どちらの側を表とみるかの選択にあたる。
+
+向きを決めた曲面と表示の関係を、次のように定める。
+
+> **表示の向き（定義）.** 向きを決めた滑らかな曲面 $S$ と、$S$ の表示 $\vec{r}(u,v)$ を考える。$E$ の内部のすべての点 $(u,v)$ で次の等式が成り立つとき、表示は $S$ の向きと**同じ向き**であるという。
+>
+> $$
+> \vec{n}\bigl(\vec{r}(u,v)\bigr)=\frac{\vec{N}(u,v)}{\lvert\vec{N}(u,v)\rvert}
+> $$
+>
+> $E$ の内部のすべての点で、右辺に $-1$ を掛けた等式が成り立つとき、表示は $S$ の向きと**逆向き**であるという。
+
+$\vec{n}(\vec{r}(u,v))$ は、点 $\vec{r}(u,v)$ で選んだ単位法線ベクトルを表す。スカラー場とベクトル場の章の位置ベクトルによる書き方（約束）と同じく、便宜的な書き方である。
+
+**球面の向き.** 半径 $a$ の球面で、北極と南極を除く点では $\sin\varphi>0$ だから、次が成り立つ。
+
+$$
+\frac{\vec{N}(\varphi,\theta)}{\lvert\vec{N}(\varphi,\theta)\rvert}=\frac{a\sin\varphi\;\vec{r}(\varphi,\theta)}{a^2\sin\varphi}=\frac{\vec{r}(\varphi,\theta)}{a}
+$$
+
+点の位置ベクトルを $\dfrac1a$ 倍した $\vec{n}=\dfrac{\vec{r}}{a}$ は、点とともに連続に変わる。$\vec{n}=\dfrac{\vec{r}}{a}$ は球面の向きであり、表示 $\vec{r}(\varphi,\theta)$ は向きと同じ向きである。$\vec{n}$ は、どの点でも原点から遠ざかる側を指す。
+
+**媒介変数の入れ替え.** 球面を、媒介変数の順を入れ替えた表示 $\vec{q}(\theta,\varphi)=\vec{r}(\varphi,\theta)$ で表す。外積の章の反交換律より、表示の法線ベクトルは $\vec{r}_\theta\times\vec{r}_\varphi=-\vec{r}_\varphi\times\vec{r}_\theta$ である。表示は、向き $\dfrac{\vec{r}}{a}$ と逆向きである。
+
+一般に、取り替えた表示の向きは、ヤコビアンの符号で決まる。
+
+> **取り替えと表示の向き（定理）.** 向きを決めた滑らかな曲面 $S$ と、$S$ の向きと同じ向きの表示 $\vec{r}(u,v)$ を考える。$\vec{r}$ の同じ向きの取り替えは、$S$ の向きと同じ向きの表示である。逆向きの取り替えは、$S$ の向きと逆向きの表示である。
+
+**証明.** $\tilde{E}$ の内部の点 $(s,t)$ をとる。取り替えの条件 6 より、$\Phi(s,t)$ は $E$ の内部の点である。表示 $\vec{r}$ は向きと同じ向きだから、点 $\Phi(s,t)$ の像での $\vec{n}$ は $\dfrac{\vec{N}}{\lvert\vec{N}\rvert}$ に等しい。$\vec{N}$ は点 $\Phi(s,t)$ での値である。取り替えと法線ベクトル（定理）より $\vec{q}_s\times\vec{q}_t=J\:\vec{N}$ だから、次が成り立つ。
+
+$$
+\frac{\vec{q}_s\times\vec{q}_t}{\lvert\vec{q}_s\times\vec{q}_t\rvert}=\frac{J}{\lvert J\rvert}\cdot\frac{\vec{N}}{\lvert\vec{N}\rvert}
+$$
+
+同じ向きの取り替えでは内部で $J>0$ だから、右辺は $\vec{n}$ に等しい。逆向きの取り替えでは $J<0$ だから、右辺は $-\vec{n}$ に等しい。証明を終わる。
+
+グラフの曲面には、上向きと下向きを定める。
+
+> **上向き・下向き（定義）.** グラフの曲面で、$z$ 成分が正の単位法線ベクトルを選ぶ向きを**上向き**、$z$ 成分が負のほうを選ぶ向きを**下向き**と呼ぶ。
+
+グラフの表示の $\vec{N}=(-g_x,-g_y,1)$ は $z$ 成分が正だから、表示は上向きと同じ向きである。
+
+### 向きを決められない曲面
+
+どの曲面にも向きを決められるとは限らない。代表例が、メビウスの帯である[^mobius]。細長い長方形の帯を、半回りだけねじって両端を貼り合わせた帯である。次の表示で表せる。
+
+$$
+\begin{aligned}
+\vec{r}(u,v)&=\Bigl(\bigl(1+v\cos\tfrac u2\bigr)\cos u,\ \bigl(1+v\cos\tfrac u2\bigr)\sin u,\ v\sin\tfrac u2\Bigr)\\
+E&=[0,2\pi]\times\Bigl[-\frac12,\frac12\Bigr]
+\end{aligned}
+$$
+
+$u=0$ と $u=2\pi$ では、$\vec{r}(2\pi,v)=\vec{r}(0,-v)$ である。$E$ の左右の辺は、帯の同じ線分に対応し、上下を入れ替えて貼り合わされる。帯の中央の円（$v=0$）に沿って、表示の法線ベクトルを計算すると、次のとおりである。
+
+$$
+\vec{N}(u,0)=\Bigl(\cos u\sin\tfrac u2,\ \sin u\sin\tfrac u2,\ -\cos\tfrac u2\Bigr)
+$$
+
+$\vec{N}(u,0)$ の大きさは $1$ である。出発点 $\mathrm{P}(1,0,0)$ での値は、次のとおりである。
+
+$$
+\vec{N}(0,0)=(0,0,-1),\qquad\vec{N}(2\pi,0)=(0,0,1)
+$$
+
+中央の円を 1 周すると、連続に変わる単位法線ベクトルは、同じ点 $\mathrm{P}$ に逆向きで戻る。
+
+> **メビウスの帯は向きを決められない（承認事項）.** メビウスの帯は滑らかな曲面であり、帯の向き（連続に変わる単位法線ベクトルの選び方）は存在しない。
+
+承認事項の根拠を、直観で補う。帯のどこかで $\vec{n}$ を選び、中央の円に沿って連続に選び続ける。1 周して $\mathrm{P}$ に戻ると、$\vec{n}$ は出発時の逆ベクトルになる。$\mathrm{P}$ で選べる $\vec{n}$ は 1 つだけだから、連続な選び方は帯全体には広げられない。本章では証明を省き、承認事項として認める。本章では、向きを決められる曲面だけを扱う。図 8 に描く。
+
+<figure>
+  <SurfacePlot
+    xRange={[-1.8, 1.8]}
+    yRange={[-1.8, 1.8]}
+    zRange={[-1.1, 1.1]}
+    elevation={38}
+    floorGrid={false}
+    axes={false}
+    surfaces={[{ kind: "parametric", fn: mobius, u: [0, 2 * Math.PI], v: [-0.45, 0.45], opacity: 0.45, resolution: [64, 4] }]}
+    curves={[{ fn: (t) => mobius(t, 0), t: [0, 2 * Math.PI], color: "#64748b", width: 1.4, dashed: true, arrows: [1.18, 2.75, 4.32] }]}
+    segments={[
+      ...[1, 2, 3, 4, 5, 6, 7].map((k) => ({ from: mobius((k * Math.PI) / 4, 0), to: plus(mobius((k * Math.PI) / 4, 0), mobiusN((k * Math.PI) / 4), 0.55), arrow: true, color: "#0d9488", width: 1.8 })),
+      { from: mobius(0, 0), to: plus(mobius(0, 0), mobiusN(0), 0.7), arrow: true, color: "#dc2626", width: 2.4, hidden: "show" },
+      { from: mobius(2 * Math.PI, 0), to: plus(mobius(2 * Math.PI, 0), mobiusN(2 * Math.PI), 0.7), arrow: true, color: "#8b5cf6", width: 2.4, hidden: "show" },
+    ]}
+    points={[{ ...mobius(0, 0), highlight: true, label: "\\mathrm{P}", hidden: "show" }]}
+    ariaLabel="メビウスの帯を青い半透明の面で描いた図。帯の中央の円を灰色の破線で描き、矢じりで u が増える向きを示す。中央の円の上の点に、表示の法線ベクトルを青緑の矢印で描く。矢印は、円に沿って進むにつれて少しずつ傾き、1 周する間に裏返る。出発点 P（点 (1,0,0)）では、u=0 の法線ベクトル（赤、下向き）と u=2π の法線ベクトル（紫、上向き）が、同じ点から逆向きに出る。"
+  />
+  <figcaption>
+    <em>
+      図 8. メビウスの帯と、中央の円（灰色の破線）に沿った表示の法線ベクトル $\vec{N}(u,0)$。青緑の矢印は $u=\tfrac\pi4,\tfrac\pi2,\dots,\tfrac{7\pi}{4}$ での値であり、円に沿って少しずつ傾く。出発点 $\mathrm{P}$ では、$u=0$ の値（赤、下向き）と $u=2\pi$ の値（紫、上向き）が逆向きになる。
+    </em>
+  </figcaption>
+</figure>
+
+### 閉じた曲面と外向き
+
+球面のように立体を囲む曲面では、外向きを向きの標準にする。
+
+> **閉じた曲面（約束）.** 球面、直方体の表面、ふたつきの円柱の表面のように、空間の 1 つの立体を囲み、立体の内側と外側を分ける区分的に滑らかな曲面を、**閉じた曲面**と呼ぶ。本章では、囲む立体が明らかな具体例だけを扱い、一般の定義には立ち入らない。
+
+閉じた曲面の外向きを、次のように定める。
+
+> **外向き（定義）.** 閉じた曲面 $S$ が囲む立体を $V$ とする。$S$ の点 $\mathrm{P}$ で単位法線ベクトルが定まるとし、$\mathrm{P}$ の位置ベクトルを $\vec{p}$ とする。$\mathrm{P}$ における単位法線ベクトル $\vec{n}$ について、ある正の数 $\delta$ があり、$0<t<\delta$ のすべての $t$ で、位置ベクトル $\vec{p}+t\:\vec{n}$ の点が $V$ に属さないとする。条件を満たす $\vec{n}$ を、$\mathrm{P}$ における**外向き**の単位法線ベクトルと呼び、逆ベクトルを**内向き**の単位法線ベクトルと呼ぶ。$S$ の各部分で外向きの単位法線ベクトルを選ぶ向きを、$S$ の**外向き**の向きと呼ぶ。
+
+定義について、次の点を押さえる。
+
+- **記号.** $\vec{p}$ は「ベクトル・ピー」、$\delta$ は「デルタ」と読む、本定義の便宜的な文字である。$t$ は、点 $\mathrm{P}$ から $\vec{n}$ の向きに進む距離を表す。
+- **意味.** $\mathrm{P}$ から外向きの $\vec{n}$ の側へ少し進むと、立体の外に出る。
+
+閉じた曲面の向きについて、次のように約束する。
+
+> **閉じた曲面の向き（約束）.** 閉じた曲面の向きは、断りがなければ外向きとする。
+
+### 外向きの例
+
+閉じた曲面の例で、外向きの単位法線ベクトルと表示の向きを確かめる。
+
+**球面.** 半径 $a$ の球面が囲む立体は、球 $V=\{(x,y,z)\mid x^2+y^2+z^2\le a^2\}$ である。$\vec{n}=\dfrac{\vec{r}}{a}$ とすると、$\vec{p}+t\:\vec{n}=\left(1+\dfrac ta\right)\vec{p}$ であり、原点からの距離は $a+t>a$ である。点は $V$ に属さないので、$\vec{n}=\dfrac{\vec{r}}{a}$ は外向きである。表示 $\vec{r}(\varphi,\theta)$ は、外向きと同じ向きである。
+
+**立方体の表面.** 立方体 $[0,1]\times[0,1]\times[0,1]$ の 6 つの面について、外向きの単位法線ベクトルと表示の向きを、表にまとめる。どの表示も $E=[0,1]\times[0,1]$ である。
+
+| 面    | 外向きの $\vec{n}$ | 表示          | 表示の $\vec{N}$ | 表示の向き |
+| ----- | ------------------ | ------------- | ---------------- | ---------- |
+| $x=1$ | $(1,0,0)$          | $(1,\ u,\ v)$ | $(1,0,0)$        | 同じ向き   |
+| $x=0$ | $(-1,0,0)$         | $(0,\ u,\ v)$ | $(1,0,0)$        | 逆向き     |
+| $y=1$ | $(0,1,0)$          | $(v,\ 1,\ u)$ | $(0,1,0)$        | 同じ向き   |
+| $y=0$ | $(0,-1,0)$         | $(v,\ 0,\ u)$ | $(0,1,0)$        | 逆向き     |
+| $z=1$ | $(0,0,1)$          | $(u,\ v,\ 1)$ | $(0,0,1)$        | 同じ向き   |
+| $z=0$ | $(0,0,-1)$         | $(u,\ v,\ 0)$ | $(0,0,1)$        | 逆向き     |
+
+表の各行を補う。
+
+- **外向き.** 例えば $x=1$ の面の点から $(1,0,0)$ の向きに $t>0$ だけ進むと、$x$ 座標は $1+t>1$ になり、立方体の外に出る。ほかの面も同様である。
+- **表示の $\vec{N}$.** 例えば表示 $(v,\ 1,\ u)$ では、次のとおりである。
+
+  $$
+  \vec{r}_u=(0,0,1),\qquad\vec{r}_v=(1,0,0),\qquad\vec{N}=\vec{r}_u\times\vec{r}_v=(0,1,0)
+  $$
+
+  ほかの表示も、外積の成分式で同じように求められる。
+
+**ふたつきの円柱.** 3 つの部分の表示の $\vec{N}$ と、外向きとの関係を表にまとめる。
+
+| 部分           | 表示の $\vec{N}$                  | $\vec{N}$ の指す側         | 表示の向き |
+| -------------- | --------------------------------- | -------------------------- | ---------- |
+| 側面 $S_1$     | $(a\cos\theta,\ a\sin\theta,\ 0)$ | $z$ 軸から遠ざかる（外側） | 同じ向き   |
+| 上のふた $S_2$ | $(0,0,1)$                         | 上（立体の外側）           | 同じ向き   |
+| 下のふた $S_3$ | $(0,0,1)$                         | 上（立体の内側）           | 逆向き     |
+
+下のふたの外向きの単位法線ベクトルは $(0,0,-1)$ である。外向き（定義）で確かめる。
+
+- **側面.** 点から $(\cos\theta,\sin\theta,0)$ の向きに $t>0$ だけ進むと、$z$ 軸からの距離は $a+t>a$ になる。
+- **上のふた.** 点から $(0,0,1)$ の向きに進むと、高さは $h+t>h$ になる。
+- **下のふた.** 点から $(0,0,-1)$ の向きに進むと、高さは $-t<0$ になる。
+
+どの場合も、点は立体の外に出る。
+
+球面と立方体の外向きの単位法線ベクトルを、図 9 に描く。
+
+<figure>
+  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", columnGap: "1rem" }}>
+    <div style={{ flex: "1 1 260px", maxWidth: "320px" }}>
+      <SurfacePlot
+        xRange={[-1.8, 1.8]}
+        yRange={[-1.8, 1.8]}
+        zRange={[-1.8, 1.8]}
+        floorGrid={false}
+        axes={false}
+        surfaces={[{ kind: "parametric", fn: (p, t) => sph(1, p, t), u: [0, Math.PI], v: [0, 2 * Math.PI], opacity: 0.3, resolution: [16, 32], meshEvery: 4 }]}
+        fields={[
+          {
+            fn: (x, y, z) => ({ x, y, z }),
+            at: [{ x: 0, y: 0, z: 1 }, { x: 0, y: 0, z: -1 }, ...sphGrid(1, [Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4], [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2])],
+            scale: 0.5,
+          },
+        ]}
+        ariaLabel="半径 1 の球面（青い半透明の面）の上の 14 点に、外向きの単位法線ベクトルを青緑の矢印で描いた図。どの矢印も、球の中心から遠ざかる向きに、球面に垂直に立つ。奥の矢印は面に隠れて淡く見える。"
+      />
+    </div>
+    <div style={{ flex: "1 1 260px", maxWidth: "320px" }}>
+      <SurfacePlot
+        xRange={[-0.9, 1.9]}
+        yRange={[-0.9, 1.9]}
+        zRange={[-0.9, 1.9]}
+        floorGrid={false}
+        boxes={[{ x: [0, 1], y: [0, 1], z: [0, 1], color: "#3b82f6", opacity: 0.25 }]}
+        segments={[
+          { from: { x: 1, y: 0.5, z: 0.5 }, to: { x: 1.6, y: 0.5, z: 0.5 }, arrow: true, color: "#0d9488", width: 2 },
+          { from: { x: 0, y: 0.5, z: 0.5 }, to: { x: -0.6, y: 0.5, z: 0.5 }, arrow: true, color: "#0d9488", width: 2 },
+          { from: { x: 0.5, y: 1, z: 0.5 }, to: { x: 0.5, y: 1.6, z: 0.5 }, arrow: true, color: "#0d9488", width: 2 },
+          { from: { x: 0.5, y: 0, z: 0.5 }, to: { x: 0.5, y: -0.6, z: 0.5 }, arrow: true, color: "#0d9488", width: 2 },
+          { from: { x: 0.5, y: 0.5, z: 1 }, to: { x: 0.5, y: 0.5, z: 1.6 }, arrow: true, color: "#0d9488", width: 2 },
+          { from: { x: 0.5, y: 0.5, z: 0 }, to: { x: 0.5, y: 0.5, z: -0.6 }, arrow: true, color: "#0d9488", width: 2 },
+        ]}
+        ariaLabel="立方体 [0,1]×[0,1]×[0,1]（青い半透明の箱）の 6 つの面の中心から、外向きの単位法線ベクトルを青緑の矢印で描いた図。矢印は、x 軸・y 軸・z 軸の正の向きと負の向きの 6 方向に、面に垂直に外へ出る。奥の面の矢印は箱に隠れて淡く見える。"
+      />
+    </div>
+  </div>
+  <figcaption>
+    <em>
+      図 9. 閉じた曲面の外向きの単位法線ベクトル（青緑。長さを縮めて描いた）。左（狭い画面では上）は半径 $1$ の球面であり、矢印は球の中心から遠ざかる向きを指す。右は立方体の表面であり、各面の中心から、面に垂直に立方体の外へ向かう。
+    </em>
+  </figcaption>
+</figure>
+
+## フラックス
+
+### 膜を通り抜ける量
+
+まず、平らな膜と一定の流れで考える。膜は、零ベクトルでなく平行でない 2 本のベクトル $\vec{b}$・$\vec{c}$ が張る平行四辺形であるとし、面積を $\Delta S$ と書く。単位法線ベクトルを $\vec{n}=\dfrac{\vec{b}\times\vec{c}}{\lvert\vec{b}\times\vec{c}\rvert}$ とし、一定のベクトル場 $\vec{F}$ を考える。$\Delta S$ は「デルタ・エス」と読む、小さな面積を表す便宜的な記号である。$\vec{b}$・$\vec{c}$ も本節だけの文字である。
+
+1. **斜めの柱.** 膜の各点から $\vec{F}$ の矢印を伸ばすと、膜を底面とする斜めの柱ができる。柱は、$\vec{F}$・$\vec{b}$・$\vec{c}$ が張る平行六面体である。
+2. **柱の体積.** 外積の章より $\lvert\vec{b}\times\vec{c}\rvert=\Delta S$ だから、$\vec{b}\times\vec{c}=\Delta S\:\vec{n}$ である。$\vec{F}\cdot\vec{n}\neq0$ のとき、重積分の変数変換とヤコビアンの章の 2 つの定理（3 次の行列式と外積、3 次の行列式と平行六面体の体積）より、体積は次の値である。
+
+   $$
+   \bigl\lvert\vec{F}\cdot(\vec{b}\times\vec{c})\bigr\rvert=\lvert\vec{F}\cdot\vec{n}\rvert\,\Delta S
+   $$
+
+   $\vec{F}\cdot\vec{n}=0$ のときは、柱がつぶれるので、体積を $0$ とみなす。
+
+3. **垂直な成分.** $\lvert\vec{n}\rvert=1$ だから、$\vec{F}\cdot\vec{n}$ は $\vec{F}$ の $\vec{n}$ の向きの成分である。線積分の章の進む向きの成分と同じ考え方である。
+
+流れが膜を押し流す量の目安として、柱の体積を使う。以上は、通り抜ける量を数えるための見当である。
+
+$\vec{F}\cdot\vec{n}$ の符号で、通り抜ける向きを読み分ける。
+
+| $\vec{F}\cdot\vec{n}$ | 流れと膜の関係                         | 柱の体積の扱い |
+| --------------------- | -------------------------------------- | -------------- |
+| 正                    | 裏から表（$\vec{n}$ の側）へ通り抜ける | 正の量と数える |
+| $0$                   | 膜に沿って流れ、通り抜けない           | $0$            |
+| 負                    | 表から裏へ通り抜ける                   | 負の量と数える |
+
+図 10 に、正の場合を描く。
+
+<figure>
+  <SurfacePlot
+    xRange={[-0.3, 1.9]}
+    yRange={[-0.3, 1.5]}
+    zRange={[-0.6, 1.5]}
+    azimuth={65}
+    elevation={22}
+    floorGrid={false}
+    planes={[
+      { kind: "planeZ", z: 0, x: [0, 1], y: [0, 1], color: "#3b82f6", opacity: 0.45 },
+      { kind: "polygon", vertices: [{ x: 0.6, y: 0, z: 1 }, { x: 1.6, y: 0, z: 1 }, { x: 1.6, y: 1, z: 1 }, { x: 0.6, y: 1, z: 1 }], color: "#f59e0b", opacity: 0.25 },
+    ]}
+    segments={[
+      ...[
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 1, y: 1 },
+        { x: 0, y: 1 },
+      ].map((c) => ({ from: { x: c.x, y: c.y, z: 0 }, to: { x: c.x + 0.6, y: c.y, z: 1 }, color: "#f59e0b", width: 1.4, dashed: true })),
+      { from: { x: 0.5, y: 0.5, z: 0 }, to: { x: 0.5, y: 0.5, z: 0.7 }, arrow: true, color: "#dc2626", width: 2.4, label: "\\vec{n}", hidden: "show" },
+    ]}
+    fields={[
+      {
+        fn: () => ({ x: 0.6, y: 0, z: 1 }),
+        at: [
+          { x: 0.25, y: 0.25, z: 0 },
+          { x: 0.75, y: 0.25, z: 0 },
+          { x: 0.25, y: 0.75, z: 0 },
+          { x: 0.75, y: 0.75, z: 0 },
+        ],
+        pivot: "center",
+        scale: 0.7,
+        hidden: "show",
+      },
+    ]}
+    ariaLabel="床の上の 1 辺 1 の正方形の膜（青）と、膜を斜め上へ通り抜ける一定の流れの矢印（青緑、4 本）。膜の中心から、膜に垂直な単位法線ベクトル n（赤）が真上に立つ。膜の 4 つの頂点から流れの向きに引いた破線と、上の琥珀色の平行四辺形が、膜を底面とする斜めの柱の輪郭をなす。柱の高さは 1 である。"
+  />
+  <figcaption>
+    <em>
+      図 10. 平らな膜（青、面積 $1$）を通り抜ける一定の流れ $\vec{F}=(0.6,0,1)$（青緑）。膜の各点から $\vec{F}$ の矢印を伸ばすと、琥珀色の破線と平行四辺形で囲まれた斜めの柱ができる。柱の高さは $\vec{F}\cdot\vec{n}=1$（$\vec{n}=(0,0,1)$、赤）であり、体積は $1\times1=1$ である。流れの横の成分 $0.6$ は、柱を傾けるだけで体積を変えない。
+    </em>
+  </figcaption>
+</figure>
+
+曲がった曲面では、曲面を小さな面に分ける。小さな面を平らな平行四辺形とみなし、「$\vec{F}\cdot\vec{n}\times$ 小さな面の面積」を足し合わせる。曲面積の見当と同じく、小さな面の面積はおよそ $\lvert\vec{N}\rvert\:\Delta u\:\Delta v$ である。表示が向きと同じ向きなら、$E$ の内部の点で $\vec{N}=\lvert\vec{N}\rvert\:\vec{n}$ だから、次が成り立つ。
+
+$$
+(\vec{F}\cdot\vec{n})\,\lvert\vec{N}\rvert\,\Delta u\,\Delta v=\vec{F}\cdot\vec{N}\,\Delta u\,\Delta v
+$$
+
+右辺を足し合わせた和の行き先を、フラックスと定める。
+
+### フラックスの定義
+
+> **フラックス（定義）.** 面積分の仮定のもとで、$S$ を向きを決めた滑らかな曲面とし、ベクトル場 $\vec{F}$ を考える。$S$ の表示 $\vec{r}(u,v)$ は、$S$ の向きと同じ向き、または逆向きであるとする。次の値を、$S$ を通る $\vec{F}$ の**フラックス**と呼ぶ[^flux-name]。
+>
+> - **同じ向きのとき.** 次の値と定める。
+>
+>   $$
+>   \iint_S\vec{F}\cdot\vec{n}\,dS=\iint_E\vec{F}(\vec{r}(u,v))\cdot\bigl(\vec{r}_u\times\vec{r}_v\bigr)\,du\,dv
+>   $$
+>
+> - **逆向きのとき.** 右辺に $-1$ を掛けた値と定める。
+>
+> 区分的に滑らかな曲面 $S_1+\cdots+S_n$ では、各部分の向きを決め、各部分のフラックスの和と定める。
+
+記号 $\displaystyle\iint_S\vec{F}\cdot\vec{n}\:dS$ について、次の点を押さえる。
+
+- **読み方**：「ダブルインテグラル・エス・ベクトル・エフ・ドット・ベクトル・エヌ・ディー・エス」と読む。
+- **意味**：曲面 $S$ に沿って、「垂直な成分 $\vec{F}\cdot\vec{n}$ $\times$ 小さな面の面積」を足し合わせた値を表す。右辺の二重積分で定まる 1 つの実数である。
+- **区別**：記号全体は、右辺の値を表す正式な記法である。$dS$ は、スカラー場の面積分と同じく便宜的な書き方である。
+- **別の書き方**：$\displaystyle\iint_S\vec{F}\cdot d\vec{S}$ とも書く。$d\vec{S}$ は、書き換えの規則 $d\vec{S}=\vec{n}\:dS=(\vec{r}_u\times\vec{r}_v)\:du\:dv$（同じ向きのとき）を表す便宜的な書き方であり、単独では値をもたない。
+- **別の呼び名**：フラックスを、ベクトル場の面積分とも呼ぶ。
+- **存在**：曲面の上での場の値の連続性（補題）を各成分に使うと、$\vec{F}(\vec{r}(u,v))$ の成分は $E$ で連続である。$\vec{N}$ の成分も連続だから、内積は $E$ で連続であり、右辺が定まる。
+
+右辺の式で定めた理由を補う。
+
+- **内部の点.** 表示が向きと同じ向きなら、$E$ の内部の点で $\vec{F}\cdot\vec{N}=(\vec{F}\cdot\vec{n})\:\lvert\vec{N}\rvert$ である。右辺は、垂直な成分 $\vec{F}\cdot\vec{n}$ のスカラー場の面積分の形をしている。
+- **境界の点.** 球面の北極のように $\vec{N}=\vec{0}$ となる境界の点では、$\vec{n}$ が定まらない。$\vec{F}\cdot\vec{N}$ なら $E$ のすべての点で定まり、連続である。定義では、$\vec{n}$ を使わない右辺の式を採用した。
+
+閉じた曲面には、専用の記号を使う。
+
+> **閉じた曲面のフラックスの記号（約束）.** $S$ が閉じた曲面で、向きが外向きのとき、フラックス $\displaystyle\iint_S\vec{F}\cdot\vec{n}\:dS$ を $\displaystyle\oiint_S\vec{F}\cdot\vec{n}\:dS$ とも書く。$\displaystyle\oiint_S\vec{F}\cdot d\vec{S}$ とも書く。
+
+記号 $\oiint$ について、次の点を押さえる。
+
+- **読み方**：$\displaystyle\oiint_S\vec{F}\cdot\vec{n}\:dS$ は「閉曲面積分・エス・ベクトル・エフ・ドット・ベクトル・エヌ・ディー・エス」と読む[^oiint]。
+- **意味**：二重積分の記号に丸を重ねた形で、曲面が閉じていることを示す。線積分の章の $\oint$ と同じ発想の記号である。値は $\displaystyle\iint_S$ と同じである。
+- **区別**：広く使われる正式な記法である。本章では、外向きのフラックスにだけ使う。
+
+### 向きを反転すると符号が変わる
+
+向きを反転した曲面を、記号で表す。
+
+> **逆向きの曲面（定義）.** 向きを決めた曲面 $S$ の向き $\vec{n}$ を $-\vec{n}$ に替えた曲面を、$S$ の**逆向きの曲面**と呼び、$-S$ と書く。区分的に滑らかな曲面では、各部分の向きを反転する。
+
+記号 $-S$ は「マイナス・エス」と読む、便宜的な書き方である。線積分の章の逆向きの曲線 $-C$ にあたる。$-S$ の上の積分では、$\vec{n}$ は $-S$ の向きを表す。
+
+> **向きの反転とフラックス（定理）.** 面積分の仮定のもとで、向きを決めた滑らかな曲面 $S$ について、次が成り立つ。区分的に滑らかな曲面でも、同じ等式が成り立つ。
+>
+> $$
+> \iint_{-S}\vec{F}\cdot\vec{n}\,dS=-\iint_S\vec{F}\cdot\vec{n}\,dS
+> $$
+
+**証明.** $S$ の向きと同じ向きの表示は、$-S$ の向きと逆向きである。定義より、$-S$ のフラックスは、$S$ のフラックスの右辺に $-1$ を掛けた値である。$S$ の向きと逆向きの表示を使う場合も同様である。区分的に滑らかな曲面では、各部分で符号が変わり、和の符号も変わる。証明を終わる。
+
+フラックスは、同じ向きの取り替えでは変わらない。
+
+> **フラックスと媒介変数の取り替え（定理）.** 面積分の仮定のもとで、表示 $\vec{r}(u,v)$ と、媒介変数の取り替え $\vec{q}(s,t)$ を考える。次が成り立つ。
+>
+> $$
+> \iint_{\tilde{E}}\vec{F}(\vec{q}(s,t))\cdot\bigl(\vec{q}_s\times\vec{q}_t\bigr)\,ds\,dt=\pm\iint_E\vec{F}(\vec{r}(u,v))\cdot\bigl(\vec{r}_u\times\vec{r}_v\bigr)\,du\,dv
+> $$
+>
+> 複号 $\pm$ は、同じ向きの取り替えでは $+$、逆向きの取り替えでは $-$ を選ぶ。
+
+**証明.** $h(u,v)=\vec{F}(\vec{r}(u,v))\cdot\vec{N}(u,v)$ とおく。フラックスの定義の「存在」の項のとおり、$h$ は $E$ で連続である。取り替えと法線ベクトル（定理）と内積の成分公式より、左辺の被積分関数は $J\:h(\Phi(s,t))$ に等しい。
+
+- **同じ向き.** $\tilde{E}$ のすべての点で $J\ge0$ だから、$J=\lvert J\rvert$ である。曲面積と媒介変数の取り替え（定理）の証明と同じく変数変換の公式を使うと、左辺は $\displaystyle\iint_E h\:du\:dv$ に等しい。
+- **逆向き.** $\tilde{E}$ のすべての点で $J\le0$ だから、$J=-\lvert J\rvert$ である。二重積分の線形性（定理）で $-1$ をくくり出してから変数変換の公式を使うと、左辺は $\displaystyle-\iint_E h\:du\:dv$ に等しい。
+
+証明を終わる。
+
+定理より、同じ向きの表示を取り替えても、フラックスの値は変わらない。取り替えと表示の向き（定理）より、逆向きの取り替えで得た表示は、向きと逆向きの表示である。定義の $-1$ が符号の変化を打ち消す。取り替えで得たどの表示を使っても、フラックスは同じ値になる。
+
+2 種類の面積分の違いを、表にまとめる。
+
+| 項目               | スカラー場の面積分 $\displaystyle\iint_S f\:dS$    | フラックス $\displaystyle\iint_S\vec{F}\cdot\vec{n}\:dS$            |
+| ------------------ | -------------------------------------------------- | ------------------------------------------------------------------- |
+| 被積分関数         | $f(\vec{r})\:\lvert\vec{r}_u\times\vec{r}_v\rvert$ | $\vec{F}(\vec{r})\cdot(\vec{r}_u\times\vec{r}_v)$（同じ向きのとき） |
+| 足し合わせる量     | 値 $\times$ 小さな面の面積                         | 垂直な成分 $\times$ 小さな面の面積                                  |
+| 曲面の向き         | 使わない                                           | 使う                                                                |
+| 同じ向きの取り替え | 変わらない                                         | 変わらない                                                          |
+| 向きの反転         | 変わらない                                         | 符号が変わる                                                        |
+| 違いの理由         | $\lvert J\rvert$ が現れる                          | $J$ が現れる                                                        |
+
+### 線積分との対応
+
+本章の概念は、線積分の章の概念を、曲線から曲面へ広げたものである。対応を表にまとめる。
+
+| 線積分の章（曲線）                                                | 本章（曲面）                                                                    |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 表示 $\vec{r}(t)$（$a\le t\le b$）                                | 表示 $\vec{r}(u,v)$（$(u,v)\in E$）                                             |
+| 接ベクトル $\vec{r}\:'(t)$                                        | 接ベクトル $\vec{r}_u$・$\vec{r}_v$ と、法線ベクトル $\vec{r}_u\times\vec{r}_v$ |
+| 弧長 $\displaystyle\int_a^b\lvert\vec{r}\:'(t)\rvert\:dt$         | 曲面積 $\displaystyle\iint_E\lvert\vec{r}_u\times\vec{r}_v\rvert\:du\:dv$       |
+| スカラー場の線積分 $\displaystyle\int_C f\:ds$                    | スカラー場の面積分 $\displaystyle\iint_S f\:dS$                                 |
+| 単位接ベクトル $\vec{T}$ と、進む向きの成分 $\vec{F}\cdot\vec{T}$ | 単位法線ベクトル $\vec{n}$ と、垂直な成分 $\vec{F}\cdot\vec{n}$                 |
+| ベクトル場の線積分 $\displaystyle\int_C\vec{F}\cdot d\vec{r}$     | フラックス $\displaystyle\iint_S\vec{F}\cdot d\vec{S}$                          |
+| 曲線の向き（$t$ が増える向き）と $-C$                             | 曲面の向き（単位法線ベクトルの選び方）と $-S$                                   |
+| 閉曲線の記号 $\displaystyle\oint_C$                               | 閉じた曲面の記号 $\displaystyle\oiint_S$                                        |
+
+### グラフの曲面のフラックス
+
+グラフの曲面では、フラックスの式が簡単になる。
+
+> **グラフの曲面のフラックス（定理）.** 2 変数関数 $g$ が集合 $U$ で $C^1$ 級であり、$D$ は $U$ に含まれる縦線領域または横線領域であるとする。$g$ のグラフを、表示 $\vec{r}(x,y)$（$(x,y)\in D$）で表した曲面を $S$ とし、上向きの向きを決める。ベクトル場 $\vec{F}=(P,Q,R)$ は、$S$ について面積分の仮定を満たすとする。すると、次が成り立つ。
+>
+> $$
+> \iint_S\vec{F}\cdot\vec{n}\,dS=\iint_D\bigl(-P\,g_x-Q\,g_y+R\bigr)\,dA
+> $$
+>
+> 右辺の $P$・$Q$・$R$ は、点 $\vec{r}(x,y)$ での値である。$g_x$・$g_y$ は、点 $(x,y)$ での値である。下向きの向きでは、右辺に $-1$ を掛ける。
+
+**証明.** グラフの表示は上向きと同じ向きであり、$\vec{N}=(-g_x,-g_y,1)$ である。内積の成分公式より、$\vec{F}\cdot\vec{N}=-P\:g_x-Q\:g_y+R$ である。フラックスの定義に代入すればよい。下向きの向きは $-S$ の向きだから、向きの反転とフラックス（定理）より符号が変わる。証明を終わる。
+
+**例.** 上向きの一定の流れ $\vec{F}=(0,0,1)$ では、$P=Q=0$・$R=1$ だから、次を得る。
+
+$$
+\iint_S(0,0,1)\cdot\vec{n}\,dS=\iint_D1\,dA
+$$
+
+フラックスは、グラフの形によらず、床への影 $D$ の面積に等しい。小さな面ごとに見ると、$(0,0,1)$ が小さな面を通り抜ける量は、小さな面の床への影の面積に等しい。グラフの表示では、$\Delta x\:\vec{r}_x$・$\Delta y\:\vec{r}_y$ が張る平行四辺形の影が、床の長方形 $[x,x+\Delta x]\times[y,y+\Delta y]$ になるからである。
+
+## フラックスの計算例
+
+### 計算の手順
+
+フラックスの計算の手順を、まとめる。
+
+1. **向きを確かめる.** 曲面 $S$ と向きを確かめる。閉じた曲面なら、外向きである。区分的に滑らかな曲面なら、各部分に分ける。
+2. **法線ベクトルを求める.** 表示 $\vec{r}(u,v)$（$(u,v)\in E$）を決め、$\vec{N}=\vec{r}_u\times\vec{r}_v$ を求める。
+3. **表示の向きを比べる.** $\vec{N}$ が、選んだ向きと同じ側を指すかを確かめる。逆の側なら、最後に $-1$ を掛ける。
+4. **場に代入する.** 場の式の $x$・$y$・$z$ に、表示の成分を代入する。
+5. **積分する.** 内積 $\vec{F}(\vec{r}(u,v))\cdot\vec{N}$ を作り、$E$ の上で積分する。区分的に滑らかな曲面なら、各部分の値を足す。
+
+### 球面を通るフラックス
+
+半径 $a$ の球面 $S$ を外向きに通る、空間の放射状の場 $\vec{F}=(x,y,z)$ のフラックスを求める。表示 $\vec{r}(\varphi,\theta)$ は外向きと同じ向きであり、$\vec{N}=a\sin\varphi\:\vec{r}$ である。場の値は $\vec{F}(\vec{r}(\varphi,\theta))=\vec{r}(\varphi,\theta)$ である。自分自身との内積は $\vec{r}\cdot\vec{r}=\lvert\vec{r}\rvert^2=a^2$ だから、次のとおりである。
+
+$$
+\vec{F}(\vec{r})\cdot\vec{N}=a\sin\varphi\,(\vec{r}\cdot\vec{r})=a^3\sin\varphi
+$$
+
+外向きのフラックスは、次のとおりである。
+
+$$
+\oiint_S(x,y,z)\cdot\vec{n}\,dS=a^3\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^\pi\sin\varphi\,d\varphi\right)=a^3\cdot2\pi\cdot2=4\pi a^3
+$$
+
+値は、次のようにも読める。球面の上では $\vec{F}=\vec{r}=a\:\vec{n}$ だから、垂直な成分 $\vec{F}\cdot\vec{n}$ はつねに $a$ である。フラックスは $a\times\operatorname{area}(S)=a\cdot4\pi a^2$ であり、計算と一致する。
+
+### 距離の 2 乗に反比例する場のフラックス
+
+次のベクトル場を考える。本章では、**距離の 2 乗に反比例する放射状の場**と呼ぶ。便宜的な呼び名である。
+
+$$
+\vec{F}=\frac{\vec{r}}{\lvert\vec{r}\rvert^3}=\left(\frac{x}{(x^2+y^2+z^2)^{3/2}},\ \frac{y}{(x^2+y^2+z^2)^{3/2}},\ \frac{z}{(x^2+y^2+z^2)^{3/2}}\right)
+$$
+
+場について、次の点を押さえる。
+
+- **記号.** $\dfrac{\vec{r}}{\lvert\vec{r}\rvert^3}$ は、スカラー場とベクトル場の章の $\dfrac{\vec{r}}{\lvert\vec{r}\rvert}$ と同じく、正の数倍を表す便宜的な書き方である。
+- **定義域.** 式で与えたベクトル場の定義域（約束）より、原点を除く空間である。
+- **連続性.** 分母は $\sqrt{x^2+y^2+z^2}$ の 3 乗である。$\sqrt{x^2+y^2+z^2}$ は多項式と $\sqrt{t}$ の合成であり、1 変数の関数との合成の連続性（定理。3 変数でも同じ形）より連続である。分母は原点を除く空間で正だから、連続性と四則演算の定理より、成分は定義域で連続である。
+- **大きさと向き.** 大きさは $\dfrac{\lvert\vec{r}\rvert}{\lvert\vec{r}\rvert^3}=\dfrac{1}{\lvert\vec{r}\rvert^2}$ であり、原点からの距離の 2 乗に反比例する。向きは、原点から遠ざかる向きである。
+
+半径 $a$ の球面 $S$ は原点を通らないので、面積分の仮定を満たす。球面の上では $\lvert\vec{r}\rvert=a$ だから、$\vec{F}(\vec{r})=\dfrac{\vec{r}}{a^3}$ である。
+
+$$
+\vec{F}(\vec{r})\cdot\vec{N}=\frac{1}{a^3}\cdot a\sin\varphi\,(\vec{r}\cdot\vec{r})=\frac{a^3\sin\varphi}{a^3}=\sin\varphi
+$$
+
+外向きのフラックスは、次のとおりである。
+
+$$
+\oiint_S\frac{\vec{r}}{\lvert\vec{r}\rvert^3}\cdot\vec{n}\,dS=\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^\pi\sin\varphi\,d\varphi\right)=4\pi
+$$
+
+フラックスは、半径 $a$ によらず $4\pi$ である。理由は、次の 2 つが打ち消し合うことにある。
+
+- **場の大きさ.** 球面の上での大きさは $\dfrac{1}{a^2}$ であり、半径が大きいほど小さい。
+- **曲面積.** 球面の面積は $4\pi a^2$ であり、半径が大きいほど広い。
+
+場の値は $\vec{n}$ の向きを指すから、垂直な成分は $\dfrac{1}{a^2}$ である。フラックスは $\dfrac{1}{a^2}\times4\pi a^2=4\pi$ になる。線積分の章の距離に反比例して回る場でも、円に沿った循環は半径と無関係な値 $2\pi$ であった。同じ打ち消し合いである。図 11 に、半径 $1$ と $2$ の球面の上の値を描く。
+
+<figure>
+  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", columnGap: "1rem" }}>
+    <div style={{ flex: "1 1 260px", maxWidth: "320px" }}>
+      <SurfacePlot
+        xRange={[-2.5, 2.5]}
+        yRange={[-2.5, 2.5]}
+        zRange={[-2.5, 2.5]}
+        floorGrid={false}
+        surfaces={[{ kind: "parametric", fn: (p, t) => sph(1, p, t), u: [0, Math.PI], v: [0, 2 * Math.PI], opacity: 0.3, resolution: [12, 24], meshEvery: 3 }]}
+        fields={[{ fn: inverseSquare, at: silhouette(1, 6), scale: 1.3 }]}
+        ariaLabel="半径 1 の球面（青い半透明の面）と、球面の上の 6 点での距離の 2 乗に反比例する放射状の場の値（青緑の矢印）。矢印は球面に垂直に外へ向かい、長さは球の半径より長い。"
+      />
+    </div>
+    <div style={{ flex: "1 1 260px", maxWidth: "320px" }}>
+      <SurfacePlot
+        xRange={[-2.5, 2.5]}
+        yRange={[-2.5, 2.5]}
+        zRange={[-2.5, 2.5]}
+        floorGrid={false}
+        surfaces={[{ kind: "parametric", fn: (p, t) => sph(2, p, t), u: [0, Math.PI], v: [0, 2 * Math.PI], opacity: 0.25, resolution: [12, 24], meshEvery: 3 }]}
+        fields={[{ fn: inverseSquare, at: silhouette(2, 6), scale: 1.3, width: 2.2 }]}
+        ariaLabel="同じ縮尺で描いた半径 2 の球面（青い半透明の面）と、球面の上の 6 点での同じ場の値（青緑の矢印）。矢印は球面に垂直に外へ向かうが、左の図の矢印の 4 分の 1 の長さである。球面は左の図より広い。"
+      />
+    </div>
+  </div>
+  <figcaption>
+    <em>
+      図 11. 距離の 2 乗に反比例する放射状の場 $\dfrac{\vec{r}}{\lvert\vec{r}\rvert^3}$ の、半径 $1$（左。狭い画面では上）と半径 $2$（右）の球面の上の値。2 つの図は同じ縮尺であり、矢印の長さは値の大きさの $1.3$ 倍である。半径 $2$ の球面では、値の大きさが $\tfrac14$ になり、面積が $4$ 倍になる。どちらの球面でも、外向きのフラックスは $4\pi$ である。
+    </em>
+  </figcaption>
+</figure>
+
+### 上半分の球面を通るフラックス
+
+半径 $a$ の球面のうち $z\ge0$ の部分を $S$ とする。設定を次のように置く。
+
+- **表示.** 表示は $\vec{r}(\varphi,\theta)$ であり、範囲は $E=\left[0,\tfrac\pi2\right]\times[0,2\pi]$ である。球面と同じく、$S$ は滑らかな曲面である。
+- **向き.** 原点から遠ざかる側 $\vec{n}=\dfrac{\vec{r}}{a}$ に決める。$S$ の上では $z\ge0$ だから、$\vec{n}$ の $z$ 成分は $0$ 以上である。
+- **表示の向き.** 球面と同じく、表示は向きと同じ向きである。
+
+上向きの一定の流れ $\vec{F}=(0,0,1)$ のフラックスを求める。$\vec{F}\cdot\vec{N}$ は、$\vec{N}$ の $z$ 成分 $a^2\sin\varphi\cos\varphi$ に等しい。$\varphi$ の積分は、定積分の置換（定理）で $w=\sin\varphi$ とおいて求める。$w$ は本節だけの便宜的な文字である。
+
+$$
+\int_0^{\pi/2}\sin\varphi\cos\varphi\,d\varphi=\int_0^1w\,dw=\frac12
+$$
+
+フラックスは、次のとおりである。
+
+$$
+\iint_S(0,0,1)\cdot\vec{n}\,dS=a^2\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^{\pi/2}\sin\varphi\cos\varphi\,d\varphi\right)=a^2\cdot2\pi\cdot\frac12=\pi a^2
+$$
+
+値は、床の上の半径 $a$ の円板の面積 $\pi a^2$ に等しい。理由を、直観で補う。
+
+- **影の面積.** グラフの曲面のフラックスの例のとおり、$(0,0,1)$ が小さな面を通り抜ける量は、小さな面の床への影の面積に等しい。
+- **影が円板を埋める.** 床の円板の内部の点を通る鉛直線は、上半分の球面とちょうど 1 回交わる。小さな面の影は、重なりなく円板を埋める。
+
+上半分の球面は、関数 $g(x,y)=\sqrt{a^2-x^2-y^2}$ のグラフでもある。ただし、円板の縁（$x^2+y^2=a^2$）では $g_x=-\dfrac{x}{g}$ の分母が $0$ になり、$g$ は円板を含む集合で $C^1$ 級ではない。グラフの曲面のフラックス（定理）は直接使えないので、球面の表示で計算した。図 12 に描く。
+
+<figure>
+  <SurfacePlot
+    xRange={[-1.4, 1.4]}
+    yRange={[-1.4, 1.4]}
+    zRange={[0, 1.7]}
+    floorGrid={false}
+    surfaces={[{ kind: "parametric", fn: (p, t) => sph(1, p, t), u: [0, Math.PI / 2], v: [0, 2 * Math.PI], opacity: 0.2, resolution: [8, 32], meshEvery: 2 }]}
+    regions={[{ kind: "typeI", x: [-1, 1], lower: (x) => -Math.sqrt(Math.max(0, 1 - x * x)), upper: (x) => Math.sqrt(Math.max(0, 1 - x * x)), opacity: 0.55 }]}
+    segments={hemiPts.map((p) => ({ from: { x: p.x, y: p.y, z: 0 }, to: p, dashed: true, color: "var(--fig-axis)", width: 1, hidden: "show" }))}
+    fields={[{ fn: () => ({ x: 0, y: 0, z: 1 }), at: hemiPts, scale: 0.45 }]}
+    ariaLabel="半径 1 の球面の上半分（青い半透明の面）と、床の上の半径 1 の円板（琥珀色）。上半分の球面の上の 9 点に、上向きの一定の流れ (0,0,1) の値を青緑の矢印で描く。各点から床へ鉛直に灰色の破線を下ろす。破線は円板の内部の点に達し、どの鉛直線も上半分の球面と 1 回だけ交わる。"
+  />
+  <figcaption>
+    <em>
+      図 12. 上半分の球面（青、半径 $1$）を通る一定の流れ $(0,0,1)$（青緑。長さを $0.45$ 倍に縮めて描いた）と、床への影の円板（琥珀色）。灰色の破線は、球面の上の点から床へ下ろした鉛直線である。円板の内部の点を通る鉛直線は、球面とちょうど 1 回交わる。フラックス $\pi$ は、円板の面積に等しい。
+    </em>
+  </figcaption>
+</figure>
+
+### 円柱の表面を通るフラックス
+
+半径 $a$・高さ $h$ のふたつきの円柱の表面 $S=S_1+S_2+S_3$ を、外向きに通る $\vec{F}=(x,y,1)$ のフラックスを求める。部分ごとに計算し、表にまとめる。
+
+| 部分           | 表示                              | $\vec{N}$                         | 表示の向き | $\vec{F}\cdot\vec{N}$ | フラックス  |
+| -------------- | --------------------------------- | --------------------------------- | ---------- | --------------------- | ----------- |
+| 側面 $S_1$     | $(a\cos\theta,\ a\sin\theta,\ z)$ | $(a\cos\theta,\ a\sin\theta,\ 0)$ | 同じ向き   | $a^2$                 | $2\pi a^2h$ |
+| 上のふた $S_2$ | $(x,\ y,\ h)$                     | $(0,0,1)$                         | 同じ向き   | $1$                   | $\pi a^2$   |
+| 下のふた $S_3$ | $(x,\ y,\ 0)$                     | $(0,0,1)$                         | 逆向き     | $1$                   | $-\pi a^2$  |
+
+表の各行を補う。
+
+- **側面.** 場の値は $(a\cos\theta,\ a\sin\theta,\ 1)$ であり、$\vec{N}$ との内積は $a^2\cos^2\theta+a^2\sin^2\theta+0=a^2$ である。フラックスは $\displaystyle\int_0^{2\pi}\int_0^h a^2\:dz\:d\theta=2\pi a^2h$ である。
+- **上のふた.** 内積は $\vec{F}$ の $z$ 成分 $1$ に等しい。フラックスは $\displaystyle\iint_D1\:dA=\pi a^2$ である。
+- **下のふた.** 内積は同じく $1$ である。表示は外向きと逆向きだから、フラックスは $-\displaystyle\iint_D1\:dA=-\pi a^2$ である。
+
+3 つを足すと、外向きのフラックスは次のとおりである。
+
+$$
+\oiint_S(x,y,1)\cdot\vec{n}\,dS=2\pi a^2h+\pi a^2-\pi a^2=2\pi a^2h
+$$
+
+2 つのふたの値は、打ち消し合う。$\vec{F}$ の上向きの成分 $1$ は、下のふたでは外から内へ（負）、上のふたでは内から外へ（正）通り抜けるからである。側面では、$\vec{F}$ の水平な部分 $(x,y,0)$ が $z$ 軸から遠ざかる向きを指し、外へ通り抜ける。図 13 に描く。
+
+<figure>
+  <SurfacePlot
+    xRange={[-1.6, 1.6]}
+    yRange={[-1.6, 1.6]}
+    zRange={[-0.2, 2.4]}
+    floorGrid={false}
+    surfaces={[
+      { kind: "parametric", fn: (th, z) => ({ x: Math.cos(th), y: Math.sin(th), z }), u: [0, 2 * Math.PI], v: [0, 1.4], opacity: 0.25, resolution: [32, 4] },
+      { kind: "graph", f: () => 1.4, disk: { r: 1 }, color: "#10b981", opacity: 0.3 },
+      { kind: "graph", f: () => 0, disk: { r: 1 }, color: "#f59e0b", opacity: 0.3 },
+    ]}
+    fields={[{ fn: (x, y) => ({ x, y, z: 1 }), at: cylinderPts, scale: 0.4 }]}
+    ariaLabel="半径 1・高さ 1.4 の円柱の表面（側面は青、上のふたは緑、下のふたは琥珀色の半透明の面）と、ベクトル場 (x,y,1) の値（青緑の矢印）。側面の左右の縁の近くの 6 点では、矢印は斜め上へ、z 軸から遠ざかる向きに外へ出る。上のふたの上の 5 点では、矢印はほぼ上向きに外へ出る。下のふたの上の 5 点では、矢印はほぼ上向きで、円柱の内側へ入る。"
+  />
+  <figcaption>
+    <em>
+      図 13. ふたつきの円柱の表面（$a=1$・$h=1.4$）と、ベクトル場 $\vec{F}=(x,y,1)$ の値（青緑。長さを $0.4$ 倍に縮めて描いた）。側面と上のふた（緑）では、矢印は外へ出る。下のふた（琥珀色）では、矢印は内へ入り、フラックスは負になる。
+    </em>
+  </figcaption>
+</figure>
+
+### 立方体の表面を通るフラックス
+
+「外向きの例」の節の立方体の表面 $S$ を、外向きに通る $\vec{F}=(x+y,\ 0,\ z)$ のフラックスを求める。「外向きの例」の節の表の表示を使う。どの表示も $E=[0,1]\times[0,1]$ である。
+
+| 面    | 表示          | 表示の向き | $\vec{F}\cdot\vec{N}$ | フラックス  |
+| ----- | ------------- | ---------- | --------------------- | ----------- |
+| $x=1$ | $(1,\ u,\ v)$ | 同じ向き   | $x+y=1+u$             | $\tfrac32$  |
+| $x=0$ | $(0,\ u,\ v)$ | 逆向き     | $x+y=u$               | $-\tfrac12$ |
+| $y=1$ | $(v,\ 1,\ u)$ | 同じ向き   | $0$                   | $0$         |
+| $y=0$ | $(v,\ 0,\ u)$ | 逆向き     | $0$                   | $0$         |
+| $z=1$ | $(u,\ v,\ 1)$ | 同じ向き   | $z=1$                 | $1$         |
+| $z=0$ | $(u,\ v,\ 0)$ | 逆向き     | $z=0$                 | $0$         |
+
+表の各行を補う。
+
+- **$x=1$ の面.** $\vec{N}=(1,0,0)$ だから、内積は $\vec{F}$ の $x$ 成分 $x+y$ である。面の上では $x=1$・$y=u$ だから、$1+u$ である。フラックスは $\displaystyle\int_0^1\int_0^1(1+u)\:du\:dv=1+\frac12=\frac32$ である。
+- **$x=0$ の面.** 内積は $0+u=u$ である。積分は $\dfrac12$ であり、表示が逆向きだから、フラックスは $-\dfrac12$ である。流れが立方体の中へ入る面である。
+- **$y=1$・$y=0$ の面.** $\vec{F}$ の $y$ 成分は $0$ だから、内積は $0$ である。流れは面に沿い、面を通り抜けない。
+- **$z=1$・$z=0$ の面.** 内積は $\vec{F}$ の $z$ 成分 $z$ である。$z=1$ の面では $1$、$z=0$ の面では $0$ である。
+
+6 つの値を足すと、外向きのフラックスは次のとおりである。
+
+$$
+\oiint_S(x+y,\ 0,\ z)\cdot\vec{n}\,dS=\frac32-\frac12+0+0+1+0=2
+$$
+
+## よくある誤り
+
+面積分の計算で起こりやすい誤りを、表にまとめる。
+
+| 誤り                                                | 誤った例                                                                                         | 正しい扱い                                                                                      |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| $\lvert\vec{r}_u\times\vec{r}_v\rvert$ を掛け忘れる | 半径 $a$ の球面の面積を $\displaystyle\int_0^{2\pi}\int_0^\pi1\:d\varphi\:d\theta=2\pi^2$ とする | $\lvert\vec{N}\rvert=a^2\sin\varphi$ を掛ける。面積は $4\pi a^2$                                |
+| グラフの曲面積を、影の面積とみなす                  | $z=1-x-y$ の三角形の面積を、影の面積 $\tfrac12$ とする                                           | 被積分関数 $\sqrt{1+g_x^2+g_y^2}$ を掛ける。面積は $\tfrac{\sqrt3}{2}$                          |
+| フラックスに大きさを掛ける                          | $\displaystyle\iint_E\vec{F}\cdot\vec{N}\:\lvert\vec{N}\rvert\:du\:dv$ と書く                    | 被積分関数は内積 $\vec{F}(\vec{r})\cdot\vec{N}$ だけ                                            |
+| 表示の向きを確かめない                              | 円柱の下のふたで、$\vec{N}=(0,0,1)$ のまま外向きのフラックスとする                               | 下のふたの外向きは $(0,0,-1)$。値に $-1$ を掛ける                                               |
+| 媒介変数の順を入れ替えても $\vec{N}$ は同じとみる   | 球面で $\vec{r}_\theta\times\vec{r}_\varphi$ を外向きとする                                      | 反交換律より $\vec{r}_\theta\times\vec{r}_\varphi=-\vec{r}_\varphi\times\vec{r}_\theta$。内向き |
+| スカラー場の面積分の符号を、向きで変える            | $\displaystyle\iint_{-S}f\:dS=-\iint_S f\:dS$ とする                                             | スカラー場の面積分は向きによらない                                                              |
+| 1 対 1 でない表示で面積を数える                     | $\theta$ を $0$ から $4\pi$ まで動かし、球面の面積を $8\pi a^2$ とする                           | $E$ の内部で 1 対 1 になる範囲を選ぶ                                                            |
+| グラフの公式を、縁で偏導関数の定まらない曲面に使う  | 上半分の球面に、$g=\sqrt{a^2-x^2-y^2}$ のグラフの公式を直接使う                                  | 公式は $g$ が $D$ を含む集合 $U$ で $C^1$ 級のときに使う。球面の表示で計算する                  |
+
+## 例題
+
+### 例題 1
+
+関数 $g(x,y)=x^2+y^2$ のグラフのうち、$x^2+y^2\le1$ の部分 $S$ の曲面積を求めよ。
+
+**解答.** $g$ は多項式だから、$\mathbb{R}^2$ で $C^1$ 級である。$D=\{(x,y)\mid x^2+y^2\le1\}$ は縦線領域である。$g_x=2x$・$g_y=2y$ だから、グラフの曲面積（定理）より次のとおりである。
+
+$$
+\operatorname{area}(S)=\iint_D\sqrt{1+4x^2+4y^2}\,dA
+$$
+
+重積分の変数変換とヤコビアンの章の極座標による二重積分（定理）を、$E=[0,1]\times[0,2\pi]$ として使う。$r$ は極座標の文字であり、位置ベクトル $\vec{r}$ とは別である。
+
+$$
+\operatorname{area}(S)=\int_0^{2\pi}\left(\int_0^1\sqrt{1+4r^2}\;r\,dr\right)d\theta
+$$
+
+内側の積分を求める。$G(r)=\dfrac{1}{12}(1+4r^2)^{3/2}$ とおく。$G$ は本解答だけの便宜的な名前である。$1+4r^2>0$ だから、[合成関数の微分（連鎖律）](../../calculus/chain-rule/)の章の連鎖律と有理数乗の微分より、次が成り立つ。
+
+$$
+G'(r)=\frac{1}{12}\cdot\frac32(1+4r^2)^{1/2}\cdot8r=r\sqrt{1+4r^2}
+$$
+
+[微分積分学の基本定理](../../calculus/fundamental-theorem-of-calculus/)の章の基本定理 2 より、内側の積分は $G(1)-G(0)=\dfrac{5\sqrt5-1}{12}$ である。外側の積分で $2\pi$ を掛けて、次を得る。
+
+$$
+\operatorname{area}(S)=2\pi\cdot\frac{5\sqrt5-1}{12}=\frac{\pi\,(5\sqrt5-1)}{6}\approx5.33
+$$
+
+床への影の円板の面積 $\pi\approx3.14$ より大きい。グラフは、縁へ向かうほど急に傾くからである。
+
+### 例題 2
+
+半径 $a$ の球面のうち $z\ge0$ の部分 $S$ について、高さ $z$ の面積分と、$S$ に沿った $z$ の平均値を求めよ。
+
+**解答.** $f(x,y,z)=z$ とする。表示は $\vec{r}(\varphi,\theta)$、$E=\left[0,\tfrac\pi2\right]\times[0,2\pi]$ である。$f(\vec{r}(\varphi,\theta))=a\cos\varphi$・$\lvert\vec{N}\rvert=a^2\sin\varphi$ である。$\varphi$ の積分は、「上半分の球面を通るフラックス」の節と同じく $\dfrac12$ である。
+
+$$
+\iint_S z\,dS=a^3\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^{\pi/2}\cos\varphi\sin\varphi\,d\varphi\right)=a^3\cdot2\pi\cdot\frac12=\pi a^3
+$$
+
+曲面積は、次のとおりである。
+
+$$
+\operatorname{area}(S)=a^2\cdot2\pi\cdot\int_0^{\pi/2}\sin\varphi\,d\varphi=2\pi a^2
+$$
+
+平均値は、次のとおりである。
+
+$$
+\frac{\pi a^3}{2\pi a^2}=\frac a2
+$$
+
+平均値が真ん中の高さ $\dfrac a2$ になる理由を補う。$\varphi$ の積分で $w=a\cos\varphi$ と置換し、積分の下端を $0$、上端を $a$ にそろえると、$a^2\sin\varphi\:d\varphi$ は $a\:dw$ に替わる。$w$ は本例だけの便宜的な文字であり、高さを表す。曲面積と $z$ の面積分は、次のように書ける。
+
+$$
+\begin{aligned}
+\operatorname{area}(S)&=\int_0^{2\pi}\int_0^a a\,dw\,d\theta\\
+\iint_S z\,dS&=\int_0^{2\pi}\int_0^a w\cdot a\,dw\,d\theta
+\end{aligned}
+$$
+
+重み $a$ が高さ $w$ によらないので、曲面積は高さについて一様に分布する。平均値は、$0$ から $a$ までの高さの真ん中 $\dfrac a2$ になる。図 14 に、高さを色の濃さで描く。
+
+<figure>
+  <SurfacePlot
+    xRange={[-1.4, 1.4]}
+    yRange={[-1.4, 1.4]}
+    zRange={[0, 1.5]}
+    floorGrid={false}
+    surfaces={[{ kind: "parametric", fn: (p, t) => sph(1, p, t), u: [0, Math.PI / 2], v: [0, 2 * Math.PI], shading: "height", opacity: 1, resolution: [24, 32], mesh: false }]}
+    curves={[0.25, 0.5, 0.75].map((h) => ({ fn: (t) => ({ x: Math.sqrt(1 - h * h) * Math.cos(t), y: Math.sqrt(1 - h * h) * Math.sin(t), z: h }), t: [0, 2 * Math.PI], color: "var(--fig-axis)", width: 1.2, dashed: true, hidden: "hide" }))}
+    ariaLabel="半径 1 の球面の上半分を、高さに応じた濃淡で塗った図。高い部分ほど色が変わる。高さ 0.25・0.5・0.75 の 3 本の緯線を破線で描き、上半分の球面を高さの等しい間隔で 4 つの帯に分ける。"
+  />
+  <figcaption>
+    <em>
+      図 14. 上半分の球面（半径 $1$）を、高さ $z$ に応じた濃淡で塗った図。破線は高さ $0.25$・$0.5$・$0.75$ の緯線である。高さの間隔が等しい 4 つの帯の面積は、どれも $2\pi\times0.25=\tfrac\pi2$ に等しい。曲面積が高さについて一様に分布するので、高さの平均値は $\tfrac12$ になる。
+    </em>
+  </figcaption>
+</figure>
+
+### 例題 3
+
+媒介変数表示の節の表の円錐面 $S$ に、表示と同じ向き（$z$ 軸の側へ傾いて上を向く向き）を決める。$S$ を通る、空間の放射状の場 $\vec{F}=(x,y,z)$ のフラックスを求めよ。
+
+**解答.**「代表的な曲面が滑らかであること」の節より、$\vec{N}=(-t\cos\theta,\ -t\sin\theta,\ t)$ である。場の値は $(t\cos\theta,\ t\sin\theta,\ t)$ である。
+
+$$
+\vec{F}(\vec{r})\cdot\vec{N}=-t^2\cos^2\theta-t^2\sin^2\theta+t^2=0
+$$
+
+被積分関数がつねに $0$ だから、フラックスは $0$ である。
+
+理由を補う。場の値は $\vec{r}=(t\cos\theta,\ t\sin\theta,\ t)=t\:\vec{r}_t$ であり、接ベクトル $\vec{r}_t$ の $t$ 倍である。場の値は、原点を通る円錐の母線に沿う向きを指し、曲面に接する。曲面に沿う流れは、曲面を通り抜けない。
+
+### 例題 4
+
+関数 $g(x,y)=1-x^2-y^2$ のグラフのうち、$x^2+y^2\le1$ の部分 $S$ に上向きの向きを決める。$S$ を通る $\vec{F}=(x,y,z)$ のフラックスを求めよ。
+
+**解答.** $g$ は多項式だから、$\mathbb{R}^2$ で $C^1$ 級である。$D=\{(x,y)\mid x^2+y^2\le1\}$ は縦線領域である。$g_x=-2x$・$g_y=-2y$ だから、グラフの曲面のフラックス（定理）の被積分関数は、次のとおりである。
+
+$$
+-x\cdot(-2x)-y\cdot(-2y)+(1-x^2-y^2)=1+x^2+y^2
+$$
+
+$D$ は半径 $1$ の円板である。極座標による二重積分（定理）より、次を得る。
+
+$$
+\iint_S\vec{F}\cdot\vec{n}\,dS=\int_0^{2\pi}\left(\int_0^1(1+r^2)\,r\,dr\right)d\theta=2\pi\left(\frac12+\frac14\right)=\frac{3\pi}{2}
+$$
+
+## 演習問題
+
+### 問題 1
+
+平面 $x+2y+z=2$ のうち、$x\ge0$・$y\ge0$・$z\ge0$ の部分 $S$ の曲面積を、グラフの曲面積（定理）で求めよ。$S$ は、平面と 3 本の座標軸の交点を頂点とする三角形である。外積の章の三角形の面積の公式でも確かめよ。
+
+<details>
+<summary>解答を表示</summary>
+
+$g(x,y)=2-x-2y$ とおく。$g$ は多項式だから、$\mathbb{R}^2$ で $C^1$ 級である。$z\ge0$ は $x+2y\le2$ と同じだから、$D=\{(x,y)\mid0\le x\le2,\ 0\le y\le\tfrac{2-x}{2}\}$ であり、縦線領域である。$g_x=-1$・$g_y=-2$ だから、被積分関数は $\sqrt{1+1+4}=\sqrt6$ である。$D$ の面積は、次のとおりである。
+
+$$
+\int_0^2\frac{2-x}{2}\,dx=\Bigl[x-\frac{x^2}{4}\Bigr]_0^2=1
+$$
+
+よって、曲面積は $\sqrt6\cdot1=\sqrt6$ である。
+
+外積で確かめる。3 つの頂点と、2 本の辺のベクトルは次のとおりである。
+
+$$
+\begin{aligned}
+&\mathrm{A}(2,0,0),\quad\mathrm{B}(0,1,0),\quad\mathrm{C}(0,0,2)\\
+&\overrightarrow{\mathrm{AB}}=(-2,1,0),\quad\overrightarrow{\mathrm{AC}}=(-2,0,2)
+\end{aligned}
+$$
+
+外積の第 1・第 2・第 3 成分は、上から順に次のとおりである。
+
+$$
+\begin{aligned}
+1\cdot2-0\cdot0&=2\\
+0\cdot(-2)-(-2)\cdot2&=4\\
+(-2)\cdot0-1\cdot(-2)&=2
+\end{aligned}
+$$
+
+外積は $(2,4,2)$ であり、大きさは $\sqrt{24}=2\sqrt6$ である。三角形の面積は半分の $\sqrt6$ であり、一致する。
+
+</details>
+
+### 問題 2
+
+半径 $a$ の球面を、媒介変数の順を入れ替えた表示 $\vec{q}(\theta,\varphi)=\vec{r}(\varphi,\theta)$ で表す。範囲は $\tilde{E}=[0,2\pi]\times[0,\pi]$ である。取り替えの定義の文字では、$s$・$t$ が $\theta$・$\varphi$ を表し、$u$・$v$ が $\varphi$・$\theta$ を表す。
+
+1. 取り替え $u(s,t)=t$・$v(s,t)=s$ のヤコビアンを求め、逆向きの取り替えであることを確かめよ。
+2. $\vec{q}_\theta\times\vec{q}_\varphi$ を求めよ。
+3. 表示 $\vec{q}$ を使って、$\vec{F}=(x,y,z)$ が球面を外向きに通るフラックスを求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+1. $u_s=0$・$u_t=1$・$v_s=1$・$v_t=0$ だから、$J=u_sv_t-u_tv_s=0\cdot0-1\cdot1=-1$ である。$\Phi$ は 2 つの座標を入れ替える変数変換であり、1 対 1 である。$\tilde{E}$ の像は $E=[0,\pi]\times[0,2\pi]$ であり、内部の点の像も $E$ の内部の点である。$J=-1<0$ だから、逆向きの取り替えである。
+2. 取り替えと法線ベクトル（定理）より、次のとおりである。
+
+   $$
+   \vec{q}_\theta\times\vec{q}_\varphi=J\,\vec{N}=-a\sin\varphi\;\vec{r}(\varphi,\theta)
+   $$
+
+   外積の章の反交換律 $\vec{r}_\theta\times\vec{r}_\varphi=-\vec{r}_\varphi\times\vec{r}_\theta$ からも、同じ式を得る。取り替えと表示の向き（定理）より、$\vec{q}$ は外向きと逆向きの表示である。
+
+3. 内積は $\vec{F}(\vec{q})\cdot(\vec{q}_\theta\times\vec{q}_\varphi)=-a\sin\varphi\:(\vec{r}\cdot\vec{r})=-a^3\sin\varphi$ である。表示が逆向きだから、フラックスの定義より $-1$ を掛ける。
+
+   $$
+   -\int_0^{2\pi}\int_0^\pi\bigl(-a^3\sin\varphi\bigr)\,d\varphi\,d\theta=a^3\cdot2\pi\cdot2=4\pi a^3
+   $$
+
+   本文の値 $4\pi a^3$ と一致する。
+
+</details>
+
+### 問題 3
+
+半径 $a$ の球面 $S$ の上で、$\displaystyle\iint_S x^2\:dS$ を求め、$S$ に沿った $x^2$ の平均値を答えよ。さらに、本文の $\displaystyle\iint_S z^2\:dS=\frac{4\pi a^4}{3}$ と面積分の線形性を使って、$\displaystyle\iint_S y^2\:dS$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+$f(\vec{r}(\varphi,\theta))=a^2\sin^2\varphi\cos^2\theta$・$\lvert\vec{N}\rvert=a^2\sin\varphi$ である。
+
+$$
+\iint_S x^2\,dS=a^4\left(\int_0^{2\pi}\cos^2\theta\,d\theta\right)\left(\int_0^\pi\sin^3\varphi\,d\varphi\right)
+$$
+
+[指数・対数・三角関数の積分](../../calculus/integrals-of-elementary-functions/)の章の正弦・余弦の 2 乗の不定積分より、次のとおりである。
+
+$$
+\int_0^{2\pi}\cos^2\theta\,d\theta=\Bigl[\frac\theta2+\frac{\sin2\theta}{4}\Bigr]_0^{2\pi}=\pi
+$$
+
+$\sin^3\varphi=(1-\cos^2\varphi)\sin\varphi$ と、本文で求めた積分の値 $\dfrac23$ より、次のとおりである。
+
+$$
+\int_0^\pi\sin^3\varphi\,d\varphi=\int_0^\pi\sin\varphi\,d\varphi-\int_0^\pi\cos^2\varphi\sin\varphi\,d\varphi=2-\frac23=\frac43
+$$
+
+よって、$\displaystyle\iint_S x^2\:dS=a^4\cdot\pi\cdot\frac43=\frac{4\pi a^4}{3}$ である。平均値は $\dfrac{4\pi a^4/3}{4\pi a^2}=\dfrac{a^2}{3}$ である。
+
+球面の上では $x^2+y^2+z^2=a^2$ だから、$\displaystyle\iint_S(x^2+y^2+z^2)\:dS=a^2\cdot4\pi a^2=4\pi a^4$ である。面積分の線形性より、次を得る。
+
+$$
+\iint_S y^2\,dS=4\pi a^4-\frac{4\pi a^4}{3}-\frac{4\pi a^4}{3}=\frac{4\pi a^4}{3}
+$$
+
+</details>
+
+### 問題 4
+
+$xy$ 平面の滑らかな曲線 $C$：$(x(t),y(t))$（$a\le t\le b$）と、$C$ について線積分の仮定を満たす 2 変数のスカラー場 $f$ を考える。$C$ の点で $f\ge0$ であるとする。$C$ の上に高さ $f$ の柵を立てた曲面 $S$ を、次の表示で表す。
+
+$$
+\vec{r}(t,w)=\bigl(x(t),\ y(t),\ w\bigr),\qquad E=\bigl\{(t,w)\bigm|a\le t\le b,\ 0\le w\le f(x(t),y(t))\bigr\}
+$$
+
+$S$ が滑らかな曲面であることは仮定してよい。$\operatorname{area}(S)=\displaystyle\int_C f\:ds$ を示せ。
+
+<details>
+<summary>解答を表示</summary>
+
+線積分の章の曲線の上での場の値の連続性（補題）より、$f(x(t),y(t))$ は $[a,b]$ で連続であり、$0$ 以上である。よって $E$ は縦線領域である。接ベクトルは、次の 2 つである。
+
+$$
+\vec{r}_t=\bigl(x'(t),\ y'(t),\ 0\bigr),\qquad\vec{r}_w=(0,0,1)
+$$
+
+表示の法線ベクトルの成分は、次のとおりである。
+
+$$
+\begin{aligned}
+N_1&=y'(t)\cdot1-0\cdot0=y'(t)\\
+N_2&=0\cdot0-x'(t)\cdot1=-x'(t)\\
+N_3&=x'(t)\cdot0-y'(t)\cdot0=0
+\end{aligned}
+$$
+
+$\lvert\vec{N}\rvert=\sqrt{x'(t)^2+y'(t)^2}$ は、曲線 $C$ の接ベクトルの大きさに等しい。$\lvert\vec{N}\rvert$ は $w$ を含まない。重積分の章の縦線領域・横線領域の上の二重積分（承認事項）の累次積分の式より、次を得る。
+
+$$
+\operatorname{area}(S)=\int_a^b\left(\int_0^{f(x(t),y(t))}\sqrt{x'(t)^2+y'(t)^2}\,dw\right)dt=\int_a^b f(x(t),y(t))\sqrt{x'(t)^2+y'(t)^2}\,dt
+$$
+
+右辺は、スカラー場の線積分 $\displaystyle\int_C f\:ds$ の定義の式である。
+
+</details>
+
+### 問題 5
+
+「外向きの例」の節の立方体の表面を外向きに通る、$\vec{F}=(y,\ z,\ x)$ のフラックスを、6 つの面ごとに求めて足せ。
+
+<details>
+<summary>解答を表示</summary>
+
+「外向きの例」の節の表の表示を使う。
+
+| 面    | 表示          | 表示の向き | $\vec{F}\cdot\vec{N}$ | フラックス  |
+| ----- | ------------- | ---------- | --------------------- | ----------- |
+| $x=1$ | $(1,\ u,\ v)$ | 同じ向き   | $y=u$                 | $\tfrac12$  |
+| $x=0$ | $(0,\ u,\ v)$ | 逆向き     | $y=u$                 | $-\tfrac12$ |
+| $y=1$ | $(v,\ 1,\ u)$ | 同じ向き   | $z=u$                 | $\tfrac12$  |
+| $y=0$ | $(v,\ 0,\ u)$ | 逆向き     | $z=u$                 | $-\tfrac12$ |
+| $z=1$ | $(u,\ v,\ 1)$ | 同じ向き   | $x=u$                 | $\tfrac12$  |
+| $z=0$ | $(u,\ v,\ 0)$ | 逆向き     | $x=u$                 | $-\tfrac12$ |
+
+どの面でも $\displaystyle\int_0^1\int_0^1u\:du\:dv=\frac12$ であり、逆向きの面では $-1$ を掛ける。6 つの和は $0$ である。
+
+</details>
+
+### 問題 6
+
+半径 $a$・高さ $h$ の円柱面 $S$ を、媒介変数表示の節の表の表示で表す。$S$ に、$z$ 軸から遠ざかる向きを決める。ふたは含めない。次のベクトル場が $S$ を通るフラックスを、それぞれ求めよ。
+
+1. 空間で軸のまわりを回る場 $\vec{F}=(-y,\ x,\ 0)$
+2. $\vec{G}=(x,\ y,\ 0)$
+
+<details>
+<summary>解答を表示</summary>
+
+表示は向きと同じ向きであり、$\vec{N}=(a\cos\theta,\ a\sin\theta,\ 0)$ である。
+
+1. 場の値は $(-a\sin\theta,\ a\cos\theta,\ 0)$ である。内積は $-a^2\sin\theta\cos\theta+a^2\cos\theta\sin\theta=0$ だから、フラックスは $0$ である。場の値は、円柱面の上の水平な円に接し、曲面に沿う。
+2. 場の値は $(a\cos\theta,\ a\sin\theta,\ 0)$ である。内積は $a^2\cos^2\theta+a^2\sin^2\theta=a^2$ だから、フラックスは $\displaystyle\int_0^{2\pi}\int_0^h a^2\:dz\:d\theta=2\pi a^2h$ である。
+
+</details>
+
+### 問題 7
+
+距離の 2 乗に反比例する放射状の場 $\vec{F}=\dfrac{\vec{r}}{\lvert\vec{r}\rvert^3}$ について、次の問いに答えよ。
+
+1. 半径 $a$ の球面のうち $z\ge0$ の部分に、原点から遠ざかる向きを決める。$\vec{F}$ のフラックスを求めよ。
+2. 半径 $a$ の球面に内向きの向きを決める。$\vec{F}$ のフラックスを求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+1. 表示 $\vec{r}(\varphi,\theta)$（$E=\left[0,\tfrac\pi2\right]\times[0,2\pi]$）は、向きと同じ向きである。本文の計算と同じく $\vec{F}(\vec{r})\cdot\vec{N}=\sin\varphi$ だから、次を得る。
+
+   $$
+   \iint_S\vec{F}\cdot\vec{n}\,dS=\left(\int_0^{2\pi}1\,d\theta\right)\left(\int_0^{\pi/2}\sin\varphi\,d\varphi\right)=2\pi\cdot1=2\pi
+   $$
+
+2. 内向きの球面は、外向きの球面 $S$ の向きを反転した $-S$ である。向きの反転とフラックス（定理）より、フラックスは $-4\pi$ である。
+
+</details>
+
+## まとめ
+
+本章は、曲面を媒介変数で表し、曲面の面積と、曲面に沿ってスカラー場・ベクトル場を足し合わせる面積分を定めた。要点を振り返る。
+
+- **曲面の表示**：曲面 $S$ を $\vec{r}(u,v)$（$(u,v)\in E$）で表す。$E$ は縦線領域または横線領域であり、関数は $E$ を含む集合 $U$ で定義する。
+- **接ベクトルと法線ベクトル**：$\vec{r}_u$・$\vec{r}_v$ は $u$ 曲線・$v$ 曲線の接ベクトルである。表示の法線ベクトル $\vec{N}=\vec{r}_u\times\vec{r}_v$ は、曲面の上の曲線 $\vec{r}(u(t),v(t))$ の接ベクトルにも垂直である。$\vec{N}\neq\vec{0}$ の点で、$\vec{N}$ を法線ベクトルとする接平面が定まる。
+- **滑らかな曲面**：成分が $U$ で $C^1$ 級であり、$E$ の内部の点で $\vec{N}\neq\vec{0}$ かつ 1 対 1 である。境界の例外を許す。滑らかな曲面を縁で張り合わせると、区分的に滑らかな曲面 $S_1+\cdots+S_n$ になる。
+- **代表的な $\vec{N}$**：
+  - グラフ $z=g(x,y)$：$(-g_x,-g_y,1)$
+  - 半径 $a$ の円柱面：$(a\cos\theta,a\sin\theta,0)$
+  - 半径 $a$ の球面：$a\sin\varphi\:\vec{r}$（大きさ $a^2\sin\varphi$）
+- **曲面積**：$\operatorname{area}(S)=\displaystyle\iint_E\lvert\vec{r}_u\times\vec{r}_v\rvert\:du\:dv$ である。球面で $4\pi a^2$、円柱面で $2\pi ah$、グラフで $\displaystyle\iint_D\sqrt{1+g_x^2+g_y^2}\:dA$ となる。
+- **媒介変数の取り替え**：$\vec{q}_s\times\vec{q}_t=J\:\vec{N}$ が成り立つ。$\tilde{E}$ で $J\ge0$ かつ内部で $J>0$ なら同じ向き、$J\le0$ かつ内部で $J<0$ なら逆向きの取り替えである。曲面積はどちらでも変わらない。
+- **スカラー場の面積分**：$\displaystyle\iint_S f\:dS=\iint_E f(\vec{r})\:\lvert\vec{r}_u\times\vec{r}_v\rvert\:du\:dv$ である。$\dfrac{1}{\operatorname{area}(S)}\displaystyle\iint_S f\:dS$ が曲面に沿った平均値である。取り替えと向きによらない。
+- **曲面の向き**：連続に変わる単位法線ベクトル $\vec{n}$ の選び方である。メビウスの帯には向きを決められない。閉じた曲面の向きは、断りがなければ外向きとする。
+- **フラックス**：$\displaystyle\iint_S\vec{F}\cdot\vec{n}\:dS$ を、同じ向きの表示での $\vec{F}(\vec{r})\cdot(\vec{r}_u\times\vec{r}_v)$ の二重積分で定める。逆向きなら $-1$ を掛ける。$\displaystyle\iint_S\vec{F}\cdot d\vec{S}$ とも書き、閉じた曲面では $\displaystyle\oiint_S$ と書く。
+- **向きの反転**：$\displaystyle\iint_{-S}\vec{F}\cdot\vec{n}\:dS=-\iint_S\vec{F}\cdot\vec{n}\:dS$ である。
+- **グラフの曲面のフラックス**：上向きでは $\displaystyle\iint_D(-P\:g_x-Q\:g_y+R)\:dA$ である。$(0,0,1)$ のフラックスは、床への影の面積に等しい。
+- **計算例**：外向きのフラックスは、次のとおりである。
+  - 半径 $a$ の球面と $(x,y,z)$：$4\pi a^3$
+  - 半径 $a$ の球面と $\dfrac{\vec{r}}{\lvert\vec{r}\rvert^3}$：半径によらず $4\pi$
+  - ふたつきの円柱（半径 $a$・高さ $h$）と $(x,y,1)$：$2\pi a^2h$
+  - 1 辺 $1$ の立方体の表面と $(x+y,0,z)$：$2$
+
+## 参考文献
+
+面積分とフラックスをさらに学ぶための一次資料を挙げる。
+
+- T. M. Apostol, _Calculus, Vol. II_（2nd ed.）Wiley、1969 年。曲面の媒介変数表示・曲面積・面積分と、媒介変数の取り替えによる値の変わり方を厳密に扱う。
+- J. E. Marsden, A. Tromba, _Vector Calculus_（6th ed.）W. H. Freeman、2012 年。曲面積・スカラー場とベクトル場の面積分・曲面の向きを、図と例を多く使って解説する。
+- J. Stewart, _Calculus_（8th ed.）Cengage Learning、2015 年。媒介変数表示の曲面・曲面積・面積分とフラックスを、多くの計算例とともに扱う。
+- M. P. do Carmo, _Differential Geometry of Curves and Surfaces_（2nd ed.）Dover、2016 年。曲面の向きと、メビウスの帯が向きを決められないことを扱う。
+- 杉浦光夫『解析入門 II』東京大学出版会、1985 年。曲面積と面積分を、多変数の微分積分の中で厳密に扱う。
+
+[^open-set]: $E$ を含み、各点を中心とする円の内側を含む集合 $U$ で関数を定義するのは、$E$ の境界の点でも、偏微分係数を偏微分の章の定義のまま扱うためである。曲面積と面積分の値は、$E$ の点での値だけで決まる。
+
+[^lantern]: 曲線では、折れ線の長さが弧長に近づいた。線積分の章の折れ線の長さと弧長（承認事項）である。曲面では、曲面の上の点を頂点とする小さな三角形をつないで近似しても、三角形の面積の和は曲面積に近づくとは限らない。円柱の側面で、三角形を細かくしながら平たく折り重ねるように並べると、和はいくらでも大きくなる。例は、シュワルツの提灯と呼ばれる。本章では、曲面に接する平行四辺形による見当で曲面積を定めた。
+
+[^surface-integral-name]: 「面積分」は英語 surface integral の訳語である。曲面に沿った積分であることを表す呼び名である。
+
+[^mobius]: メビウスの帯の名前は、数学者 A. F. メビウス（1790–1868）にちなむ。
+
+[^flux-name]: 「フラックス」は英語 flux の音訳であり、「流れ」を意味する語に由来する。日本語では「流束」とも訳す。
+
+[^oiint]: 記号 $\oiint$ は、閉じた曲面の上の積分を表す記号として広く使われる。外向きの向きを前提とすることが多い。
