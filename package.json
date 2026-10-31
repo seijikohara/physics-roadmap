@@ -30,7 +30,7 @@
     "@visx/network": "^4.0.0",
     "@visx/scale": "^4.0.0",
     "@visx/shape": "^4.0.0",
-    "astro": "^7.0.2",
+    "astro": "^7.2.8",
     "katex": "^0.17.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
