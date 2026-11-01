@@ -7,6 +7,7 @@ import {
   degToRad,
   fitView,
   makeProjector,
+  minMax,
   projectedBounds,
   viewBasis,
 } from "./projection3d";
@@ -614,8 +615,8 @@ export default function SurfacePlot({
   const { project, depth } = makeProjector(basis, fit);
 
   // ---- 面の前後関係（BSP 木） ----
-  const depths = boundsPts.map(depth);
-  const depthRange = Math.max(...depths) - Math.min(...depths) || 1;
+  const [depthLo, depthHi] = minMax(boundsPts.map(depth));
+  const depthRange = depthHi - depthLo || 1;
   const ordered = orderFaces(allFaces, fwd, 1e-7 * depthRange);
 
   // ---- 面の描画データと、線の可視判定のための索引 ----
@@ -1531,9 +1532,7 @@ function buildSurface(s: Surface, ctx: BuildCtx): { faces: Face[]; verts: Vec3[]
   }
 
   // 高さによる濃淡の基準（切り取り後の $z$ の範囲）。
-  const zs = polys.flatMap((p) => p.pts.map((q) => q.z));
-  const zLo = Math.min(...zs);
-  const zHi = Math.max(...zs);
+  const [zLo, zHi] = minMax(polys.flatMap((p) => p.pts.map((q) => q.z)));
   const base = parseHex(color);
   // 網目の色は面の色を暗くして作る。ただし透かした曲面（球面など）は塗りが淡く、網目が形を
   // 担う。暗くしすぎると暗テーマの背景に沈むため、面の色に近い明るさにとどめる。
