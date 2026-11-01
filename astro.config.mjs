@@ -87,6 +87,10 @@ export default defineConfig({
               label: "多変数微積分",
               items: [{ autogenerate: { directory: "math/multivariable-calculus" } }],
             },
+            {
+              label: "ベクトル解析",
+              items: [{ autogenerate: { directory: "math/vector-calculus" } }],
+            },
           ],
         },
       ],

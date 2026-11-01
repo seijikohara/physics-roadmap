@@ -83,19 +83,26 @@ export const DEFAULT_VIEW: ViewBasis = viewBasis(
   degToRad(DEFAULT_ELEVATION_DEG),
 );
 
+/**
+ * 数の列の最小値と最大値を返す。空の列では [Infinity, -Infinity] を返す。
+ * Math.min(...列) は列が長いと引数の数の上限を超えて例外になるため、ループで求める。
+ */
+export function minMax(values: number[]): [number, number] {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const v of values) {
+    if (v < lo) lo = v;
+    if (v > hi) hi = v;
+  }
+  return [lo, hi];
+}
+
 /** 空間の点の列を倍率 1・原点 (0, 0) で投影し、画面上の範囲を返す。 */
 export function projectedBounds(points: Vec3[], basis: ViewBasis): ScreenBounds {
   const { dirX, dirY, dirZ } = basis;
-  const raw = points.map((p) => ({
-    sx: p.x * dirX.sx + p.y * dirY.sx + p.z * dirZ.sx,
-    sy: p.x * dirX.sy + p.y * dirY.sy + p.z * dirZ.sy,
-  }));
-  return {
-    minSx: Math.min(...raw.map((c) => c.sx)),
-    maxSx: Math.max(...raw.map((c) => c.sx)),
-    minSy: Math.min(...raw.map((c) => c.sy)),
-    maxSy: Math.max(...raw.map((c) => c.sy)),
-  };
+  const [minSx, maxSx] = minMax(points.map((p) => p.x * dirX.sx + p.y * dirY.sx + p.z * dirZ.sx));
+  const [minSy, maxSy] = minMax(points.map((p) => p.x * dirX.sy + p.y * dirY.sy + p.z * dirZ.sy));
+  return { minSx, maxSx, minSy, maxSy };
 }
 
 /**

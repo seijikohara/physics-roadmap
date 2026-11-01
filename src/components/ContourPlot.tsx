@@ -32,6 +32,17 @@ import KatexLabel from "./KatexLabel";
  * 軸・目盛り数字・線・既出ラベルと重ならない位置を選ぶ（`FunctionGraph` と同じ考え方）。
  * 等高線のラベルは線の上に置き、ラベルの下だけ線をマスクで切り抜く。格子線（目盛りに沿った
  * 格子線と極座標の格子）は、すべてのラベルと目盛り数字の下でマスクで切り抜く。
+ *
+ * ベクトル場（`fields`）は格子点で関数を評価して矢印の群を描く。曲線・媒介変数曲線・領域の境界の
+ * `arrows` は、線の向きを矢じりで示す。例えば原点のまわりを回る場と、反時計回りの単位円は次の
+ * ように書く。
+ *
+ * ```mdx
+ * <ContourPlot xMin={-2} xMax={2} yMin={-2} yMax={2} ariaLabel="回転する場と単位円"
+ *   fields={[{ fn: (x, y) => ({ x: -y, y: x }), step: 0.5, pivot: "center" }]}
+ *   parametrics={[{ fn: (t) => ({ x: Math.cos(t), y: Math.sin(t) }), tMin: 0, tMax: 2 * Math.PI,
+ *     arrows: 4 }]} />
+ * ```
  */
 
 /** 数学座標の点。 */
@@ -98,8 +109,21 @@ type RegionStyle = {
   labelAt?: XY;
 };
 
+/**
+ * 曲線の向きを示す矢じりの置き方。数値 n なら媒介変数の範囲を n 等分した各小区間の中央に、
+ * 配列なら各値の位置に置く。矢じりの中心を曲線の上に置き、媒介変数の範囲を始端から終端へ
+ * 進む向き（通常は媒介変数が増える向き）へ向ける。小区間の中央に置くのは、閉曲線の始点と終点
+ * （同じ点）に矢じりが 2 つ重ならないためである。
+ */
+type ArrowMarks = number | number[];
+
 /** 頂点列で与える多角形の領域。頂点は順にたどり、最後の頂点から最初の頂点へ戻って閉じる。 */
-type PolygonRegion = RegionStyle & { kind: "polygon"; points: XY[] };
+type PolygonRegion = RegionStyle & {
+  kind: "polygon";
+  points: XY[];
+  /** 各辺の中点に、頂点の順にたどる向きの矢じりを付けるか（境界の向きを示す）。既定 false。 */
+  arrows?: boolean;
+};
 
 /**
  * 2 曲線ではさまれた領域 $a\le x\le b$、$g_1(x)\le y\le g_2(x)$。`x` に $[a,b]$、`lower` に
@@ -132,6 +156,8 @@ type ParametricRegion = RegionStyle & {
   tMax: number;
   /** 標本数。既定 240。 */
   samples?: number;
+  /** 境界の向きを示す矢じり（ArrowMarks を参照）。tMin から tMax へ進む向きを指す。既定は矢じりなし。 */
+  arrows?: ArrowMarks;
 };
 
 /** 極座標の動径の範囲の端。定数、または角 $\theta$ の関数で与える。 */
@@ -174,6 +200,12 @@ type Curve = {
   labelPlacement?: LabelPlacement;
   /** "inline" のとき、ラベルを置く位置の x 座標。省略時は空いた位置を自動で選ぶ。 */
   labelAt?: number;
+  /**
+   * 向きを示す矢じり（ArrowMarks を参照）。媒介変数は x で、定義域の [始端, 終端] の順に進む
+   * 向き（通常は x が増える向き）を指す。数値 n なら定義域（省略時は描画窓の横範囲）を n 等分
+   * して置く。既定は矢じりなし。
+   */
+  arrows?: ArrowMarks;
 };
 
 /** 媒介変数曲線 $t\mapsto(x(t),y(t))$。 */
@@ -193,6 +225,11 @@ type ParametricCurve = {
   labelPlacement?: LabelPlacement;
   /** "inline" のとき、ラベルを置く位置の媒介変数 t。省略時は空いた位置を自動で選ぶ。 */
   labelAt?: number;
+  /**
+   * 向きを示す矢じり（ArrowMarks を参照）。t が増える向きを指す。逆向きを示すには tMin と
+   * tMax を入れ替えるか、fn の t の符号を反転する。既定は矢じりなし。
+   */
+  arrows?: ArrowMarks;
 };
 
 /** 矢印の見た目。 */
@@ -209,6 +246,63 @@ type VectorStyle = {
 
 /** 矢印（有向線分）。始点 `from` と終点 `to`、または始点 `from` と成分 `delta` で与える。 */
 type Vector = VectorStyle & ({ from: XY; to: XY } | { from: XY; delta: XY });
+
+/**
+ * 平面のベクトル場（矢印の格子）。格子点（または `at` の各点）で関数を評価し、各点に矢印を
+ * 描く。長さはすべて座標の単位で決める。横縦の縮尺が異なる図でも、矢印の成分は座標どおりになる。
+ */
+type VectorField = {
+  /**
+   * 場の関数。数学座標 (x, y) を受け取り、その点のベクトル（成分）を返す。null や有限でない値を
+   * 返した点（場が定義されない点）は描かない。
+   */
+  fn: (x: number, y: number) => XY | null;
+  /** 格子の間隔（座標）。数値なら横縦共通、[横, 縦] で個別に与える。既定 1。 */
+  step?: number | [number, number];
+  /** 格子の基準点（座標）。格子点はこの点から間隔の整数倍の位置に置く。既定は原点。 */
+  origin?: XY;
+  /**
+   * 格子を張る横の範囲 [min, max]（座標。両端を含む）。既定は描画窓の横範囲で、窓の縁の上の
+   * 格子点は除く（縁の点の矢印は大半が窓の外へ出て、切れ端だけが残るため）。
+   */
+  x?: [number, number];
+  /** 格子を張る縦の範囲 [min, max]（座標。両端を含む）。既定は描画窓の縦範囲（縁の上の点を除く）。 */
+  y?: [number, number];
+  /** 格子の代わりに評価する点の列（座標）。曲線の上の法線など、決まった点に矢印を置くときに使う。 */
+  at?: XY[];
+  /** 評価しない点のマスク。true を返した点には何も描かない（定義域外・原点のまわりなど）。 */
+  hide?: (x: number, y: number) => boolean;
+  /**
+   * 長さの倍率。矢印の成分（座標）をベクトルの scale 倍にする。省略時は、格子なら最も長い矢印が
+   * 格子間隔の 0.85 倍になる値、`at` なら 1 とする。
+   */
+  scale?: number;
+  /**
+   * すべての矢印を同じ長さにそろえるか（向きだけを示す）。そろえた長さ（座標）は scale で、
+   * 省略時は格子なら格子間隔の 0.7 倍、`at` なら 1 とする。既定 false。
+   */
+  normalize?: boolean;
+  /** 矢印の長さの上限（座標）。超える矢印は向きを保って縮める。特異点の近くで伸びすぎるのを防ぐ。 */
+  maxLength?: number;
+  /** 評価点に矢印のどこを合わせるか。"tail" は始点、"center" は中点。既定 "tail"。 */
+  pivot?: "tail" | "center";
+  /** 零ベクトルの点の描き方。"skip" は描かない、"dot" は小さな点で示す。既定 "skip"。 */
+  zero?: "skip" | "dot";
+  /** 矢印の色。既定は青緑（等高線の青・矢印の桃色・強調の琥珀色と区別する）。 */
+  color?: string;
+  /** 矢印の群の不透明度（0〜1）。既定 1。重ねる曲線・領域を目立たせたいときに下げる。 */
+  opacity?: number;
+  /** 矢印の軸の線の太さ（px）。既定 1.4。 */
+  width?: number;
+  /**
+   * ラベル・目盛り数字に重なる矢印を描かないか。既定 false（ラベルはハローを敷いて矢印の上に
+   * 描く）。密な場で目盛り数字やラベルが読みにくいときに true にする。省くのは矢印 1 本ごとで、
+   * 矢じりの無い切れ端は残さない。
+   */
+  avoidLabels?: boolean;
+  /** 凡例に載せる LaTeX ラベル（例: "\\mathbf{F}=(-y,x)"）。省略時は凡例に載せない。 */
+  legendLabel?: string;
+};
 
 /** 平面上の 1 点。塗りつぶし（黒丸）または白抜き（白丸。その点を含まない）で表す。 */
 type Point = {
@@ -315,6 +409,11 @@ type ContourPlotProps = {
   parametrics?: ParametricCurve[];
   /** 矢印（有向線分）。 */
   vectors?: Vector[];
+  /**
+   * ベクトル場（矢印の格子）。領域・等高線より前面、曲線・矢印・点・ラベルより奥に描き、
+   * 描画窓で切り取る。
+   */
+  fields?: VectorField[];
   /** 平面上に置く点。 */
   points?: Point[];
   /** 長方形の分割の格子。 */
@@ -378,6 +477,25 @@ const PARAM_SAMPLES = 240;
 const HEAD_LEN = 9;
 const HEAD_HALF = 3.6;
 
+// ベクトル場の既定色。等高線（青）・矢印（桃色）・強調（琥珀色）のいずれとも見分けられる青緑にする。
+const FIELD = "#0d9488";
+// ベクトル場の矢じりと軸の太さ（px）。矢印が数十〜数百本並び、1 本ずつは短いため、通常の矢印より
+// 小さくする。矢じりの縦横比は通常の矢印（9 : 3.6）と同じに保つ。
+const FIELD_HEAD_LEN = 6;
+const FIELD_HEAD_HALF = 2.4;
+const FIELD_WIDTH = 1.4;
+// 零ベクトルを示す点の半径（px）。
+const FIELD_DOT_R = 1.6;
+// 画面上の長さがこれ（px）より短い矢印は、向きが読めないため零ベクトルと同じに扱う。
+const FIELD_MIN_PX = 0.5;
+// 格子の 1 方向あたりの格子点数の上限。間隔の指定を誤ったときに、ビルドが止まらないようにする。
+const FIELD_MAX_STEPS = 200;
+// ラベル配置で、ベクトル場の矢印 1 本と重なるごとの罰点と、1 つの場あたりの罰点の上限。上限を
+// 曲線・等高線の重み（6）より小さくし、場が図全体を覆う場合も、ラベルは線を避けることを優先し、
+// そのうえで重なる矢印の少ない位置を選ぶ。罰点が有限なので、ラベルが置けなくなることはない。
+const FIELD_WEIGHT = 1;
+const FIELD_MAX_PENALTY = 4;
+
 // 領域のラベルを置く候補の、基準点（重心または labelAt）からのずれ（px）。近い順に並べ、同点なら
 // 前の候補を選ぶ。斜めのずれを真横のずれより先に試す。重心が軸の上に来たとき、真横へずらすと
 // ラベルが同じ高さの目盛り数字と軸をはさんで並び、1 続きの式に見えるためである。
@@ -431,6 +549,7 @@ export default function ContourPlot({
   curves = [],
   parametrics = [],
   vectors = [],
+  fields = [],
   points = [],
   partition,
   segments = [],
@@ -573,6 +692,45 @@ export default function ContourPlot({
     return { from: toScreen(v.from), to: toScreen(to) };
   });
 
+  // ---- ベクトル場 ----
+  const fieldData = fields.map((f) =>
+    fieldGeometry(f, { x0: xMin, x1: xMax, y0: yMin, y1: yMax }, toScreen),
+  );
+
+  // ---- 曲線・境界の向きの矢じり ----
+  // 矢じりは画面座標で向きを求め、横縦の縮尺が異なる図でも線に沿って向くようにする。接線は
+  // ごく近い 2 点の差で求めるため、0.01px に丸める toScreen でなく丸めない写像を使う。
+  const toPx = (p: XY): XY => ({ x: x(p.x), y: y(p.y) });
+  const curveHeads = [
+    ...curves.flatMap((c) => {
+      const [lo, hi] = c.domain ?? [xMin, xMax];
+      const color = c.color ?? CURVE;
+      const heads = orientationHeads((t) => ({ x: t, y: c.fn(t) }), c.arrows, lo, hi, toPx, inExt);
+      return heads.map((head) => ({ head, color }));
+    }),
+    ...parametrics.flatMap((pc) => {
+      const color = pc.color ?? CURVE;
+      const heads = orientationHeads(pc.fn, pc.arrows, pc.tMin, pc.tMax, toPx, inExt);
+      return heads.map((head) => ({ head, color }));
+    }),
+  ];
+  const regionHeads = regions.flatMap((r) => {
+    const color = r.boundaryColor ?? r.color ?? CURVE;
+    if (r.kind === "parametric") {
+      const heads = orientationHeads(r.fn, r.arrows, r.tMin, r.tMax, toPx, inExt);
+      return heads.map((head) => ({ head, color }));
+    }
+    if (r.kind === "polygon" && r.arrows === true) {
+      // 各辺を 0〜1 の媒介変数でたどり、中点に矢じりを置く。
+      return r.points.flatMap((p, k) => {
+        const q = r.points[(k + 1) % r.points.length];
+        const heads = orientationHeads((t) => lerpAt(p, q, t), [0.5], 0, 1, toPx, inExt);
+        return heads.map((head) => ({ head, color }));
+      });
+    }
+    return [];
+  });
+
   // ---- 極座標の格子 ----
   const polar =
     polarGrid === undefined
@@ -670,6 +828,14 @@ export default function ContourPlot({
     for (const e of r.edges) addLine(`rg${i}`, e, 3);
   });
   vectorData.forEach((v, i) => addLine(`vc${i}`, [v.from, v.to], 6));
+  // ベクトル場の矢印は、場ごとにまとめて別に持つ。重なる本数の罰点に場ごとの上限を設けるためで
+  // ある（FIELD_MAX_PENALTY を参照）。
+  const fieldObstacles: LineObstacle[][] = fieldData.map((fd, i) =>
+    fd.arrows.map((a) => {
+      const pts = [a.from, a.to];
+      return { id: `fd${i}`, pts, weight: FIELD_WEIGHT, bbox: bboxOf(pts) };
+    }),
+  );
   segments.forEach((s, i) => addLine(`sg${i}`, [toScreen(s.from), toScreen(s.to)], 3));
   if (partitionData !== null) {
     for (const l of partitionData.lines) addLine("pt", l.pts, l.outer ? 3 : 1);
@@ -726,6 +892,21 @@ export default function ContourPlot({
     for (const l of avoidGrid ? [...lineObstacles, ...gridObstacles] : lineObstacles) {
       if (l.id !== exclude && boxesOverlap(padded, l.bbox) && polylineHitsBox(l.pts, padded)) {
         p += l.weight;
+      }
+    }
+    // ベクトル場の矢印。格子線と同じく、等高線のラベル（avoidGrid が false）は避けない。等高線の
+    // ラベルは線の上で置ける位置が限られ、矢印を避けると線の中ほどから外れるためである。重なる
+    // 矢印はラベルのハローで読める。
+    if (avoidGrid) {
+      for (const group of fieldObstacles) {
+        let hits = 0;
+        for (const l of group) {
+          if (boxesOverlap(padded, l.bbox) && polylineHitsBox(l.pts, padded)) {
+            hits += l.weight;
+            if (hits >= FIELD_MAX_PENALTY) break;
+          }
+        }
+        p += Math.min(hits, FIELD_MAX_PENALTY);
       }
     }
     return p;
@@ -1027,6 +1208,11 @@ export default function ContourPlot({
               ? []
               : [{ label: pc.label, color: pc.color ?? CURVE, dashed: pc.dashed ?? false }],
           ),
+          ...fields.flatMap((f) =>
+            f.legendLabel === undefined
+              ? []
+              : [{ label: f.legendLabel, color: f.color ?? FIELD, dashed: false }],
+          ),
         ];
 
   const allLabels = [
@@ -1051,6 +1237,10 @@ export default function ContourPlot({
       GRID_CUT_PAD,
     );
   };
+  // 空ラベルの目盛り（格子線だけを残し数字を省く目盛り）は字形をもたないので、格子線の切り抜きと
+  // avoidLabels の判定から外す。外さないと、数字の無い位置で格子線が規則的に途切れて見える。
+  const xtLabeled = xt.filter((t) => tickLabel(t) !== "");
+  const ytLabeled = yt.filter((t) => tickLabel(t) !== "");
   // 切り抜きとプロット矩形の縁の間に残る格子線が GRID_STUB_PX より短いときは、縁まで切り抜く。
   // ラベルの脇に数 px だけ残った線が、「=1_」のように字の続きに見えるのを防ぐ。
   const plotRight = originX + plotW;
@@ -1070,13 +1260,43 @@ export default function ContourPlot({
           ),
           ...(axes
             ? [
-                ...xt.map((t) => tickCut(x(tickValue(t)), axisY + 13, t)),
-                ...yt.map((t) => tickCut(axisX - 14, y(tickValue(t)), t)),
+                ...xtLabeled.map((t) => tickCut(x(tickValue(t)), axisY + 13, t)),
+                ...ytLabeled.map((t) => tickCut(axisX - 14, y(tickValue(t)), t)),
               ]
             : []),
         ].map(toEdge)
       : [];
   const gridMaskRef = gridCuts.length > 0 ? `url(#${gridMask})` : undefined;
+
+  // avoidLabels の場では、ラベル・目盛り数字の矩形に触れる矢印と零ベクトルの点を描かない。矢印を
+  // マスクで部分的に切ると、矢じりの無い切れ端が残って向きを誤読させるため、1 本ごと省く。
+  const fieldShown = fieldData.map((fd, i) => {
+    if (fields[i].avoidLabels !== true) return fd;
+    const boxes = [
+      ...contourLabels.map((l) => l.box),
+      ...allLabels.map((l) => inflate(boxFor(l.pos, estimateTexWidthPrecise(l.tex, 12)), 1)),
+      ...(axes
+        ? [
+            ...xtLabeled.map((t) => tickCut(x(tickValue(t)), axisY + 13, t)),
+            ...ytLabeled.map((t) => tickCut(axisX - 14, y(tickValue(t)), t)),
+          ]
+        : []),
+    ];
+    return {
+      arrows: fd.arrows.filter((a) => !boxes.some((b) => segmentHitsBox(a.from, a.to, b))),
+      dots: fd.dots.filter(
+        (d) =>
+          !boxes.some((b) =>
+            boxesOverlap(inflate(b, FIELD_DOT_R), {
+              x0: d.x,
+              x1: d.x,
+              y0: d.y,
+              y1: d.y,
+            }),
+          ),
+      ),
+    };
+  });
 
   return (
     <div className="contour-plot-figure" style={{ maxWidth: `${viewW}px` }}>
@@ -1291,6 +1511,10 @@ export default function ContourPlot({
               </g>
             );
           })}
+          {/* 領域の境界の向きを示す矢じり。 */}
+          {regionHeads.map((h, i) => (
+            <polygon key={`rh-${i}`} points={h.head} fill={h.color} />
+          ))}
 
           {/* 分割の格子線。内側の細線、外周の順に重ねる。 */}
           {partitionData !== null &&
@@ -1330,6 +1554,32 @@ export default function ContourPlot({
             )}
           </g>
 
+          {/* ベクトル場。等高線より前面、曲線より奥に描き、閉曲線などの主役の線を矢印の上に残す。
+              矢印は数百本になりうるため、場ごとに全矢印の軸を 1 本の path、矢じりを 1 本の path に
+              まとめて SVG を軽くする。不透明度は g にかけ、軸と矢じりの重なりが濃くならないようにする。 */}
+          {fieldShown.map((fd, i) => {
+            const f = fields[i];
+            const color = f.color ?? FIELD;
+            const { shafts, heads } = arrowPaths(fd.arrows, FIELD_HEAD_LEN, FIELD_HEAD_HALF);
+            return (
+              <g key={`fd-${i}`} opacity={f.opacity}>
+                {shafts !== "" && (
+                  <path
+                    d={shafts}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={f.width ?? FIELD_WIDTH}
+                    strokeLinecap="round"
+                  />
+                )}
+                {heads !== "" && <path d={heads} fill={color} />}
+                {fd.dots.map((d, k) => (
+                  <Circle key={`fz-${i}-${k}`} cx={d.x} cy={d.y} r={FIELD_DOT_R} fill={color} />
+                ))}
+              </g>
+            );
+          })}
+
           {/* 曲線。 */}
           {curves.map((c, i) => (
             <LinePath<Sample>
@@ -1360,6 +1610,10 @@ export default function ContourPlot({
               strokeLinecap="round"
               strokeLinejoin="round"
             />
+          ))}
+          {/* 曲線の向きを示す矢じり。 */}
+          {curveHeads.map((h, i) => (
+            <polygon key={`ch-${i}`} points={h.head} fill={h.color} />
           ))}
 
           {/* 補助線分。 */}
@@ -2056,6 +2310,166 @@ function meanOf(pts: XY[]): XY {
     x: pts.reduce((s, p) => s + p.x, 0) / n,
     y: pts.reduce((s, p) => s + p.y, 0) / n,
   };
+}
+
+// ======================================================================
+// ベクトル場と向きの矢じり
+// ======================================================================
+
+/** 画面上の矢印（始点・終点）。 */
+type ScreenArrow = { from: XY; to: XY };
+
+/**
+ * ベクトル場を格子点（または at の点）で評価し、画面上の矢印と、零ベクトルを示す点にする。
+ * 長さは座標の単位で決めてから両端を toScreen で写し、横縦の縮尺が異なる図でも矢印の成分を
+ * 座標どおりに保つ。画面上で FIELD_MIN_PX より短い矢印は向きが読めないため、零ベクトルと同じに
+ * 扱う。
+ */
+function fieldGeometry(
+  f: VectorField,
+  win: Box,
+  toScreen: (p: XY) => XY,
+): { arrows: ScreenArrow[]; dots: XY[] } {
+  const [hx, hy] = typeof f.step === "number" ? [f.step, f.step] : (f.step ?? [1, 1]);
+  // 公開 props の間隔に 0 や負数が来ても、格子点の列挙が止まるよう 1 に置き換える。
+  const stepX = hx > 0 ? hx : 1;
+  const stepY = hy > 0 ? hy : 1;
+  const origin = f.origin ?? { x: 0, y: 0 };
+  const base: XY[] =
+    f.at ??
+    stepsIn(f.y ?? [win.y0, win.y1], stepY, origin.y, f.y === undefined).flatMap((yv) =>
+      stepsIn(f.x ?? [win.x0, win.x1], stepX, origin.x, f.x === undefined).map((xv) => ({
+        x: xv,
+        y: yv,
+      })),
+    );
+  const samples = base.flatMap((p) => {
+    if (f.hide?.(p.x, p.y) === true) return [];
+    const v = f.fn(p.x, p.y);
+    if (v === null || !Number.isFinite(v.x) || !Number.isFinite(v.y)) return [];
+    return [{ p, v, mag: Math.hypot(v.x, v.y) }];
+  });
+  // 自動の倍率は、最も長い矢印（normalize ならすべての矢印）を格子間隔より短くし、隣の格子点の
+  // 矢印と重ならないようにする。点の列で渡したときは格子間隔が無いため、ベクトルをそのまま描く。
+  const unit = Math.min(stepX, stepY);
+  const maxMag = samples.reduce((m, s) => Math.max(m, s.mag), 0);
+  const autoScale =
+    f.at !== undefined
+      ? 1
+      : f.normalize === true
+        ? 0.7 * unit
+        : maxMag > 0
+          ? (0.85 * unit) / maxMag
+          : 1;
+  const scale = f.scale ?? autoScale;
+  const arrows: ScreenArrow[] = [];
+  const dots: XY[] = [];
+  for (const { p, v, mag } of samples) {
+    let len = mag > 0 ? (f.normalize === true ? scale : scale * mag) : 0;
+    if (f.maxLength !== undefined) len = Math.min(len, f.maxLength);
+    const d = mag > 0 ? { x: (v.x / mag) * len, y: (v.y / mag) * len } : { x: 0, y: 0 };
+    const start = f.pivot === "center" ? { x: p.x - d.x / 2, y: p.y - d.y / 2 } : p;
+    const from = toScreen(start);
+    const to = toScreen({ x: start.x + d.x, y: start.y + d.y });
+    if (Math.hypot(to.x - from.x, to.y - from.y) >= FIELD_MIN_PX) arrows.push({ from, to });
+    else if (f.zero === "dot") dots.push(toScreen(p));
+  }
+  return { arrows, dots };
+}
+
+/**
+ * 区間 [lo, hi] にある、origin から step の整数倍の位置を小さい順に返す。open なら両端の上の
+ * 位置を除く（開区間）。端との一致は step の 1e-9 倍の誤差まで許す。
+ */
+function stepsIn(range: [number, number], step: number, origin: number, open = false): number[] {
+  const lo = (Math.min(...range) - origin) / step;
+  const hi = (Math.max(...range) - origin) / step;
+  const k0 = open ? Math.floor(lo + 1e-9) + 1 : Math.ceil(lo - 1e-9);
+  const k1 = open ? Math.ceil(hi - 1e-9) - 1 : Math.floor(hi + 1e-9);
+  const out: number[] = [];
+  for (let k = k0; k <= k1 && out.length < FIELD_MAX_STEPS; k += 1) out.push(origin + k * step);
+  return out;
+}
+
+/**
+ * 矢印の列を、全矢印の軸をつないだ path と、全矢じりをつないだ path の d 属性にする。矢じりの
+ * 形と短い矢印での縮め方は、通常の矢印（vectors）と同じである。軸は矢じりの根元で止め、矢じりと
+ * 重ねない。
+ */
+function arrowPaths(
+  arrows: ScreenArrow[],
+  headLen: number,
+  headHalf: number,
+): { shafts: string; heads: string } {
+  const shafts: string[] = [];
+  const heads: string[] = [];
+  for (const { from, to } of arrows) {
+    const len = Math.hypot(to.x - from.x, to.y - from.y);
+    if (!(len > 0)) continue;
+    const ux = (to.x - from.x) / len;
+    const uy = (to.y - from.y) / len;
+    const hl = Math.min(headLen, len * 0.8);
+    const hh = headHalf * (hl / headLen);
+    const bx = to.x - hl * ux;
+    const by = to.y - hl * uy;
+    shafts.push(`M${round2(from.x)} ${round2(from.y)}L${round2(bx)} ${round2(by)}`);
+    heads.push(
+      `M${round2(to.x)} ${round2(to.y)}` +
+        `L${round2(bx - hh * uy)} ${round2(by + hh * ux)}` +
+        `L${round2(bx + hh * uy)} ${round2(by - hh * ux)}Z`,
+    );
+  }
+  return { shafts: shafts.join(""), heads: heads.join("") };
+}
+
+/** ArrowMarks を、矢じりを置く媒介変数の値の列にする。 */
+function arrowParams(marks: ArrowMarks | undefined, lo: number, hi: number): number[] {
+  if (marks === undefined) return [];
+  if (typeof marks !== "number") return marks;
+  const n = Math.max(0, Math.round(marks));
+  return Array.from({ length: n }, (_, k) => lo + ((hi - lo) * (k + 0.5)) / n);
+}
+
+/**
+ * 曲線 fn の上に置く向きの矢じり（polygon の points 属性）の列。矢じりの中心を曲線の上の点に
+ * 合わせ、媒介変数を lo から hi の順に進む向きへ向ける。接線は前後のごく近い 2 点の画面上の差で
+ * 求める。点が描く範囲（inExt）の外にある位置と、接線が求まらない位置には置かない。
+ */
+function orientationHeads(
+  fn: (t: number) => XY,
+  marks: ArrowMarks | undefined,
+  lo: number,
+  hi: number,
+  toPx: (p: XY) => XY,
+  inExt: (p: XY) => boolean,
+): string[] {
+  // 差分の刻みは範囲に符号付きで比例させ、hi < lo（逆向きにたどる指定）でも進む向きを指す。
+  const h = (hi - lo) * 1e-3;
+  // 差分の評価点を範囲の中に収める。端の点では片側の差分になり、範囲の外で例外を投げる関数も呼ばない。
+  const clampT = (s: number) => Math.min(Math.max(s, Math.min(lo, hi)), Math.max(lo, hi));
+  return arrowParams(marks, lo, hi).flatMap((t) => {
+    const p = fn(t);
+    if (!inExt(p)) return [];
+    const c = toPx(p);
+    const tb = clampT(t - h);
+    const ta = clampT(t + h);
+    const before = tb === t ? p : fn(tb);
+    const after = ta === t ? p : fn(ta);
+    const a = inExt(before) ? toPx(before) : c;
+    const b = inExt(after) ? toPx(after) : c;
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (!(len > 1e-9)) return [];
+    const ux = (b.x - a.x) / len;
+    const uy = (b.y - a.y) / len;
+    const tip = { x: c.x + (ux * HEAD_LEN) / 2, y: c.y + (uy * HEAD_LEN) / 2 };
+    const bx = c.x - (ux * HEAD_LEN) / 2;
+    const by = c.y - (uy * HEAD_LEN) / 2;
+    return [
+      `${round2(tip.x)},${round2(tip.y)} ` +
+        `${round2(bx - HEAD_HALF * uy)},${round2(by + HEAD_HALF * ux)} ` +
+        `${round2(bx + HEAD_HALF * uy)},${round2(by - HEAD_HALF * ux)}`,
+    ];
+  });
 }
 
 // ======================================================================
