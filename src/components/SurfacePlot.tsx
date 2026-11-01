@@ -935,6 +935,8 @@ export default function SurfacePlot({
   const curveHeads = curves.flatMap((c, i) => {
     const [t0, t1] = c.t;
     const h = (t1 - t0) * 1e-3;
+    // 差分の評価点を範囲の中に収める。端の点では片側の差分になり、範囲の外で例外を投げる関数も呼ばない。
+    const clampT = (s: number) => Math.min(Math.max(s, Math.min(t0, t1)), Math.max(t0, t1));
     const mode = c.hidden ?? "fade";
     return arrowParams(c.arrows, t0, t1).flatMap((t, k) => {
       const p = c.fn(t);
@@ -943,9 +945,10 @@ export default function SurfacePlot({
       const level = pointLevel(pv, mode);
       if (level <= 0) return [];
       const sc = project(pv);
-      // 端の点では片側の差分に切り替え、範囲の外で値が定義されない曲線にも置けるようにする。
-      const before = c.fn(t - h);
-      const after = c.fn(t + h);
+      const tb = clampT(t - h);
+      const ta = clampT(t + h);
+      const before = tb === t ? p : c.fn(tb);
+      const after = ta === t ? p : c.fn(ta);
       const a = isFiniteVec(before) ? project(toView(before)) : sc;
       const b = isFiniteVec(after) ? project(toView(after)) : sc;
       const len = Math.hypot(b.sx - a.sx, b.sy - a.sy);
@@ -1300,8 +1303,8 @@ export default function SurfacePlot({
 type Run = { level: number; pts: ScreenPoint[] };
 
 /**
- * 可視の区間を 1 本の折れ線として描く。trimEnd を与えると、終点 trimTo から trimEnd px
- * 手前で線を止める（矢じりの下に線が突き出ないようにする）。
+ * 可視の区間を 1 本の折れ線として描く。trimEnd を与え、区間が終点 trimTo まで届くときは、
+ * trimTo から trimEnd px 手前で線を止める（矢じりの下に線が突き出ないようにする）。
  */
 function RunPath({
   run,
@@ -1321,7 +1324,13 @@ function RunPath({
   trimTo?: ScreenPoint;
 }) {
   let pts = run.pts;
-  if (trimEnd > 0 && trimTo) {
+  const end = pts[pts.length - 1];
+  // 終点まで届かない区間（終点が面に隠れて途切れた区間）は縮めない。縮めると、隠れた部分へ線を補ってしまう。
+  const reachesEnd =
+    trimTo !== undefined &&
+    end !== undefined &&
+    Math.hypot(end.sx - trimTo.sx, end.sy - trimTo.sy) < 0.5;
+  if (trimEnd > 0 && trimTo && reachesEnd) {
     // 終点から trimEnd 以内の標本点を落とし、境目の点を補う。
     const keep = pts.filter((p) => Math.hypot(p.sx - trimTo.sx, p.sy - trimTo.sy) > trimEnd);
     if (keep.length === 0) return null;

@@ -2445,13 +2445,16 @@ function orientationHeads(
 ): string[] {
   // 差分の刻みは範囲に符号付きで比例させ、hi < lo（逆向きにたどる指定）でも進む向きを指す。
   const h = (hi - lo) * 1e-3;
+  // 差分の評価点を範囲の中に収める。端の点では片側の差分になり、範囲の外で例外を投げる関数も呼ばない。
+  const clampT = (s: number) => Math.min(Math.max(s, Math.min(lo, hi)), Math.max(lo, hi));
   return arrowParams(marks, lo, hi).flatMap((t) => {
     const p = fn(t);
     if (!inExt(p)) return [];
     const c = toPx(p);
-    // 端の点では片側の差分に切り替え、範囲の外で値が定義されない曲線にも置けるようにする。
-    const before = fn(t - h);
-    const after = fn(t + h);
+    const tb = clampT(t - h);
+    const ta = clampT(t + h);
+    const before = tb === t ? p : fn(tb);
+    const after = ta === t ? p : fn(ta);
     const a = inExt(before) ? toPx(before) : c;
     const b = inExt(after) ? toPx(after) : c;
     const len = Math.hypot(b.x - a.x, b.y - a.y);
