@@ -13,7 +13,8 @@
     "format:check": "oxfmt --check",
     "lint:text": "textlint \"**/*.{md,mdx}\"",
     "lint:text:fix": "textlint --fix \"**/*.{md,mdx}\"",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run lint:text",
+    "typecheck": "astro sync && tsc --noEmit",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run lint:text",
     "figures:shot": "tsx scripts/figures/shot.ts",
     "figures:lint": "tsx scripts/figures/lint.ts",
     "figures:diff": "tsx scripts/figures/diff.ts",
@@ -55,7 +56,8 @@
     "textlint-plugin-mdx": "^1.1.0",
     "textlint-rule-preset-ja-spacing": "^3.0.2",
     "textlint-rule-preset-ja-technical-writing": "^12.0.2",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@11.8.0"
 }
