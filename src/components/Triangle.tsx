@@ -12,42 +12,42 @@ import KatexLabel from "./KatexLabel";
  * KatexLabel を介して KaTeX で組版する。
  */
 
-type Vertex = {
+type Vertex = Readonly<{
   /** 頂点の数学座標。 */
   x: number;
   y: number;
   /** 頂点に添える LaTeX ラベル（例: "A"）。 */
   label?: string;
-};
+}>;
 
 /** 辺に添えるラベル。`from`・`to` は vertices の添字（0,1,2）。 */
-type EdgeLabel = {
+type EdgeLabel = Readonly<{
   from: number;
   to: number;
   /** 辺の中点付近に置く LaTeX ラベル（例: "c"、"a"）。 */
   label: string;
-};
+}>;
 
 /** 頂点での内角の印とラベル。`at` は vertices の添字。 */
-type AngleMark = {
+type AngleMark = Readonly<{
   at: number;
   /** 角に添える LaTeX ラベル（例: "A"、"\\theta"、"90^\\circ"）。 */
   label?: string;
   /** 直角の印（小さな四角）で描くか。既定 false（弧で描く）。 */
   right?: boolean;
-};
+}>;
 
 /** 数学座標の点。 */
-type Pt = { x: number; y: number };
+type Pt = Readonly<{ x: number; y: number }>;
 
 /** 追加の補助線分（破線）。垂線の足までの底辺の延長などに使う。 */
-type Segment = { from: Pt; to: Pt };
+type Segment = Readonly<{ from: Pt; to: Pt }>;
 
 /**
  * 頂点から底辺へ下ろした垂線。高さの線分（破線）・足の点・直角の印をまとめて描く。
  * `toward` は底辺に沿う向きを示す点（直角の印の向きづけに使う）。
  */
-type Perpendicular = {
+type Perpendicular = Readonly<{
   from: Pt;
   foot: Pt;
   toward: Pt;
@@ -55,19 +55,19 @@ type Perpendicular = {
   label?: string;
   /** 足に添えるラベル（例: "H"）。 */
   footLabel?: string;
-};
+}>;
 
-type TriangleProps = {
+type TriangleProps = Readonly<{
   /** 3 頂点。反時計回り・時計回りのどちらでもよい。 */
-  vertices: [Vertex, Vertex, Vertex];
+  vertices: readonly [Vertex, Vertex, Vertex];
   /** 辺のラベル。 */
-  edges?: EdgeLabel[];
+  edges?: readonly EdgeLabel[];
   /** 内角の印。 */
-  angles?: AngleMark[];
+  angles?: readonly AngleMark[];
   /** 補助線分（破線）。底辺の延長などに使う。 */
-  segments?: Segment[];
+  segments?: readonly Segment[];
   /** 頂点から底辺へ下ろした垂線（高さ・足・直角の印）。 */
-  perpendiculars?: Perpendicular[];
+  perpendiculars?: readonly Perpendicular[];
   /**
    * 1 数学単位あたりのピクセル数を固定する。複数の図で縮尺をそろえる（合同な三角形を
    * 同じ大きさで描く）ときに使う。省略時は viewBox に合わせて自動でフィットする。
@@ -75,7 +75,7 @@ type TriangleProps = {
   unitScale?: number;
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
-};
+}>;
 
 const STROKE = "#3b82f6";
 const FILL = "#3b82f6";
@@ -172,9 +172,7 @@ export default function Triangle({
         const a2 = Math.atan2(u2.y, u2.x);
         const start = { x: v.x + rr * Math.cos(a1), y: v.y + rr * Math.sin(a1) };
         const end = { x: v.x + rr * Math.cos(a2), y: v.y + rr * Math.sin(a2) };
-        let diff = a2 - a1;
-        while (diff <= -Math.PI) diff += 2 * Math.PI;
-        while (diff > Math.PI) diff -= 2 * Math.PI;
+        const diff = wrapBelowPi(wrapAbovePi(a2 - a1));
         const sweepFlag = diff > 0 ? 1 : 0;
         const bis = { x: (u1.x + u2.x) / 2, y: (u1.y + u2.y) / 2 };
         const bisLen = Math.hypot(bis.x, bis.y) || 1;
@@ -301,8 +299,24 @@ export default function Triangle({
   );
 }
 
+/**
+ * 角の差が -π 以下なら 2π を足し、-π より大きくする。
+ *
+ * 折り返しは wrapBelowPi と 2 段に分け、先に下側、次に上側の順で 1 回ずつ通す。
+ * 両側を 1 つの関数で繰り返し折り返すと、上側の折り返しで丸めにより -π ちょうどになった値を
+ * もう一度折り返し、角の向き（弧の sweep）が変わりうる。
+ */
+function wrapAbovePi(diff: number): number {
+  return diff <= -Math.PI ? wrapAbovePi(diff + 2 * Math.PI) : diff;
+}
+
+/** 角の差が π より大きければ 2π を引き、π 以下にする。 */
+function wrapBelowPi(diff: number): number {
+  return diff > Math.PI ? wrapBelowPi(diff - 2 * Math.PI) : diff;
+}
+
 /** v から w へ向かう単位ベクトル（SVG 座標）。 */
-function unitVec(v: { x: number; y: number }, w: { x: number; y: number }) {
+function unitVec(v: Pt, w: Pt) {
   const dx = w.x - v.x;
   const dy = w.y - v.y;
   const len = Math.hypot(dx, dy) || 1;

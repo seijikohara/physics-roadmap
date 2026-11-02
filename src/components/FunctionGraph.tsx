@@ -32,7 +32,7 @@ import KatexLabel from "./KatexLabel";
  */
 
 /** グラフに重ねる 1 本の曲線。`fn` は MDX から JavaScript の関数式で渡す。 */
-type Curve = {
+type Curve = Readonly<{
   /** 描く関数。x（数学座標）を受け取り y を返す。定義域外では NaN を返してよい。 */
   fn: (x: number) => number;
   /** 曲線の色。既定は青系。 */
@@ -44,11 +44,11 @@ type Curve = {
   /** 破線で描くか。既定は実線。 */
   dashed?: boolean;
   /** この曲線だけの定義域 [min, max]。省略時は描画窓の横範囲全体。 */
-  domain?: [number, number];
-};
+  domain?: readonly [number, number];
+}>;
 
 /** 平面上の 1 点。塗りつぶし（黒丸）または白抜き（白丸）で表す。 */
-type Point = {
+type Point = Readonly<{
   x: number;
   y: number;
   /** 点に添える LaTeX ラベル。 */
@@ -57,44 +57,44 @@ type Point = {
   open?: boolean;
   /** 強調色で描くか。既定は false。 */
   highlight?: boolean;
-};
+}>;
 
 /** 縦または横の漸近線・補助線。`x` を指定すれば縦線、`y` を指定すれば横線。 */
-type AsymptoteLine = {
+type AsymptoteLine = Readonly<{
   x?: number;
   y?: number;
   /** 線に添える LaTeX ラベル。 */
   label?: string;
   /** 線の色。既定は強調色（HIGHLIGHT）。準線など他の補助線と区別したいとき指定する。 */
   color?: string;
-};
+}>;
 
 /** 2 点を結ぶ補助線分。傾きの三角形の辺など、限定した区間の補助線に使う。 */
-type Segment = {
-  from: { x: number; y: number };
-  to: { x: number; y: number };
+type Segment = Readonly<{
+  from: Readonly<{ x: number; y: number }>;
+  to: Readonly<{ x: number; y: number }>;
   /** 線分の中点付近に置く LaTeX ラベル（例: "\\Delta x"）。 */
   label?: string;
   /** 破線で描くか。既定は実線。 */
   dashed?: boolean;
-};
+}>;
 
 /** 矢印付きベクトル（有向線分）。始点 from から終点 to へ矢じり付きで描く。 */
-type Vec = {
-  from: { x: number; y: number };
-  to: { x: number; y: number };
+type Vec = Readonly<{
+  from: Readonly<{ x: number; y: number }>;
+  to: Readonly<{ x: number; y: number }>;
   /** 線分の中点付近に置く LaTeX ラベル（例: "\\vec{a}"）。 */
   label?: string;
   /** ベクトルの色。既定は青系（CURVE）。 */
   color?: string;
   /** 破線で描くか。既定は実線。 */
   dashed?: boolean;
-};
+}>;
 
 /** 媒介変数曲線。t を tMin..tMax で標本化し、(x(t), y(t)) を折れ線で結ぶ。 */
-type Parametric = {
+type Parametric = Readonly<{
   /** 媒介変数 t を受け取り、数学座標 (x, y) を返す。 */
-  fn: (t: number) => { x: number; y: number };
+  fn: (t: number) => Readonly<{ x: number; y: number }>;
   tMin: number;
   tMax: number;
   /** 標本数。多いほど滑らかになる。既定 240。 */
@@ -105,15 +105,15 @@ type Parametric = {
   label?: string;
   /** 破線で描くか。既定は実線。 */
   dashed?: boolean;
-};
+}>;
 
 /**
  * 軸の目盛り。数値だけ渡すと数値をそのまま描く。$\pi$ など特別な値には
  * `{ value, label }` でラベル（LaTeX）を添える。例: `{ value: Math.PI, label: "\\pi" }`。
  */
-type Tick = number | { value: number; label?: string };
+type Tick = number | Readonly<{ value: number; label?: string }>;
 
-type FunctionGraphProps = {
+type FunctionGraphProps = Readonly<{
   /** 描画窓の横範囲。 */
   xMin: number;
   xMax: number;
@@ -121,21 +121,21 @@ type FunctionGraphProps = {
   yMin: number;
   yMax: number;
   /** 重ねて描く曲線。 */
-  curves?: Curve[];
+  curves?: readonly Curve[];
   /** 平面上に置く点。 */
-  points?: Point[];
+  points?: readonly Point[];
   /** 縦・横の漸近線や補助線。破線で描く。 */
-  asymptotes?: AsymptoteLine[];
+  asymptotes?: readonly AsymptoteLine[];
   /** 2 点を結ぶ補助線分（傾きの三角形の辺など）。 */
-  segments?: Segment[];
+  segments?: readonly Segment[];
   /** 矢印付きベクトル（有向線分）。 */
-  vectors?: Vec[];
+  vectors?: readonly Vec[];
   /** 媒介変数曲線。label 付きは凡例にまとめる。 */
-  parametrics?: Parametric[];
+  parametrics?: readonly Parametric[];
   /** x 軸の目盛り。省略時は整数位置に自動で振る。空配列で目盛りなし。 */
-  xTicks?: Tick[];
+  xTicks?: readonly Tick[];
   /** y 軸の目盛り。省略時は整数位置に自動で振る。空配列で目盛りなし。 */
-  yTicks?: Tick[];
+  yTicks?: readonly Tick[];
   /** x 軸の名前（LaTeX）。既定は "x"。 */
   xLabel?: string;
   /** y 軸の名前（LaTeX）。既定は "y"。 */
@@ -150,7 +150,7 @@ type FunctionGraphProps = {
   legend?: "auto" | "none";
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
-};
+}>;
 
 // 軸・グリッドは global.css の CSS 変数でテーマに追従する（暗テーマで沈める）。
 const AXIS = "var(--fig-axis)";
@@ -196,13 +196,9 @@ export default function FunctionGraph({
   const availH = VIEW_H - 2 * PAD;
 
   // equalScale のときは横縦で 1 単位の長さをそろえ、小さい方の倍率に合わせて中央へ寄せる。
-  let plotW = availW;
-  let plotH = availH;
-  if (equalScale) {
-    const unit = Math.min(availW / (xMax - xMin), availH / (yMax - yMin));
-    plotW = unit * (xMax - xMin);
-    plotH = unit * (yMax - yMin);
-  }
+  const unit = Math.min(availW / (xMax - xMin), availH / (yMax - yMin));
+  const plotW = equalScale ? unit * (xMax - xMin) : availW;
+  const plotH = equalScale ? unit * (yMax - yMin) : availH;
   const originX = PAD + (availW - plotW) / 2;
   const originY = PAD + (availH - plotH) / 2;
 
@@ -225,15 +221,13 @@ export default function FunctionGraph({
   // 曲線を標本化し、各標本に可視判定を添えた配列にする。LinePath の `defined` が、値が
   // 描画窓の縦範囲を外れる、または非有限となる点で経路を切り、漸近線をまたぐ枝が直線で
   // 結ばれないようにする。
-  const samplesOf = (c: Curve): CurveSample[] => {
+  const samplesOf = (c: Curve): readonly CurveSample[] => {
     const [lo, hi] = c.domain ?? [xMin, xMax];
-    const out: CurveSample[] = [];
-    for (let i = 0; i <= SAMPLES; i += 1) {
+    return steps(SAMPLES).map((i) => {
       const xv = lo + ((hi - lo) * i) / SAMPLES;
       const yv = c.fn(xv);
-      out.push({ xv, yv, visible: Number.isFinite(yv) && yv >= yMin && yv <= yMax });
-    }
-    return out;
+      return { xv, yv, visible: Number.isFinite(yv) && yv >= yMin && yv <= yMax };
+    });
   };
 
   // 凡例（色見本＋数式ラベル）。曲線の上に重ねず、SVG の外の HTML として下に並べる。
@@ -244,7 +238,7 @@ export default function FunctionGraph({
   const labeledParametrics = parametrics.filter(
     (p): p is Parametric & { label: string } => p.label !== undefined,
   );
-  const legendItems: LegendEntry[] =
+  const legendItems: readonly LegendEntry[] =
     legend === "none"
       ? []
       : [
@@ -264,8 +258,7 @@ export default function FunctionGraph({
   // 位置へ置く。候補位置を採点し、最も衝突の少ない位置を選ぶ。ビルド時に一度だけ走る。
   // 点が y 軸上にあると中央配置のラベルが目盛り数字と重なり、急な曲線上の点では真上の
   // ラベルを曲線が貫く。候補から逃がし先を選ぶことで、章ごとの手調整なしに重なりを防ぐ。
-  const placedBoxes: Box[] = [];
-  const tickBoxes: Box[] = [
+  const tickBoxes: readonly Box[] = [
     ...yt.map((t) => {
       const ty = y(tickValue(t));
       return { x0: axisX - 24, x1: axisX - 4, y0: ty - 7, y1: ty + 7 };
@@ -275,93 +268,85 @@ export default function FunctionGraph({
       return { x0: tx - 9, x1: tx + 9, y0: axisY + 6, y1: axisY + 20 };
     }),
   ];
-  const axisBoxes: Box[] = [
+  const axisBoxes: readonly Box[] = [
     { x0: axisX - 1.5, x1: axisX + 1.5, y0: originY, y1: originY + plotH },
     { x0: originX, x1: originX + plotW, y0: axisY - 1.5, y1: axisY + 1.5 },
   ];
-  const crossesCurves = (b: Box): number => {
-    let n = 0;
-    for (const c of curves) {
-      for (let k = 0; k <= 8; k += 1) {
+  // 曲線ごとに box の横幅を 8 等分した 9 点で値を引き、box の縦範囲に入る点があれば衝突とする。
+  const crossesCurves = (b: Box): number =>
+    curves.filter((c) =>
+      steps(8).some((k) => {
         const sx = b.x0 + ((b.x1 - b.x0) * k) / 8;
         const yv = c.fn(x.invert(sx));
-        if (Number.isFinite(yv) && y(yv) >= b.y0 - 2 && y(yv) <= b.y1 + 2) {
-          n += 1;
-          break;
-        }
-      }
-    }
-    return n;
-  };
+        return Number.isFinite(yv) && y(yv) >= b.y0 - 2 && y(yv) <= b.y1 + 2;
+      }),
+    ).length;
   // 媒介変数曲線は y=f(x) でないため x で逆引きできない。t で標本化して画面座標へ写し、
   // box 内に入る標本があるかで衝突を判定する。点・漸近線ラベルが楕円などの曲線に重ならない
   // よう、curves と同じ重みでペナルティに含める。
-  const crossesParametrics = (b: Box): number => {
-    let n = 0;
-    for (const p of parametrics) {
+  const crossesParametrics = (b: Box): number =>
+    parametrics.filter((p) => {
       const m = Math.max(1, p.samples ?? 240);
-      let hit = false;
-      for (let k = 0; k <= m && !hit; k += 1) {
+      return steps(m).some((k) => {
         const pt = p.fn(p.tMin + ((p.tMax - p.tMin) * k) / m);
-        if (!Number.isFinite(pt.x) || !Number.isFinite(pt.y)) continue;
+        if (!Number.isFinite(pt.x) || !Number.isFinite(pt.y)) return false;
         const px = x(pt.x);
         const py = y(pt.y);
-        if (px >= b.x0 - 2 && px <= b.x1 + 2 && py >= b.y0 - 2 && py <= b.y1 + 2) hit = true;
-      }
-      if (hit) n += 1;
-    }
-    return n;
-  };
-  const penaltyOf = (b: Box): number => {
-    let p = 0;
-    if (b.x0 < 2 || b.x1 > VIEW_W - 2 || b.y0 < 2 || b.y1 > VIEW_H - 2) p += 1000;
-    for (const a of axisBoxes) if (boxesOverlap(b, a)) p += 6;
-    for (const t of tickBoxes) if (boxesOverlap(b, t)) p += 8;
-    p += crossesCurves(b) * 5;
-    p += crossesParametrics(b) * 5;
-    for (const q of placedBoxes) if (boxesOverlap(b, q)) p += 7;
-    return p;
-  };
-  const choosePlacement = (cands: LabelPos[], w: number): LabelPos => {
-    let best = cands[0];
-    let bestP = Infinity;
-    cands.forEach((cand, i) => {
-      const p = penaltyOf(boxFor(cand, w)) + i * 0.1; // 同点なら前方の候補（上・下）を優先。
-      if (p < bestP) {
-        bestP = p;
-        best = cand;
-      }
-    });
-    placedBoxes.push(boxFor(best, w));
-    return best;
-  };
+        return px >= b.x0 - 2 && px <= b.x1 + 2 && py >= b.y0 - 2 && py <= b.y1 + 2;
+      });
+    }).length;
+  // placed は、この候補より先に置いたラベルの矩形である。
+  const penaltyOf = (b: Box, placed: readonly Box[]): number =>
+    (b.x0 < 2 || b.x1 > VIEW_W - 2 || b.y0 < 2 || b.y1 > VIEW_H - 2 ? 1000 : 0) +
+    countOverlaps(b, axisBoxes) * 6 +
+    countOverlaps(b, tickBoxes) * 8 +
+    crossesCurves(b) * 5 +
+    crossesParametrics(b) * 5 +
+    countOverlaps(b, placed) * 7;
+  const choosePlacement = (req: LabelRequest, placed: readonly Box[]): LabelPos =>
+    req.cands.reduce<Readonly<{ pos: LabelPos; score: number }>>(
+      (best, cand, i) => {
+        const p = penaltyOf(boxFor(cand, req.w), placed) + i * 0.1; // 同点なら前方の候補（上・下）を優先。
+        return p < best.score ? { pos: cand, score: p } : best;
+      },
+      { pos: req.cands[0], score: Infinity },
+    ).pos;
 
   // 漸近線ラベルは線に沿って複数の位置を試し、曲線・軸・目盛りの無い箇所へ置く。曲線が
   // 漸近線に両端で近づく（指数関数の y=0 など）場合でも、線の中ほどの空いた区間を選べる。
-  const asymLabelPos = asymptotes.map((a): LabelPos | null => {
+  const asymRequests = asymptotes.map((a): LabelRequest | null => {
     if (a.label === undefined) return null;
     const w = estimateTexWidth(a.label, 12);
-    const cands: LabelPos[] = [];
     if (a.x !== undefined) {
       const ax = x(a.x);
-      for (const fy of [0.12, 0.32, 0.68, 0.88]) {
-        const yy = originY + plotH * fy;
-        cands.push({ x: ax + 8, y: yy, align: "left" });
-        cands.push({ x: ax - 8, y: yy, align: "right" });
-      }
-    } else if (a.y !== undefined) {
-      const ay = y(a.y);
-      for (const fx of [0.2, 0.38, 0.5, 0.62, 0.8]) {
-        const xx = originX + plotW * fx;
-        cands.push({ x: xx, y: ay - 9, align: "center" });
-        cands.push({ x: xx, y: ay + 9, align: "center" });
-      }
+      return {
+        w,
+        cands: [0.12, 0.32, 0.68, 0.88].flatMap((fy): LabelPos[] => {
+          const yy = originY + plotH * fy;
+          return [
+            { x: ax + 8, y: yy, align: "left" },
+            { x: ax - 8, y: yy, align: "right" },
+          ];
+        }),
+      };
     }
-    if (cands.length === 0) return null;
-    return choosePlacement(cands, w);
+    if (a.y !== undefined) {
+      const ay = y(a.y);
+      return {
+        w,
+        cands: [0.2, 0.38, 0.5, 0.62, 0.8].flatMap((fx): LabelPos[] => {
+          const xx = originX + plotW * fx;
+          return [
+            { x: xx, y: ay - 9, align: "center" },
+            { x: xx, y: ay + 9, align: "center" },
+          ];
+        }),
+      };
+    }
+    return null;
   });
 
-  const segLabelPos = segments.map((s): LabelPos | null => {
+  const segRequests = segments.map((s): LabelRequest | null => {
     if (s.label === undefined) return null;
     const a = { x: x(s.from.x), y: y(s.from.y) };
     const b = { x: x(s.to.x), y: y(s.to.y) };
@@ -373,17 +358,17 @@ export default function FunctionGraph({
     // 当たり判定は広めの幅 w で行い、線分からの距離は実幅に近い幅で決める。
     const w = estimateTexWidth(s.label, 12);
     const offset = normalLabelOffset(perpX, perpY, estimateTexWidthPrecise(s.label, 12));
-    return choosePlacement(
-      [
+    return {
+      w,
+      cands: [
         { x: mx + perpX * offset, y: my + perpY * offset, align: "center" },
         { x: mx - perpX * offset, y: my - perpY * offset, align: "center" },
       ],
-      w,
-    );
+    };
   });
 
   // ベクトルのラベルは線分の中点から、線分に直交する向きへ逃がす（補助線分と同じ方式）。
-  const vectorLabelPos = vectors.map((v): LabelPos | null => {
+  const vectorRequests = vectors.map((v): LabelRequest | null => {
     if (v.label === undefined) return null;
     const a = { x: x(v.from.x), y: y(v.from.y) };
     const b = { x: x(v.to.x), y: y(v.to.y) };
@@ -392,27 +377,26 @@ export default function FunctionGraph({
     const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
     const perpX = -(b.y - a.y) / len; // 線分に直交する向き。
     const perpY = (b.x - a.x) / len;
-    const w = estimateTexWidth(v.label, 12); // segLabelPos と同じく、当たり判定用の広めの幅。
+    const w = estimateTexWidth(v.label, 12); // segRequests と同じく、当たり判定用の広めの幅。
     const offset = normalLabelOffset(perpX, perpY, estimateTexWidthPrecise(v.label, 12));
-    return choosePlacement(
-      [
+    return {
+      w,
+      cands: [
         { x: mx + perpX * offset, y: my + perpY * offset, align: "center" },
         { x: mx - perpX * offset, y: my - perpY * offset, align: "center" },
       ],
-      w,
-    );
+    };
   });
 
   // 媒介変数曲線を標本化し、各標本に可視判定を添える。描画窓 [xMin,xMax]×[yMin,yMax] を
   // 外れる、または非有限となる点で経路を分断する（LinePath の defined に渡す）。
-  const paramSamplesOf = (p: Parametric): CurveSample[] => {
+  const paramSamplesOf = (p: Parametric): readonly CurveSample[] => {
     // 公開 props の samples に 0 や負数が来ても 0 除算で NaN にならないよう、最低 1 に丸める。
     const n = Math.max(1, p.samples ?? 240);
-    const out: CurveSample[] = [];
-    for (let i = 0; i <= n; i += 1) {
+    return steps(n).map((i) => {
       const t = p.tMin + ((p.tMax - p.tMin) * i) / n;
       const { x: xv, y: yv } = p.fn(t);
-      out.push({
+      return {
         xv,
         yv,
         visible:
@@ -422,18 +406,18 @@ export default function FunctionGraph({
           xv <= xMax &&
           yv >= yMin &&
           yv <= yMax,
-      });
-    }
-    return out;
+      };
+    });
   };
 
-  const pointLabelPos = points.map((p): LabelPos | null => {
+  const pointRequests = points.map((p): LabelRequest | null => {
     if (p.label === undefined) return null;
     const px = x(p.x);
     const py = y(p.y);
     const w = estimateTexWidth(p.label, 12);
-    return choosePlacement(
-      [
+    return {
+      w,
+      cands: [
         { x: px, y: py - 13, align: "center" },
         { x: px, y: py + 16, align: "center" },
         { x: px + 9, y: py - 12, align: "left" },
@@ -443,9 +427,22 @@ export default function FunctionGraph({
         { x: px + 12, y: py + 1, align: "left" },
         { x: px - 12, y: py + 1, align: "right" },
       ],
-      w,
-    );
+    };
   });
+
+  // 漸近線・補助線分・ベクトル・点の順に 1 つずつ置く。先に置いたラベルの矩形を、後のラベルの
+  // 採点に加える。置く順を変えると、同じ候補でも採点が変わり、配置が変わる。
+  const labelPos = placeLabels(
+    [...asymRequests, ...segRequests, ...vectorRequests, ...pointRequests],
+    choosePlacement,
+  );
+  const segStart = asymptotes.length;
+  const vectorStart = segStart + segments.length;
+  const pointStart = vectorStart + vectors.length;
+  const asymLabelPos = labelPos.slice(0, segStart);
+  const segLabelPos = labelPos.slice(segStart, vectorStart);
+  const vectorLabelPos = labelPos.slice(vectorStart, pointStart);
+  const pointLabelPos = labelPos.slice(pointStart);
 
   return (
     <div className="function-graph-figure">
@@ -611,7 +608,7 @@ export default function FunctionGraph({
           {curves.map((c, i) => (
             <LinePath<CurveSample>
               key={`curve-${i}`}
-              data={samplesOf(c)}
+              data={[...samplesOf(c)]}
               x={(d) => x(d.xv)}
               y={(d) => y(d.yv)}
               defined={(d) => d.visible}
@@ -626,7 +623,7 @@ export default function FunctionGraph({
           {parametrics.map((p, i) => (
             <LinePath<CurveSample>
               key={`param-${i}`}
-              data={paramSamplesOf(p)}
+              data={[...paramSamplesOf(p)]}
               x={(d) => x(d.xv)}
               y={(d) => y(d.yv)}
               defined={(d) => d.visible}
@@ -686,8 +683,7 @@ export default function FunctionGraph({
           const px = x(p.x);
           const py = y(p.y);
           const color = p.highlight ? HIGHLIGHT : "currentColor";
-          const marks: ReactNode[] = [];
-          marks.push(
+          const marks: readonly ReactNode[] = [
             p.open ? (
               <Circle
                 key="c"
@@ -701,7 +697,7 @@ export default function FunctionGraph({
             ) : (
               <Circle key="c" cx={px} cy={py} r={4} fill={color} />
             ),
-          );
+          ];
           const pos = pointLabelPos[i];
           return (
             <g key={`pt-${i}`}>
@@ -793,7 +789,7 @@ function estimateTexWidth(tex: string, fontSize: number): number {
 }
 
 /** 字形を持たず、引数の中身だけが幅を持つ組版コマンド（\mathrm{A} は A の幅になる）。 */
-const LAYOUT_ONLY_COMMANDS = new Set([
+const LAYOUT_ONLY_COMMANDS: ReadonlySet<string> = new Set([
   "mathrm",
   "mathit",
   "mathbf",
@@ -820,7 +816,7 @@ const LAYOUT_ONLY_COMMANDS = new Set([
 ]);
 
 /** コマンド名の綴りがそのまま立体で描かれる演算子名（\sin は sin の 3 字）。 */
-const OPERATOR_NAMES = new Set([
+const OPERATOR_NAMES: ReadonlySet<string> = new Set([
   "sin",
   "cos",
   "tan",
@@ -840,10 +836,20 @@ const OPERATOR_NAMES = new Set([
 ]);
 
 /** 前後に広い空きが入る関係記号のコマンド名。 */
-const RELATION_COMMANDS = new Set(["le", "ge", "leq", "geq", "neq", "ne", "approx", "to", "equiv"]);
+const RELATION_COMMANDS: ReadonlySet<string> = new Set([
+  "le",
+  "ge",
+  "leq",
+  "geq",
+  "neq",
+  "ne",
+  "approx",
+  "to",
+  "equiv",
+]);
 
 /** 前後に空きが入る二項演算子のコマンド名。 */
-const BINARY_COMMANDS = new Set(["times", "cdot", "pm", "mp", "div"]);
+const BINARY_COMMANDS: ReadonlySet<string> = new Set(["times", "cdot", "pm", "mp", "div"]);
 
 /**
  * LaTeX 文字列の表示幅を、estimateTexWidth より実幅に近く見積もる（安全側に広めに取る点は同じ）。
@@ -860,42 +866,40 @@ function estimateTexWidthPrecise(tex: string, fontSize: number): number {
   // ため数えない（\mathrm{A} を 7 字と数えると、実幅の数倍に膨らむ）。KaTeX は関係記号（=）と
   // 二項演算子（+）の前後に空きを入れるため、それらは 2 字ぶんと数える。単項のマイナス
   // （(-2,-1) の -）には空きが入らないため 1 字とする。
-  let units = 0;
-  // 直前の字形が被演算子（文字・数字・閉じ括弧）か。+ や - が二項演算子として空きを伴うかを決める。
-  let afterOperand = false;
-  for (const m of tex.matchAll(/\\([a-zA-Z]+)|\\[^a-zA-Z]|[^{}^_$\s]/g)) {
-    const name = m[1];
-    if (name !== undefined) {
-      if (LAYOUT_ONLY_COMMANDS.has(name)) continue;
-      if (RELATION_COMMANDS.has(name) || BINARY_COMMANDS.has(name)) {
-        units += 2;
-        afterOperand = false;
-      } else {
-        units += OPERATOR_NAMES.has(name) ? name.length : 1;
-        afterOperand = true;
+  // 字形を先頭から順に数える。afterOperand は、直前の字形が被演算子（文字・数字・閉じ括弧）か
+  // を表す。+ や - が二項演算子として空きを伴うかを決める。
+  const { units } = Array.from(tex.matchAll(/\\([a-zA-Z]+)|\\[^a-zA-Z]|[^{}^_$\s]/g)).reduce<
+    Readonly<{ units: number; afterOperand: boolean }>
+  >(
+    (state, m) => {
+      const name = m[1];
+      if (name !== undefined) {
+        if (LAYOUT_ONLY_COMMANDS.has(name)) return state;
+        if (RELATION_COMMANDS.has(name) || BINARY_COMMANDS.has(name)) {
+          return { units: state.units + 2, afterOperand: false };
+        }
+        return {
+          units: state.units + (OPERATOR_NAMES.has(name) ? name.length : 1),
+          afterOperand: true,
+        };
       }
-      continue;
-    }
-    const ch = m[0];
-    if (ch.startsWith("\\")) {
-      // \{ \} \| は字形、\, や \; などは細い空きとみなす。
-      if ("{}|".includes(ch[1])) {
-        units += 1;
-        afterOperand = ch[1] !== "{";
+      const ch = m[0];
+      if (ch.startsWith("\\")) {
+        // \{ \} \| は字形、\, や \; などは細い空きとみなす。
+        return "{}|".includes(ch[1])
+          ? { units: state.units + 1, afterOperand: ch[1] !== "{" }
+          : state;
       }
-      continue;
-    }
-    if (ch === "=" || ch === "<" || ch === ">") {
-      units += 2;
-      afterOperand = false;
-    } else if (ch === "+" || ch === "-") {
-      units += afterOperand ? 2 : 1;
-      afterOperand = false;
-    } else {
-      units += 1;
-      afterOperand = !"([,".includes(ch);
-    }
-  }
+      if (ch === "=" || ch === "<" || ch === ">") {
+        return { units: state.units + 2, afterOperand: false };
+      }
+      if (ch === "+" || ch === "-") {
+        return { units: state.units + (state.afterOperand ? 2 : 1), afterOperand: false };
+      }
+      return { units: state.units + 1, afterOperand: !"([,".includes(ch) };
+    },
+    { units: 0, afterOperand: false },
+  );
   return Math.max(units * fontSize * 0.72, 24);
 }
 
@@ -915,25 +919,37 @@ function tickLabel(t: Tick): string {
 }
 
 /** 区間 [lo, hi] 内の 0 以外の整数位置を目盛りとして返す。 */
-function autoTicks(lo: number, hi: number): number[] {
-  const out: number[] = [];
-  for (let v = Math.ceil(lo); v <= Math.floor(hi); v += 1) {
-    if (v !== 0) out.push(v);
-  }
-  return out;
+function autoTicks(lo: number, hi: number): readonly number[] {
+  const first = Math.ceil(lo);
+  const count = Math.max(0, Math.floor(hi) - first + 1);
+  return Array.from({ length: count }, (_, i) => first + i).filter((v) => v !== 0);
+}
+
+/**
+ * 0 から n までの整数を昇順に並べる（n が整数でなければ n 以下の整数まで）。
+ *
+ * 標本化の添字 k = 0, 1, …, n を、k ≤ n を満たす範囲で 1 ずつ増やして作る。n が NaN なら空。
+ */
+function steps(n: number): readonly number[] {
+  // n + 1 は、整数の直前の値（3.9999999999999996 など）で丸められて整数になり、k ≤ n を満たさない
+  // 添字まで作ってしまう。切り捨ててから 1 を足す。
+  return Array.from({ length: Math.floor(n) + 1 }, (_, k) => k);
 }
 
 /** 曲線の 1 標本。`visible` は描画窓内かつ有限で、LinePath の `defined` に渡す。 */
-type CurveSample = { xv: number; yv: number; visible: boolean };
+type CurveSample = Readonly<{ xv: number; yv: number; visible: boolean }>;
 
 /** 凡例の 1 項目。曲線と媒介変数曲線を同じ見た目で並べるために正規化する。 */
-type LegendEntry = { label: string; color: string; dashed: boolean };
+type LegendEntry = Readonly<{ label: string; color: string; dashed: boolean }>;
 
 /** ラベルの配置先（中心・左端・右端の基準点と寄せ方向）。 */
-type LabelPos = { x: number; y: number; align: "center" | "left" | "right" };
+type LabelPos = Readonly<{ x: number; y: number; align: "center" | "left" | "right" }>;
+
+/** 1 つのラベルの配置の要求。候補位置（前方ほど優先）と、当たり判定に使う推定文字幅。 */
+type LabelRequest = Readonly<{ cands: readonly LabelPos[]; w: number }>;
 
 /** 当たり判定に使う軸並行の矩形（左上 (x0,y0)・右下 (x1,y1)）。 */
-type Box = { x0: number; x1: number; y0: number; y1: number };
+type Box = Readonly<{ x0: number; x1: number; y0: number; y1: number }>;
 
 /** ラベルの想定文字高（viewBox 単位）。フォントサイズ 12 の約 1.25 倍。当たり判定の縦幅に使う。 */
 const LABEL_H = 15;
@@ -963,4 +979,34 @@ function boxFor(pos: LabelPos, w: number): Box {
 /** 2 つの矩形が重なるか。 */
 function boxesOverlap(a: Box, b: Box): boolean {
   return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+}
+
+/** 矩形 b と重なる矩形の個数を数える。 */
+function countOverlaps(b: Box, boxes: readonly Box[]): number {
+  return boxes.filter((q) => boxesOverlap(b, q)).length;
+}
+
+/**
+ * ラベルを要求の順に 1 つずつ置き、要求と同じ並びで配置先を返す。
+ *
+ * 先に置いたラベルの矩形を、後のラベルの採点（choose の placed）に加える。ラベルの無い要求
+ * （null）は何も置かず、null を返す。
+ */
+function placeLabels(
+  requests: readonly (LabelRequest | null)[],
+  choose: (req: LabelRequest, placed: readonly Box[]) => LabelPos,
+): readonly (LabelPos | null)[] {
+  return requests.reduce<
+    Readonly<{ placed: readonly Box[]; positions: readonly (LabelPos | null)[] }>
+  >(
+    (state, req) => {
+      if (req === null) return { placed: state.placed, positions: [...state.positions, null] };
+      const best = choose(req, state.placed);
+      return {
+        placed: [...state.placed, boxFor(best, req.w)],
+        positions: [...state.positions, best],
+      };
+    },
+    { placed: [], positions: [] },
+  ).positions;
 }

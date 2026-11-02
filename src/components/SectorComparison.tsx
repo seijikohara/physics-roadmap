@@ -16,9 +16,9 @@ import KatexLabel from "./KatexLabel";
  * KatexLabel を介して KaTeX で組版する。
  */
 
-type Pt = { x: number; y: number };
+type Pt = Readonly<{ x: number; y: number }>;
 
-type SectorComparisonProps = {
+type SectorComparisonProps = Readonly<{
   /** 中心角（度）。$0 \lt \text{angleDeg} \lt 90$ を想定する。 */
   angleDeg: number;
   /** 中心 O に添える LaTeX ラベル。既定 "\\mathrm{O}"。 */
@@ -35,7 +35,7 @@ type SectorComparisonProps = {
   tangentLengthLabel?: string;
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
-};
+}>;
 
 // 塗りは領域ごとに色を変え、重なりを判別できるようにする。色はテーマ共通とし、不透明度は
 // global.css のテーマ変数（--sector-*-fill-opacity）で切り替え、暗テーマでも判別できるようにする。

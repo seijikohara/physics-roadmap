@@ -57,7 +57,7 @@
 - 既定の対象は dev サーバ（`http://localhost:4321/physics-roadmap`）である。`--dist dist`でビルド結果を対象にできる。
 - ブラウザはインストール済みの Google Chrome を使う。出力先の`.figures/`は Git の管理外である。
 - スクリプトは`scripts/figures/*.ts`（TypeScript）で、tsx で実行する。
-- `scripts/**`と`astro.config.ts`には、`.oxlintrc.json`の overrides でイミュータビリティの規則（読み取り専用の引数・引数の書き換えの禁止など）をかける。
+- スクリプトも「コードの書き方」の節のイミュータビリティの規則に従う。
 - `figures:lint`の近接（near）の閾値は既定で 4px である。4px は、ラベルと線のすきまの目標である。
 - 図の変更の前後比較は、次の順に行う。
   1. 変更前に`pnpm build`を実行し、`dist`を`.figures/base`へコピーする。既存の基準は置き換える。
@@ -115,6 +115,21 @@
   - 図中の日本語は本文と同じシステムフォントにそろえる（`global.css`で KaTeX の`.cjk_fallback`を本文フォントへ上書き済み）。各図は表示倍率 1.0（`max-width`＝viewBox 幅）で描き、フォントサイズを図をまたいでそろえる。
 - ドラッグやスライダーなど双方向性が必要な図のみ、クライアントアイランドで読み込む。
 - データグラフは visx を標準とする。高水準の図が要るときは`@visx/xychart`を導入する。データ図が必要な章で導入する。双方向性が要る場合は、その時点で描画手段を選定する。
+
+## コードの書き方
+
+- コードは TypeScript で書き、JS ファイルを置かない。
+- イミュータビリティを基本にする。
+  - 変数は`const`だけを使う。
+  - 型は`readonly`を基本にする（`readonly T[]`・`Readonly<...>`・`ReadonlyMap`・`as const`）。
+  - 配列とオブジェクトをその場で書き換えない。`push`・`splice`・`sort`・添字への代入の代わりに、`map`・`filter`・`reduce`・`toSorted`・スプレッドで新しく作る。
+- 例外として、関数の中に閉じた局所の可変バッファを許す。理由をコメントに書き、可変の値を関数の外へ出さない。
+  - 作り直すと遅くなる重い計算（等高線の追跡など）
+  - 可変の API しか持たないライブラリ（dagre など）
+- `src/components/**`・`scripts/**`・`astro.config.ts`には、`.oxlintrc.json`の overrides で次の規則をかける。
+  - `no-param-reassign`（引数の書き換えの禁止）
+  - `prefer-readonly-parameter-types`（読み取り専用の引数の型）
+  - その場の`sort`・`reverse`の禁止
 
 ## 品質ゲート
 

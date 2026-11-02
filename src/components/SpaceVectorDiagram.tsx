@@ -31,19 +31,19 @@ import type { Vec3 } from "./projection3d";
  */
 
 /** 空間ベクトル（有向線分）。始点 from から終点 to へ矢じり付きで描く。 */
-type SpaceVec = {
-  from: { x: number; y: number; z: number };
-  to: { x: number; y: number; z: number };
+type SpaceVec = Readonly<{
+  from: Vec3;
+  to: Vec3;
   /** 線分の中点付近に置く LaTeX ラベル（例: "\\vec{a}"）。 */
   label?: string;
   /** ベクトルの色。既定は青系。 */
   color?: string;
   /** 破線で描くか。既定は実線。 */
   dashed?: boolean;
-};
+}>;
 
 /** 空間内の 1 点。塗りつぶしの小丸で描く。 */
-type SpacePoint = {
+type SpacePoint = Readonly<{
   x: number;
   y: number;
   z: number;
@@ -51,24 +51,24 @@ type SpacePoint = {
   label?: string;
   /** 強調色で描くか。既定 false。 */
   highlight?: boolean;
-};
+}>;
 
 /** 起点 o から 2 ベクトル a, b が張る平行四辺形。外積の面積の図示に使う。半透明で塗る。 */
-type Parallelogram = {
-  o: { x: number; y: number; z: number };
-  a: { x: number; y: number; z: number };
-  b: { x: number; y: number; z: number };
+type Parallelogram = Readonly<{
+  o: Vec3;
+  a: Vec3;
+  b: Vec3;
   /** 平行四辺形の中心付近に置く LaTeX ラベル。 */
   label?: string;
   /** 塗りの色。既定は青系。 */
   color?: string;
-};
+}>;
 
-type SpaceVectorDiagramProps = {
+type SpaceVectorDiagramProps = Readonly<{
   /** 空間ベクトル（有向線分）。 */
-  vectors?: SpaceVec[];
+  vectors?: readonly SpaceVec[];
   /** 空間内に置く点。 */
-  points?: SpacePoint[];
+  points?: readonly SpacePoint[];
   /** 2 ベクトルが張る平行四辺形（半透明で塗る）。 */
   parallelogram?: Parallelogram;
   /** 軸の表示範囲。各軸を 0..axisMax まで描く。既定 3。 */
@@ -79,7 +79,7 @@ type SpaceVectorDiagramProps = {
   dropLines?: boolean;
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
-};
+}>;
 
 // 軸・ベクトルは global.css の CSS 変数でテーマに追従する。
 const AXIS = "var(--fig-axis)";
@@ -113,7 +113,7 @@ export default function SpaceVectorDiagram({
   // 図に現れるすべての空間点（軸端・床の隅・ベクトル端・点・平行四辺形の隅）から、倍率 1 の
   // 画面範囲を求める。viewBox（余白を引いた領域）へ収まる最大倍率と中央寄せの原点を決める。
   // axisMax と実データに追従して図が viewBox を埋め、他図と倍率・余白がそろう。
-  const boundsPts: Vec3[] = [
+  const boundsPts: readonly Vec3[] = [
     { x: 0, y: 0, z: 0 },
     { x: axisMax, y: 0, z: 0 },
     { x: 0, y: axisMax, z: 0 },
@@ -136,7 +136,7 @@ export default function SpaceVectorDiagram({
   const { project, depth } = makeProjector(DEFAULT_VIEW, fit);
 
   // 各軸の正の向きの終点（軸名ラベルを少し外へ離して置く）。
-  const axes: { dir: "x" | "y" | "z"; label: string; end: Vec3 }[] = [
+  const axes: readonly Readonly<{ dir: "x" | "y" | "z"; label: string; end: Vec3 }>[] = [
     { dir: "x", label: "x", end: { x: axisMax, y: 0, z: 0 } },
     { dir: "y", label: "y", end: { x: 0, y: axisMax, z: 0 } },
     { dir: "z", label: "z", end: { x: 0, y: 0, z: axisMax } },
@@ -145,9 +145,17 @@ export default function SpaceVectorDiagram({
 
   // 床グリッドの格子値。3〜4 分割になるよう刻みを選び、端 axisMax を必ず含める。
   const step = axisMax <= 2 ? 0.5 : axisMax <= 5 ? 1 : 2;
-  const gridValues: number[] = [];
-  for (let t = 0; t <= axisMax + EPS; t += step) gridValues.push(Math.round(t * 1e6) / 1e6);
-  if (gridValues[gridValues.length - 1] < axisMax - EPS) gridValues.push(axisMax);
+  // 格子値は k × step で求める。step は 2 の累乗（0.5・1・2）なので、積は 0 から step を足し重ねた
+  // 値と一致し、axisMax + EPS を step で割る計算も丸めを生じない。再帰で作ると axisMax が大きいときに
+  // スタックがあふれるため、個数を先に求めて Array.from で作る。
+  const stepCount = Math.max(0, Math.floor((axisMax + EPS) / step) + 1);
+  const stepped: readonly number[] = Array.from(
+    { length: stepCount },
+    (_, k) => Math.round(k * step * 1e6) / 1e6,
+  );
+  const lastStepped = stepped.at(-1);
+  const gridValues: readonly number[] =
+    lastStepped !== undefined && lastStepped < axisMax - EPS ? [...stepped, axisMax] : stepped;
   // 床グリッドの最大奥行き（手前の隅）。濃淡の正規化に使う。
   const floorMaxDepth = depth({ x: axisMax, y: axisMax, z: 0 }) || 1;
   const gridOpacity = (mx: number, my: number): number => {
@@ -156,13 +164,13 @@ export default function SpaceVectorDiagram({
   };
 
   // 落とし込み線の対象（ベクトル終点と点）。床への鉛直線と、床の足から各軸への線を引く。
-  const markers: Vec3[] = dropLines
+  const markers: readonly Vec3[] = dropLines
     ? [...vectors.map((v) => v.to), ...points.map((p) => ({ x: p.x, y: p.y, z: p.z }))]
     : [];
 
   // 当たり判定に使う線分（軸 3 本とベクトル）。ラベルが線・矢じりの上に乗らないよう、
   // ラベル中心から線分までの距離が近い候補にペナルティを課す。
-  const segs: Seg[] = [
+  const segs: readonly Seg[] = [
     ...axes.map((ax) => {
       const e = project(ax.end);
       return { ax: originP.sx, ay: originP.sy, bx: e.sx, by: e.sy };
@@ -174,50 +182,133 @@ export default function SpaceVectorDiagram({
     }),
   ];
 
-  // ラベルの自動配置。軸名・線分・矢じり・既出ラベルとの重なりを避けるよう、複数候補から
-  // 衝突の少ない位置を選ぶ。軸名を先に積み、平行四辺形・ベクトル・点のラベルを順に逃がす。
-  const placedBoxes: Box[] = [];
-  const place = (
-    cx: number,
-    cy: number,
-    cands: { dx: number; dy: number }[],
-    tex: string,
-  ): {
-    x: number;
-    y: number;
-  } => {
-    const w = estimateTexWidth(tex);
-    let best = cands[0];
-    let bestP = Infinity;
-    cands.forEach((c, i) => {
-      const lx = cx + c.dx;
-      const ly = cy + c.dy;
-      const box = boxFor(lx, ly, w);
-      let p = i * 0.1; // 同点なら前方の候補を優先。
-      if (box.x0 < 2 || box.x1 > VIEW_W - 2 || box.y0 < 2 || box.y1 > VIEW_H - 2) p += 1000;
-      // ラベル同士の重なりは最優先で避ける（線分近接より重く罰する）。
-      for (const q of placedBoxes) if (boxesOverlap(box, q)) p += 15;
-      // ラベルの矩形が線分に近すぎる（線・矢じりを覆う・端が接する）候補を避ける。中心ではなく
-      // 矩形で測り、幅の広いラベル（外積など）の端が縦の線に接するのを防ぐ。
-      for (const s of segs) if (segBoxDist(s, box) < 4) p += 12;
-      if (p < bestP) {
-        bestP = p;
-        best = c;
-      }
-    });
-    placedBoxes.push(boxFor(cx + best.dx, cy + best.dy, w));
-    return { x: cx + best.dx, y: cy + best.dy };
-  };
-
-  // 軸名は終点の外側へ置き、当たり判定に積む（以降のラベルが軸名を避ける）。
+  // 軸名は終点の外側へ置く。
   const axisLabelPos = axes.map((ax) => {
     const end = project(ax.end);
     const ang = Math.atan2(end.sy - originP.sy, end.sx - originP.sx);
-    const lx = end.sx + Math.cos(ang) * 12;
-    const ly = end.sy + Math.sin(ang) * 12;
-    placedBoxes.push(boxFor(lx, ly, estimateTexWidth(ax.label)));
-    return { x: lx, y: ly };
+    return { x: end.sx + Math.cos(ang) * 12, y: end.sy + Math.sin(ang) * 12 };
   });
+
+  // 平行四辺形の 4 隅（起点 o から a、a + b、b の順）。
+  const para = parallelogram
+    ? {
+        p0: project(parallelogram.o),
+        p1: project(add(parallelogram.o, parallelogram.a)),
+        p2: project(add(add(parallelogram.o, parallelogram.a), parallelogram.b)),
+        p3: project(add(parallelogram.o, parallelogram.b)),
+        color: parallelogram.color ?? VEC,
+      }
+    : null;
+
+  // 空間ベクトルの線と矢じり。
+  const vectorDraws = vectors.map((v) => {
+    const fromP = project(v.from);
+    const toP = project(v.to);
+    const ang = Math.atan2(toP.sy - fromP.sy, toP.sx - fromP.sx);
+    const cos = Math.cos(ang);
+    const sin = Math.sin(ang);
+    const len = Math.hypot(toP.sx - fromP.sx, toP.sy - fromP.sy) || 1;
+    // 矢じり長はベクトルのスクリーン長を超えないよう上限を付ける。短いベクトルで base が
+    // 始点を越えて描画が崩れるのを防ぐ。半幅も同じ比率で縮め、矢じりの形を保つ。
+    const hl = Math.min(HEAD_LEN, len * 0.8);
+    const hh = HEAD_HALF * (hl / HEAD_LEN);
+    const base = { sx: toP.sx - hl * cos, sy: toP.sy - hl * sin };
+    return {
+      color: v.color ?? VEC,
+      fromP,
+      toP,
+      base,
+      left: { sx: base.sx - hh * sin, sy: base.sy + hh * cos },
+      right: { sx: base.sx + hh * sin, sy: base.sy - hh * cos },
+      len,
+    };
+  });
+
+  // ラベルの自動配置。軸名・線分・矢じり・既出ラベルとの重なりを避けるよう、複数候補から
+  // 衝突の少ない位置を選ぶ。軸名を先に積み、平行四辺形・ベクトル・点のラベルを順に逃がす。
+  const axisBoxes = axes.map((ax, i) =>
+    boxFor(axisLabelPos[i].x, axisLabelPos[i].y, estimateTexWidth(ax.label)),
+  );
+  const paraPlaced = placeEach(axisBoxes, segs, [
+    parallelogram?.label !== undefined && para
+      ? {
+          cx: (para.p0.sx + para.p2.sx) / 2,
+          cy: (para.p0.sy + para.p2.sy) / 2,
+          cands: [
+            { dx: 0, dy: 0 },
+            { dx: 0, dy: -14 },
+            { dx: 0, dy: 14 },
+            { dx: 16, dy: 0 },
+            { dx: -16, dy: 0 },
+          ],
+          tex: parallelogram.label,
+        }
+      : null,
+  ]);
+  const vectorPlaced = placeEach(
+    paraPlaced.placed,
+    segs,
+    vectors.map((v, i) => {
+      if (v.label === undefined) return null;
+      const { fromP, toP, len } = vectorDraws[i];
+      // ラベルは線分の中点を基準に、直交方向へ逃がしつつ線に沿って前後へもずらす。長い
+      // ベクトル（縦に伸びる外積など）は、中点で隣のラベルと衝突しても、矢印に沿って先端側へ
+      // 滑らせれば空きが見つかる。直交のみだと幅の広いラベルが逃げ切れない。
+      const perpX = -(toP.sy - fromP.sy) / len;
+      const perpY = (toP.sx - fromP.sx) / len;
+      const alongX = (toP.sx - fromP.sx) / len;
+      const alongY = (toP.sy - fromP.sy) / len;
+      const cand = (a: number, p: number): Offset => ({
+        dx: alongX * a + perpX * p,
+        dy: alongY * a + perpY * p,
+      });
+      // 直交方向の逃がし量はラベル半幅に余白を足して決める。幅の広いラベル（外積 a×b など）
+      // でも、近い端が自分のベクトル線から確実に離れるようにする。
+      const perpClear = estimateTexWidth(v.label) / 2 + 9;
+      return {
+        cx: (fromP.sx + toP.sx) / 2,
+        cy: (fromP.sy + toP.sy) / 2,
+        cands: [
+          cand(0, perpClear),
+          cand(0, -perpClear),
+          cand(0, 13),
+          cand(0, -13),
+          cand(0, 22),
+          cand(0, -22),
+          cand(26, perpClear),
+          cand(26, -perpClear),
+          cand(-26, perpClear),
+          cand(-26, -perpClear),
+          cand(26, 0),
+          cand(-26, 0),
+        ],
+        tex: v.label,
+      };
+    }),
+  );
+  // 点のラベルは真上を第一候補に、衝突を避けて上下左右へ逃がす。
+  const pointPlaced = placeEach(
+    vectorPlaced.placed,
+    segs,
+    points.map((p) => {
+      if (p.label === undefined) return null;
+      const sp = project(p);
+      return {
+        cx: sp.sx,
+        cy: sp.sy,
+        cands: [
+          { dx: 0, dy: -13 },
+          { dx: 0, dy: 14 },
+          { dx: 13, dy: -11 },
+          { dx: -13, dy: -11 },
+          { dx: 13, dy: 12 },
+          { dx: -13, dy: 12 },
+        ],
+        tex: p.label,
+      };
+    }),
+  );
+  const paraLabelPos = paraPlaced.positions[0];
 
   return (
     <svg
@@ -270,12 +361,15 @@ export default function SpaceVectorDiagram({
           {markers.flatMap((m, i) => {
             const foot = { x: m.x, y: m.y, z: 0 };
             const fp = project(foot);
-            const lines: { key: string; a: Vec3; b: Vec3 }[] = [];
-            if (Math.abs(m.z) > EPS) lines.push({ key: `v-${i}`, a: m, b: foot });
-            if (Math.abs(m.y) > EPS)
-              lines.push({ key: `y-${i}`, a: foot, b: { x: m.x, y: 0, z: 0 } });
-            if (Math.abs(m.x) > EPS)
-              lines.push({ key: `x-${i}`, a: foot, b: { x: 0, y: m.y, z: 0 } });
+            const lines: readonly Readonly<{ key: string; a: Vec3; b: Vec3 }>[] = [
+              ...(Math.abs(m.z) > EPS ? [{ key: `v-${i}`, a: m, b: foot }] : []),
+              ...(Math.abs(m.y) > EPS
+                ? [{ key: `y-${i}`, a: foot, b: { x: m.x, y: 0, z: 0 } }]
+                : []),
+              ...(Math.abs(m.x) > EPS
+                ? [{ key: `x-${i}`, a: foot, b: { x: 0, y: m.y, z: 0 } }]
+                : []),
+            ];
             return [
               ...lines.map((seg) => {
                 const a = project(seg.a);
@@ -310,48 +404,24 @@ export default function SpaceVectorDiagram({
       )}
 
       {/* 平行四辺形（半透明の塗り）。2 ベクトル a, b が起点 o から張る面を示す。 */}
-      {parallelogram && (
+      {parallelogram && para && (
         <g>
-          {(() => {
-            const { o, a, b } = parallelogram;
-            const p0 = project(o);
-            const p1 = project(add(o, a));
-            const p2 = project(add(add(o, a), b));
-            const p3 = project(add(o, b));
-            const color = parallelogram.color ?? VEC;
-            const cx = (p0.sx + p2.sx) / 2;
-            const cy = (p0.sy + p2.sy) / 2;
-            const lp =
-              parallelogram.label !== undefined
-                ? place(
-                    cx,
-                    cy,
-                    [
-                      { dx: 0, dy: 0 },
-                      { dx: 0, dy: -14 },
-                      { dx: 0, dy: 14 },
-                      { dx: 16, dy: 0 },
-                      { dx: -16, dy: 0 },
-                    ],
-                    parallelogram.label,
-                  )
-                : null;
-            return (
-              <>
-                <polygon
-                  points={`${p0.sx},${p0.sy} ${p1.sx},${p1.sy} ${p2.sx},${p2.sy} ${p3.sx},${p3.sy}`}
-                  fill={color}
-                  fillOpacity={0.18}
-                  stroke={color}
-                  strokeWidth={1}
-                  strokeDasharray="4 3"
-                />
-                {lp && parallelogram.label !== undefined && (
-                  <KatexLabel tex={parallelogram.label} x={lp.x} y={lp.y} fontSize={12} />
-                )}
-              </>
-            );
-          })()}
+          <polygon
+            points={`${para.p0.sx},${para.p0.sy} ${para.p1.sx},${para.p1.sy} ${para.p2.sx},${para.p2.sy} ${para.p3.sx},${para.p3.sy}`}
+            fill={para.color}
+            fillOpacity={0.18}
+            stroke={para.color}
+            strokeWidth={1}
+            strokeDasharray="4 3"
+          />
+          {paraLabelPos && parallelogram.label !== undefined && (
+            <KatexLabel
+              tex={parallelogram.label}
+              x={paraLabelPos.x}
+              y={paraLabelPos.y}
+              fontSize={12}
+            />
+          )}
         </g>
       )}
 
@@ -384,58 +454,8 @@ export default function SpaceVectorDiagram({
 
       {/* 空間ベクトル（有向線分）。矢じりは polygon を手計算で置く。 */}
       {vectors.map((v, i) => {
-        const color = v.color ?? VEC;
-        const fromP = project(v.from);
-        const toP = project(v.to);
-        const ang = Math.atan2(toP.sy - fromP.sy, toP.sx - fromP.sx);
-        const cos = Math.cos(ang);
-        const sin = Math.sin(ang);
-        const len = Math.hypot(toP.sx - fromP.sx, toP.sy - fromP.sy) || 1;
-        // 矢じり長はベクトルのスクリーン長を超えないよう上限を付ける。短いベクトルで base が
-        // 始点を越えて描画が崩れるのを防ぐ。半幅も同じ比率で縮め、矢じりの形を保つ。
-        const hl = Math.min(HEAD_LEN, len * 0.8);
-        const hh = HEAD_HALF * (hl / HEAD_LEN);
-        const base = { sx: toP.sx - hl * cos, sy: toP.sy - hl * sin };
-        const left = { sx: base.sx - hh * sin, sy: base.sy + hh * cos };
-        const right = { sx: base.sx + hh * sin, sy: base.sy - hh * cos };
-        // ラベルは線分の中点を基準に、直交方向へ逃がしつつ線に沿って前後へもずらす。長い
-        // ベクトル（縦に伸びる外積など）は、中点で隣のラベルと衝突しても、矢印に沿って先端側へ
-        // 滑らせれば空きが見つかる。直交のみだと幅の広いラベルが逃げ切れない。
-        const mx = (fromP.sx + toP.sx) / 2;
-        const my = (fromP.sy + toP.sy) / 2;
-        const perpX = -(toP.sy - fromP.sy) / len;
-        const perpY = (toP.sx - fromP.sx) / len;
-        const alongX = (toP.sx - fromP.sx) / len;
-        const alongY = (toP.sy - fromP.sy) / len;
-        const cand = (a: number, p: number): { dx: number; dy: number } => ({
-          dx: alongX * a + perpX * p,
-          dy: alongY * a + perpY * p,
-        });
-        // 直交方向の逃がし量はラベル半幅に余白を足して決める。幅の広いラベル（外積 a×b など）
-        // でも、近い端が自分のベクトル線から確実に離れるようにする。
-        const perpClear = estimateTexWidth(v.label ?? "") / 2 + 9;
-        const lp =
-          v.label !== undefined
-            ? place(
-                mx,
-                my,
-                [
-                  cand(0, perpClear),
-                  cand(0, -perpClear),
-                  cand(0, 13),
-                  cand(0, -13),
-                  cand(0, 22),
-                  cand(0, -22),
-                  cand(26, perpClear),
-                  cand(26, -perpClear),
-                  cand(-26, perpClear),
-                  cand(-26, -perpClear),
-                  cand(26, 0),
-                  cand(-26, 0),
-                ],
-                v.label,
-              )
-            : null;
+        const { color, fromP, toP, base, left, right } = vectorDraws[i];
+        const lp = vectorPlaced.positions[i];
         return (
           <g key={`vec-${i}`}>
             <Line
@@ -457,26 +477,11 @@ export default function SpaceVectorDiagram({
         );
       })}
 
-      {/* 点。ラベルは真上を第一候補に、衝突を避けて上下左右へ逃がす。 */}
+      {/* 点。 */}
       {points.map((p, i) => {
         const sp = project(p);
         const color = p.highlight ? HIGHLIGHT : "currentColor";
-        const lp =
-          p.label !== undefined
-            ? place(
-                sp.sx,
-                sp.sy,
-                [
-                  { dx: 0, dy: -13 },
-                  { dx: 0, dy: 14 },
-                  { dx: 13, dy: -11 },
-                  { dx: -13, dy: -11 },
-                  { dx: 13, dy: 12 },
-                  { dx: -13, dy: 12 },
-                ],
-                p.label,
-              )
-            : null;
+        const lp = pointPlaced.positions[i];
         return (
           <g key={`pt-${i}`}>
             <circle cx={sp.sx} cy={sp.sy} r={3.6} fill={color} />
@@ -496,7 +501,7 @@ function add(p: Vec3, q: Vec3): Vec3 {
 }
 
 /** 当たり判定に使う線分（画面座標の端点 a→b）。 */
-type Seg = { ax: number; ay: number; bx: number; by: number };
+type Seg = Readonly<{ ax: number; ay: number; bx: number; by: number }>;
 
 /** 点 (px, py) から軸並行矩形 b までの最短距離（矩形の内部なら 0）。 */
 function pointToBox(px: number, py: number, b: Box): number {
@@ -510,18 +515,19 @@ function pointToBox(px: number, py: number, b: Box): number {
  * ラベル中心ではなく矩形で線分との近接を測り、幅の広いラベルの端が線に接するのを検出する。
  */
 function segBoxDist(s: Seg, b: Box): number {
-  let min = Infinity;
   const N = 16;
-  for (let i = 0; i <= N; i += 1) {
+  // 標本点 i から先の最小を、それまでの最小 min と比べながら求める（SurfacePlot と同じ方式）。
+  const minFrom = (i: number, min: number): number => {
+    if (i > N) return min;
     const t = i / N;
     const d = pointToBox(s.ax + (s.bx - s.ax) * t, s.ay + (s.by - s.ay) * t, b);
-    if (d < min) min = d;
-  }
-  return min;
+    return minFrom(i + 1, d < min ? d : min);
+  };
+  return minFrom(0, Infinity);
 }
 
 /** 当たり判定に使う軸並行の矩形（左上 (x0,y0)・右下 (x1,y1)）。 */
-type Box = { x0: number; x1: number; y0: number; y1: number };
+type Box = Readonly<{ x0: number; x1: number; y0: number; y1: number }>;
 
 /** ラベルの想定文字高（viewBox 単位）。当たり判定の縦幅に使う。 */
 const LABEL_H = 15;
@@ -534,6 +540,67 @@ function boxFor(cx: number, cy: number, w: number): Box {
 /** 2 つの矩形が重なるか。 */
 function boxesOverlap(a: Box, b: Box): boolean {
   return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+}
+
+/** ラベルの中心を基準点からずらす量。 */
+type Offset = Readonly<{ dx: number; dy: number }>;
+
+/** 置いたラベルの中心。 */
+type LabelPos = Readonly<{ x: number; y: number }>;
+
+/** 1 つのラベルの配置の依頼。基準点 (cx, cy) と、優先順に並べたずらしの候補を持つ。 */
+type LabelRequest = Readonly<{ cx: number; cy: number; cands: readonly Offset[]; tex: string }>;
+
+/**
+ * ラベルの位置を候補から選ぶ。既出のラベルの矩形 placed・線分 segs との衝突の罰点が最も小さい
+ * 候補を返す。
+ */
+function chooseLabel(
+  placed: readonly Box[],
+  segs: readonly Seg[],
+  { cx, cy, cands, tex }: LabelRequest,
+): LabelPos {
+  const w = estimateTexWidth(tex);
+  const best = cands.reduce<Readonly<{ c: Offset; p: number }>>(
+    (acc, c, i) => {
+      const box = boxFor(cx + c.dx, cy + c.dy, w);
+      const p0 = i * 0.1; // 同点なら前方の候補を優先。
+      const p1 =
+        box.x0 < 2 || box.x1 > VIEW_W - 2 || box.y0 < 2 || box.y1 > VIEW_H - 2 ? p0 + 1000 : p0;
+      // ラベル同士の重なりは最優先で避ける（線分近接より重く罰する）。
+      const p2 = placed.reduce((p, q) => (boxesOverlap(box, q) ? p + 15 : p), p1);
+      // ラベルの矩形が線分に近すぎる（線・矢じりを覆う・端が接する）候補を避ける。中心ではなく
+      // 矩形で測り、幅の広いラベル（外積など）の端が縦の線に接するのを防ぐ。
+      const p3 = segs.reduce((p, s) => (segBoxDist(s, box) < 4 ? p + 12 : p), p2);
+      return p3 < acc.p ? { c, p: p3 } : acc;
+    },
+    { c: cands[0], p: Infinity },
+  );
+  return { x: cx + best.c.dx, y: cy + best.c.dy };
+}
+
+/**
+ * ラベルを依頼の順に 1 つずつ置く。置いたラベルの矩形を placed に積み、後のラベルが避ける。
+ * 依頼が null の項目は何も置かず、位置も null とする（位置の並びを依頼の並びとそろえる）。
+ */
+function placeEach(
+  placed: readonly Box[],
+  segs: readonly Seg[],
+  requests: readonly (LabelRequest | null)[],
+): Readonly<{ positions: readonly (LabelPos | null)[]; placed: readonly Box[] }> {
+  return requests.reduce<
+    Readonly<{ positions: readonly (LabelPos | null)[]; placed: readonly Box[] }>
+  >(
+    (acc, req) => {
+      if (req === null) return { positions: [...acc.positions, null], placed: acc.placed };
+      const pos = chooseLabel(acc.placed, segs, req);
+      return {
+        positions: [...acc.positions, pos],
+        placed: [...acc.placed, boxFor(pos.x, pos.y, estimateTexWidth(req.tex))],
+      };
+    },
+    { positions: [], placed },
+  );
 }
 
 /** LaTeX 文字列の表示幅をおおまかに見積もる（DOM が無いビルド時の概算。安全側に広めに取る）。 */

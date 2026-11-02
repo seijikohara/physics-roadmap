@@ -13,10 +13,10 @@ import FlowChart, { type FlowEdge, type FlowNode } from "./FlowChart";
  */
 
 /** カテゴリ。id は設計書の接頭辞、label は短縮名。tone は進捗（既定＝執筆予定）。 */
-type Category = { id: string; label: string; tone?: "done" | "goal" };
+type Category = Readonly<{ id: string; label: string; tone?: "done" | "goal" }>;
 
 // 執筆済みカテゴリ（2026 年 10 月時点）。docs/roadmap-design.md の実装状況に対応する。
-const DONE = new Set([
+const DONE: ReadonlySet<string> = new Set([
   "PRE",
   "M-SET",
   "M-ALG",
@@ -30,10 +30,10 @@ const DONE = new Set([
   "M-VCAL",
 ]);
 // 到達目標の 2 カテゴリ。
-const GOALS = new Set(["P-SMD", "P-GR"]);
+const GOALS: ReadonlySet<string> = new Set(["P-SMD", "P-GR"]);
 
 // カテゴリ一覧（設計書の順）。短縮名で描く。
-const CATEGORIES: { id: string; label: string }[] = [
+const CATEGORIES: readonly Readonly<{ id: string; label: string }>[] = [
   { id: "PRE", label: "前提知識" },
   { id: "M-SET", label: "数学の言葉" },
   { id: "M-ALG", label: "代数" },
@@ -73,7 +73,7 @@ const CATEGORIES: { id: string; label: string }[] = [
 ];
 
 // カテゴリ間の主要な前提関係（前提 → 依存先）。設計書の各章前提とクリティカルパスに基づく。
-const DEPENDENCIES: [from: string, to: string][] = [
+const DEPENDENCIES: readonly (readonly [from: string, to: string])[] = [
   ["PRE", "M-SET"],
   ["PRE", "M-ALG"],
   ["M-SET", "M-GRP"],
@@ -135,18 +135,22 @@ function toneOf(id: string): Category["tone"] {
   return undefined;
 }
 
-const NODES: FlowNode[] = CATEGORIES.map((c) => ({
+const NODES: readonly FlowNode[] = CATEGORIES.map((c) => ({
   id: c.id,
   label: c.label,
   tone: toneOf(c.id),
 }));
 
-const EDGES: FlowEdge[] = DEPENDENCIES.map(([from, to]) => ({ from, to }));
+const EDGES: readonly FlowEdge[] = DEPENDENCIES.map(([from, to]) => ({ from, to }));
 
 const DONE_COUNT = CATEGORIES.filter((c) => DONE.has(c.id)).length;
 
 /** 凡例の 1 項目。 */
-function LegendItem({ fill, stroke, label }: { fill: string; stroke: string; label: string }) {
+function LegendItem({
+  fill,
+  stroke,
+  label,
+}: Readonly<{ fill: string; stroke: string; label: string }>) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
       <span

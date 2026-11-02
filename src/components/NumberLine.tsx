@@ -17,24 +17,24 @@ import KatexLabel from "./KatexLabel";
  */
 
 /** 軸上に目盛りとして表示する刻み。`label` を省くと数値をそのまま描く。 */
-type Tick = {
+type Tick = Readonly<{
   /** 目盛りの位置（実数値）。 */
   value: number;
   /** 目盛りに添える LaTeX 文字列。省略時は value を描く。 */
   label?: string;
-};
+}>;
 
 /** 軸上の 1 点。塗りつぶしの丸で表す。 */
-type Point = {
+type Point = Readonly<{
   value: number;
   /** 点の真上に添える LaTeX 文字列。 */
   label?: string;
   /** 強調色で描くか。既定は false（通常の文字色）。 */
   highlight?: boolean;
-};
+}>;
 
 /** 軸上の区間。端点の開閉を丸の塗りで表す。 */
-type Interval = {
+type Interval = Readonly<{
   /** 左端の値。負の無限大側へ伸ばすときは省略する。 */
   from?: number;
   /** 右端の値。正の無限大側へ伸ばすときは省略する。 */
@@ -43,22 +43,22 @@ type Interval = {
   fromClosed?: boolean;
   /** 右端を含むか（閉区間端＝黒丸）。既定は false（開＝白丸）。端が無い側では無視する。 */
   toClosed?: boolean;
-};
+}>;
 
-type NumberLineProps = {
+type NumberLineProps = Readonly<{
   /** 軸の最小値。 */
   min: number;
   /** 軸の最大値。 */
   max: number;
   /** 目盛り。省略時は目盛りを描かない（軸線と矢印だけを描く）。 */
-  ticks?: Tick[];
+  ticks?: readonly Tick[];
   /** 軸上に置く点。 */
-  points?: Point[];
+  points?: readonly Point[];
   /** 軸上に塗る区間。 */
-  intervals?: Interval[];
+  intervals?: readonly Interval[];
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
-};
+}>;
 
 const AXIS = "#94a3b8";
 const HIGHLIGHT = "#f59e0b";
@@ -164,13 +164,12 @@ export default function NumberLine({
 
       {/* 端点の開閉を示す丸。区間の端ごとに描く。 */}
       {intervals.map((iv, i) => {
-        const marks: ReactNode[] = [];
-        if (iv.from !== undefined) {
-          marks.push(endpoint(`ep-${i}-l`, x(iv.from), iv.fromClosed ?? false));
-        }
-        if (iv.to !== undefined) {
-          marks.push(endpoint(`ep-${i}-r`, x(iv.to), iv.toClosed ?? false));
-        }
+        const marks: readonly ReactNode[] = [
+          ...(iv.from === undefined
+            ? []
+            : [endpoint(`ep-${i}-l`, x(iv.from), iv.fromClosed ?? false)]),
+          ...(iv.to === undefined ? [] : [endpoint(`ep-${i}-r`, x(iv.to), iv.toClosed ?? false)]),
+        ];
         return <g key={`ep-${i}`}>{marks}</g>;
       })}
 

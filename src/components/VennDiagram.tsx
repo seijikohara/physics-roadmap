@@ -28,13 +28,13 @@ type Variant =
   | "nonempty" // A≠∅
   | "subset-complement"; // B̄⊂Ā（A⊂B の対偶側）
 
-type VennDiagramProps = {
+type VennDiagramProps = Readonly<{
   variant: Variant;
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
   /** 1 文字の集合名。既定は 'A' と 'B'。 */
-  labels?: { a?: string; b?: string };
-};
+  labels?: Readonly<{ a?: string; b?: string }>;
+}>;
 
 const STROKE_A = "#3b82f6";
 const STROKE_B = "#ef4444";
@@ -44,9 +44,9 @@ const FRAME = "#94a3b8";
 // 全体集合の矩形の中に置く、重なる 2 つの円。半径と中心は、四方どの辺に対しても枠と
 // の余白を確保する。独自の配置を使う `subset` と `disjoint` を除く、すべての variant
 // で共有する。
-const U = { x: 10, y: 8, w: 300, h: 184 };
-const A = { cx: 128, cy: 104, r: 58 };
-const B = { cx: 192, cy: 104, r: 58 };
+const U = { x: 10, y: 8, w: 300, h: 184 } as const;
+const A = { cx: 128, cy: 104, r: 58 } as const;
+const B = { cx: 192, cy: 104, r: 58 } as const;
 
 // 中央寄せの KaTeX ラベル用ヘルパ。`tex` は LaTeX 文字列を受け取り、(x, y) を中心に
 // 中央寄せで組版する。補集合の上線は `\overline{}` で正しく文字の上へ載せる。生 SVG の
