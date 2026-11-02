@@ -28,11 +28,12 @@
       separateMajorMinor: false,
     },
     {
-      // @types/react-dom は @types/react をピア依存に持つ。型定義の更新はビルドの出力を変えないため、まとめて型の検査で確かめる。
-      // 本ルールは Renovate 組み込みの group:react より後に適用されるため、React の型定義も本グループに入る。
-      description: "型定義を 1 つの PR にまとめる",
+      // 型定義の更新はビルドの出力を変えないため、まとめて型の検査で確かめる。
+      // React の型定義は除き、Renovate 組み込みの group:react に任せる。group:react は @types/react と @types/react-dom を react・react-dom と同じ PR にまとめる。
+      // 本ルールは group:react より後に適用される。除かないと React のメジャー更新が本体と型定義の 2 つの PR に分かれ、片方だけマージされると型エラーになる。
+      description: "React 以外の型定義を 1 つの PR にまとめる",
       groupName: "type definitions",
-      matchPackageNames: ["@types/*"],
+      matchPackageNames: ["@types/*", "!@types/react", "!@types/react-dom"],
     },
   ],
 }
