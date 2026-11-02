@@ -35,5 +35,30 @@
       groupName: "type definitions",
       matchPackageNames: ["@types/*", "!@types/react", "!@types/react-dom"],
     },
+    {
+      // katex 0.18 で CSS のクラス名に `katex-` の接頭辞が付いた。本文の数式は rehype-katex が依存する katex 0.16 が描画し、
+      // ページは直接依存の katex の CSS を読み込む。直接依存だけを 0.18 以上にすると、ビルドは通ったまま本文の数式の表示が崩れる。
+      // rehype-katex が katex 0.18 以上に対応したら、この制限を外す。katex と rehype-katex を同じ PR で上げ、
+      // src/styles/global.css と scripts/figures/lint.ts のクラス名を合わせて直す。
+      description: "rehype-katex が katex 0.18 に対応するまで katex を 0.17 系に留める",
+      matchPackageNames: ["katex"],
+      allowedVersions: "<0.18",
+    },
+    {
+      // dagre の更新で図のノード配置とエッジの経路が変わる（3.1 では 62 図中 20 図）。
+      // CI は図の見た目を比べないため、自動マージせず、`pnpm run figures:diff` で差分を確かめてからマージする。
+      description: "図の配置を変える dagre の更新を自動マージしない",
+      matchPackageNames: ["@dagrejs/dagre"],
+      automerge: false,
+    },
+    {
+      // Starlight は 1.0 未満で、マイナーバージョンに破壊的変更を含む（0.42 ではモバイルメニューのマークアップが変わった）。
+      // ビルドが通っても表示が変わりうるため、マイナー以上の更新は自動マージせず、変更履歴を確かめてからマージする。
+      // astro グループの PR に Starlight のマイナー更新が含まれる場合は、その PR 全体が自動マージされない。
+      description: "Starlight のマイナー以上の更新を自動マージしない",
+      matchPackageNames: ["@astrojs/starlight"],
+      matchUpdateTypes: ["major", "minor"],
+      automerge: false,
+    },
   ],
 }
