@@ -22,3 +22,6 @@ yarn-error.log*
 
 # Playwright MCP output (local verification artifacts)
 .playwright-mcp/
+
+# 図のスクリプト（figures:shot・figures:lint・figures:diff）の出力
+.figures/

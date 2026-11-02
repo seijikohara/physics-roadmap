@@ -14,6 +14,9 @@
     "lint:text": "textlint \"**/*.{md,mdx}\"",
     "lint:text:fix": "textlint --fix \"**/*.{md,mdx}\"",
     "check": "pnpm run format:check && pnpm run lint && pnpm run lint:text",
+    "figures:shot": "node scripts/figures/shot.mjs",
+    "figures:lint": "node scripts/figures/lint.mjs",
+    "figures:diff": "node scripts/figures/diff.mjs",
     "prepare": "lefthook install"
   },
   "dependencies": {
@@ -45,6 +48,7 @@
     "oxfmt": "0.56.0",
     "oxlint": "1.71.0",
     "oxlint-tsgolint": "0.23.0",
+    "playwright-core": "^1.64.1",
     "textlint": "^15.7.1",
     "textlint-filter-rule-comments": "^1.3.0",
     "textlint-plugin-mdx": "^1.1.0",
