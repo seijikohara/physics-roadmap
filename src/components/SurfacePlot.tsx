@@ -586,7 +586,8 @@ export default function SurfacePlot({
 
   const curvePts = curves.map((c) => {
     const n = Math.max(2, c.samples ?? 160);
-    return Array.from({ length: n + 1 }, (_, i): Vec3 => {
+    // 添字 i ≤ n の範囲だけを作る。n + 1 のままだと、整数の直前の n で丸められて範囲の外の添字ができる。
+    return Array.from({ length: Math.floor(n) + 1 }, (_, i): Vec3 => {
       const t = c.t[0] + ((c.t[1] - c.t[0]) * i) / n;
       const p = c.fn(t);
       return isFiniteVec(p) ? toView(p) : { x: Number.NaN, y: Number.NaN, z: Number.NaN };

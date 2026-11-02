@@ -931,7 +931,9 @@ function autoTicks(lo: number, hi: number): readonly number[] {
  * 標本化の添字 k = 0, 1, …, n を、k ≤ n を満たす範囲で 1 ずつ増やして作る。n が NaN なら空。
  */
 function steps(n: number): readonly number[] {
-  return Array.from({ length: n + 1 }, (_, k) => k);
+  // n + 1 は、整数の直前の値（3.9999999999999996 など）で丸められて整数になり、k ≤ n を満たさない
+  // 添字まで作ってしまう。切り捨ててから 1 を足す。
+  return Array.from({ length: Math.floor(n) + 1 }, (_, k) => k);
 }
 
 /** 曲線の 1 標本。`visible` は描画窓内かつ有限で、LinePath の `defined` に渡す。 */
