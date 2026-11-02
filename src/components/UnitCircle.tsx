@@ -16,7 +16,7 @@ import KatexLabel from "./KatexLabel";
  * KaTeX で組版する。
  */
 
-type UnitCircleProps = {
+type UnitCircleProps = Readonly<{
   /** 動径の角（度）。$x$ 軸の正の向きから反時計回りに測る。 */
   angleDeg: number;
   /** 先端の座標に添える LaTeX ラベル。省略時は描かない。 */
@@ -33,7 +33,7 @@ type UnitCircleProps = {
   sinLabel?: string;
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
-};
+}>;
 
 // 軸・円は global.css の CSS 変数でテーマに追従する（暗テーマで沈める）。
 const AXIS = "var(--fig-axis)";

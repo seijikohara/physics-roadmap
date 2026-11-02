@@ -38,7 +38,7 @@ export type FlowShape = "rect" | "diamond";
 export type FlowTone = "done" | "goal";
 
 /** フローチャートの 1 ノード。 */
-export type FlowNode = {
+export type FlowNode = Readonly<{
   /** ノードの識別子。エッジ・クラスタから参照する。 */
   id: string;
   /** ラベル。改行は `\n`、数式は `$...$` で表す。 */
@@ -47,10 +47,10 @@ export type FlowNode = {
   shape?: FlowShape;
   /** 配色トーン。既定は中立色。`done`・`goal` を強調色で描く。 */
   tone?: FlowTone;
-};
+}>;
 
 /** 2 ノードを結ぶ有向エッジ。 */
-export type FlowEdge = {
+export type FlowEdge = Readonly<{
   /** 始点ノードの id。 */
   from: string;
   /** 終点ノードの id。 */
@@ -59,27 +59,27 @@ export type FlowEdge = {
   label?: string;
   /** 破線で描くか。既定は実線。 */
   dashed?: boolean;
-};
+}>;
 
 /** ノードをまとめるクラスタ（Mermaid の subgraph に相当）。入れ子にできる。 */
-export type FlowCluster = {
+export type FlowCluster = Readonly<{
   /** クラスタの識別子。親クラスタの `children` から参照する。 */
   id: string;
   /** クラスタの見出し。改行は `\n`、数式は `$...$` で表す。 */
   label?: string;
   /** 直接の子。ノード id・クラスタ id を混在できる。 */
-  children: string[];
-};
+  children: readonly string[];
+}>;
 
-type FlowChartProps = {
+type FlowChartProps = Readonly<{
   /** レイアウトの方向。既定 `TB`。 */
   direction?: FlowDirection;
   /** ノードの一覧。 */
-  nodes: FlowNode[];
+  nodes: readonly FlowNode[];
   /** エッジの一覧。 */
-  edges?: FlowEdge[];
+  edges?: readonly FlowEdge[];
   /** クラスタ（サブグラフ）の一覧。 */
-  clusters?: FlowCluster[];
+  clusters?: readonly FlowCluster[];
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
   /** 表示の最大幅（px）。既定は 720。大きなグラフ（ロードマップ全体図）で広げる。 */
@@ -90,7 +90,7 @@ type FlowChartProps = {
    * 省略時は従来どおり dagre へ何も渡さず、既存の図の配置を変えない。
    */
   align?: "UL" | "UR" | "DL" | "DR";
-};
+}>;
 
 // 色はテーマに追従する CSS 変数（global.css の :root と [data-theme="dark"]）で与える。
 const NODE_FILL = "var(--flow-node-fill)";
@@ -129,6 +129,8 @@ export default function FlowChart({
   const rankdir = direction === "LR" ? "LR" : "TB";
 
   // dagre の graphlib をラベル型で型付けし、型アサーションなしで配置結果を読む。
+  // graphlib はグラフを書き換える API（setNode・setEdge・setParent）しか持たず、layout も
+  // グラフへ結果を書き込む。可変のグラフ g はこの関数の中だけで組み立てて読み、外へ出さない。
   const g = new graphlib.Graph<DagreGraphCfg, DagreNode, DagreEdge>({
     compound: true,
     multigraph: true,
@@ -226,12 +228,15 @@ export default function FlowChart({
         `FlowChart: エッジ "${e.from}" → "${e.to}" のレイアウト結果が空です。ノード id を確認してください。`,
       );
     }
-    const points = ed.points.map((p) => ({ x: p.x, y: p.y }));
     // dagre は端点を外接矩形の上に置くため、菱形ノードでは矢印が輪郭から浮く。菱形の端点だけを
     // 輪郭上へ付け替える。矩形ノード・クラスタの端点は dagre の結果のまま使う。
-    const last = points.length - 1;
-    points[0] = clipToDiamond(points[0], nodeById.get(e.from));
-    points[last] = clipToDiamond(points[last], nodeById.get(e.to));
+    // 経路が 1 点だけのときは、始点側で付け替えた点を終点側でもう一度付け替える。
+    const last = ed.points.length - 1;
+    const points = ed.points.map((p, j) => {
+      const head =
+        j === 0 ? clipToDiamond({ x: p.x, y: p.y }, nodeById.get(e.from)) : { x: p.x, y: p.y };
+      return j === last ? clipToDiamond(head, nodeById.get(e.to)) : head;
+    });
     const lab =
       e.label && typeof ed.x === "number" && typeof ed.y === "number"
         ? { text: e.label, x: ed.x, y: ed.y }
@@ -343,7 +348,7 @@ type DagreGraphCfg = {
 };
 
 /** レイアウト前に決まるノードの外形と描画情報。 */
-type NodeMeta = {
+type NodeMeta = Readonly<{
   id: string;
   label: string;
   shape: FlowShape;
@@ -355,23 +360,23 @@ type NodeMeta = {
   /** ラベルを収める内枠の幅・高さ。 */
   labelW: number;
   labelH: number;
-};
+}>;
 
 /** レイアウト後の中心座標を加えたノード。 */
-type PlacedNode = NodeMeta & { x: number; y: number };
+type PlacedNode = NodeMeta & Readonly<{ x: number; y: number }>;
 
-type Pt = { x: number; y: number };
+type Pt = Readonly<{ x: number; y: number }>;
 
 /** レイアウト後のエッジ。visx Graph の Link 形（source・target）に経路と装飾を足す。 */
-type PlacedLink = {
+type PlacedLink = Readonly<{
   source: Pt;
   target: Pt;
-  points: Pt[];
+  points: readonly Pt[];
   dashed: boolean;
-  label?: { text: string; x: number; y: number };
+  label?: Readonly<{ text: string; x: number; y: number }>;
   /** 矢印マーカーの id。FlowChart インスタンスごとに異なる。 */
   arrowId: string;
-};
+}>;
 
 /**
  * エッジの端点を、菱形ノードの輪郭 |dx|/(w/2) + |dy|/(h/2) = 1 の上へ移す。
@@ -391,7 +396,7 @@ function clipToDiamond(p: Pt, node: PlacedNode | undefined): Pt {
 }
 
 /** ノードのトーンごとの塗り・輪郭の CSS 変数。未指定（中立）は既定色。 */
-function toneColors(tone?: FlowTone): { fill: string; stroke: string } {
+function toneColors(tone?: FlowTone): Readonly<{ fill: string; stroke: string }> {
   if (tone === "done") {
     return { fill: "var(--flow-node-done-fill)", stroke: "var(--flow-node-done-stroke)" };
   }
@@ -407,7 +412,7 @@ function toneColors(tone?: FlowTone): { fill: string; stroke: string } {
  * ラベルはここでは描かない。visx Graph がノードへ施す translate 変換の下に foreignObject の
  * KaTeX を置くと WebKit が誤った位置に描くため、ラベルは FlowChart 側で変換の外に描く。
  */
-function NodeShape({ node }: { node: PlacedNode }) {
+function NodeShape({ node }: Readonly<{ node: PlacedNode }>) {
   const { shape, width, height, tone } = node;
   const { fill, stroke } = toneColors(tone);
   return (
@@ -441,12 +446,12 @@ function NodeShape({ node }: { node: PlacedNode }) {
 }
 
 /** エッジ 1 本を絶対座標で描く。経路・矢印・（あれば）ラベルを置く。 */
-function EdgeShape({ link }: { link: PlacedLink }) {
+function EdgeShape({ link }: Readonly<{ link: PlacedLink }>) {
   const { points, dashed, label, arrowId } = link;
   return (
     <Group>
       <LinePath<Pt>
-        data={points}
+        data={[...points]}
         x={(p) => p.x}
         y={(p) => p.y}
         curve={curveLinear}
@@ -462,7 +467,7 @@ function EdgeShape({ link }: { link: PlacedLink }) {
 }
 
 /** エッジラベル。線の上に重なっても読めるよう、背景チップを敷いてから組版を載せる。 */
-function EdgeLabel({ text, cx, cy }: { text: string; cx: number; cy: number }) {
+function EdgeLabel({ text, cx, cy }: Readonly<{ text: string; cx: number; cy: number }>) {
   const { width, height } = measureLabel(text, EDGE_FONT, EDGE_LINE_H);
   return (
     <Group>
@@ -481,7 +486,7 @@ function EdgeLabel({ text, cx, cy }: { text: string; cx: number; cy: number }) {
 }
 
 /** クラスタの見出し。上辺の中央に、背景チップで枠線を断ち切って載せる。 */
-function ClusterLabel({ label, cx, top }: { label: string; cx: number; top: number }) {
+function ClusterLabel({ label, cx, top }: Readonly<{ label: string; cx: number; top: number }>) {
   const { width, height } = measureLabel(label, CLUSTER_FONT, CLUSTER_FONT * 1.4);
   return (
     <Group>
@@ -515,14 +520,14 @@ function LabelBox({
   width,
   height,
   fontSize,
-}: {
+}: Readonly<{
   label: string;
   cx: number;
   cy: number;
   width: number;
   height: number;
   fontSize: number;
-}) {
+}>) {
   const html = labelToHtml(label);
   return (
     <foreignObject
@@ -624,38 +629,39 @@ function measureLabel(
   label: string,
   fontSize: number,
   lineH: number,
-): { width: number; height: number } {
+): Readonly<{ width: number; height: number }> {
   const lines = label.split("\n");
-  let maxW = 0;
-  for (const line of lines) {
-    let w = 0;
-    for (const seg of line.split(/(\$[^$]*\$)/g)) {
-      if (seg.length === 0) continue;
-      if (seg.startsWith("$") && seg.endsWith("$") && seg.length >= 2) {
-        w += texWidth(seg.slice(1, -1), fontSize);
-      } else {
-        w += plainWidth(seg, fontSize);
-      }
-    }
-    // 数式を含む行は、foreignObject 内の KaTeX 描画幅がブラウザ・フォントの違いで
-    // 変動する。見積もりの過小評価で枠外へはみ出すのを防ぐため、安全余白を 1 文字分足す。
-    if (line.includes("$")) {
-      w += fontSize * 0.6;
-    }
-    maxW = Math.max(maxW, w);
-  }
+  const maxW = lines.reduce((acc, line) => Math.max(acc, lineWidth(line, fontSize)), 0);
   return { width: Math.max(maxW, fontSize * 2), height: lines.length * lineH };
+}
+
+/** ラベル 1 行（数式混在）の表示幅を見積もる。 */
+function lineWidth(line: string, fontSize: number): number {
+  // 区切りの幅は先頭から順に足す。足す順を変えると浮動小数の丸めが変わり、ノードの寸法がずれる。
+  const w = line
+    .split(/(\$[^$]*\$)/g)
+    .filter((seg) => seg.length > 0)
+    .reduce(
+      (acc, seg) =>
+        acc +
+        (seg.startsWith("$") && seg.endsWith("$") && seg.length >= 2
+          ? texWidth(seg.slice(1, -1), fontSize)
+          : plainWidth(seg, fontSize)),
+      0,
+    );
+  // 数式を含む行は、foreignObject 内の KaTeX 描画幅がブラウザ・フォントの違いで
+  // 変動する。見積もりの過小評価で枠外へはみ出すのを防ぐため、安全余白を 1 文字分足す。
+  return line.includes("$") ? w + fontSize * 0.6 : w;
 }
 
 /** 地の文（全角・半角混在）のおおよその表示幅。全角は 1em、半角は約 0.55em。 */
 function plainWidth(s: string, fontSize: number): number {
-  let w = 0;
-  for (const ch of s) {
+  // 文字列をコードポイント単位に分け、先頭から順に幅を足す。
+  return Array.from(s).reduce((w, ch) => {
     // Latin-1 の範囲（コードポイント 0xFF 以下）を半角とみなす。
     const halfWidth = (ch.codePointAt(0) ?? 0) <= 0xff;
-    w += halfWidth ? fontSize * 0.55 : fontSize;
-  }
-  return w;
+    return w + (halfWidth ? fontSize * 0.55 : fontSize);
+  }, 0);
 }
 
 /**

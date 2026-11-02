@@ -34,13 +34,13 @@ import KatexLabel from "./KatexLabel";
  * あり、数字が塗りの縁と重なるときに使う。`dx` は x 軸の目盛り数字を横へずらす量（px、右が正）で
  * ある。急な曲線が目盛りの真上または真下を通り、数字と重なるときに、曲線の無い側へ逃がす。
  */
-type Tick = number | { value: number; label?: string; above?: boolean; dx?: number };
+type Tick = number | Readonly<{ value: number; label?: string; above?: boolean; dx?: number }>;
 
 /** 代表点の選び方。左端・右端・中点、または各小区間の代表点の配列。 */
-type Sample = "left" | "right" | "mid" | number[];
+type Sample = "left" | "right" | "mid" | readonly number[];
 
 /** 外枠だけの長方形。区間 [x0, x1] の上に、x 軸から高さ height まで破線で描く。 */
-type Frame = {
+type Frame = Readonly<{
   x0: number;
   x1: number;
   height: number;
@@ -53,9 +53,9 @@ type Frame = {
   labelSide?: "left" | "right";
   /** 枠線の色。既定は強調色。 */
   color?: string;
-};
+}>;
 
-type RiemannSumGraphProps = {
+type RiemannSumGraphProps = Readonly<{
   /** 描画窓の横範囲。 */
   xMin: number;
   xMax: number;
@@ -65,7 +65,7 @@ type RiemannSumGraphProps = {
   /** 描く関数。x（数学座標）を受け取り y を返す。 */
   fn: (x: number) => number;
   /** 曲線を描く範囲 [min, max]。省略時は描画窓の横範囲全体。 */
-  curveDomain?: [number, number];
+  curveDomain?: readonly [number, number];
   /** 曲線の凡例に添える LaTeX ラベル。省略時は凡例に載せない。 */
   curveLabel?: string;
   /** 比較用の 2 本目の曲線。area を指定すると、2 曲線の間の領域も塗る。 */
@@ -76,35 +76,35 @@ type RiemannSumGraphProps = {
    * 2 曲線の間を塗る区間。省略時は area と同じ。曲線の下の領域と、2 曲線の間の領域を別の区間で
    * 塗り分けるときに指定する。指定すると、2 本目の曲線もこの区間で描く。
    */
-  betweenArea?: [number, number];
+  betweenArea?: readonly [number, number];
   /**
    * 2 曲線の間の領域の下側の境界。省略時は fn。区間の一部で fn と異なる境界（定数の高さなど）を
    * 下側に使い、L 字形などの領域を塗るときに指定する。
    */
   betweenLowerFn?: (x: number) => number;
   /** 分割点 x_0 < x_1 < ... < x_n。指定すると、各小区間に長方形を描く。 */
-  partition?: number[];
+  partition?: readonly number[];
   /** 代表点の選び方。既定 "left"。配列を渡すときは小区間の個数と同じ長さにする。 */
   sample?: Sample;
   /** 代表点を曲線上の点で示すか。既定 false。 */
   showSamples?: boolean;
   /** 曲線と x 軸の間の領域を塗る区間 [from, to]。両端には x 軸から曲線まで縦の線を引く。 */
-  area?: [number, number];
+  area?: readonly [number, number];
   /** 外枠だけの長方形。 */
-  frames?: Frame[];
+  frames?: readonly Frame[];
   /** 領域を区切る縦の破線を引く x 座標。x 軸から曲線上の点まで引く（区間の分け目を示す）。 */
-  dividers?: number[];
+  dividers?: readonly number[];
   /** x 軸の目盛り。省略時は整数位置に自動で振る。空配列で目盛りなし。 */
-  xTicks?: Tick[];
+  xTicks?: readonly Tick[];
   /** y 軸の目盛り。省略時は整数位置に自動で振る。空配列で目盛りなし。 */
-  yTicks?: Tick[];
+  yTicks?: readonly Tick[];
   /** x 軸の名前（LaTeX）。既定は "x"。 */
   xLabel?: string;
   /** y 軸の名前（LaTeX）。既定は "y"。 */
   yLabel?: string;
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
-};
+}>;
 
 // 軸・グリッドは global.css の CSS 変数でテーマに追従する（暗テーマで沈める）。
 const AXIS = "var(--fig-axis)";
@@ -127,7 +127,7 @@ const PAD = 28;
 // 曲線と領域の標本数。
 const SAMPLES = 480;
 
-type Sample2 = { xv: number; yv: number };
+type Sample2 = Readonly<{ xv: number; yv: number }>;
 
 export default function RiemannSumGraph({
   xMin,
@@ -195,30 +195,30 @@ export default function RiemannSumGraph({
   });
 
   // 区間 [from, to] を標本化する。領域の多角形と曲線の両方で使う。
-  const sampleRange = (f: (v: number) => number, lo: number, hi: number): Sample2[] => {
-    const out: Sample2[] = [];
-    for (let i = 0; i <= SAMPLES; i += 1) {
+  const sampleRange = (f: (v: number) => number, lo: number, hi: number): readonly Sample2[] =>
+    Array.from({ length: SAMPLES + 1 }, (_, i) => {
       const xv = lo + ((hi - lo) * i) / SAMPLES;
-      out.push({ xv, yv: f(xv) });
-    }
-    return out;
-  };
+      return { xv, yv: f(xv) };
+    });
 
   // 曲線と x 軸の間の領域を、正の部分と負の部分に分けた多角形にする。値を 0 で切り詰めると、
   // 正の部分の多角形は x 軸より上だけ、負の部分は下だけを覆い、符号ごとに色を分けられる。
   // 値がその符号をとらない部分しか無いときは、面積 0 の多角形を出さずに省く。
   const areaSamples = area === undefined ? [] : sampleRange(fn, area[0], area[1]);
+  // 戻す配列は呼ぶたびに新しく作る。visx の Polygon が可変の配列型の points を受け取るため、
+  // 型だけは可変のままにする。
   const areaPolygon = (sign: 1 | -1): [number, number][] | null => {
     if (area === undefined) return null;
     const has = areaSamples.some((d) => (sign === 1 ? d.yv > 0 : d.yv < 0));
     if (!has) return null;
-    const pts: [number, number][] = [[x(area[0]), zeroY]];
-    for (const d of areaSamples) {
-      const clipped = sign === 1 ? Math.max(d.yv, 0) : Math.min(d.yv, 0);
-      pts.push([x(d.xv), y(clipped)]);
-    }
-    pts.push([x(area[1]), zeroY]);
-    return pts;
+    return [
+      [x(area[0]), zeroY],
+      ...areaSamples.map((d): [number, number] => {
+        const clipped = sign === 1 ? Math.max(d.yv, 0) : Math.min(d.yv, 0);
+        return [x(d.xv), y(clipped)];
+      }),
+      [x(area[1]), zeroY],
+    ];
   };
   const positiveArea = areaPolygon(1);
   const negativeArea = areaPolygon(-1);
@@ -406,7 +406,7 @@ export default function RiemannSumGraph({
           {/* 曲線。長方形の上に描き、長方形の上辺とのずれを見せる。 */}
           {upperSamples.length > 0 && (
             <LinePath<Sample2>
-              data={upperSamples}
+              data={[...upperSamples]}
               x={(d) => x(d.xv)}
               y={(d) => y(d.yv)}
               defined={(d) => Number.isFinite(d.yv)}
@@ -418,7 +418,7 @@ export default function RiemannSumGraph({
             />
           )}
           <LinePath<Sample2>
-            data={curveSamples}
+            data={[...curveSamples]}
             x={(d) => x(d.xv)}
             y={(d) => y(d.yv)}
             defined={(d) => Number.isFinite(d.yv)}
@@ -590,10 +590,8 @@ function tickDx(t: Tick): number {
 }
 
 /** 区間 [lo, hi] 内の 0 以外の整数位置を目盛りとして返す。 */
-function autoTicks(lo: number, hi: number): number[] {
-  const out: number[] = [];
-  for (let v = Math.ceil(lo); v <= Math.floor(hi); v += 1) {
-    if (v !== 0) out.push(v);
-  }
-  return out;
+function autoTicks(lo: number, hi: number): readonly number[] {
+  const first = Math.ceil(lo);
+  const count = Math.max(0, Math.floor(hi) - first + 1);
+  return Array.from({ length: count }, (_, i) => first + i).filter((v) => v !== 0);
 }

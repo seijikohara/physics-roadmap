@@ -23,13 +23,13 @@
  */
 
 /** 空間の点（またはベクトル）。 */
-export type Vec3 = { x: number; y: number; z: number };
+export type Vec3 = Readonly<{ x: number; y: number; z: number }>;
 
 /** 画面上の点（またはベクトル）。SVG と同じく下向きが正の sy を持つ。 */
-export type ScreenPoint = { sx: number; sy: number };
+export type ScreenPoint = Readonly<{ sx: number; sy: number }>;
 
 /** 視点が決める投影の基底。各軸の単位ベクトルの画面上の向きと、視線方向を持つ。 */
-export type ViewBasis = {
+export type ViewBasis = Readonly<{
   /** $x$ 軸の単位ベクトルを写す画面ベクトル（倍率 1）。 */
   dirX: ScreenPoint;
   /** $y$ 軸の単位ベクトルを写す画面ベクトル（倍率 1）。 */
@@ -38,13 +38,13 @@ export type ViewBasis = {
   dirZ: ScreenPoint;
   /** 視線方向（画面の手前向き）の空間の単位ベクトル。奥行きの計算に使う。 */
   fwd: Vec3;
-};
+}>;
 
 /** 投影範囲（倍率 1 の画面座標での最小・最大）。 */
-export type ScreenBounds = { minSx: number; maxSx: number; minSy: number; maxSy: number };
+export type ScreenBounds = Readonly<{ minSx: number; maxSx: number; minSy: number; maxSy: number }>;
 
 /** 描画領域への当てはめ。倍率と、空間の原点を写す画面座標を持つ。 */
-export type ViewFit = { scale: number; originX: number; originY: number };
+export type ViewFit = Readonly<{ scale: number; originX: number; originY: number }>;
 
 /** 既定の方位角（度）。35° は床面が十分開いて見え、3 軸の成分も読み取りやすい。 */
 export const DEFAULT_AZIMUTH_DEG = 35;
@@ -85,20 +85,18 @@ export const DEFAULT_VIEW: ViewBasis = viewBasis(
 
 /**
  * 数の列の最小値と最大値を返す。空の列では [Infinity, -Infinity] を返す。
- * Math.min(...列) は列が長いと引数の数の上限を超えて例外になるため、ループで求める。
+ * Math.min(...列) は列が長いと引数の数の上限を超えて例外になるため、1 つずつ畳み込んで求める。
+ * 比較で更新するので、NaN は読み飛ばされる（Math.min と違い、結果を NaN にしない）。
  */
-export function minMax(values: number[]): [number, number] {
-  let lo = Infinity;
-  let hi = -Infinity;
-  for (const v of values) {
-    if (v < lo) lo = v;
-    if (v > hi) hi = v;
-  }
-  return [lo, hi];
+export function minMax(values: readonly number[]): readonly [number, number] {
+  return values.reduce<readonly [number, number]>(
+    ([lo, hi], v) => [v < lo ? v : lo, v > hi ? v : hi],
+    [Infinity, -Infinity],
+  );
 }
 
 /** 空間の点の列を倍率 1・原点 (0, 0) で投影し、画面上の範囲を返す。 */
-export function projectedBounds(points: Vec3[], basis: ViewBasis): ScreenBounds {
+export function projectedBounds(points: readonly Vec3[], basis: ViewBasis): ScreenBounds {
   const { dirX, dirY, dirZ } = basis;
   const [minSx, maxSx] = minMax(points.map((p) => p.x * dirX.sx + p.y * dirY.sx + p.z * dirZ.sx));
   const [minSy, maxSy] = minMax(points.map((p) => p.x * dirX.sy + p.y * dirY.sy + p.z * dirZ.sy));
@@ -131,7 +129,7 @@ export function fitView(
 export function makeProjector(
   basis: ViewBasis,
   fit: ViewFit,
-): { project: (p: Vec3) => ScreenPoint; depth: (p: Vec3) => number } {
+): Readonly<{ project: (p: Vec3) => ScreenPoint; depth: (p: Vec3) => number }> {
   const { dirX, dirY, dirZ, fwd } = basis;
   const { scale, originX, originY } = fit;
   // 倍率を先に掛けた画面ベクトル。演算順を切り出し前の計算と一致させる（ファイル冒頭を参照）。

@@ -14,7 +14,7 @@ import { renderToString } from "katex";
  * 判定ではなく配置の基準にすぎず、内容がはみ出す場合に備えて overflow を可視にする。
  */
 
-type KatexLabelProps = {
+type KatexLabelProps = Readonly<{
   /** 組版する LaTeX 文字列（例: "a^2"、"\\sqrt2"、"\\pi"）。 */
   tex: string;
   /** ラベルの中心の x 座標（SVG の viewBox 単位）。 */
@@ -35,7 +35,7 @@ type KatexLabelProps = {
   align?: "center" | "left" | "right";
   /** ラベル内側の要素へ付ける CSS クラス。背景色ハローなどテーマ依存の装飾を CSS で与える。 */
   className?: string;
-};
+}>;
 
 export default function KatexLabel({
   tex,

@@ -13,15 +13,15 @@ import KatexLabel from "./KatexLabel";
  */
 
 /** 1 辺を分割する区切り。`length` は描画上の相対的な長さ、`label` は辺に添える数式。 */
-type Segment = {
+type Segment = Readonly<{
   /** 区切りの相対的な長さ。同じ辺の中での比だけが意味を持つ。 */
   length: number;
   /** 辺に添える LaTeX 文字列（例: "a"、"b"）。 */
   label: string;
-};
+}>;
 
 /** 小長方形に書き込む面積の表示。省略時は空欄にする。 */
-type CellLabel = {
+type CellLabel = Readonly<{
   /** 横方向の何番目の区切りか（0 始まり）。 */
   col: number;
   /** 縦方向の何番目の区切りか（0 始まり）。 */
@@ -30,15 +30,15 @@ type CellLabel = {
   label: string;
   /** 強調して塗るか。既定は false。 */
   highlight?: boolean;
-};
+}>;
 
-type AreaModelProps = {
+type AreaModelProps = Readonly<{
   /** 横の辺の分割。左から順に並べる。 */
-  columns: Segment[];
+  columns: readonly Segment[];
   /** 縦の辺の分割。上から順に並べる。 */
-  rows: Segment[];
+  rows: readonly Segment[];
   /** 各セルに書く面積の表示。 */
-  cells?: CellLabel[];
+  cells?: readonly CellLabel[];
   /**
    * 横と縦で 1 単位の長さを揃えるか。既定は false（描画領域いっぱいに広げる）。
    * true にすると、横の length の和と縦の length の和の比が、そのまま図の縦横比になる。
@@ -47,7 +47,7 @@ type AreaModelProps = {
   equalScale?: boolean;
   /** 支援技術が読み上げるアクセシブルな説明。 */
   ariaLabel: string;
-};
+}>;
 
 const FRAME = "#94a3b8";
 const GRID = "#cbd5e1";
@@ -80,13 +80,9 @@ export default function AreaModel({
 
   // 実際に描く長方形の寸法と原点。equalScale のときは横縦で 1 単位を揃え、
   // はみ出さないよう小さい方の倍率に合わせて中央へ寄せる。
-  let boxW = availW;
-  let boxH = availH;
-  if (equalScale) {
-    const unit = Math.min(availW / colTotal, availH / rowTotal);
-    boxW = unit * colTotal;
-    boxH = unit * rowTotal;
-  }
+  const unit = Math.min(availW / colTotal, availH / rowTotal);
+  const boxW = equalScale ? unit * colTotal : availW;
+  const boxH = equalScale ? unit * rowTotal : availH;
   const originX = PAD_L + (availW - boxW) / 2;
   const originY = PAD_T + (availH - boxH) / 2;
 
@@ -185,13 +181,22 @@ export default function AreaModel({
   );
 }
 
-/** 相対長の配列から、開始座標を base とする累積境界座標を作る。 */
-function cumulative(lengths: number[], span: number, base: number, total: number): number[] {
-  const edges = [base];
-  let acc = 0;
-  for (const len of lengths) {
-    acc += len;
-    edges.push(base + (acc / total) * span);
-  }
-  return edges;
+/**
+ * 相対長の配列から、開始座標を base とする累積境界座標を作る。
+ *
+ * 累積和は先頭から 1 つずつ足す。足す順を変えると浮動小数の丸めが変わり、座標がずれるため。
+ */
+function cumulative(
+  lengths: readonly number[],
+  span: number,
+  base: number,
+  total: number,
+): readonly number[] {
+  return lengths.reduce<Readonly<{ acc: number; edges: readonly number[] }>>(
+    (state, len) => {
+      const acc = state.acc + len;
+      return { acc, edges: [...state.edges, base + (acc / total) * span] };
+    },
+    { acc: 0, edges: [base] },
+  ).edges;
 }
