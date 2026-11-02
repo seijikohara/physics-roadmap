@@ -38,3 +38,8 @@ jobs:
 
       - name: Proofread Markdown/MDX (textlint)
         run: pnpm run lint:text
+
+      # Renovate は CI の通過後に依存関係の更新を自動マージする。deploy.yml は main への
+      # push 後にしかビルドしないため、マージ前にサイトがビルドできることを確かめる。
+      - name: Build the site (astro build)
+        run: pnpm run build
