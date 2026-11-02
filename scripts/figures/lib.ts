@@ -106,9 +106,9 @@ export function parseThemes(value: string): readonly Theme[] {
   throw new UsageError(`--theme は light・dark・both のいずれか: ${value}`);
 }
 
-/** astro.config.mjs の `base:` のパス（例: "/physics-roadmap"）を読む。 */
+/** astro.config.ts の `base:` のパス（例: "/physics-roadmap"）を読む。 */
 export function readBasePath(): string {
-  const config = readFileSync(path.join(ROOT, "astro.config.mjs"), "utf8");
+  const config = readFileSync(path.join(ROOT, "astro.config.ts"), "utf8");
   const m = /^\s*base:\s*["'`]([^"'`]*)["'`]/m.exec(config);
   return m === null ? "" : `/${(m[1] ?? "").replace(/^\/+|\/+$/g, "")}`.replace(/^\/$/, "");
 }

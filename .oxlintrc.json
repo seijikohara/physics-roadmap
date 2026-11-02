@@ -27,7 +27,7 @@
   "ignorePatterns": ["dist", ".astro", "node_modules"],
   "overrides": [
     {
-      "files": ["scripts/**"],
+      "files": ["scripts/**", "astro.config.ts"],
       "rules": {
         "no-var": "error",
         "prefer-const": "error",
