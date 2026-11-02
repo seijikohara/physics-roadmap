@@ -2542,8 +2542,15 @@ function visiblePieces(samples: readonly Sample[]): readonly (readonly XY[])[] {
  */
 function simplifyPolyline(pts: readonly XY[], eps: number): readonly XY[] {
   if (pts.length <= 2) return pts;
-  // 頂点 a と b の間で残す頂点の番号。最も離れた頂点が同点なら前の頂点を選ぶ。
-  const keptBetween = (a: number, b: number): readonly number[] => {
+  // 再帰で両側を調べると、最遠点が端に偏る折れ線（鋸歯状など）で深さが頂点数に比例し、スタックが
+  // あふれる。関数の中に閉じた明示のスタックと、残す頂点の印（局所の可変バッファ）で走査する。
+  const keep = new Uint8Array(pts.length);
+  keep[0] = 1;
+  keep[pts.length - 1] = 1;
+  const stack: (readonly [number, number])[] = [[0, pts.length - 1]];
+  for (let top = stack.pop(); top !== undefined; top = stack.pop()) {
+    const [a, b] = top;
+    // 頂点 a と b の間で最も離れた頂点。同点なら前の頂点を選ぶ。
     const far = indices(b - a - 1).reduce<Readonly<{ d: number; k: number }>>(
       (best, o) => {
         const k = a + 1 + o;
@@ -2552,12 +2559,12 @@ function simplifyPolyline(pts: readonly XY[], eps: number): readonly XY[] {
       },
       { d: -1, k: -1 },
     );
-    return far.k >= 0 && far.d > eps
-      ? [...keptBetween(a, far.k), far.k, ...keptBetween(far.k, b)]
-      : [];
-  };
-  const keep: ReadonlySet<number> = new Set([0, pts.length - 1, ...keptBetween(0, pts.length - 1)]);
-  return pts.filter((_, k) => keep.has(k));
+    if (far.k >= 0 && far.d > eps) {
+      keep[far.k] = 1;
+      stack.push([a, far.k], [far.k, b]);
+    }
+  }
+  return pts.filter((_, k) => keep[k] === 1);
 }
 
 /** 点 p から線分 ab までの距離。 */
