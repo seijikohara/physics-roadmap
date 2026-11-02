@@ -17,8 +17,19 @@ jobs:
     steps:
       - name: Checkout your repository using git
         uses: actions/checkout@v6
+      # withastro/action は .nvmrc を読まず、node-version を省くとアクション既定の Node.js でビルドする。
+      # lint.yml と同じく .nvmrc を唯一の正とし、.nvmrc の更新をデプロイのビルドにも反映する。
+      # .nvmrc が空のときは、意図しない Node.js でビルドしないよう失敗させる。
+      - name: Read the Node.js version from .nvmrc
+        id: node
+        run: |
+          version="$(tr -d '[:space:]' < .nvmrc)"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Install, build, and upload your site
         uses: withastro/action@v6
+        with:
+          node-version: ${{ steps.node.outputs.version }}
 
   deploy:
     needs: build
