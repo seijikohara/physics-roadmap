@@ -1,0 +1,38 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  // 共通の方針（スケジュール・自動マージ・リリース後の待機期間など）はプリセットに集約する。
+  // https://github.com/seijikohara/renovate-config
+  extends: ["github>seijikohara/renovate-config:default.json5"],
+  packageRules: [
+    {
+      // プラグインとルールは textlint 本体が読み込んで実行する。
+      // 本体とルールの組み合わせで校正の結果が変わると文書の修正が要るため、1 つの PR の lint:text でまとめて確かめる。
+      description: "textlint 本体とプラグイン・ルールを 1 つの PR にまとめる",
+      groupName: "textlint",
+      matchPackageNames: ["textlint", "textlint-*"],
+    },
+    {
+      // Starlight は Renovate 組み込みの astro モノレポのグループに含まれない。
+      // Starlight の新しいバージョンは astro の最低バージョンを引き上げるため、astro と同じ PR で更新する。
+      description: "Astro 本体と公式インテグレーションを 1 つの PR にまとめる",
+      groupName: "astro",
+      matchPackageNames: ["astro", "@astrojs/*"],
+    },
+    {
+      // oxlint は必要な oxlint-tsgolint のバージョンをピア依存で宣言する。
+      // oxlint-tsgolint は TypeScript に合わせてメジャーを上げる。
+      // メジャーも同じ PR にまとめ、対応する oxlint-tsgolint なしに oxlint が入らないようにする。
+      description: "oxc のリンタとフォーマッタを 1 つの PR にまとめる",
+      groupName: "linting and formatting",
+      matchPackageNames: ["oxlint", "oxfmt", "oxlint-tsgolint"],
+      separateMajorMinor: false,
+    },
+    {
+      // @types/react-dom は @types/react をピア依存に持つ。型定義の更新はビルドの出力を変えないため、まとめて型の検査で確かめる。
+      // 本ルールは Renovate 組み込みの group:react より後に適用されるため、React の型定義も本グループに入る。
+      description: "型定義を 1 つの PR にまとめる",
+      groupName: "type definitions",
+      matchPackageNames: ["@types/*"],
+    },
+  ],
+}
