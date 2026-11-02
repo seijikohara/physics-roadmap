@@ -13,7 +13,7 @@
     "format:check": "oxfmt --check",
     "lint:text": "textlint \"**/*.{md,mdx}\"",
     "lint:text:fix": "textlint --fix \"**/*.{md,mdx}\"",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "astro sync && tsc --noEmit",
     "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run lint:text",
     "figures:shot": "tsx scripts/figures/shot.ts",
     "figures:lint": "tsx scripts/figures/lint.ts",

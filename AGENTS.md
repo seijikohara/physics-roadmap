@@ -45,7 +45,7 @@
 - `pnpm run format:check`: oxfmt で整形済みかを検査する。
 - `pnpm run lint:text`: 全ドキュメントを textlint で校正する。
 - `pnpm run lint:text:fix`: textlint で自動修正できる箇所を修正する。
-- `pnpm run typecheck`: TypeScript の型を`tsc --noEmit`で検査する。
+- `pnpm run typecheck`: `astro sync`で Astro の型宣言を生成してから、TypeScript の型を`tsc --noEmit`で検査する。
 - `pnpm run check`: format:check・lint・typecheck・lint:text をまとめて実行する。
 - `pnpm run figures:shot -- <ページ>...`: 章の図を 1 枚ずつ PNG に撮る（出力先は`.figures/shots`）。
 - `pnpm run figures:lint -- <ページ>...`: 図のラベルと線・点・他のラベルの重なりと近接を一覧にする（`--all`で全ページ）。
