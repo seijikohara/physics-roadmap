@@ -709,8 +709,14 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
       markers.push(...markerObstacles(el, cs, svg));
       const fillOn = paintVisible(cs.fill) && Number.parseFloat(cs.fillOpacity) > 0;
       const strokeWidth = Number.parseFloat(cs.strokeWidth) || 0;
-      // 塗りと同じ色の縁（SurfacePlot が面の継ぎ目を埋める細い縁）は、線ではなく塗りの一部とみなす。
-      const seam = fillOn && cs.stroke === cs.fill;
+      // SurfacePlot は、曲面の面どうしの継ぎ目に背景が透けないよう、面と同じ色の細い縁を付ける。
+      // 継ぎ目は線ではなく塗りの一部とみなす。点（NumberLine の閉端点など）の同じ色の縁は、塗りの
+      // 外へ広がる本物の線なので、線として数える。
+      const seam =
+        fillOn &&
+        cs.stroke === cs.fill &&
+        el.localName === "polygon" &&
+        el.closest(".surface-plot") !== null;
       const strokeOn =
         !seam &&
         paintVisible(cs.stroke) &&
@@ -720,6 +726,8 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
       const node = el.closest("g.visx-network-node");
       const ctm = el.getScreenCTM();
       const scale = ctm === null ? 1 : Math.sqrt(Math.abs(ctm.a * ctm.d - ctm.b * ctm.c));
+      const alpha = fillOn ? fillAlpha(el, svg, cs) : 0;
+      const small = (r) => r.r - r.l <= smallFill && r.b - r.t <= smallFill;
       if (strokeOn) {
         const half = (strokeWidth * scale) / 2;
         lines.push({
@@ -728,14 +736,16 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
           ctm,
           scale,
           half,
+          cap: cs.strokeLinecap,
           dash: dashOf(cs),
+          // 塗りもある小さな図形（点）は、縁の線に加えて塗りの内側も重なりとして測る。
+          solid: fillOn && alpha >= 0.5 && small(rect),
           reach: box(rect.l - half, rect.t - half, rect.r + half, rect.b + half),
           node,
         });
         continue;
       }
       if (!fillOn) continue;
-      const alpha = fillAlpha(el, svg, cs);
       // ラベルに敷く背景の板。部品が実際に板として描くのは FlowChart のエッジラベルとクラスタ見出しの
       // 背景チップ（Bar = rect）だけである。ラベルを丸ごと覆う不透明な rect は、ラベルの障害物では
       // なく、下に描かれた線を隠すものとして扱う。矢じりの群の path などは、外接矩形の中に塗られない
@@ -743,7 +753,6 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
       if (alpha >= 0.9 && el.localName === "rect") plateCandidates.push({ el, rect });
       // 淡い塗り（分割の小長方形の強調など）は領域の塗りであり、矢じり・点ではない。
       if (alpha < 0.5) continue;
-      const small = (r) => r.r - r.l <= smallFill && r.b - r.t <= smallFill;
       if (small(rect)) {
         fills.push({ kind: "fill", el, geom: el, ctm, scale, half: 0, rect, reach: rect, node });
         continue;
@@ -825,15 +834,45 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
       const covering = plates.filter(
         (p) => ob.el.compareDocumentPosition(p.el) & Node.DOCUMENT_POSITION_FOLLOWING,
       );
-      ob.samples = positions.map((s) => {
+      const pointAt = (s) => {
         const u = ob.el.getPointAtLength(s);
-        const p = ob.ctm === null ? u : new DOMPoint(u.x, u.y).matrixTransform(ob.ctm);
-        const visible =
-          visibleAt(p, f) &&
-          !covering.some((c) => inside(p, c.rect)) &&
-          (ob.dash === null || inDash(ob.dash, s));
-        return { x: p.x, y: p.y, s, visible };
+        return ob.ctm === null ? u : new DOMPoint(u.x, u.y).matrixTransform(ob.ctm);
+      };
+      // clip・マスク・板で隠れる（切り取られる）か。破線の空白とは区別する。
+      const cut = (p) => !visibleAt(p, f) || covering.some((c) => inside(p, c.rect));
+      const dashed = (s) => ob.dash === null || inDash(ob.dash, s);
+      const raw = positions.map((s) => {
+        const p = pointAt(s);
+        const hidden = cut(p);
+        return { x: p.x, y: p.y, s, cut: hidden, visible: !hidden && dashed(s) };
       });
+      // 見える部分と切り取られる部分の境目を二分法で求め、境目にも標本を置く。境目は線端の形
+      // （stroke-linecap）ではなく、まっすぐな切り口（edge）として扱う。
+      ob.samples = [];
+      for (let i = 0; i < raw.length; i += 1) {
+        const a = raw[i];
+        const b = raw[i + 1];
+        ob.samples.push(a);
+        if (b === undefined || a.cut === b.cut) continue;
+        if (Math.hypot(b.x - a.x, b.y - a.y) > (b.s - a.s) * ob.scale * 1.5 + 0.5) continue;
+        let lo = a.s;
+        let hi = b.s;
+        for (let k = 0; k < 12; k += 1) {
+          const mid = (lo + hi) / 2;
+          if (cut(pointAt(mid)) === a.cut) lo = mid;
+          else hi = mid;
+        }
+        const edge = a.cut ? hi : lo;
+        const pe = pointAt(edge);
+        ob.samples.push({
+          x: pe.x,
+          y: pe.y,
+          s: edge,
+          cut: false,
+          edge: true,
+          visible: dashed(edge),
+        });
+      }
       return ob.samples;
     };
     // 隣り合う標本を線分でつなぐか。画面上で大きく飛ぶ箇所は部分パスの切れ目、間が破線の空白なら
@@ -844,25 +883,124 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
       if (Math.hypot(q.x - p.x, q.y - p.y) > (q.s - p.s) * ob.scale * 1.5 + 0.5) return false;
       return ob.dash === null || inDash(ob.dash, (p.s + q.s) / 2);
     };
+    // 中心線（線分）と矩形の符号つき距離。
+    const centerDistance = (p, q, r) => {
+      const a = pointRect(p, r);
+      const b = pointRect(q, r);
+      return a <= 0 || b <= 0 ? Math.min(a, b) : segmentRect(p, q, r);
+    };
+    // 凸多角形と矩形の距離。分離軸で交わりを判定し、交わるときは null を返す。
+    const polygonRectDistance = (poly, r) => {
+      const corners = [
+        { x: r.l, y: r.t },
+        { x: r.r, y: r.t },
+        { x: r.r, y: r.b },
+        { x: r.l, y: r.b },
+      ];
+      const edges = poly.map((a, i) => [a, poly[(i + 1) % poly.length]]);
+      const axes = [
+        { x: 1, y: 0 },
+        { x: 0, y: 1 },
+        ...edges.map(([a, b]) => ({ x: a.y - b.y, y: b.x - a.x })),
+      ];
+      const separated = axes.some((ax) => {
+        const pa = poly.map((v) => v.x * ax.x + v.y * ax.y);
+        const pb = corners.map((v) => v.x * ax.x + v.y * ax.y);
+        return Math.max(...pa) < Math.min(...pb) || Math.max(...pb) < Math.min(...pa);
+      });
+      if (!separated) return null;
+      return Math.min(
+        ...poly.map((v) => pointRect(v, r)),
+        ...corners.flatMap((c) => edges.map(([a, b]) => pointSegment(c, a, b))),
+      );
+    };
+    // 線端が butt・square の線分の太さを含む形（向きのある長方形）と矩形の距離。ext は線端から
+    // 外へ延ばす長さで、butt は 0、square は線幅の半分である。
+    const capBoxDistance = (p, q, half, extP, extQ, r) => {
+      const len = Math.hypot(q.x - p.x, q.y - p.y);
+      if (len === 0) return null;
+      const ux = (q.x - p.x) / len;
+      const uy = (q.y - p.y) / len;
+      const a = { x: p.x - ux * extP, y: p.y - uy * extP };
+      const b = { x: q.x + ux * extQ, y: q.y + uy * extQ };
+      const nx = -uy * half;
+      const ny = ux * half;
+      const d = polygonRectDistance(
+        [
+          { x: a.x + nx, y: a.y + ny },
+          { x: b.x + nx, y: b.y + ny },
+          { x: b.x - nx, y: b.y - ny },
+          { x: a.x - nx, y: a.y - ny },
+        ],
+        r,
+      );
+      return d === null ? Math.min(centerDistance(p, q, r) - half, 0) : d;
+    };
+    // 線（太さを含む）とラベルの距離。見える標本がつながる区間ごとに測り、区間の両端では線端の形
+    // （stroke-linecap）を使う。中心線からの距離から線幅の半分を引くと、線端が round の形になる。
+    // butt・square の線端と、切り取られた端（edge）は、向きのある長方形で測る。
     const lineDistance = (ob, rects) => {
       const pts = samplesOf(ob);
+      const capped = ob.kind === "line" && ob.half > 0;
+      const capOf = (p) => (!capped ? "round" : p.edge === true ? "butt" : ob.cap);
       let best = Infinity;
       let at = null;
+      const consider = (d, p) => {
+        if (d !== null && d < best) {
+          best = d;
+          at = p;
+        }
+      };
       for (let i = 0; i < pts.length; i += 1) {
-        const p = pts[i];
-        if (!p.visible) continue;
-        const q = pts[i + 1];
-        const joined = joins(ob, p, q);
+        if (!pts[i].visible) continue;
+        const run = [pts[i]];
+        while (joins(ob, pts[i], pts[i + 1])) {
+          i += 1;
+          run.push(pts[i]);
+        }
+        const first = run[0];
+        const last = run.at(-1);
+        // 始点に戻る区間（円・閉じた多角形）には線端が無い。
+        const closed = run.length > 2 && Math.hypot(last.x - first.x, last.y - first.y) < 0.01;
+        const startCap = closed ? "round" : capOf(first);
+        const endCap = closed ? "round" : capOf(last);
+        // butt・square の線端のすぐ内側の標本は除く。残すと、その標本で測る線幅の半分の円が線端の外へ
+        // はみ出し、round の線端と同じ形になってしまう。
+        const tooClose = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < ob.half;
+        if (startCap !== "round") {
+          while (run.length > 2 && tooClose(run[0], run[1])) run.splice(1, 1);
+        }
+        if (endCap !== "round") {
+          while (run.length > 2 && tooClose(run.at(-1), run.at(-2))) run.splice(-2, 1);
+        }
         for (const r of rects) {
-          const d = pointRect(p, r);
-          const s = joined && d > 0 ? segmentRect(p, q, r) : d;
-          if (Math.min(d, s) < best) {
-            best = Math.min(d, s);
-            at = p;
+          if (run.length === 1) {
+            if (startCap === "round") consider(pointRect(first, r) - ob.half, first);
+            if (startCap === "square") {
+              const h = ob.half;
+              consider(rectRect(box(first.x - h, first.y - h, first.x + h, first.y + h), r), first);
+            }
+            continue;
+          }
+          for (let k = 0; k + 1 < run.length; k += 1) {
+            const p = run[k];
+            const q = run[k + 1];
+            const freeP = k === 0 && startCap !== "round";
+            const freeQ = k + 2 === run.length && endCap !== "round";
+            if (!freeP && !freeQ) {
+              consider(centerDistance(p, q, r) - ob.half, p);
+              continue;
+            }
+            const extP = freeP && startCap === "square" ? ob.half : 0;
+            const extQ = freeQ && endCap === "square" ? ob.half : 0;
+            consider(capBoxDistance(p, q, ob.half, extP, extQ, r), p);
+            // 線端でない側の端点は、隣の線分または round の線端の円で覆われる。
+            if (!freeP) consider(pointRect(p, r) - ob.half, p);
+            if (!freeQ) consider(pointRect(q, r) - ob.half, q);
           }
         }
       }
-      return at === null ? null : { distance: best - ob.half, at };
+      return at === null ? null : { distance: best, at };
     };
     const rectsDistance = (as, bs) => Math.min(...as.flatMap((a) => bs.map((b) => rectRect(a, b))));
     // 塗りの図形（点・矢じり・marker の矢じり）との距離。外接矩形ではなく輪郭の標本で測り、
@@ -903,11 +1041,14 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
       }
       const ownPlates = plates.filter((p) => contains(p.rect, r, 2)).map((p) => p.el);
       for (const ob of obstacles) {
-        if (ob.node !== null && label.containers.includes(ob.node)) continue;
+        // ノードの中のラベルは、ノードの塗りとは比べない。枠線（stroke）との接触は測る。
+        if (ob.kind === "fill" && ob.node !== null && label.containers.includes(ob.node)) continue;
         if (ownPlates.includes(ob.el) || rectRect(r, ob.reach) >= near) continue;
         // 外接矩形は候補の絞り込みにだけ使い、距離は実際の図形で求める。
         const hit =
-          ob.kind === "line" ? lineDistance(ob, label.rects) : shapeDistance(ob, label.rects);
+          ob.kind === "line" && !ob.solid
+            ? lineDistance(ob, label.rects)
+            : shapeDistance(ob, label.rects);
         if (hit === null || hit.distance >= near) continue;
         const partner = describe(ob.el, ob.kind);
         if (ob.kind === "marker") partner.fill = ob.color;
@@ -994,7 +1135,13 @@ function flattenFindings(pages) {
       fig.svgs.forEach((svg, si) => {
         const suffix = fig.svgs.length > 1 ? `・SVG ${si + 1}` : "";
         for (const finding of svg.findings) {
-          out.push({ route, figure: fig.figure, heading: `${svg.className}${suffix}`, finding });
+          out.push({
+            route,
+            figure: fig.figure,
+            svg: si + 1,
+            heading: `${svg.className}${suffix}`,
+            finding,
+          });
         }
       });
     }
@@ -1002,22 +1149,25 @@ function flattenFindings(pages) {
   return out;
 }
 
+const byName = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+
 /**
  * 基準の所見と今回の所見を照合し、増えた所見と消えた所見を返す。
  *
- * 照合のキーはページ・図番号・ラベル名・相手の表示名・種別とし、距離とまとめた件数は含めない。
- * 距離のわずかな変化で別の所見と誤らないためである。同じキーが複数あるときは件数で突き合わせる。
- * 今回検査しなかったページの基準の所見は、消えたとは数えない。
+ * 照合のキーはページ・図番号・図の中の SVG の番号・ラベル名・相手の表示名・種別とし、距離と
+ * まとめた件数は含めない。距離のわずかな変化で別の所見と誤らないためである。同じキーが複数ある
+ * ときは件数で突き合わせる。今回検査しなかったページの基準の所見は、消えたとは数えない。
  */
 function compareFindings(basePages, pages) {
-  const key = (item) =>
-    JSON.stringify([
-      item.route,
-      item.figure,
-      item.finding.label,
-      partnerName(item.finding.partner),
-      item.finding.kind,
-    ]);
+  const key = (item) => {
+    const f = item.finding;
+    // ラベルどうしの所見は、どちらのラベルが DOM で先に現れたかに依らない組にする。
+    const who =
+      f.partner.type === "label"
+        ? ["ラベルの組", ...[f.label, f.partner.name].toSorted(byName)]
+        : [f.label, partnerName(f.partner)];
+    return JSON.stringify([item.route, item.figure, item.svg, ...who, f.kind]);
+  };
   const routes = new Set(pages.map((p) => p.route));
   const remaining = new Map();
   for (const item of flattenFindings(basePages.filter((p) => routes.has(p.route)))) {
@@ -1040,15 +1190,16 @@ function printComparison(added, removed) {
     ["removed", removed],
   ]) {
     for (const item of items) {
-      const k = JSON.stringify([item.route, item.figure]);
+      const k = JSON.stringify([item.route, item.figure, item.svg]);
       const g = groups.get(k) ?? { ...item, added: [], removed: [] };
       g[kind].push(item.finding);
       groups.set(k, g);
     }
   }
-  const sorted = [...groups.values()].toSorted((a, b) =>
-    a.route === b.route ? a.figure - b.figure : a.route < b.route ? -1 : 1,
-  );
+  const sorted = [...groups.values()].toSorted((a, b) => {
+    if (a.route !== b.route) return a.route < b.route ? -1 : 1;
+    return a.figure === b.figure ? a.svg - b.svg : a.figure - b.figure;
+  });
   let route = null;
   for (const g of sorted) {
     const lines = [];
