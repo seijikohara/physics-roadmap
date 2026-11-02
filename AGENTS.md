@@ -55,6 +55,8 @@
 - `<ページ>`には、ルート（`math/vector-calculus/curl`）・URL のパス・章ファイルのパスのどれでも渡せる。
 - 既定の対象は dev サーバ（`http://localhost:4321/physics-roadmap`）である。`--dist dist`でビルド結果を対象にできる。
 - ブラウザはインストール済みの Google Chrome を使う。出力先の`.figures/`は Git の管理外である。
+- スクリプトは`scripts/figures/*.ts`（TypeScript）で、tsx で実行する。
+- `scripts/**`には、`.oxlintrc.json`の overrides でイミュータビリティの規則（読み取り専用の引数・引数の書き換えの禁止など）をかける。
 - `figures:lint`の近接（near）の閾値は既定で 4px である。4px は、ラベルと線のすきまの目標である。
 - 図の変更の前後比較は、次の順に行う。
   1. 変更前に`pnpm build`を実行し、`dist`を`.figures/base`へコピーする。既存の基準は置き換える。
