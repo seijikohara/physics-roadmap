@@ -1980,21 +1980,25 @@ type Vertex = Readonly<{ p: Vec3; e: EdgeFlag }>;
 
 /** 末尾から、先頭の頂点と一致する頂点を除く（閉じた多角形の重複した終点を落とす）。 */
 function dropClosingDuplicates(vs: readonly Vertex[]): readonly Vertex[] {
-  return vs.length > 1 && near3(vs[vs.length - 1].p, vs[0].p)
-    ? dropClosingDuplicates(vs.slice(0, -1))
-    : vs;
+  // 末尾から見て、先頭と一致しない最初の頂点までを残す（先頭の頂点は必ず残す）。
+  const keep = vs.findLastIndex((v, i) => i === 0 || !near3(v.p, vs[0].p));
+  return vs.slice(0, keep + 1);
 }
 
 /** 連続して一致する頂点（円板の中心・球の極など）を除く。頂点が 3 未満になれば null。 */
 function dedupe(pts: readonly Vec3[], edges: readonly EdgeFlag[]): Polygon | null {
-  const merged = pts.reduce<readonly Vertex[]>((acc, p, k) => {
-    const last = acc.at(-1);
+  // 頂点の数は境界の標本数に比例し、数万になりうる。蓄積した配列を頂点ごとに写すと 2 乗の時間が
+  // かかるため、関数の中に閉じた可変のバッファに積む（外へは読み取り専用の値だけを返す）。
+  const merged: Vertex[] = [];
+  pts.forEach((p, k) => {
+    const last = merged.at(-1);
     // 長さ 0 の辺を捨て、直前の頂点から先は p の次の辺を引き継ぐ。
     if (last !== undefined && near3(last.p, p)) {
-      return [...acc.slice(0, -1), { p: last.p, e: edges[k] }];
+      merged[merged.length - 1] = { p: last.p, e: edges[k] };
+    } else {
+      merged.push({ p, e: edges[k] });
     }
-    return [...acc, { p, e: edges[k] }];
-  }, []);
+  });
   const out = dropClosingDuplicates(merged);
   return out.length >= 3 ? { pts: out.map((v) => v.p), edges: out.map((v) => v.e) } : null;
 }
