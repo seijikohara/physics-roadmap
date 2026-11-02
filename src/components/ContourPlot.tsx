@@ -2529,10 +2529,12 @@ type Sample = Readonly<{ x: number; y: number; ok: boolean; t: number }>;
 function visiblePieces(samples: readonly Sample[]): readonly (readonly XY[])[] {
   // 描く範囲内の連続した部分の始まり（直前が範囲外か先頭の、範囲内の標本）の番号。
   const starts = samples.flatMap((s, k) => (s.ok && (k === 0 || !samples[k - 1].ok) ? [k] : []));
-  return starts.map((start) => {
-    const end = samples.findIndex((s, k) => k > start && !s.ok);
-    return samples.slice(start, end === -1 ? samples.length : end).map((s) => ({ x: s.x, y: s.y }));
-  });
+  // 終わり（直前が範囲内の、範囲外の標本）の番号。始まりと終わりは交互に現れるので、i 番目の終わりが
+  // i 番目の始まりに対応する。始まりごとに先頭から探すと、標本数 × 部分の数の時間がかかる。
+  const ends = samples.flatMap((s, k) => (!s.ok && k > 0 && samples[k - 1].ok ? [k] : []));
+  return starts.map((start, i) =>
+    samples.slice(start, ends.at(i) ?? samples.length).map((s) => ({ x: s.x, y: s.y })),
+  );
 }
 
 /**
