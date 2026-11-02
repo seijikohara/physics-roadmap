@@ -151,8 +151,9 @@ export default function FlowChart({
 
   // クラスタ（複合ノード）を、親子付けの前に全件登録する。子に後で定義されるクラスタ id が
   // 来ても、親子付けの時点で全クラスタのノードが存在するようにする（順序非依存）。
+  // 寸法は dagre が子から決める。0 は dagre の既定値と同じで、配置は変わらない。
   for (const c of clusters) {
-    g.setNode(c.id, { label: c.label ?? "" });
+    g.setNode(c.id, { label: c.label ?? "", width: 0, height: 0 });
   }
 
   // 既知の id（ノード＋クラスタ）。子・エッジ端点の参照ミスを、ビルド時に分かる形で弾く。
@@ -315,9 +316,10 @@ export default function FlowChart({
 
 /**
  * dagre の graphlib に渡すラベル型。レイアウト前は寸法のみ、レイアウト後に dagre が
- * 中心座標 (x, y) を書き込む。クラスタ（複合ノード）は寸法なしで登録するため、すべて任意。
+ * 中心座標 (x, y) を書き込む。dagre の型が寸法を必須とするため、クラスタ（複合ノード）も
+ * 寸法 0 で登録する。
  */
-type DagreNode = { width?: number; height?: number; x?: number; y?: number; label?: string };
+type DagreNode = { width: number; height: number; x?: number; y?: number; label?: string };
 
 /** dagre の graphlib に渡すエッジラベル型。レイアウト後に経路 points とラベル位置が入る。 */
 type DagreEdge = {
