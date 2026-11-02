@@ -145,10 +145,14 @@ export default function SpaceVectorDiagram({
 
   // 床グリッドの格子値。3〜4 分割になるよう刻みを選び、端 axisMax を必ず含める。
   const step = axisMax <= 2 ? 0.5 : axisMax <= 5 ? 1 : 2;
-  // 格子値は 0 から step を 1 回ずつ足して求める（積 k × step に置き換えず、和の取り方を保つ）。
-  const steppedFrom = (t: number): readonly number[] =>
-    t <= axisMax + EPS ? [Math.round(t * 1e6) / 1e6, ...steppedFrom(t + step)] : [];
-  const stepped = steppedFrom(0);
+  // 格子値は k × step で求める。step は 2 の累乗（0.5・1・2）なので、積は 0 から step を足し重ねた
+  // 値と一致し、axisMax + EPS を step で割る計算も丸めを生じない。再帰で作ると axisMax が大きいときに
+  // スタックがあふれるため、個数を先に求めて Array.from で作る。
+  const stepCount = Math.max(0, Math.floor((axisMax + EPS) / step) + 1);
+  const stepped: readonly number[] = Array.from(
+    { length: stepCount },
+    (_, k) => Math.round(k * step * 1e6) / 1e6,
+  );
   const lastStepped = stepped.at(-1);
   const gridValues: readonly number[] =
     lastStepped !== undefined && lastStepped < axisMax - EPS ? [...stepped, axisMax] : stepped;
