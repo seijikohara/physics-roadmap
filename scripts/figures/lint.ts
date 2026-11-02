@@ -847,8 +847,15 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
   };
 
   // 曲面の塗りは小さな面に分けて描かれる。接し合う小さな塗りの集まりが矢じり・点の大きさを
-  // 超えるなら、1 つの大きな塗りとみなして障害物から外す。
-  const dropTiles = (fills: readonly Obstacle[]): readonly Obstacle[] =>
+  // 超えるなら、1 つの大きな塗りとみなして障害物から外す。点（circle・ellipse）は曲面の面ではない
+  // ので、接し合って並んでいてもまとめず、1 つずつ障害物として残す。
+  const isPoint = (f: Obstacle): boolean =>
+    f.el.localName === "circle" || f.el.localName === "ellipse";
+  const dropTiles = (fills: readonly Obstacle[]): readonly Obstacle[] => {
+    const kept: ReadonlySet<Obstacle> = new Set(mergeTiles(fills.filter((f) => !isPoint(f))));
+    return fills.filter((f) => isPoint(f) || kept.has(f));
+  };
+  const mergeTiles = (fills: readonly Obstacle[]): readonly Obstacle[] =>
     [...Map.groupBy(fills, (f) => f.el.parentElement).values()].flatMap((list) => {
       // 接し合う塗りを union-find でまとめる。親の表は、この関数の中だけで書き換える可変のバッファ
       // である（組の数の 2 乗の比較で、配列を作り直すと遅くなる）。
@@ -941,19 +948,38 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
     // 標本は、どれかのラベルの近くにある線・図形だけを遅延して取る。結果は、この図 SVG の計測の
     // 間だけ使うキャッシュ（可変の Map）に覚える。
     const sampleCache = new Map<Obstacle, readonly Sample[]>();
+    // 後から描かれた背景の板の下にある部分は見えない。
+    const coveringOf = (ob: Obstacle): readonly Plate[] =>
+      plates.filter(
+        (p) => (ob.el.compareDocumentPosition(p.el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+      );
+    /** 点が見えるか（clip の内側、mask の穴と後から描かれた板の外側）を判定する関数を返す。 */
+    const seenBy = (ob: Obstacle): ((p: Pt) => boolean) => {
+      const f = filtersOf(ob.el, svg);
+      const covering = coveringOf(ob);
+      return (p) => visibleAt(p, f) && !covering.some((c) => inside(p, c.rect));
+    };
+    // 塗り・marker の輪郭の標本にも、板による遮蔽を当てる（clip・mask は標本を作るときに当ててある）。
+    const shapeSamples = (ob: Obstacle): readonly Sample[] => {
+      const outline = ob.samples ?? outlineOf(ob.geom, ob.ctm, ob.scale, filtersOf(ob.el, svg));
+      const covering = coveringOf(ob);
+      return covering.length === 0
+        ? outline
+        : outline.map((p) =>
+            p.brk === true || !p.visible || !covering.some((c) => inside(p, c.rect))
+              ? p
+              : { ...p, visible: false },
+          );
+    };
     const lineSamples = (ob: Obstacle): readonly Sample[] => {
       const f = filtersOf(ob.el, svg);
-      if (ob.kind === "fill") return outlineOf(ob.geom, ob.ctm, ob.scale, f);
       const length = totalLength(ob.el);
       const n = Math.min(maxSamples, Math.max(2, Math.ceil((length * ob.scale) / sampleStep) + 1));
       const positions = [
         ...Array.from({ length: n }, (_, i) => (length * i) / (n - 1)),
         ...(ob.dash === null ? [] : dashEnds(ob.dash, length)),
       ].toSorted((a, b) => a - b);
-      // 後から描かれた背景の板の下にある部分は見えない。
-      const covering = plates.filter(
-        (p) => (ob.el.compareDocumentPosition(p.el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
-      );
+      const covering = coveringOf(ob);
       const pointAt = (s: number): Pt => {
         const u = ob.el.getPointAtLength(s);
         return transform(u.x, u.y, ob.ctm);
@@ -986,9 +1012,9 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
       });
     };
     const samplesOf = (ob: Obstacle): readonly Sample[] => {
-      const known = ob.samples ?? sampleCache.get(ob);
+      const known = sampleCache.get(ob);
       if (known !== undefined) return known;
-      const computed = lineSamples(ob);
+      const computed = ob.kind === "line" ? lineSamples(ob) : shapeSamples(ob);
       sampleCache.set(ob, computed);
       return computed;
     };
@@ -1141,15 +1167,74 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
     };
     const rectsDistance = (as: readonly Box[], bs: readonly Box[]): number =>
       Math.min(...as.flatMap((a) => bs.map((b) => rectRect(a, b))));
-    // 塗りの図形（点・矢じり・marker の矢じり）との距離。外接矩形ではなく輪郭の標本で測り、
-    // 輪郭から離れていてもラベルが図形の内側にあれば重なりとする。
+    /** 矩形の 4 辺のうち、範囲 area に入る部分を 0.5px ごとに標本にする。inward は内側への単位の向き。 */
+    const edgeSamples = (rect: Box, area: Box): readonly Readonly<{ p: Pt; inward: Pt }>[] => {
+      const along = (
+        fixed: number,
+        from: number,
+        to: number,
+        horizontal: boolean,
+        inward: Pt,
+      ): readonly Readonly<{ p: Pt; inward: Pt }>[] => {
+        const lo = Math.max(from, horizontal ? area.l : area.t);
+        const hi = Math.min(to, horizontal ? area.r : area.b);
+        const inArea = horizontal
+          ? fixed >= area.t && fixed <= area.b
+          : fixed >= area.l && fixed <= area.r;
+        if (!inArea || hi < lo) return [];
+        const n = Math.min(200, Math.ceil((hi - lo) / 0.5) + 1);
+        return Array.from({ length: n }, (_, i) => {
+          const v = n === 1 ? lo : lo + ((hi - lo) * i) / (n - 1);
+          return { p: horizontal ? { x: v, y: fixed } : { x: fixed, y: v }, inward };
+        });
+      };
+      return [
+        ...along(rect.t, rect.l, rect.r, true, { x: 0, y: 1 }),
+        ...along(rect.b, rect.l, rect.r, true, { x: 0, y: -1 }),
+        ...along(rect.l, rect.t, rect.b, false, { x: 1, y: 0 }),
+        ...along(rect.r, rect.t, rect.b, false, { x: -1, y: 0 }),
+      ];
+    };
+    // 図形が clip・mask・板で切り取られるとき、切り口（矩形の縁のうち、図形の内側で見えている部分）も
+    // 見える部分の境界になる。clip は矩形の内側が、mask の穴と板は外側が見える側である。
+    const cutEdgeDistance = (
+      ob: Obstacle,
+      pts: readonly Sample[],
+      rects: readonly Box[],
+    ): Hit | null => {
+      const shape = boundsOf(pts);
+      if (shape === null) return null;
+      const area = box(shape.l - 1, shape.t - 1, shape.r + 1, shape.b + 1);
+      const f = filtersOf(ob.el, svg);
+      const seen = seenBy(ob);
+      const nudge = 1e-3;
+      const edges = [
+        ...f.clips.flat().flatMap((r) => edgeSamples(r, area).map((e) => ({ ...e, sign: 1 }))),
+        ...[...f.holes, ...coveringOf(ob).map((c) => c.rect)].flatMap((r) =>
+          edgeSamples(r, area).map((e) => ({ ...e, sign: -1 })),
+        ),
+      ];
+      return edges.reduce<Hit | null>((best, { p, inward, sign }) => {
+        const q = { x: p.x + inward.x * nudge * sign, y: p.y + inward.y * nudge * sign };
+        if (!insideOutline(q, pts) || !seen(q)) return best;
+        return rects.reduce<Hit | null>((b, r) => better(b, pointRect(p, r), p), best);
+      }, null);
+    };
+    // 塗りの図形（点・矢じり・marker の矢じり）との距離。外接矩形ではなく輪郭の標本で測る。輪郭から
+    // 離れていても、ラベルが図形の見える部分の内側にあれば重なりとする。clip・mask・板で切り取られた
+    // 部分は見えないので、内側の判定から外し、切り口を境界に加える。
     const shapeDistance = (ob: Obstacle, rects: readonly Box[]): Hit | null => {
-      const hit = lineDistance(ob, rects);
-      if (hit === null || hit.distance <= 0) return hit;
+      const outline = lineDistance(ob, rects);
+      if (outline !== null && outline.distance <= 0) return outline;
       const pts = samplesOf(ob);
-      const enclosed = rects.some((r) =>
-        insideOutline({ x: (r.l + r.r) / 2, y: (r.t + r.b) / 2 }, pts),
-      );
+      const cutEdge = cutEdgeDistance(ob, pts, rects);
+      const hit = cutEdge === null ? outline : better(outline, cutEdge.distance, cutEdge.at);
+      if (hit === null || hit.distance <= 0) return hit;
+      const seen = seenBy(ob);
+      const enclosed = rects.some((r) => {
+        const c = { x: (r.l + r.r) / 2, y: (r.t + r.b) / 2 };
+        return insideOutline(c, pts) && seen(c);
+      });
       return enclosed ? { distance: -hit.distance, at: hit.at } : hit;
     };
 
@@ -1177,9 +1262,11 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
         // ノードの中のラベルは、ノードの塗りとは比べない。枠線（stroke）との接触は測る。
         if (ob.kind === "fill" && ob.node !== null && label.containers.includes(ob.node)) return [];
         if (ownPlates.includes(ob.el) || rectRect(r, ob.reach) >= near) return [];
-        // 外接矩形は候補の絞り込みにだけ使い、距離は実際の図形で求める。
+        // 外接矩形は候補の絞り込みにだけ使い、距離は実際の図形で求める。自分の入れ物（ノード）の
+        // 図形は、縮小で小さく見えても塗りの内側を測らず、枠線との接触だけを測る。
+        const ownContainer = ob.node !== null && label.containers.includes(ob.node);
         const hit =
-          ob.kind === "line" && !ob.solid
+          ob.kind === "line" && (!ob.solid || ownContainer)
             ? lineDistance(ob, label.rects)
             : shapeDistance(ob, label.rects);
         if (hit === null || hit.distance >= near) return [];
