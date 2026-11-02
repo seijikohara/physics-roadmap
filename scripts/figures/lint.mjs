@@ -268,6 +268,117 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
   const visibleAt = (p, f) =>
     f.clips.every((rs) => rs.some((r) => inside(p, r))) && !f.holes.some((r) => inside(p, r));
 
+  // 破線の模様。stroke-dasharray と stroke-dashoffset から、1 周期の中の描画区間を求める。
+  const dashOf = (cs) => {
+    let lengths = (cs.strokeDasharray ?? "none")
+      .split(/[\s,]+/)
+      .filter((v) => v !== "" && v !== "none")
+      .map((v) => Number.parseFloat(v));
+    if (lengths.length === 0 || lengths.some((v) => !(v >= 0))) return null;
+    // 奇数個の指定は、2 回繰り返して偶数個にする（SVG の仕様）。
+    if (lengths.length % 2 === 1) lengths = [...lengths, ...lengths];
+    const period = lengths.reduce((a, v) => a + v, 0);
+    if (!(period > 0)) return null;
+    const dashes = [];
+    let pos = 0;
+    for (let i = 0; i < lengths.length; i += 2) {
+      dashes.push([pos, pos + lengths[i]]);
+      pos += lengths[i] + lengths[i + 1];
+    }
+    return { dashes, period, offset: Number.parseFloat(cs.strokeDashoffset) || 0 };
+  };
+  const inDash = (dash, s) => {
+    const t = (((s + dash.offset) % dash.period) + dash.period) % dash.period;
+    return dash.dashes.some(([a, b]) => t >= a - 1e-6 && t <= b + 1e-6);
+  };
+  // 描画区間の両端の位置（線の始点からの長さ）。標本に加え、破線の端を正確に測る。
+  const dashEnds = (dash, length) => {
+    const ends = [];
+    const first = Math.floor(dash.offset / dash.period) - 1;
+    const last = Math.ceil((length + dash.offset) / dash.period) + 1;
+    for (let k = first; k <= last; k += 1) {
+      for (const [a, b] of dash.dashes) {
+        for (const e of [a, b]) {
+          const s = k * dash.period + e - dash.offset;
+          if (s >= 0 && s <= length) ends.push(s);
+        }
+      }
+    }
+    return ends;
+  };
+
+  // 塗りの path を部分パス（M で始まる区切り）ごとの図形に分ける。ContourPlot は離れた矢じりの
+  // 群を 1 本の path にまとめるため、全体の外接矩形では塗られない空間まで含んでしまう。
+  // 部分パスは文書の外の path 要素に移して幾何を測る（座標系は元の要素と同じ）。
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const fillPieces = (el) => {
+    if (el.localName !== "path") return [el];
+    const d = el.getAttribute("d") ?? "";
+    const parts = d
+      .trim()
+      .split(/(?=M)/)
+      .filter((part) => part.trim() !== "");
+    // 相対の m で始まる部分パスは前の部分パスの終点に依存するため、分けずに 1 つの図形として扱う。
+    if (parts.length <= 1 || /m/.test(d.trim().slice(1))) return [el];
+    return parts.map((part) => {
+      const piece = document.createElementNS(SVG_NS, "path");
+      piece.setAttribute("d", part);
+      return piece;
+    });
+  };
+  const BREAK = { brk: true, visible: false };
+  // 図形の輪郭を画面座標の点列にする。0.5px ごとに標本をとり、末尾に切れ目を置く。
+  const outlineOf = (geom, ctm, scale, f) => {
+    let length = 0;
+    try {
+      length = geom.getTotalLength();
+    } catch {
+      length = 0;
+    }
+    if (!(length > 0)) return [];
+    const n = Math.min(400, Math.max(12, Math.ceil((length * scale) / 0.5) + 1));
+    const pts = [];
+    for (let i = 0; i < n; i += 1) {
+      const u = geom.getPointAtLength((length * i) / (n - 1));
+      const p = ctm === null ? u : new DOMPoint(u.x, u.y).matrixTransform(ctm);
+      pts.push({ x: p.x, y: p.y, visible: visibleAt(p, f) });
+    }
+    pts.push(BREAK);
+    return pts;
+  };
+  const boundsOf = (pts) => {
+    const real = pts.filter((p) => p.brk !== true);
+    return real.length === 0
+      ? null
+      : box(
+          Math.min(...real.map((p) => p.x)),
+          Math.min(...real.map((p) => p.y)),
+          Math.max(...real.map((p) => p.x)),
+          Math.max(...real.map((p) => p.y)),
+        );
+  };
+  // 点が輪郭の内側にあるかを、偶奇規則の半直線法で判定する。輪郭は切れ目ごとに閉じた図形とみなす。
+  const insideOutline = (c, pts) => {
+    let odd = false;
+    let run = [];
+    const flush = () => {
+      for (let i = 0; i < run.length; i += 1) {
+        const a = run[i];
+        const b = run[(i + 1) % run.length];
+        if (a.y > c.y !== b.y > c.y && c.x < ((b.x - a.x) * (c.y - a.y)) / (b.y - a.y) + a.x) {
+          odd = !odd;
+        }
+      }
+      run = [];
+    };
+    for (const p of pts) {
+      if (p.brk === true) flush();
+      else run.push(p);
+    }
+    flush();
+    return odd;
+  };
+
   // marker で描く矢じり（軸の矢印・FlowChart のエッジの矢じり）は DOM に図形の実体を持たない。
   // marker の定義と線の端点から、描かれる位置の輪郭を合成して障害物に加える。
   const MARKER_HOSTS = new Set(["path", "line", "polyline", "polygon"]);
@@ -389,7 +500,7 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
       const sin = Math.sin(angle);
       const f = filtersOf(el, svg);
       const samples = markerOutline(marker).map((p) => {
-        if (p === null) return { x: Number.NaN, y: Number.NaN, visible: false };
+        if (p === null) return BREAK;
         const lx = (p.x - refX) * sx * unit;
         const ly = (p.y - refY) * sy * unit;
         const q = new DOMPoint(
@@ -398,22 +509,16 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
         ).matrixTransform(ctm);
         return { x: q.x, y: q.y, visible: visibleAt(q, f) };
       });
-      const drawn = samples.filter((s) => s.visible);
-      if (drawn.length === 0) continue;
+      const reach = boundsOf(samples.filter((p) => p.visible));
+      if (reach === null) continue;
+      // 点列は図形ごとに切れ目を挟むので、間隔による切れ目の判定は要らない。
       out.push({
         kind: "marker",
         el,
         samples,
-        // 点列は図形ごとに切れ目（visible: false）を挟むので、間隔による切れ目の判定は要らない。
-        gap: Infinity,
         half: 0,
         color: markerColor(marker, cs),
-        reach: box(
-          Math.min(...drawn.map((s) => s.x)),
-          Math.min(...drawn.map((s) => s.y)),
-          Math.max(...drawn.map((s) => s.x)),
-          Math.max(...drawn.map((s) => s.y)),
-        ),
+        reach,
         node: el.closest("g.visx-network-node"),
       });
     }
@@ -613,9 +718,9 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
         Number.parseFloat(cs.strokeOpacity) > 0;
       const rect = fromDom(el.getBoundingClientRect());
       const node = el.closest("g.visx-network-node");
+      const ctm = el.getScreenCTM();
+      const scale = ctm === null ? 1 : Math.sqrt(Math.abs(ctm.a * ctm.d - ctm.b * ctm.c));
       if (strokeOn) {
-        const ctm = el.getScreenCTM();
-        const scale = ctm === null ? 1 : Math.sqrt(Math.abs(ctm.a * ctm.d - ctm.b * ctm.c));
         const half = (strokeWidth * scale) / 2;
         lines.push({
           kind: "line",
@@ -623,6 +728,7 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
           ctm,
           scale,
           half,
+          dash: dashOf(cs),
           reach: box(rect.l - half, rect.t - half, rect.r + half, rect.b + half),
           node,
         });
@@ -630,12 +736,38 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
       }
       if (!fillOn) continue;
       const alpha = fillAlpha(el, svg, cs);
-      // 線の上のラベルに敷く背景の板（FlowChart のエッジラベルなど）。ラベルを丸ごと覆う不透明な
-      // 塗りは、ラベルの障害物ではなく、下に描かれた線を隠すものとして扱う。
-      if (alpha >= 0.9) plateCandidates.push({ el, rect });
+      // ラベルに敷く背景の板。部品が実際に板として描くのは FlowChart のエッジラベルとクラスタ見出しの
+      // 背景チップ（Bar = rect）だけである。ラベルを丸ごと覆う不透明な rect は、ラベルの障害物では
+      // なく、下に描かれた線を隠すものとして扱う。矢じりの群の path などは、外接矩形の中に塗られない
+      // 空間を含むため板にしない。
+      if (alpha >= 0.9 && el.localName === "rect") plateCandidates.push({ el, rect });
       // 淡い塗り（分割の小長方形の強調など）は領域の塗りであり、矢じり・点ではない。
-      if (alpha >= 0.5 && rect.r - rect.l <= smallFill && rect.b - rect.t <= smallFill) {
-        fills.push({ kind: "fill", el, rect, reach: rect, node });
+      if (alpha < 0.5) continue;
+      const small = (r) => r.r - r.l <= smallFill && r.b - r.t <= smallFill;
+      if (small(rect)) {
+        fills.push({ kind: "fill", el, geom: el, ctm, scale, half: 0, rect, reach: rect, node });
+        continue;
+      }
+      // 全体が大きくても、部分パスごとに見れば矢じり・点の大きさのものがある。
+      const pieces = fillPieces(el);
+      if (pieces.length <= 1) continue;
+      const f = filtersOf(el, svg);
+      for (const geom of pieces) {
+        const samples = outlineOf(geom, ctm, scale, f);
+        const r = boundsOf(samples);
+        if (r === null || !small(r)) continue;
+        fills.push({
+          kind: "fill",
+          el,
+          geom,
+          ctm,
+          scale,
+          half: 0,
+          samples,
+          rect: r,
+          reach: r,
+          node,
+        });
       }
     }
 
@@ -670,9 +802,14 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
     );
     const obstacles = [...lines, ...smallFills, ...markers];
 
-    // 線の標本は、どれかのラベルの近くにある線だけを遅延して取る。
+    // 標本は、どれかのラベルの近くにある線・図形だけを遅延して取る。
     const samplesOf = (ob) => {
       if (ob.samples !== undefined) return ob.samples;
+      const f = filtersOf(ob.el, svg);
+      if (ob.kind === "fill") {
+        ob.samples = outlineOf(ob.geom, ob.ctm, ob.scale, f);
+        return ob.samples;
+      }
       let length = 0;
       try {
         length = ob.el.getTotalLength();
@@ -680,22 +817,32 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
         length = 0;
       }
       const n = Math.min(maxSamples, Math.max(2, Math.ceil((length * ob.scale) / sampleStep) + 1));
-      const f = filtersOf(ob.el, svg);
+      const positions = [
+        ...Array.from({ length: n }, (_, i) => (length * i) / (n - 1)),
+        ...(ob.dash === null ? [] : dashEnds(ob.dash, length)),
+      ].toSorted((a, b) => a - b);
       // 後から描かれた背景の板の下にある部分は見えない。
       const covering = plates.filter(
         (p) => ob.el.compareDocumentPosition(p.el) & Node.DOCUMENT_POSITION_FOLLOWING,
       );
-      const pts = [];
-      for (let i = 0; i < n; i += 1) {
-        const u = ob.el.getPointAtLength((length * i) / (n - 1));
+      ob.samples = positions.map((s) => {
+        const u = ob.el.getPointAtLength(s);
         const p = ob.ctm === null ? u : new DOMPoint(u.x, u.y).matrixTransform(ob.ctm);
-        const visible = visibleAt(p, f) && !covering.some((c) => inside(p, c.rect));
-        pts.push({ x: p.x, y: p.y, visible });
-      }
-      ob.samples = pts;
-      // 隣り合う標本の画面上の間隔。大きく飛ぶ箇所は部分パスの切れ目なので、線分でつながない。
-      ob.gap = (length * ob.scale) / (n - 1) + 0.5;
-      return pts;
+        const visible =
+          visibleAt(p, f) &&
+          !covering.some((c) => inside(p, c.rect)) &&
+          (ob.dash === null || inDash(ob.dash, s));
+        return { x: p.x, y: p.y, s, visible };
+      });
+      return ob.samples;
+    };
+    // 隣り合う標本を線分でつなぐか。画面上で大きく飛ぶ箇所は部分パスの切れ目、間が破線の空白なら
+    // 描かれていないので、どちらもつながない。
+    const joins = (ob, p, q) => {
+      if (q === undefined || !q.visible) return false;
+      if (p.s === undefined) return true;
+      if (Math.hypot(q.x - p.x, q.y - p.y) > (q.s - p.s) * ob.scale * 1.5 + 0.5) return false;
+      return ob.dash === null || inDash(ob.dash, (p.s + q.s) / 2);
     };
     const lineDistance = (ob, rects) => {
       const pts = samplesOf(ob);
@@ -705,8 +852,7 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
         const p = pts[i];
         if (!p.visible) continue;
         const q = pts[i + 1];
-        const joined =
-          q !== undefined && q.visible && Math.hypot(q.x - p.x, q.y - p.y) <= ob.gap * 1.5;
+        const joined = joins(ob, p, q);
         for (const r of rects) {
           const d = pointRect(p, r);
           const s = joined && d > 0 ? segmentRect(p, q, r) : d;
@@ -719,6 +865,17 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
       return at === null ? null : { distance: best - ob.half, at };
     };
     const rectsDistance = (as, bs) => Math.min(...as.flatMap((a) => bs.map((b) => rectRect(a, b))));
+    // 塗りの図形（点・矢じり・marker の矢じり）との距離。外接矩形ではなく輪郭の標本で測り、
+    // 輪郭から離れていてもラベルが図形の内側にあれば重なりとする。
+    const shapeDistance = (ob, rects) => {
+      const hit = lineDistance(ob, rects);
+      if (hit === null || hit.distance <= 0) return hit;
+      const pts = samplesOf(ob);
+      const enclosed = rects.some((r) =>
+        insideOutline({ x: (r.l + r.r) / 2, y: (r.t + r.b) / 2 }, pts),
+      );
+      return enclosed ? { distance: -hit.distance, at: hit.at } : hit;
+    };
 
     // 同じラベルと同じ見た目の相手（メッシュの網目など）の組は、最短の 1 件にまとめて件数を添える。
     const merged = new Map();
@@ -748,13 +905,9 @@ function measureFigures({ near, sampleStep, maxSamples, smallFill }) {
       for (const ob of obstacles) {
         if (ob.node !== null && label.containers.includes(ob.node)) continue;
         if (ownPlates.includes(ob.el) || rectRect(r, ob.reach) >= near) continue;
+        // 外接矩形は候補の絞り込みにだけ使い、距離は実際の図形で求める。
         const hit =
-          ob.kind === "fill"
-            ? {
-                distance: rectsDistance(label.rects, [ob.rect]),
-                at: { x: ob.rect.l, y: ob.rect.t },
-              }
-            : lineDistance(ob, label.rects);
+          ob.kind === "line" ? lineDistance(ob, label.rects) : shapeDistance(ob, label.rects);
         if (hit === null || hit.distance >= near) continue;
         const partner = describe(ob.el, ob.kind);
         if (ob.kind === "marker") partner.fill = ob.color;

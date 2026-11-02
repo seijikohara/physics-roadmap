@@ -26,6 +26,8 @@ const USAGE = `使い方: pnpm run figures:diff -- --base <基準の dist> [オ�
 
 基準と変更後のビルド結果を比べ、記事本文の figure の HTML が変わった図だけを撮る。
 左に基準、右に変更後を並べた 1 枚の PNG を <out>/<ページ名>/fig-NN.png に書く。
+基準は、変更前に pnpm build した dist を、既存の基準と置き換えてコピーして作る。
+  rm -rf .figures/base && mkdir -p .figures && cp -R dist .figures/base
 
 オプション:
   --base <フォルダ>   基準のビルド結果（必須。例: .figures/base）

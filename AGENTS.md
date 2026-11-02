@@ -57,7 +57,8 @@
 - ブラウザはインストール済みの Google Chrome を使う。出力先の`.figures/`は Git の管理外である。
 - `figures:lint`の近接（near）の閾値は既定で 4px である。4px は、ラベルと線のすきまの目標である。
 - 図の変更の前後比較は、次の順に行う。
-  1. 変更前に`pnpm build`を実行し、`dist`を`.figures/base`へコピーする（`cp -R dist .figures/base`）。
+  1. 変更前に`pnpm build`を実行し、`dist`を`.figures/base`へコピーする。既存の基準は置き換える。
+     `rm -rf .figures/base && mkdir -p .figures && cp -R dist .figures/base`
   2. 基準の所見を JSON に書き出す（`pnpm run figures:lint -- --dist .figures/base --all --json .figures/base-lint.json`）。
   3. 変更後に`pnpm build`を実行する。
   4. `pnpm run figures:diff -- --base .figures/base`を実行し、`.figures/diff`の PNG を見る。
