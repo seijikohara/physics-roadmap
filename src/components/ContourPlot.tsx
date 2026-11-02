@@ -922,9 +922,11 @@ export default function ContourPlot({
     if (tex === undefined || r.labelAt === null) return NO_PLACEMENT;
     const anchor = r.labelAt;
     const w = estimateTexWidthPrecise(tex, 12);
-    const cands = REGION_LABEL_OFFSETS.map(
-      ([dx, dy]): LabelPos => ({ x: anchor.x + dx, y: anchor.y + dy, align: "center" }),
-    );
+    const cands = REGION_LABEL_OFFSETS.map(([dx, dy]): LabelPos => ({
+      x: anchor.x + dx,
+      y: anchor.y + dy,
+      align: "center",
+    }));
     const best = bestOf(cands, (cand, k) => {
       const p = penaltyOf(boxFor(cand, w), placed, undefined, plotBounds) + k * 0.1;
       return pointInPolygon(cand, r.fill) ? p : p + 1000;
