@@ -14,6 +14,9 @@
     "lint:text": "textlint \"**/*.{md,mdx}\"",
     "lint:text:fix": "textlint --fix \"**/*.{md,mdx}\"",
     "check": "pnpm run format:check && pnpm run lint && pnpm run lint:text",
+    "figures:shot": "tsx scripts/figures/shot.ts",
+    "figures:lint": "tsx scripts/figures/lint.ts",
+    "figures:diff": "tsx scripts/figures/diff.ts",
     "prepare": "lefthook install"
   },
   "dependencies": {
@@ -39,17 +42,20 @@
     "sharp": "^0.35.2"
   },
   "devDependencies": {
+    "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "lefthook": "^2.1.9",
     "oxfmt": "0.56.0",
     "oxlint": "1.71.0",
     "oxlint-tsgolint": "0.23.0",
+    "playwright-core": "^1.64.1",
     "textlint": "^15.7.1",
     "textlint-filter-rule-comments": "^1.3.0",
     "textlint-plugin-mdx": "^1.1.0",
     "textlint-rule-preset-ja-spacing": "^3.0.2",
-    "textlint-rule-preset-ja-technical-writing": "^12.0.2"
+    "textlint-rule-preset-ja-technical-writing": "^12.0.2",
+    "tsx": "^4.23.15"
   },
   "packageManager": "pnpm@11.8.0"
 }

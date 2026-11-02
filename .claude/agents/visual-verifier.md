@@ -37,198 +37,63 @@ color: purple
 
 ## 目視検査の手順
 
+図の撮影と計測には、リポジトリに常設したスクリプト`figures:shot`・`figures:lint`を使う。どちらも実際のページを Chrome で開いて扱うため、サイトの CSS（伸縮グリフの高さ復元を含む）とフォントがそのまま効く。CSS を手で複製しない。
+
 ### 1. dev サーバを用意する
 
-レンダリングは走っている dev サーバの SSR 済み HTML を使う。`pnpm build`は走らせない（複数の検証が並行するとき、同一 worktree でのビルドが競合するため）。
+撮影と計測は、走っている dev サーバのページに対して行う。`pnpm build`は走らせない（複数の検証が並行するとき、同一 worktree でのビルドが競合するため）。
 
 ```bash
 cd <worktree-root>
-pnpm exec astro dev status   # 走っていなければ起動する
-# 走っていない場合:
+curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:4321/physics-roadmap/   # 200 なら起動済み
+# 起動していない場合:
 #   pnpm dev >/tmp/devserver.log 2>&1 &
 #   curl --retry 30 --retry-delay 1 --retry-connrefused -sS -o /dev/null -w "%{http_code}\n" http://localhost:4321/physics-roadmap/
 ```
 
-base パスは`/physics-roadmap`、既定ポートは 4321 である。章の URL は、ファイルパスから`src/content/docs/`と拡張子を除いたルートに base を付けて作る。変換例を次に示す。
+base パスは`/physics-roadmap`、既定ポートは 4321 である。スクリプトは章ファイルのパス（`src/content/docs/math/functions/trigonometric-ratios.mdx`）をそのまま受け付け、ページの URL へ変換する。
 
-- 入力ファイル`src/content/docs/math/functions/trigonometric-ratios.mdx`
-- 出力 URL`http://localhost:4321/physics-roadmap/math/functions/trigonometric-ratios/`
+### 2. 重なりと近接を一覧にする（figures:lint）
 
-### 2. ビルド時生成の静的図をコンタクトシート化する（主たる手段）
-
-関数グラフ・三角形・単位円・数直線・ベン図など、ビルド時生成の静的 SVG 図は、次のスクリプトで 1 章ぶんを 1 枚のコンタクトシート PNG にまとめる。スクリプトは作業用一時ディレクトリに書き出して実行する（リポジトリにコミットしない）。
-
-要点:
-
-- dev サーバから SSR 済み HTML を`curl`で取得する（ビルド競合を避ける）。
-- 入れ子の`<svg>`（KaTeX 根号など）を深さで数え、トップレベルの図 SVG だけを抜き出す。装飾 SVG（`astro-`ハッシュ付き・`aria-hidden="true"`）は除く。
-- **実物の`src/styles/global.css`をそのまま注入する**。伸縮グリフの高さ復元など、サイトの CSS をそのまま反映するため、CSS を手で複製しない。複製は必ずドリフトし、潰れ欠陥を見逃す原因になる。
-
-```javascript
-#!/usr/bin/env node
-// 使い方: node figcontact.mjs <repoRoot> <baseUrl> <outDir> <routePath...>
-//   routePath は base 以下のルート。例: math/functions/trigonometric-ratios
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { execFileSync } from "node:child_process";
-
-const [, , ROOT, BASE, OUT, ...routes] = process.argv;
-if (!ROOT || !BASE || !OUT || routes.length === 0) {
-  console.error("usage: node figcontact.mjs <repoRoot> <baseUrl> <outDir> <routePath...>");
-  process.exit(2);
-}
-mkdirSync(OUT, { recursive: true });
-
-// macOS の Chrome パス。環境に合わせて調整する。
-const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const KATEX_CSS = `${ROOT}/node_modules/katex/dist/katex.min.css`;
-const GLOBAL_CSS = `${ROOT}/src/styles/global.css`;
-
-// 図コンポーネントのルート SVG クラスを src/components から自動収集する。
-function figureClasses() {
-  const out = new Set();
-  const dir = `${ROOT}/src/components`;
-  const files = execFileSync("ls", [dir])
-    .toString()
-    .split("\n")
-    .filter((f) => f.endsWith(".tsx"));
-  for (const f of files) {
-    const src = readFileSync(`${dir}/${f}`, "utf8");
-    for (const m of src.matchAll(/className="([a-z][a-z0-9-]*)"/g)) out.add(m[1]);
-  }
-  return out;
-}
-
-// 深さを数えてトップレベル SVG だけ取り出し、図クラスを持つものだけ拾う。
-function extractFigureSvgs(html, classes) {
-  const out = [];
-  const re = /<svg\b[^>]*>|<\/svg>/g;
-  let m,
-    depth = 0,
-    startIdx = -1,
-    keep = false;
-  while ((m = re.exec(html))) {
-    if (m[0].startsWith("</")) {
-      depth -= 1;
-      if (depth === 0 && startIdx >= 0) {
-        if (keep) out.push(html.slice(startIdx, re.lastIndex));
-        startIdx = -1;
-        keep = false;
-      }
-    } else {
-      if (depth === 0) {
-        startIdx = m.index;
-        const cls = (m[0].match(/class="([^"]*)"/) || [, ""])[1];
-        keep = cls.split(/\s+/).some((t) => classes.has(t)) && !/aria-hidden="true"/.test(m[0]);
-      }
-      depth += 1;
-    }
-  }
-  return out;
-}
-
-const classes = figureClasses();
-const katexCss = readFileSync(KATEX_CSS, "utf8");
-const globalCss = existsSync(GLOBAL_CSS) ? readFileSync(GLOBAL_CSS, "utf8") : "";
-// セル寸法・列数・解像度倍率は環境変数で上書きできる。細部を見るときは
-// COLS=1 と大きい CELL_W/CELL_H で 1 図だけ拡大し、SCALE を上げて鮮明にする。
-const CELL_W = Number(process.env.CELL_W) || 460;
-const CELL_H = Number(process.env.CELL_H) || 440;
-const COLS = Number(process.env.COLS) || 2;
-const SCALE = Number(process.env.SCALE) || 2;
-
-for (const route of routes) {
-  const url = `${BASE}/${route}/`;
-  let html;
-  try {
-    // 図の多いページの SSR HTML は数 MB になり、execFileSync の既定の上限 1 MB を超える。
-    html = execFileSync("curl", ["-fsS", url], { maxBuffer: 64 * 1024 * 1024 }).toString();
-  } catch {
-    console.error(`FETCH FAIL ${url}`);
-    continue;
-  }
-  const figs = extractFigureSvgs(html, classes);
-  const name = route.replace(/\//g, "-");
-  if (figs.length === 0) {
-    console.log(`${name}: 0 figures (クライアントアイランドは live 経路で確認)`);
-    continue;
-  }
-
-  const cells = figs
-    .map(
-      (svg, i) =>
-        `<div class="cell"><div class="idx">#${i + 1}</div><div class="fig">${svg}</div></div>`,
-    )
-    .join("\n");
-  const winH = Math.ceil(figs.length / COLS) * CELL_H + 70;
-  const page = `<!doctype html><html data-theme="light"><head><meta charset="utf-8">
-<style>${katexCss}</style><style>${globalCss}</style>
-<style>
-  body{margin:0;background:#fff;color:#1e293b;font-family:-apple-system,system-ui,sans-serif;}
-  h1{font-size:15px;padding:8px 12px;margin:0;}
-  .grid{display:grid;grid-template-columns:repeat(${COLS},${CELL_W}px);gap:8px;padding:8px;}
-  .cell{border:1px solid #cbd5e1;border-radius:6px;padding:6px;height:${CELL_H - 16}px;display:flex;flex-direction:column;}
-  .idx{font-size:12px;color:#64748b;margin-bottom:2px;}
-  .fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;}
-  .fig svg{max-width:${CELL_W - 28}px;max-height:${CELL_H - 50}px;width:auto;height:auto;}
-</style></head><body>
-<h1>${name} — ${figs.length} figures</h1><div class="grid">${cells}</div></body></html>`;
-
-  const pagePath = `${OUT}/${name}.html`,
-    outPng = `${OUT}/${name}.png`;
-  writeFileSync(pagePath, page);
-  execFileSync(
-    CHROME,
-    [
-      "--headless=new",
-      "--disable-gpu",
-      "--hide-scrollbars",
-      "--default-background-color=FFFFFFFF",
-      `--force-device-scale-factor=${SCALE}`,
-      `--window-size=${COLS * CELL_W + 36},${winH}`,
-      `--screenshot=${outPng}`,
-      `file://${pagePath}`,
-    ],
-    { stdio: "ignore" },
-  );
-  console.log(`${name}: ${figs.length} figures -> ${outPng}`);
-}
-```
-
-実行例:
+目視の前に、章の図のラベルの重なり・近接・はみ出しを計測して一覧にする。
 
 ```bash
-TMP=$(mktemp -d)
-node "$TMP/figcontact.mjs" "<worktree-root>" "http://localhost:4321/physics-roadmap" "$TMP/figs" math/functions/<slug>
+pnpm run figures:lint -- src/content/docs/math/functions/<slug>.mdx
 ```
 
-生成された各 PNG を Read ツールで読み込み、図を 1 枚ずつ目視する。コンタクトシートには図番号（`#1`, `#2`, …）が付く。番号は SSR HTML 内の図の出現順に対応する。スクリプトは既定で 2 倍解像度（`SCALE=2`）で撮るため、細い線やラベルの輪郭まで鮮明に写る。
+- 出力は図番号ごとの表で、ラベル名・相手・距離（px）・種別を示す。相手は線の要素名と色・class、marker の矢じり、または相手のラベル名である。
+- 種別は overlap（距離 0 以下）・near（0 より大きく 4px 未満）・outside（図の表示範囲の外へのはみ出し）である。4px は、ラベルと線のすきまの目標である。
+- 図番号は記事本文の`figure`の出現順で、章のキャプション「図 N」と一致する。
+- 距離は、ラベルの枠ではなく字形の実際の範囲から測る。
+- marker で描く矢じり（軸の矢印・FlowChart のエッジの矢じり）も障害物として測る。格子線と、領域や曲面の大きな塗りは、計測の対象外である。
+
+一覧に挙がった箇所は、次の手順で画像を撮り、1 つずつ確かめる。lint が拾えない問題（幾何の正しさ・色・余白の均衡・対象外の要素との接触など）は、従来どおり画像で点検する。
+
+### 3. 図を撮って目視する（figures:shot）
+
+```bash
+pnpm run figures:shot -- src/content/docs/math/functions/<slug>.mdx
+```
+
+- 記事本文の`figure`要素を 1 枚ずつ PNG に撮る。出力先は`.figures/shots/<ページ名>/fig-NN-light.png`で、書いたファイルの一覧を標準出力に出す。
+- 既定の解像度は 2 倍であり、細い線やラベルの輪郭まで鮮明に写る。
+- 生成された PNG を Read ツールで読み込み、図を 1 枚ずつ目視する。
+- キャプションを除いて図だけを見たいときは`--no-caption`を付ける。
+- スライダーなどクライアントアイランドの図も、ページを実際に開いて撮るため同じ手順で写る。
 
 #### 拡大確認
 
-些細な重なりや接触は、縮小されたコンタクトシートでは見落とす。重なりが疑わしい図、ラベルが密集する図、点や交点の近傍は、1 図だけ大きく撮り直して拡大して見る。
+些細な重なりや接触は、等倍の画像では見落とす。重なりが疑わしい図、ラベルが密集する図、点や交点の近傍は、1 図だけ高い倍率で撮り直して拡大して見る。
 
 ```bash
-COLS=1 CELL_W=1000 CELL_H=900 SCALE=2 \
-  node "$TMP/figcontact.mjs" "<worktree-root>" "http://localhost:4321/physics-roadmap" "$TMP/zoom" math/functions/<slug>
+pnpm run figures:shot -- src/content/docs/math/functions/<slug>.mdx --only 3 --scale 4
 ```
 
-ラベルどうし、ラベルと線、点と文字など、接触が疑わしい箇所を 1 つずつ拡大して、触れているか・離れているかを判定する。判定できないほど小さい場合は、さらに`CELL_W`/`CELL_H`を上げて撮り直す。
-
-### 3. クライアントアイランドは live ページで確認する
-
-`FlowChart`を含むすべての図はビルド時生成の静的 SVG で、SSR HTML に現れるため、コンタクトシート（手段 2）で確認できる。一方、スライダー・ドラッグなど JS で描画されるクライアントアイランドは`curl`の SSR HTML に最終形が無い。JS で描画される図は、Chrome に URL を直接読ませて JS を実行させ、ページ全体を撮る。
-
-```bash
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu \
-  --hide-scrollbars --force-device-scale-factor=2 --window-size=1200,5000 \
-  --screenshot="$TMP/page.png" "http://localhost:4321/physics-roadmap/math/functions/<slug>/"
-```
-
-撮れた`page.png`を Read し、字形・矢印の向き・はみ出しを確認する。ページが縦に長く撮りきれない場合は、`--window-size`の高さを増やすか、確認したい図の位置で分割して撮る。
+ラベルどうし、ラベルと線、点と文字など、接触が疑わしい箇所を 1 つずつ拡大して、触れているか・離れているかを判定する。判定できないほど小さい場合は、`--scale`をさらに上げて撮り直す。
 
 ### 4. 配色テーマ
 
-サイトは明・暗の両テーマを持つ（Starlight）。コンタクトシートは明テーマで撮る。暗テーマでの可読性に懸念がある図（背景依存の色・コントラスト不足）は、live ページを暗テーマで撮って確認する。図の色が固定値で背景が暗いと潰れる箇所を特に疑う。
+サイトは明・暗の両テーマを持つ（Starlight）。既定は明テーマで撮る。暗テーマでの可読性に懸念がある図（背景依存の色・コントラスト不足）は、`--theme dark`で撮って確認する。両テーマを並べて見るときは`--theme both`を使う。図の色が固定値で背景が暗いと潰れる箇所を特に疑う。
 
 ## 検証項目（細部まで）
 
@@ -332,7 +197,7 @@ COLS=1 CELL_W=1000 CELL_H=900 SCALE=2 \
 ## 報告フォーマット
 
 - **判定**: 問題なし／要改善。
-- **検査方法**: 画像化した図の枚数と手段（コンタクトシート／live ページ）、生成した PNG のパス、確認したテーマ（明／暗）を明記する。
+- **検査方法**: 画像化した図の枚数と手段（figures:shot／figures:lint）、生成した PNG のパス、確認したテーマ（明／暗）を明記する。
 - **視覚表現の棚卸し**: 章が使う図・ダイアグラム・グラフ・表を、位置（ファイル:行・図番号）とともに列挙する。
 - **指摘一覧**: 指摘ごとに次を示す。
   - **対象**: 図番号・`aria-label`・「ファイル:行」。

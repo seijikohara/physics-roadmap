@@ -24,5 +24,44 @@
     "react/react-in-jsx-scope": "off",
     "jsx-a11y/prefer-tag-over-role": "off"
   },
-  "ignorePatterns": ["dist", ".astro", "node_modules"]
+  "ignorePatterns": ["dist", ".astro", "node_modules"],
+  "overrides": [
+    {
+      "files": ["scripts/**"],
+      "rules": {
+        "no-var": "error",
+        "prefer-const": "error",
+        "no-param-reassign": ["error", { "props": true }],
+        "unicorn/no-array-sort": ["error", { "allowExpressionStatement": false }],
+        "unicorn/no-array-reverse": ["error", { "allowExpressionStatement": false }],
+        "typescript/prefer-readonly-parameter-types": [
+          "error",
+          {
+            "ignoreInferredTypes": true,
+            "treatMethodsAsReadonly": true,
+            "allow": [
+              {
+                "from": "package",
+                "package": "playwright-core",
+                "name": ["Browser", "BrowserContext", "Page"]
+              },
+              {
+                "from": "lib",
+                "name": [
+                  "Node",
+                  "Text",
+                  "Element",
+                  "SVGGraphicsElement",
+                  "SVGGeometryElement",
+                  "SVGSVGElement",
+                  "SVGMarkerElement",
+                  "CSSStyleDeclaration"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

@@ -46,6 +46,26 @@
 - `pnpm run lint:text`: 全ドキュメントを textlint で校正する。
 - `pnpm run lint:text:fix`: textlint で自動修正できる箇所を修正する。
 - `pnpm run check`: format:check・lint・lint:text をまとめて実行する。
+- `pnpm run figures:shot -- <ページ>...`: 章の図を 1 枚ずつ PNG に撮る（出力先は`.figures/shots`）。
+- `pnpm run figures:lint -- <ページ>...`: 図のラベルと線・点・他のラベルの重なりと近接を一覧にする（`--all`で全ページ）。
+- `pnpm run figures:diff -- --base <基準の dist>`: 2 つのビルド結果を比べ、変わった図の前後を左右に並べた PNG を書き出す。
+
+図のスクリプトは次のように使う。
+
+- `<ページ>`には、ルート（`math/vector-calculus/curl`）・URL のパス・章ファイルのパスのどれでも渡せる。
+- 既定の対象は dev サーバ（`http://localhost:4321/physics-roadmap`）である。`--dist dist`でビルド結果を対象にできる。
+- ブラウザはインストール済みの Google Chrome を使う。出力先の`.figures/`は Git の管理外である。
+- スクリプトは`scripts/figures/*.ts`（TypeScript）で、tsx で実行する。
+- `scripts/**`には、`.oxlintrc.json`の overrides でイミュータビリティの規則（読み取り専用の引数・引数の書き換えの禁止など）をかける。
+- `figures:lint`の近接（near）の閾値は既定で 4px である。4px は、ラベルと線のすきまの目標である。
+- 図の変更の前後比較は、次の順に行う。
+  1. 変更前に`pnpm build`を実行し、`dist`を`.figures/base`へコピーする。既存の基準は置き換える。
+     `rm -rf .figures/base && mkdir -p .figures && cp -R dist .figures/base`
+  2. 基準の所見を JSON に書き出す（`pnpm run figures:lint -- --dist .figures/base --all --json .figures/base-lint.json`）。
+  3. 変更後に`pnpm build`を実行する。
+  4. `pnpm run figures:diff -- --base .figures/base`を実行し、`.figures/diff`の PNG を見る。
+  5. `pnpm run figures:lint -- --dist dist --all --compare .figures/base-lint.json`を実行し、増えた所見と消えた所見を確かめる。
+     `--fail-on overlap`を足すと、overlap・outside の所見が増えたときだけ終了コード 1 になる。
 
 ## 対象読者
 
