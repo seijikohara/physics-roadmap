@@ -36,7 +36,7 @@
     "@visx/scale": "^4.0.0",
     "@visx/shape": "^4.0.0",
     "astro": "^7.4.4",
-    "katex": "^0.17.0",
+    "katex": "^0.18.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "rehype-katex": "^7.0.1",
