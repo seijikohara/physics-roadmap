@@ -578,6 +578,8 @@ const CONTOUR_FONT = 11;
 // 等高線を切り抜く矩形の、字形の矩形からの余白（px）。ラベルと線の切れ目の間に 4px のすきまを残す。
 // 斜めの線は矩形の上下の縁で切れるので、線の太さの半分と字形の見積もりの誤差のぶんだけ広くとる。
 const CONTOUR_GAP_PAD = 5.5;
+// 全レベルの線を切り抜く矩形の、字形の矩形からの余白（px）。隣の線が字形に重なる部分だけを切る。
+const GLYPH_CUT_PAD = 1;
 // 領域・点・矢印などのラベル、目盛り数字、軸名の字の大きさ（KatexLabel の fontSize）。
 const LABEL_FONT = 12;
 const TICK_FONT = 11;
@@ -623,6 +625,7 @@ export default function ContourPlot({
   const arrow = `cpArrow-${uid}`;
   const clip = `cpClip-${uid}`;
   const mask = `cpMask-${uid}`;
+  const glyphMask = `cpGlyphMask-${uid}`;
   const gridMask = `cpGridMask-${uid}`;
 
   const xr = xMax - xMin;
@@ -1274,6 +1277,32 @@ export default function ContourPlot({
               />
             </mask>
           ))}
+          {/* 字形の下だけ全レベルの線を切り抜くマスク。隣のレベルの線が字形を貫かないようにする。 */}
+          {contourLabels.length > 0 && (
+            <mask
+              id={glyphMask}
+              maskUnits="userSpaceOnUse"
+              x={0}
+              y={0}
+              width={viewW}
+              height={viewH}
+            >
+              <rect x={0} y={0} width={viewW} height={viewH} fill="#fff" />
+              {contourLabels.map((l) => {
+                const b = inflate(l.box, GLYPH_CUT_PAD);
+                return (
+                  <rect
+                    key={`gl-${l.levelId}`}
+                    x={b.x0}
+                    y={b.y0}
+                    width={b.x1 - b.x0}
+                    height={b.y1 - b.y0}
+                    fill="#000"
+                  />
+                );
+              })}
+            </mask>
+          )}
           {/* ラベル・目盛り数字の下だけ格子線を切り抜くマスク。等高線のマスクと同じ作りである。 */}
           {gridCuts.length > 0 && (
             <mask id={gridMask} maskUnits="userSpaceOnUse" x={0} y={0} width={viewW} height={viewH}>
@@ -1476,31 +1505,33 @@ export default function ContourPlot({
               />
             ))}
 
-          {contourData.map((levels, si) =>
-            levels.map((lv, li) => (
-              <g
-                key={`ctg-${si}-${li}`}
-                mask={labeledLevels.has(lv.id) ? `url(#${mask}-${lv.id})` : undefined}
-              >
-                {lv.lines.map((l, k) => (
-                  <LinePath<XY>
-                    key={`ct-${si}-${li}-${k}`}
-                    data={[...l.pts]}
-                    x={(d) => d.x}
-                    y={(d) => d.y}
-                    fill="none"
-                    strokeWidth={1.6}
-                    strokeDasharray={contours[si].dashed ? "5 4" : undefined}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    // 既定のパレットは CSS の color-mix で作るため、プレゼンテーション属性でなく
-                    // style で渡す。
-                    style={{ stroke: lv.color }}
-                  />
-                ))}
-              </g>
-            )),
-          )}
+          <g mask={contourLabels.length > 0 ? `url(#${glyphMask})` : undefined}>
+            {contourData.map((levels, si) =>
+              levels.map((lv, li) => (
+                <g
+                  key={`ctg-${si}-${li}`}
+                  mask={labeledLevels.has(lv.id) ? `url(#${mask}-${lv.id})` : undefined}
+                >
+                  {lv.lines.map((l, k) => (
+                    <LinePath<XY>
+                      key={`ct-${si}-${li}-${k}`}
+                      data={[...l.pts]}
+                      x={(d) => d.x}
+                      y={(d) => d.y}
+                      fill="none"
+                      strokeWidth={1.6}
+                      strokeDasharray={contours[si].dashed ? "5 4" : undefined}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      // 既定のパレットは CSS の color-mix で作るため、プレゼンテーション属性でなく
+                      // style で渡す。
+                      style={{ stroke: lv.color }}
+                    />
+                  ))}
+                </g>
+              )),
+            )}
+          </g>
 
           {/* ベクトル場。等高線より前面、曲線より奥に描き、閉曲線などの主役の線を矢印の上に残す。
               矢印は数百本になりうるため、場ごとに全矢印の軸を 1 本の path、矢じりを 1 本の path に
