@@ -11,6 +11,7 @@ import {
   onLine,
   onLineNear,
   positionsAround,
+  stubPenalty,
   type PointMark,
 } from "./candidates";
 import { boxesOverlap, inflate, type Box, type XY } from "./geometry";
@@ -505,6 +506,41 @@ describe("onLine の切れ端の罰点", () => {
     const marked = onLine([circle], size, 5, [], [start]);
     const last = plain.length - 1;
     expect((marked[last].score?.(0) ?? 0) - (plain[last].score?.(0) ?? 0)).toBeCloseTo(stub, 9);
+  });
+});
+
+/** 縦の線をまたぐ、幅の広い切れ目。 */
+function verticalCut(y0: number, y1: number): Box {
+  return { x0: 40, x1: 60, y0, y1 };
+}
+
+describe("stubPenalty の線の端", () => {
+  // 上から下へ進む長さ 100 の縦の線。線の端の丸みは線幅の半分だけ先へ出る。
+  const line = tracedLine(
+    [
+      { x: 50, y: 0 },
+      { x: 50, y: 100 },
+    ],
+    false,
+  );
+  const penalty = (s: number, y0: number, y1: number): number =>
+    stubPenalty(line, s, verticalCut(y0, y1), 40, [], []);
+  const hw = LABEL_POLICY.lineHalfWidth;
+  const stub = LABEL_POLICY.stub;
+
+  it("線の端が切れ目の中でも、縁から線幅の半分より近い候補に罰点を与える", () => {
+    expect(penalty(6, -0.27, 14)).toBe(stub);
+    expect(penalty(94, 86, 100.27)).toBe(stub);
+  });
+
+  it("線の端が切れ目のすぐ外にある候補に罰点を与える", () => {
+    expect(penalty(6, 0.3, 14)).toBe(stub);
+    expect(penalty(94, 86, 99.7)).toBe(stub);
+  });
+
+  it("線の端が切れ目の奥にある候補には罰点を与えない", () => {
+    expect(penalty(6, -hw - 0.01, 14)).toBe(0);
+    expect(penalty(94, 86, 100 + hw + 0.01)).toBe(0);
   });
 });
 

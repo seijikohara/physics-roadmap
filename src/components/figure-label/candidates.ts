@@ -381,16 +381,22 @@ function exitArc(line: TracedLine, s: number, dir: number, box: Box, limit: numb
   return steps.find((t) => !inside(t)) ?? s + dir * limit;
 }
 
-/** 線の端までの残りの弧長が、短い切れ端になるか。何も残らないなら切れ端は無い。 */
-function isStub(rest: number): boolean {
-  return rest > 0 && rest < LABEL_POLICY.stubLength;
+/**
+ * 線の端 tip までの残りの弧長 rest が、短い切れ端になるか。線の端が切れ目の中にあると rest は 0 以下に
+ * なる。exitArc は 1px 刻みなので、線の端が切れ目のすぐ外にあるときも同じである。線の端が切れ目の縁から
+ * 線幅の半分より近ければ、丸い端が切れ目の外へ出て点が残るので、切れ端に数える。線の端が切れ目の奥に
+ * あるなら何も残らず、切れ端は無い。
+ */
+function isStub(rest: number, tip: XY, cut: Box): boolean {
+  if (rest >= LABEL_POLICY.stubLength) return false;
+  return rest > 0 || distanceToBox(tip, inflate(cut, -LABEL_POLICY.lineHalfWidth)) > 0;
 }
 
 /**
  * 切れ目の先に短い切れ端が残る候補と、切れ目が点の印に届く候補の罰点。切れ端は、線の切れ目から線の端や
- * 線の上の点の印までの残りが短い部分である。線の端まで切れ目が届いて何も残らないなら、切れ端は無い。
+ * 線の上の点の印までの残りが短い部分である。
  */
-function stubPenalty(
+export function stubPenalty(
   line: TracedLine,
   s: number,
   cut: Box,
@@ -401,7 +407,9 @@ function stubPenalty(
   const total = line.cum[line.cum.length - 1];
   const back = exitArc(line, s, -1, cut, reach);
   const fwd = exitArc(line, s, 1, cut, reach);
-  const atEnd = !line.closed && (isStub(back) || isStub(total - fwd));
+  const atEnd =
+    !line.closed &&
+    (isStub(back, line.pts[0], cut) || isStub(total - fwd, line.pts[line.pts.length - 1], cut));
   // 弧長の差。閉じた線では一周で巻き戻し、0 以上の値にする。
   const gap = (v: number): number => (line.closed ? ((v % total) + total) % total : v);
   const atStop = stops.some(({ arc, reach: r }) => {
