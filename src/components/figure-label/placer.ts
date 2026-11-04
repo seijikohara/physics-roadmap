@@ -30,7 +30,7 @@ export type PlaceOptions = Readonly<{
   placed: readonly Box[];
   /** ラベルを収める範囲。 */
   bounds: Box;
-  /** 判定から外す線の id（ラベル自身の線）。 */
+  /** 判定から外す障害物の id（ラベル自身の線や点の印）。 */
   exclude?: string;
   /** 淡い線と群を避けるか。既定 true。線の上に置くラベルは false にする。 */
   avoidFaint?: boolean;
@@ -46,10 +46,15 @@ export type Placer = Readonly<{
   place: <T>(cands: readonly Candidate<T>[], options: PlaceOptions) => Choice<T>;
 }>;
 
+/** 線の中心から、ラベルの矩形の縁まで空ける距離（px）。 */
+export const lineReach =
+  LABEL_POLICY.lineClearance + LABEL_POLICY.lineHalfWidth + LABEL_POLICY.glyphSlack;
+
 export function createPlacer(obstacles: readonly Obstacle[]): Placer {
   const boxes = obstacles.filter((o): o is BoxObstacle => o.kind === "box");
   const lines = obstacles.filter((o): o is LineObstacle => o.kind === "line");
   const solidLines = lines.filter((l) => !l.faint);
+  const faintLines = lines.filter((l) => l.faint);
   const groups = obstacles.filter((o): o is GroupObstacle => o.kind === "group");
 
   const penalty = (b: Box, options: PlaceOptions): number => {
@@ -65,23 +70,34 @@ export function createPlacer(obstacles: readonly Obstacle[]): Placer {
       if (boxesOverlap(b, other)) return p + weight;
       return boxesOverlap(near, other) ? p + LABEL_POLICY.near : p;
     };
-    const byBoxes = boxes.reduce((p, o) => nearPenalty(p, o.box, o.weight), outside);
-    const byPlaced = placed.reduce((p, q) => nearPenalty(p, q, LABEL_POLICY.labelOverlap), byBoxes);
-    // 線との判定は矩形を少し広げて行い、ラベルの字形と線の間にすきまを残す。
-    const padded = inflate(b, LABEL_POLICY.lineClearance);
-    const byLines = (avoidFaint ? lines : solidLines).reduce(
-      (p, l) => (l.id !== exclude && lineHitsBox(l, padded) ? p + l.weight : p),
-      byPlaced,
+    const byBoxes = boxes.reduce(
+      (p, o) => (o.id !== undefined && o.id === exclude ? p : nearPenalty(p, o.box, o.weight)),
+      outside,
     );
-    if (!avoidFaint) return byLines;
-    // 上限に達した群は、残りの線を調べない。
+    const byPlaced = placed.reduce((p, q) => nearPenalty(p, q, LABEL_POLICY.labelOverlap), byBoxes);
+    // 線との判定は矩形を広げて行う。線に触れる位置と、触れないがすきまが足りない位置を分けて数え、
+    // すきまが取れない図でも線を横切らない位置を選べるようにする。
+    const touching = inflate(b, LABEL_POLICY.lineTouch);
+    const padded = inflate(b, lineReach);
+    const bySolid = solidLines.reduce((p, l) => {
+      if (l.id === exclude || !lineHitsBox(l, padded)) return p;
+      return p + (lineHitsBox(l, touching) ? l.weight : l.weight * LABEL_POLICY.nearLine);
+    }, byPlaced);
+    if (!avoidFaint) return bySolid;
+    // 淡い線は重なった部分をマスクで切り抜くので、触れるかどうかだけを数える。
+    const byFaint = faintLines.reduce(
+      (p, l) => (l.id !== exclude && lineHitsBox(l, touching) ? p + l.weight : p),
+      bySolid,
+    );
+    // 群も触れるかどうかだけを数える。すきまの内側まで数えると、密な場ではどの候補も上限に達し、
+    // 重なる矢印の少ない位置を選べない。上限に達した群は、残りの線を調べない。
     return groups.reduce((p, group) => {
       const hits = group.lines.reduce(
-        (h, l) => (h < group.cap && lineHitsBox(l, padded) ? h + l.weight : h),
+        (h, l) => (h < group.cap && lineHitsBox(l, touching) ? h + l.weight : h),
         0,
       );
       return p + Math.min(hits, group.cap);
-    }, byLines);
+    }, byFaint);
   };
 
   const place = <T>(cands: readonly Candidate<T>[], options: PlaceOptions): Choice<T> => {

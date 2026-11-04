@@ -8,7 +8,14 @@ import {
   tracedLine,
   type LineObstacle,
 } from "./obstacles";
-import { NO_PLACEMENT, bestOf, createPlacer, placeInOrder, type Candidate } from "./placer";
+import {
+  NO_PLACEMENT,
+  bestOf,
+  createPlacer,
+  lineReach,
+  placeInOrder,
+  type Candidate,
+} from "./placer";
 import { FIELD_PENALTY_CAP, LABEL_POLICY } from "./policy";
 
 const bounds: Box = { x0: 0, x1: 200, y0: 0, y1: 200 };
@@ -58,9 +65,12 @@ describe("createPlacer の penalty", () => {
     expect(placer.penalty(target, { placed: [box(62, 50)], bounds })).toBe(LABEL_POLICY.near);
   });
 
-  it("線の重みを足し、線とのすきまの内側も重なりとして数える", () => {
+  it("線に触れる位置に線の重みを与える", () => {
     const placer = createPlacer(lineObstacle("a", crossing(target), 6));
     expect(placer.penalty(target, { placed: [], bounds })).toBe(6);
+  });
+
+  it("線に触れないがすきまが足りない位置に、線の重みの一部を与える", () => {
     const below = (dy: number) =>
       createPlacer(
         lineObstacle(
@@ -72,14 +82,36 @@ describe("createPlacer の penalty", () => {
           6,
         ),
       ).penalty(target, { placed: [], bounds });
-    expect(below(LABEL_POLICY.lineClearance / 2)).toBe(6);
-    expect(below(LABEL_POLICY.lineClearance + 1)).toBe(0);
+    expect(below(LABEL_POLICY.lineTouch / 2)).toBe(6);
+    expect(below(lineReach - 1)).toBe(6 * LABEL_POLICY.nearLine);
+    expect(below(lineReach + 1)).toBe(0);
+  });
+
+  it("淡い線はすきまの内側でも数えない", () => {
+    const placer = createPlacer(
+      lineObstacle(
+        "g",
+        [
+          { x: 40, y: target.y1 + lineReach - 1 },
+          { x: 70, y: target.y1 + lineReach - 1 },
+        ],
+        1,
+        true,
+      ),
+    );
+    expect(placer.penalty(target, { placed: [], bounds })).toBe(0);
   });
 
   it("id で除外した線を数えない", () => {
     const placer = createPlacer(lineObstacle("own", crossing(target), 6));
     expect(placer.penalty(target, { placed: [], bounds, exclude: "own" })).toBe(0);
     expect(placer.penalty(target, { placed: [], bounds, exclude: "other" })).toBe(6);
+  });
+
+  it("id で除外した矩形を数えない", () => {
+    const placer = createPlacer([boxObstacle(box(55, 55), 12, "pt0")]);
+    expect(placer.penalty(target, { placed: [], bounds, exclude: "pt0" })).toBe(0);
+    expect(placer.penalty(target, { placed: [], bounds })).toBe(12);
   });
 
   it("線の上のラベルは淡い線と群を避けない", () => {

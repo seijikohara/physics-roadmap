@@ -10,8 +10,8 @@ import {
   type XY,
 } from "./geometry";
 
-/** 矩形の障害物（目盛り数字・軸名・点の印など）。 */
-export type BoxObstacle = Readonly<{ kind: "box"; box: Box; weight: number }>;
+/** 矩形の障害物（目盛り数字・軸名・点の印など）。id を持つ矩形は判定から外せる（点の自分の印）。 */
+export type BoxObstacle = Readonly<{ kind: "box"; box: Box; weight: number; id?: string }>;
 
 /**
  * 折れ線の障害物。id が同じ線はまとめて判定から外せる（ラベル自身の線）。faint の線は、線の上に
@@ -38,8 +38,8 @@ export type GroupObstacle = Readonly<{
 
 export type Obstacle = BoxObstacle | LineObstacle | GroupObstacle;
 
-export function boxObstacle(box: Box, weight: number): BoxObstacle {
-  return { kind: "box", box, weight };
+export function boxObstacle(box: Box, weight: number, id?: string): BoxObstacle {
+  return id === undefined ? { kind: "box", box, weight } : { kind: "box", box, weight, id };
 }
 
 /** 2 点以上ある折れ線を障害物にする（1 点以下なら障害物にしない）。 */

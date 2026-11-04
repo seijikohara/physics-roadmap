@@ -12,6 +12,7 @@ import {
   aroundVector,
   besideCurve,
   besideSegment,
+  centeredAt,
   insideRegion,
   meanOf,
   normalLabelOffset,
@@ -496,6 +497,11 @@ const MAX_AUTO_PLOT_H = 360;
 const SAMPLES = 480;
 const PARAM_SAMPLES = 240;
 
+// 点の印の半径と、白抜きの点の輪郭の線の太さ（px）。分割の代表点の印は小さくする。
+const POINT_R = 4;
+const OPEN_POINT_STROKE = 1.8;
+const SAMPLE_DOT_R = 2.8;
+
 // ベクトルの矢じり。長さ（線方向）と半幅（直交方向）を px で与える。FunctionGraph と同じ。
 const HEAD_LEN = 9;
 const HEAD_HALF = 3.6;
@@ -523,16 +529,20 @@ const SIMPLIFY_PX = 0.15;
 
 // 等高線のラベル。目盛り数字と同じ大きさにし、線の数が多くても図が文字で埋まらないようにする。
 const CONTOUR_FONT = 11;
-// 等高線を切り抜く矩形の、字形の矩形からの余白（px）。ラベルと線の切れ目の間にすきまを残す。
-const CONTOUR_GAP_PAD = 2;
+// 等高線を切り抜く矩形の、字形の矩形からの余白（px）。ラベルと線の切れ目の間に 4px のすきまを残す。
+// 斜めの線は矩形の上下の縁で切れるので、線の太さの半分と字形の見積もりの誤差のぶんだけ広くとる。
+const CONTOUR_GAP_PAD = 5.5;
 // 領域・点・矢印などのラベル、目盛り数字、軸名の字の大きさ（KatexLabel の fontSize）。
 const LABEL_FONT = 12;
 const TICK_FONT = 11;
 const AXIS_NAME_FONT = 13;
+// 目盛り数字の中心と軸の距離（px）。数字の字形を、目盛りの線の端から 4px 離す。y 軸は「−1」のような
+// 2 字の数字の右端で測る。
+const X_TICK_OFFSET = 14;
+const Y_TICK_OFFSET = 15;
 
-// 格子線を切り抜く範囲を、字形の矩形からさらに広げる量（px）。見積もりと実際の字幅の差と、ハローの
-// 広がりを吸収する。
-const GRID_CUT_PAD = 2;
+// 格子線を切り抜く範囲を、字形の矩形からさらに広げる量（px）。等高線の切れ目と同じすきまを残す。
+const GRID_CUT_PAD = CONTOUR_GAP_PAD;
 // 格子線を切り抜いた外側に残る線の長さの下限（px）。これより短く残るなら、縁まで切り抜く。
 const GRID_STUB_PX = 12;
 
@@ -766,12 +776,12 @@ export default function ContourPlot({
         ...xt.flatMap((t) =>
           tickLabel(t) === ""
             ? []
-            : [tickBoxOf(t, { x: x(tickValue(t)), y: axisY + 13, align: "center" })],
+            : [tickBoxOf(t, { x: x(tickValue(t)), y: axisY + X_TICK_OFFSET, align: "center" })],
         ),
         ...yt.flatMap((t) =>
           tickLabel(t) === ""
             ? []
-            : [tickBoxOf(t, { x: axisX - 14, y: y(tickValue(t)), align: "center" })],
+            : [tickBoxOf(t, { x: axisX - Y_TICK_OFFSET, y: y(tickValue(t)), align: "center" })],
         ),
       ]
     : [];
@@ -820,13 +830,22 @@ export default function ContourPlot({
   const placer = createPlacer([
     ...tickBoxes.map((box) => boxObstacle(box, W.tick)),
     ...axisObstacles,
-    ...points.map((p) => {
+    ...points.map((p, i) => {
       const px = x(p.x);
       const py = y(p.y);
-      return boxObstacle({ x0: px - 5, x1: px + 5, y0: py - 5, y1: py + 5 }, W.point);
+      const r = markerReach(p);
+      return boxObstacle({ x0: px - r, x1: px + r, y0: py - r, y1: py + r }, W.point, `pt${i}`);
     }),
     ...(partitionData?.samples ?? []).map((s) =>
-      boxObstacle({ x0: s.x - 4, x1: s.x + 4, y0: s.y - 4, y1: s.y + 4 }, W.sampleDot),
+      boxObstacle(
+        {
+          x0: s.x - SAMPLE_DOT_R,
+          x1: s.x + SAMPLE_DOT_R,
+          y0: s.y - SAMPLE_DOT_R,
+          y1: s.y + SAMPLE_DOT_R,
+        },
+        W.sampleDot,
+      ),
     ),
     ...contourData.flatMap((levels) =>
       levels.flatMap((lv) => lv.lines.flatMap((l) => lineObstacle(lv.id, l.pts, W.line))),
@@ -894,40 +913,38 @@ export default function ContourPlot({
     const size = glyphSizeOf(ray.label, LABEL_FONT);
     // 半直線の延長上へ、ラベル矩形が円に触れない距離だけ離す。
     const off = normalLabelOffset(ray.dir.x, ray.dir.y, size);
-    const pos: LabelPos = {
-      x: ray.end.x + ray.dir.x * off,
-      y: ray.end.y + ray.dir.y * off,
-      align: "center",
-    };
+    const pos = centeredAt(ray.end.x + ray.dir.x * off, ray.end.y + ray.dir.y * off, size);
     return placedLabel(ray.label, pos, size);
   });
 
   // 点のラベル。点の周囲 8 方向の候補から選ぶ（FunctionGraph と同じ候補）。
-  const pointLabels = placeInOrder(points, polarLabels.placed, (p, _, placed) => {
+  const pointLabels = placeInOrder(points, polarLabels.placed, (p, i, placed) => {
     if (p.label === undefined) return NO_PLACEMENT;
-    const cands = aroundPoint({ x: x(p.x), y: y(p.y) });
     const size = glyphSizeOf(p.label, LABEL_FONT);
+    const cands = aroundPoint({ x: x(p.x), y: y(p.y) }, size, markerReach(p));
     const pos = choosePlacement(
       p.labelDir === undefined ? Object.values(cands) : [cands[p.labelDir]],
       size,
       placed,
+      `pt${i}`,
     );
     return placedLabel(p.label, pos, size);
   });
 
   // 分割の小長方形のラベル。小長方形の中心を優先し、代表点と重なるときは上下へ逃がす。逃がす量は、
-  // ラベルの半分の高さと代表点の印の半径を足した距離より大きくとる。
+  // ラベルの半分の高さと代表点の印の半径に、すきまを足した距離である。
   const cellLabels = placeInOrder(
     partitionData?.highlights ?? [],
     pointLabels.placed,
     (h, _, placed) => {
       if (h.label === undefined) return NO_PLACEMENT;
       const size = glyphSizeOf(h.label, LABEL_FONT);
+      const shift = (size.bottom - size.top) / 2 + SAMPLE_DOT_R + LABEL_POLICY.lineClearance;
       const pos = choosePlacement(
         [
-          { x: h.cx, y: h.cy, align: "center" },
-          { x: h.cx, y: h.cy - 13, align: "center" },
-          { x: h.cx, y: h.cy + 13, align: "center" },
+          centeredAt(h.cx, h.cy, size),
+          centeredAt(h.cx, h.cy - shift, size),
+          centeredAt(h.cx, h.cy + shift, size),
         ],
         size,
         placed,
@@ -943,7 +960,7 @@ export default function ContourPlot({
     const size = glyphSizeOf(v.label, LABEL_FONT);
     const pos = choosePlacement(
       v.labelAt === undefined
-        ? aroundVector(from, to, size)
+        ? aroundVector(from, to, size, HEAD_HALF)
         : [{ ...toScreen(v.labelAt), align: "center" }],
       size,
       placed,
@@ -1013,8 +1030,10 @@ export default function ContourPlot({
         { placed, bounds: plotBounds, exclude: lv.id, avoidFaint: false },
       );
       if (best.item === null || !(best.score < LABEL_POLICY.outside)) return NO_PLACEMENT;
-      const { pos, box } = best.item;
-      return { item: { tex: lv.label, pos, box }, box };
+      // 占有矩形を切り抜きの矩形にする。後の等高線のラベルが切れ目を避け、隣り合う線の切れ目が
+      // つながって線が大きく欠けるのを防ぐ。
+      const { pos, cut } = best.item;
+      return { item: { tex: lv.label, pos, box: cut }, box: cut };
     },
   );
   const contourLabels = contourPlacement.items.filter((l): l is ContourLabel => l !== null);
@@ -1491,7 +1510,7 @@ export default function ContourPlot({
 
         {/* 分割の小長方形の代表点。 */}
         {(partitionData?.samples ?? []).map((s, i) => (
-          <Circle key={`ps-${i}`} cx={s.x} cy={s.y} r={2.8} fill="currentColor" />
+          <Circle key={`ps-${i}`} cx={s.x} cy={s.y} r={SAMPLE_DOT_R} fill="currentColor" />
         ))}
 
         {/* 点。白抜きの点は背景色で塗り抜き、その点を含まないことを表す。 */}
@@ -1504,13 +1523,13 @@ export default function ContourPlot({
               key={`pt-${i}`}
               cx={px}
               cy={py}
-              r={4}
+              r={POINT_R}
               fill="var(--sl-color-bg, #fff)"
               stroke={color}
-              strokeWidth={1.8}
+              strokeWidth={OPEN_POINT_STROKE}
             />
           ) : (
-            <Circle key={`pt-${i}`} cx={px} cy={py} r={4} fill={color} />
+            <Circle key={`pt-${i}`} cx={px} cy={py} r={POINT_R} fill={color} />
           );
         })}
 
@@ -1546,7 +1565,7 @@ export default function ContourPlot({
               key={`txn-${i}`}
               tex={tickLabel(t)}
               x={x(tickValue(t))}
-              y={axisY + 13}
+              y={axisY + X_TICK_OFFSET}
               fontSize={TICK_FONT}
               className="fig-tick-label"
             />
@@ -1556,7 +1575,7 @@ export default function ContourPlot({
             <KatexLabel
               key={`tyn-${i}`}
               tex={tickLabel(t)}
-              x={axisX - 14}
+              x={axisX - Y_TICK_OFFSET}
               y={y(tickValue(t))}
               fontSize={TICK_FONT}
               className="fig-tick-label"
@@ -2404,6 +2423,11 @@ function placedLabel(tex: string, pos: LabelPos | null, size: GlyphSize): Placem
   if (pos === null) return NO_PLACEMENT;
   const box = glyphBox(pos, size);
   return { item: { tex, pos, box }, box };
+}
+
+/** 点の中心から印の端までの距離（px）。白抜きの点は輪郭の線の太さの半分だけ広い。 */
+function markerReach(p: Point): number {
+  return p.open === true ? POINT_R + OPEN_POINT_STROKE / 2 : POINT_R;
 }
 
 /** 凡例の 1 項目。 */
