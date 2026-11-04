@@ -32,7 +32,9 @@
 
 - `src/content/docs/`: 章（`.md`/`.mdx`）
 - `src/components/`: React アイランドのコンポーネント
-- `src/components/figure-label/`: 図のラベルの寸法と幾何の共通モジュール（DOM を使わない純粋な TypeScript）
+- `src/components/figure-label/`: 図のラベルの寸法・幾何・配置器の共通モジュール（DOM を使わない純粋な TypeScript）
+  - `measure.ts`: KaTeX の組版の木から幅・高さを見積もる。`label-box.ts`: 基準点と寸法から字形の矩形を求める。
+  - `obstacles.ts`・`candidates.ts`・`placer.ts`・`policy.ts`: 障害物・候補の生成器・配置器・罰点とすきまの定数。今は`ContourPlot`が使う。
 - `src/styles/`: スタイル
 - `.claude/agents/`: 執筆と検証のサブエージェント定義
 - `docs/`: 設計と計画のドキュメント
@@ -120,6 +122,11 @@
 - 2D 図（関数グラフ・幾何・ベクトル・ベン図・数直線）は、対応する各コンポーネント（`FunctionGraph`・`UnitCircle`・`Triangle`・`NumberLine`・`VennDiagram`・`AreaModel`）で描く。
   - 図中ラベルの数式は`KatexLabel`が SVG の foreignObject に KaTeX を埋め込む。根号などの伸縮グリフは foreignObject 内で高さ 0 に潰れるため、`src/styles/global.css`で各図の`.katex svg`に`height: 100%`を与えて復元している。新たな伸縮グリフを使うときは、ビルドして実機で確認する。
   - 図中の日本語は本文と同じシステムフォントにそろえる（`global.css`で KaTeX の`.cjk_fallback`を本文フォントへ上書き済み）。各図は表示倍率 1.0（`max-width`＝viewBox 幅）で描き、フォントサイズを図をまたいでそろえる。
+- `ContourPlot`のラベルは配置器が置く。ラベルと線・点の印のすきまは 4px である。次の指定で位置を調整する。
+  - `labelAt`は基準点である。矢印・線分・領域・等高線のレベルは数学座標で渡し、等高線のレベルでは線の上の最寄りの点へ吸着させる。曲線・媒介変数曲線は線の上の点を x または媒介変数で渡す。
+  - `labelDir`は基準点から見た向きで、`"auto"`・`"center"`・8 方位を渡す。`labelAt`だけなら基準点を固定して向きを自動で選び、`labelAt`と`labelDir`の両方があれば完全に固定する。
+  - 矢印・線分は、`labelAt`があるときの`labelDir`の既定が`"center"`である。`labelAt`の点をラベルの中心にする。向きを自動で選ぶには`labelDir: "auto"`を渡す。
+  - `labelOffset`は線や基準点からラベルの箱の縁までのすきま（px）で、既定は 4 である。
 - ドラッグやスライダーなど双方向性が必要な図のみ、クライアントアイランドで読み込む。
 - データグラフは visx を標準とする。高水準の図が要るときは`@visx/xychart`を導入する。データ図が必要な章で導入する。双方向性が要る場合は、その時点で描画手段を選定する。
 
