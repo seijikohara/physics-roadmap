@@ -325,14 +325,23 @@ describe("nearestOnPolyline", () => {
     { x: 10, y: 10 },
   ];
 
-  it("辺の内側の最も近い点と距離を返す", () => {
-    expect(nearestOnPolyline(path, { x: 5, y: 3 })).toEqual({ point: { x: 5, y: 0 }, distance: 3 });
+  it("辺の内側の最も近い点と距離と弧長を返す", () => {
+    expect(nearestOnPolyline(path, { x: 5, y: 3 })).toEqual({
+      point: { x: 5, y: 0 },
+      distance: 3,
+      arc: 5,
+    });
+  });
+
+  it("後の辺の点の弧長は前の辺の長さを含む", () => {
+    expect(nearestOnPolyline(path, { x: 13, y: 4 }).arc).toBe(14);
   });
 
   it("端点が最も近いときは端点を返す", () => {
     expect(nearestOnPolyline(path, { x: -3, y: -4 })).toEqual({
       point: { x: 0, y: 0 },
       distance: 5,
+      arc: 0,
     });
   });
 });

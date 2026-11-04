@@ -1125,6 +1125,8 @@ export default function ContourPlot({
       : NO_PLACEMENT,
   );
 
+  const pointMarks = points.map((p) => ({ x: x(p.x), y: y(p.y), reach: markerReach(p) }));
+
   // 等高線のラベル。線の上の位置を弧長に沿って候補にし、軸・目盛り・他の線・既出ラベルとの衝突を
   // 罰点にして選ぶ。等高線のラベルは格子線とベクトル場を避けない。線の上で置ける位置が限られ、
   // 避けると線の中ほどから大きく外れるためである。重なった格子線は、下の線と同じくマスクで切り抜き、
@@ -1138,7 +1140,7 @@ export default function ContourPlot({
       const size = glyphSizeOf(lv.label, CONTOUR_FONT);
       const best = placer.place(
         lv.labelAt === undefined
-          ? onLine(lines, size, CONTOUR_GAP_PAD, placed)
+          ? onLine(lines, size, CONTOUR_GAP_PAD, placed, pointMarks)
           : onLineNear(lines, size, CONTOUR_GAP_PAD, lv.labelAt),
         { placed, bounds: plotBounds, exclude: lv.id, avoidFaint: false },
       );

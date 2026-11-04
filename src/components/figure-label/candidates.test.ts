@@ -11,6 +11,7 @@ import {
   onLine,
   onLineNear,
   positionsAround,
+  type PointMark,
 } from "./candidates";
 import { boxesOverlap, inflate, type Box, type XY } from "./geometry";
 import { glyphBox, type GlyphSize, type LabelPos } from "./label-box";
@@ -345,6 +346,90 @@ describe("onLine の採点", () => {
     // 切り抜きの幅は 20 + 2 × 5 = 30 なので、一周が 38 未満なら収まらない。
     expect(onLine([ring(5)], size, 5)).toHaveLength(0);
     expect(onLine([ring(8)], size, 5).length).toBeGreaterThan(0);
+  });
+});
+
+/** 長さ 300 の開いた線の上の x の、線の中ほどの好みの罰点。 */
+function midPref(x: number): number {
+  return Math.abs(x / 300 - 0.5) * 2;
+}
+
+describe("onLine の切れ端の罰点", () => {
+  const line = tracedLine(
+    [
+      { x: 0, y: 100 },
+      { x: 300, y: 100 },
+    ],
+    false,
+  );
+  // 切り抜きの幅は 30 なので、中心が x のとき切れ目の左端は x − 15 である。
+  const scoreAt = (cx: number, marks: readonly PointMark[] = []) => {
+    const near = onLine([line], size, 5, [], marks).reduce((m, c) =>
+      Math.abs(centerX(c.box) - cx) < Math.abs(centerX(m.box) - cx) ? c : m,
+    );
+    return near.score?.(0) ?? 0;
+  };
+  const stub = LABEL_POLICY.stub;
+
+  it("線の端との間に短い切れ端が残る候補に罰点を与える", () => {
+    expect(scoreAt(19) - midPref(19)).toBeCloseTo(stub, 1);
+    expect(scoreAt(281) - midPref(281)).toBeCloseTo(stub, 1);
+  });
+
+  it("線の端まで十分に線が残る候補には罰点を与えない", () => {
+    expect(scoreAt(35) - midPref(35)).toBeCloseTo(0, 1);
+  });
+
+  it("閉じた線には線の端の切れ端の罰点を与えない", () => {
+    // 始点の上の候補でも、残るのは曲がりと右上の好みの罰点だけである。
+    const [first] = onLine([ring(60)], size, 5);
+    expect(first.score?.(0)).toBeLessThan(LABEL_POLICY.stub);
+  });
+
+  it("切れ端しか残らない短い線にも候補を作る", () => {
+    const short = tracedLine(
+      [
+        { x: 0, y: 0 },
+        { x: 40, y: 0 },
+      ],
+      false,
+    );
+    expect(onLine([short], size, 5).length).toBeGreaterThan(0);
+  });
+
+  describe("線の上の点の印", () => {
+    const mark = { x: 150, y: 100, reach: 4 };
+
+    it("切れ目が印に届く候補に罰点を与える", () => {
+      expect(scoreAt(150, [mark]) - scoreAt(150)).toBeCloseTo(stub, 9);
+    });
+
+    it("印との間に短い切れ端が残る候補に罰点を与える", () => {
+      // 切れ目の右端は 120 で、印の端 146 まで 26 残る。x = 125 なら 6 しか残らない。
+      expect(scoreAt(125, [mark]) - scoreAt(125)).toBeCloseTo(stub, 9);
+      expect(scoreAt(175, [mark]) - scoreAt(175)).toBeCloseTo(stub, 9);
+    });
+
+    it("印から十分に離れた候補には罰点を与えない", () => {
+      expect(scoreAt(100, [mark]) - scoreAt(100)).toBeCloseTo(0, 9);
+      expect(scoreAt(200, [mark]) - scoreAt(200)).toBeCloseTo(0, 9);
+    });
+  });
+
+  it("線の外の点の印に切れ目が届く候補に罰点を与える", () => {
+    // 切れ目の矩形の下端は y = 100 + 5 + 5 付近にある。
+    const below = { x: 150, y: 112, reach: 4 };
+    expect(scoreAt(150, [below]) - scoreAt(150)).toBeCloseTo(stub, 9);
+  });
+
+  it("閉じた線でも印までの残りを始点をまたいで測る", () => {
+    // 円の始点（角 0）の印を、始点の後ろ側の候補からも見つける。
+    const circle = ring(60);
+    const start = { x: 160, y: 100, reach: 4 };
+    const plain = onLine([circle], size, 5);
+    const marked = onLine([circle], size, 5, [], [start]);
+    const last = plain.length - 1;
+    expect((marked[last].score?.(0) ?? 0) - (plain[last].score?.(0) ?? 0)).toBeCloseTo(stub, 9);
   });
 });
 

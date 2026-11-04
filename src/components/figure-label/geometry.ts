@@ -169,12 +169,15 @@ export function segmentBoxDistance(a: XY, b: XY, box: Box): number {
   );
 }
 
-/** 折れ線の上で点 p に最も近い点と、点 p からの距離。同点なら始点に近い側の点を返す。 */
+/**
+ * 折れ線の上で点 p に最も近い点と、点 p からの距離と、始点からの弧長。同点なら始点に近い側の点を返す。
+ */
 export function nearestOnPolyline(
   pts: readonly XY[],
   p: XY,
-): Readonly<{ point: XY; distance: number }> {
-  const first = { point: pts[0], distance: Math.hypot(p.x - pts[0].x, p.y - pts[0].y) };
+): Readonly<{ point: XY; distance: number; arc: number }> {
+  const first = { point: pts[0], distance: Math.hypot(p.x - pts[0].x, p.y - pts[0].y), arc: 0 };
+  const cum = cumulativeLength(pts);
   return pts.reduce((best, b, k) => {
     if (k === 0) return best;
     const a = pts[k - 1];
@@ -184,7 +187,9 @@ export function nearestOnPolyline(
     const t = len2 === 0 ? 0 : clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / len2, 0, 1);
     const point = lerpAt(a, b, t);
     const distance = Math.hypot(p.x - point.x, p.y - point.y);
-    return distance < best.distance ? { point, distance } : best;
+    return distance < best.distance
+      ? { point, distance, arc: cum[k - 1] + (cum[k] - cum[k - 1]) * t }
+      : best;
   }, first);
 }
 

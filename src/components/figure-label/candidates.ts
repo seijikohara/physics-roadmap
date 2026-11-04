@@ -3,6 +3,7 @@
 
 import {
   boxGap,
+  distanceToBox,
   inflate,
   nearestOnPolyline,
   pointAtLength,
@@ -311,6 +312,7 @@ export function onLine(
   size: GlyphSize,
   gapPad: number,
   others: readonly Box[] = [],
+  marks: readonly PointMark[] = [],
 ): readonly Candidate<OnLinePlacement>[] {
   const w = size.width + 2 * gapPad;
   // ラベルが乗る線のうち、ラベルの中心から弧長で ownWindow の範囲にある部分は、ラベルが当然重なる部分として
@@ -320,12 +322,13 @@ export function onLine(
   return lines.flatMap((line, li) => {
     const total = line.cum[line.cum.length - 1];
     if (total < w + 8) return [];
+    const stops = marksOnLine(line, marks);
     const centroid = line.closed ? meanOf(line.pts) : null;
     const margin = line.closed ? 0 : w / 2 + 2;
     return accumulateSteps(margin, 4, total - margin).map((s): Candidate<OnLinePlacement> => {
       const p = pointAtLength(line.pts, line.cum, s, line.closed);
       const value = placementOnLine(p, size, gapPad);
-      const { glyph } = value;
+      const { glyph, cut } = value;
       return {
         box: glyph,
         value,
@@ -341,6 +344,7 @@ export function onLine(
           const turned =
             penalty +
             own * LABEL_POLICY.ownLine +
+            stubPenalty(line, s, cut, ownWindow, stops, marks) +
             crowded * LABEL_POLICY.crowd +
             turnAngle(pa, p, pb) * 3;
           if (centroid === null) return turned + Math.abs(s / total - 0.5) * 2;
@@ -350,6 +354,68 @@ export function onLine(
       };
     });
   });
+}
+
+/** 図の中の点の印。reach は点の中心から印の端までの距離である。 */
+export type PointMark = XY & Readonly<{ reach: number }>;
+
+/** 線の上にある点の印の、線の始点からの弧長と印の端までの距離。 */
+function marksOnLine(
+  line: TracedLine,
+  marks: readonly PointMark[],
+): readonly Readonly<{ arc: number; reach: number }>[] {
+  return marks.flatMap((m) => {
+    const near = nearestOnPolyline(line.pts, m);
+    return near.distance <= m.reach ? [{ arc: near.arc, reach: m.reach }] : [];
+  });
+}
+
+/** 弧長 s から向き dir へ線をたどり、矩形を出る弧長を返す。limit まで出なければ limit 先の弧長を返す。 */
+function exitArc(line: TracedLine, s: number, dir: number, box: Box, limit: number): number {
+  const inside = (t: number): boolean => {
+    const q = pointAtLength(line.pts, line.cum, t, line.closed);
+    return q.x >= box.x0 && q.x <= box.x1 && q.y >= box.y0 && q.y <= box.y1;
+  };
+  const steps = Array.from({ length: Math.ceil(limit) }, (_, i) => s + dir * (i + 1));
+  return steps.find((t) => !inside(t)) ?? s + dir * limit;
+}
+
+/** 線の端までの残りの弧長が、短い切れ端になるか。何も残らないなら切れ端は無い。 */
+function isStub(rest: number): boolean {
+  return rest > 0 && rest < LABEL_POLICY.stubLength;
+}
+
+/**
+ * 切れ目の先に短い切れ端が残る候補と、切れ目が点の印に届く候補の罰点。切れ端は、線の切れ目から線の端や
+ * 線の上の点の印までの残りが短い部分である。線の端まで切れ目が届いて何も残らないなら、切れ端は無い。
+ */
+function stubPenalty(
+  line: TracedLine,
+  s: number,
+  cut: Box,
+  reach: number,
+  stops: readonly Readonly<{ arc: number; reach: number }>[],
+  marks: readonly PointMark[],
+): number {
+  const total = line.cum[line.cum.length - 1];
+  const back = exitArc(line, s, -1, cut, reach);
+  const fwd = exitArc(line, s, 1, cut, reach);
+  const atEnd = !line.closed && (isStub(back) || isStub(total - fwd));
+  // 弧長の差。閉じた線では一周で巻き戻し、0 以上の値にする。
+  const gap = (v: number): number => (line.closed ? ((v % total) + total) % total : v);
+  const atStop = stops.some(({ arc, reach: r }) => {
+    const fromBack = gap(arc - back);
+    const inCut = fromBack >= 0 && fromBack <= fwd - back;
+    const ahead = gap(arc - fwd);
+    const behind = gap(back - arc);
+    return (
+      inCut ||
+      (ahead >= 0 && ahead - r < LABEL_POLICY.stubLength) ||
+      (behind >= 0 && behind - r < LABEL_POLICY.stubLength)
+    );
+  });
+  const touchesMark = marks.some((m) => distanceToBox(m, cut) <= m.reach);
+  return atEnd || atStop || touchesMark ? LABEL_POLICY.stub : 0;
 }
 
 /** 線の組の上で target に最も近い 1 点だけの候補。線が無ければ候補を作らない。 */
