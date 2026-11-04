@@ -589,8 +589,9 @@ const AXIS_NAME_FONT = 13;
 const X_TICK_OFFSET = 14;
 const Y_TICK_OFFSET = 15;
 
-// 格子線を切り抜く範囲を、字形の矩形からさらに広げる量（px）。等高線の切れ目と同じすきまを残す。
-const GRID_CUT_PAD = CONTOUR_GAP_PAD;
+// 格子線を切り抜く範囲を、字形の矩形からさらに広げる量（px）。格子線の切り抜きの目的は線が字形を
+// 貫かないことである。広げすぎると、字に触れていない格子線まで途切れる。
+const GRID_CUT_PAD = 2;
 // 格子線を切り抜いた外側に残る線の長さの下限（px）。これより短く残るなら、縁まで切り抜く。
 const GRID_STUB_PX = 12;
 
@@ -1183,7 +1184,7 @@ export default function ContourPlot({
   // 格子線（目盛りに沿った格子線と極座標の格子）を切り抜く矩形。すべてのラベルと目盛り数字の下で
   // 補助線を切り、線が字形を貫かないようにする。ハローは字の輪郭から 2〜3px しか覆わず、字の
   // すき間を通る線（「=」の 2 本の間、「−」に沿う線）を隠せないためである。背景色の矩形を重ねる
-  // 方式と違い、領域の塗りを隠さない。等高線のラベルは、等高線を切る矩形と同じ範囲で切る。
+  // 方式と違い、領域の塗りを隠さない。
   // 切り抜きとプロット矩形の縁の間に残る格子線が GRID_STUB_PX より短いときは、縁まで切り抜く。
   // ラベルの脇に数 px だけ残った線が、「=1_」のように字の続きに見えるのを防ぐ。
   const plotRight = originX + plotW;
@@ -1197,7 +1198,7 @@ export default function ContourPlot({
   const gridCuts: readonly Box[] =
     grid || polar !== null
       ? [
-          ...contourLabels.map((l) => l.cut),
+          ...contourLabels.map((l) => inflate(l.box, GRID_CUT_PAD)),
           ...allLabels.map((l) => inflate(l.box, GRID_CUT_PAD)),
           ...tickBoxes.map((b) => inflate(b, GRID_CUT_PAD)),
         ].map(toEdge)
