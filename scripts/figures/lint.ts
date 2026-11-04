@@ -1,12 +1,11 @@
 // 図の中のラベルと線・点・他のラベルとの重なりと近接、図の外へのはみ出しを、ブラウザで計測して一覧にする。
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import type { BrowserContext } from "playwright-core";
 import {
   UsageError,
-  displayPath,
   distDirOf,
   mapSeries,
   newThemedContext,
@@ -18,6 +17,7 @@ import {
   resolvePages,
   runMain,
   withBrowser,
+  writeJson,
 } from "./lib.ts";
 
 const USAGE = `使い方: pnpm run figures:lint -- [<ページ>...] [オプション]
@@ -29,7 +29,8 @@ const USAGE = `使い方: pnpm run figures:lint -- [<ページ>...] [オプシ�
   --all               全ページを検査する（--dist ならビルド結果、--url なら src/content/docs の章）
   --near <px>         近接とみなす距離の上限（既定: 4）。距離 0 以下は重なり（overlap）
   --json <パス>       詳細を JSON で書き出す（--compare の基準に使える）
-  --labels <パス>     全ラベルの名前・フォントサイズ・字形の矩形（図 SVG の座標系）を JSON で書き出す
+  --labels <パス>     全ラベルの名前・種類・元の書式・フォントサイズ・字形の矩形を JSON で書き出す
+                      （フォントサイズと矩形は、どちらも図 SVG の座標系 = viewBox の単位にそろえる）
   --compare <パス>    --json で書き出した基準と比べ、図ごとに増えた所見と消えた所見だけを出す
                       （所見はページ・図番号・ラベル名・相手・種別で照合し、距離の違いは無視する）
   --fail-on <種別>    overlap なら overlap・outside、near なら near も含めて、該当があれば終了コード 1
@@ -83,9 +84,30 @@ type Finding = Readonly<{
   at?: Pt;
   count: number;
 }>;
-/** --labels に書き出すラベルの寸法（図 SVG の座標系）。 */
+/**
+ * --labels に書き出すラベルの寸法。
+ *
+ * fontSize と矩形は、どちらも図 SVG の座標系（viewBox の単位）で表す。図が本文の幅に合わせて
+ * 縮んでも値は変わらないので、部品が見積もる文字幅とそのまま比べられる。
+ */
 type LabelInfo = Readonly<{
   name: string;
+  /**
+   * ラベルの種類。svg-text は `<text>`、katex は全体が 1 つの KaTeX の数式だけの foreignObject、
+   * html はそれ以外の foreignObject（地の文や複数の数式・複数行を含む FlowChart のラベルなど）。
+   */
+  kind: "svg-text" | "katex" | "html";
+  /**
+   * 元の書式に戻したラベル。数式は `$...$`、ブロック要素の境目は `\n` で表す（FlowChart のラベルの
+   * 書式と同じ）。地の文の空白は、描画と同じく連続を 1 つに詰め、行の両端では除く。`<text>` は
+   * 文字列をそのまま入れる。
+   */
+  source: string;
+  /**
+   * 部品が指定したフォントサイズを図 SVG の座標系に直した値。foreignObject の中の CSS px は
+   * foreignObject の座標系の単位なので、ラベルの座標系から図 SVG の座標系への倍率を掛ける
+   * （translate だけの入れ子なら倍率は 1 で、部品が渡した値そのものになる）。
+   */
   fontSize: number;
   x?: number;
   y?: number;
@@ -754,6 +776,36 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
     return /^\$[^$]*\$$/.test(name) ? name.slice(1, -1) : name;
   };
 
+  // --labels 用に、ラベルを部品に渡した書式（数式は $...$、行の境目は \n）へ戻す。ブロック要素の
+  // 前後に改行を置き、改行だけの行（入れ子のブロックの境目）は後で捨てる。幅 0 の空白だけの行は、
+  // FlowChart が空の行に入れる字なので、空の行として残す。
+  const sourceParts = (n: Node): readonly string[] => {
+    if (n instanceof Text) return [n.nodeValue ?? ""];
+    if (!(n instanceof Element)) return [];
+    if (n.classList.contains("katex")) {
+      const a = n.querySelector('annotation[encoding="application/x-tex"]');
+      return [`$${(a?.textContent ?? n.textContent ?? "").trim()}$`];
+    }
+    const block = getComputedStyle(n).display.startsWith("inline") ? [] : ["\n"];
+    return [...block, ...[...n.childNodes].flatMap(sourceParts), ...block];
+  };
+  const labelSource = (el: Element): string => {
+    if (el.localName === "text") return el.textContent ?? "";
+    return sourceParts(el)
+      .join("")
+      .split("\n")
+      .map((line) => line.replace(/\s+/g, " ").trim())
+      .filter((line) => line !== "")
+      .map((line) => line.replaceAll(ZERO_WIDTH_SPACE, ""))
+      .join("\n");
+  };
+  // 全体が 1 つの KaTeX の数式だけのラベル（KatexLabel）か、地の文や複数の数式を含むラベルかを分ける。
+  const labelKind = (el: Element): LabelInfo["kind"] => {
+    if (el.localName === "text") return "svg-text";
+    const outside = glyphTextNodes(el).filter((n) => n.parentElement?.closest(".katex") === null);
+    return el.querySelectorAll(".katex").length === 1 && outside.length === 0 ? "katex" : "html";
+  };
+
   const describe = (el: Element, kind: Obstacle["kind"]): Partner => {
     const cs = getComputedStyle(el);
     return {
@@ -893,7 +945,7 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
     const svgCtm = svg.getScreenCTM();
     const toSvg = svgCtm === null ? null : svgCtm.inverse();
     const round2 = (v: number): number => Math.round(v * 100) / 100;
-    const svgUserBox = (r: Box): Omit<LabelInfo, "name" | "fontSize"> => {
+    const svgUserBox = (r: Box): Pick<LabelInfo, "x" | "y" | "width" | "height"> => {
       if (toSvg === null) return {};
       const b = transformBox(r, toSvg);
       return {
@@ -903,9 +955,13 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
         height: round2(b.b - b.t),
       };
     };
-    const fontSizeOf = (el: Element): number => {
+    // getComputedStyle の font-size は、ラベルの座標系（foreignObject・text の座標系）の単位である。
+    // 画面への倍率の比で、図 SVG の座標系の単位に直す。
+    const svgScale = scaleOf(svgCtm);
+    const fontSizeOf = (el: SVGGraphicsElement): number => {
       const target = el.localName === "text" ? el : (el.firstElementChild ?? el);
-      return Number.parseFloat(getComputedStyle(target).fontSize);
+      const css = Number.parseFloat(getComputedStyle(target).fontSize);
+      return svgScale > 0 ? round2((css * scaleOf(el.getScreenCTM())) / svgScale) : css;
     };
 
     const labelEls = [...svg.querySelectorAll<SVGGraphicsElement>("foreignObject, text")].filter(
@@ -1320,6 +1376,8 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
       findings,
       labelList: labels.map((l) => ({
         name: l.name,
+        kind: labelKind(l.el),
+        source: labelSource(l.el),
         fontSize: fontSizeOf(l.el),
         ...svgUserBox(l.rect),
       })),
@@ -1498,14 +1556,6 @@ function countFailing(findings: readonly Finding[], failOn: string | undefined):
   if (failOn === "overlap") return findings.filter((f) => f.kind !== "near").length;
   if (failOn === "near") return findings.length;
   return 0;
-}
-
-/** JSON を書き出し、表示用のパスを返す。 */
-function writeJson(file: string, data: unknown): string {
-  const resolved = path.resolve(file);
-  mkdirSync(path.dirname(resolved), { recursive: true });
-  writeFileSync(resolved, `${JSON.stringify(data, null, 2)}\n`);
-  return displayPath(resolved);
 }
 
 /** 件数の合計。 */

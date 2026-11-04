@@ -36,6 +36,9 @@ jobs:
       - name: Type check (tsc)
         run: pnpm run typecheck
 
+      - name: Unit tests (vitest)
+        run: pnpm run test
+
       - name: Proofread Markdown/MDX (textlint)
         run: pnpm run lint:text
 

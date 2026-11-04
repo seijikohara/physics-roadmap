@@ -19,6 +19,8 @@
 - フレームワーク: Astro 7、Starlight 0.42
 - UI アイランド: React 19
 - 数式: remark-math、rehype-katex、KaTeX
+  - KaTeX は版を固定する（`package.json`の`katex`に範囲指定を付けない）。図のラベルの幅を、KaTeX の内部 API が返す組版の木から見積もるためである。
+  - 内部 API の木の形は版で変わりうる。KaTeX を上げるときは`pnpm run figures:widths`で見積もりの誤差を測り直してからマージする。
 - 図・グラフ: visx（`@visx/*`）によるビルド時生成の静的 SVG。すべての図を visx で描く。
   - 座標・スケール: `@visx/scale`。描画: `@visx/shape`・`@visx/group`・`@visx/grid`・`@visx/marker`・`@visx/clip-path`。凡例: `@visx/legend`。
   - 概念図（フローチャート）: `@visx/network` ＋ `@dagrejs/dagre`（ビルド時のレイアウト）。`FlowChart`コンポーネントで描く。
@@ -30,6 +32,7 @@
 
 - `src/content/docs/`: 章（`.md`/`.mdx`）
 - `src/components/`: React アイランドのコンポーネント
+- `src/components/figure-label/`: 図のラベルの寸法と幾何の共通モジュール（DOM を使わない純粋な TypeScript）
 - `src/styles/`: スタイル
 - `.claude/agents/`: 執筆と検証のサブエージェント定義
 - `docs/`: 設計と計画のドキュメント
@@ -46,10 +49,12 @@
 - `pnpm run lint:text`: 全ドキュメントを textlint で校正する。
 - `pnpm run lint:text:fix`: textlint で自動修正できる箇所を修正する。
 - `pnpm run typecheck`: `astro sync`で Astro の型宣言を生成してから、TypeScript の型を`tsc --noEmit`で検査する。
-- `pnpm run check`: format:check・lint・typecheck・lint:text をまとめて実行する。
+- `pnpm run test`: Vitest で単体テスト（`src/**/*.test.ts`・`scripts/**/*.test.ts`）を実行する。
+- `pnpm run check`: format:check・lint・typecheck・test・lint:text をまとめて実行する。
 - `pnpm run figures:shot -- <ページ>...`: 章の図を 1 枚ずつ PNG に撮る（出力先は`.figures/shots`）。
 - `pnpm run figures:lint -- <ページ>...`: 図のラベルと線・点・他のラベルの重なりと近接を一覧にする（`--all`で全ページ）。
 - `pnpm run figures:diff -- --base <基準の dist>`: 2 つのビルド結果を比べ、変わった図の前後を左右に並べた PNG を書き出す。
+- `pnpm run figures:widths -- <labels.json>`: ラベルの幅の見積もり（`src/components/figure-label/`）と実測の誤差を、種類・部品ごとの表にする。
 
 図のスクリプトは次のように使う。
 
@@ -59,6 +64,8 @@
 - スクリプトは`scripts/figures/*.ts`（TypeScript）で、tsx で実行する。
 - スクリプトも「コードの書き方」の節のイミュータビリティの規則に従う。
 - `figures:lint`の近接（near）の閾値は既定で 4px である。4px は、ラベルと線のすきまの目標である。
+- `figures:widths`の入力は`figures:lint`の`--labels`の出力である。`--worst <N>`で誤差の大きいラベルを出す。
+  `pnpm run figures:lint -- --dist .figures/base --all --labels .figures/base-labels.json`
 - 図の変更の前後比較は、次の順に行う。
   1. 変更前に`pnpm build`を実行し、`dist`を`.figures/base`へコピーする。既存の基準は置き換える。
      `rm -rf .figures/base && mkdir -p .figures && cp -R dist .figures/base`
@@ -134,7 +141,7 @@
 ## 品質ゲート
 
 - コミット前に lefthook の pre-commit フックが、oxfmt（整形）→ oxlint（型認識・警告もエラー扱い）→ textlint（校正）を順に実行する。エラーがあればコミットを中断する。
-- CI（GitHub Actions）の lint ワークフローでも、oxfmt の整形検査・oxlint・tsc の型検査・textlint を実行する。エラーがあればチェックを失敗させる。
+- CI（GitHub Actions）の lint ワークフローでも、oxfmt の整形検査・oxlint・tsc の型検査・Vitest の単体テスト・textlint を実行する。エラーがあればチェックを失敗させる。
 - フックは`pnpm install`時の`prepare`スクリプト（`lefthook install`）で有効化する。
 
 ## コミット規約

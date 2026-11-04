@@ -4,7 +4,7 @@
 // 計算（ページの指定の解決・応答の組み立て）は純粋な関数にし、入出力とブラウザ・サーバの起動と
 // 後始末は main とその直下の関数に寄せる。
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
@@ -490,4 +490,12 @@ export async function shootFigure(page: Page, n: number, outPath?: string): Prom
 export function displayPath(p: string): string {
   const rel = path.relative(process.cwd(), p);
   return rel.startsWith("..") ? p : rel;
+}
+
+/** JSON を書き出し、表示用のパスを返す。書き出し先のフォルダが無ければ作る。 */
+export function writeJson(file: string, data: unknown): string {
+  const resolved = path.resolve(file);
+  mkdirSync(path.dirname(resolved), { recursive: true });
+  writeFileSync(resolved, `${JSON.stringify(data, null, 2)}\n`);
+  return displayPath(resolved);
 }
