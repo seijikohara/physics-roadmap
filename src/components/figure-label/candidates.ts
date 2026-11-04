@@ -87,7 +87,7 @@ export function fixedPosition(
     : aroundPoint(p, size, reach, offset)[dir];
 }
 
-/** 基準点のまわりの位置。基準点そのものを最初に試し、続いて 8 方向を試す。 */
+/** 基準点のまわりの位置。基準点を最初に試し、続いて 8 方向を試す。 */
 export function positionsAround(
   p: XY,
   size: GlyphSize,
@@ -216,7 +216,7 @@ export function insideRegion(
 export type CurvePoint = XY & Readonly<{ t: number }>;
 
 /**
- * 曲線のそばの候補。曲線に沿った各位置で、線の両側へ離した位置を並べる。at があればその媒介変数に
+ * 曲線のそばの候補。曲線に沿った各位置で、線の両側へ離した位置を並べる。at があれば媒介変数 at に
  * 最も近い標本の両側だけを候補にする。指定が無ければ両端を除く 4 点おきの標本を使い、曲線の後半
  * （右寄り）を少し優先する。式のラベルが曲線の終わり近くに付く慣習に合わせるためである。dir が
  * "auto" でなければ、線の両側の代わりに、各位置から dir の向きの 1 か所だけを候補にする。
@@ -280,7 +280,7 @@ export function onLine(
   gapPad: number,
 ): readonly Candidate<OnLinePlacement>[] {
   const w = size.width + 2 * gapPad;
-  // ラベルが乗る線のうち、ラベルの中心から弧長でこの範囲にある部分は、ラベルが当然重なる部分として
+  // ラベルが乗る線のうち、ラベルの中心から弧長で ownWindow の範囲にある部分は、ラベルが当然重なる部分として
   // 当たり判定から外す。判定に使う矩形の対角の半分より長くとる。
   const ownWindow =
     Math.hypot(size.width + 2 * lineReach, size.bottom - size.top + 2 * lineReach) / 2 + 2;
@@ -350,8 +350,8 @@ export function meanOf(pts: readonly XY[]): XY {
 
 /**
  * start から step ずつ足していき、end 以下の値を順に返す。start + k * step と掛け算で求めると
- * 浮動小数の丸めが変わるため、直前の値に足して求める。値を作り直さずに積むよう、この関数の中に
- * 閉じた可変の配列を使う。
+ * 浮動小数の丸めが変わるため、直前の値に足して求める。値を作り直さずに積むよう、関数の中に閉じた
+ * 可変の配列を使う。
  */
 function accumulateSteps(start: number, step: number, end: number): readonly number[] {
   if (!(start <= end)) return [];

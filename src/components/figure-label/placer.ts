@@ -26,7 +26,7 @@ export type Candidate<T> = Readonly<{
 
 /** 1 つのラベルの採点の条件。 */
 export type PlaceOptions = Readonly<{
-  /** それまでに置いたラベルの占有矩形。 */
+  /** 先に置いたラベルの占有矩形。 */
   placed: readonly Box[];
   /** ラベルを収める範囲。 */
   bounds: Box;
@@ -103,7 +103,7 @@ export function createPlacer(obstacles: readonly Obstacle[]): Placer {
   const place = <T>(cands: readonly Candidate<T>[], options: PlaceOptions): Choice<T> => {
     const best = bestOf(cands, (cand, _, bestScore) => {
       const pen = penalty(cand.box, options);
-      // 好みの罰点は 0 以上なので、この時点で最良に届かない候補は残りを調べない。
+      // 好みの罰点は 0 以上なので、障害物の罰点だけで最良に届かない候補は残りを調べない。
       return cand.score === undefined || pen >= bestScore ? pen : cand.score(pen);
     });
     return { item: best.item === null ? null : best.item.value, score: best.score };
@@ -113,9 +113,9 @@ export function createPlacer(obstacles: readonly Obstacle[]): Placer {
 }
 
 /**
- * 候補のうち、罰点 score が最も小さいものとその罰点を返す。同点なら前方の候補を選ぶ。score には
- * それまでの最小の罰点を渡し、届かないと分かった候補の計算を打ち切れるようにする（打ち切るときは
- * その最小以上の値を返す）。候補が無いか、どの罰点も Infinity より小さくなければ item は null になる。
+ * 候補のうち、罰点 score が最も小さい候補と罰点を返す。同点なら前方の候補を選ぶ。score には前方の
+ * 候補の最小の罰点を渡し、届かないと分かった候補の計算を打ち切れるようにする（打ち切るときは最小の
+ * 罰点以上の値を返す）。候補が無いか、どの罰点も Infinity より小さくなければ item は null になる。
  */
 export function bestOf<T>(
   cands: readonly T[],
@@ -130,14 +130,14 @@ export function bestOf<T>(
   );
 }
 
-/** 1 つのラベルを置いた結果。item は置いたもの、box はそれが占める矩形（置かなければ null）。 */
+/** 1 つのラベルを置いた結果。item は置いたもの、box は占有矩形（置かなければ null）。 */
 export type Placement<T> = Readonly<{ item: T | null; box: Box | null }>;
 
 /** 何も置かない結果。 */
 export const NO_PLACEMENT: Placement<never> = { item: null, box: null };
 
 /**
- * sources の順にラベルを 1 つずつ置く。place には、それまでに置いたラベルの占有矩形 placed を
+ * sources の順にラベルを 1 つずつ置く。place には、先に置いたラベルの占有矩形 placed を
  * 渡し、後のラベルが先のラベルを避けられるようにする。置いた結果（sources と同じ順）と、最後の
  * 占有矩形の列を返す。
  */

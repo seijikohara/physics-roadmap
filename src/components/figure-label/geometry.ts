@@ -102,7 +102,7 @@ export function distanceToSegment(p: XY, a: XY, b: XY): number {
   return Math.hypot(p.x - (a.x + dx * t), p.y - (a.y + dy * t));
 }
 
-/** 折れ線の上で点 p に最も近い点と、その距離。同点なら始点に近い側の点を返す。 */
+/** 折れ線の上で点 p に最も近い点と、点 p からの距離。同点なら始点に近い側の点を返す。 */
 export function nearestOnPolyline(
   pts: readonly XY[],
   p: XY,

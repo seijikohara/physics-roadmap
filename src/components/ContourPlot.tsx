@@ -91,7 +91,7 @@ type Tick = number | Readonly<{ value: number; label?: string }>;
 /**
  * 等高線の 1 つの高さ。数値だけ渡すと、ラベルは `labelVar` を左辺にした等式（例: `c=1`）になる。
  * `{ value, label, color }` でラベル（LaTeX）と線の色を個別に指定できる。`label: ""` で
- * その高さだけラベルを省く。`labelAt`（数学座標）を渡すと、その点に最も近い線の上の点へラベルを
+ * その高さだけラベルを省く。`labelAt`（数学座標）を渡すと、基準点に最も近い線の上の点へラベルを
  * 固定する。省略時は線の上の空いた位置を自動で選ぶ。
  */
 type ContourLevel =
@@ -146,7 +146,7 @@ type RegionStyle = Readonly<{
   labelAt?: XY;
   /**
    * 基準点から見たラベルの向き。既定 "auto"（空いた位置を選ぶ）。"center" や 8 方位を渡すと、
-   * 罰点によらずその位置に固定する。
+   * 罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
   /** 向きを固定したときの、基準点からラベルの箱の縁までのすきま（px）。既定 4。 */
@@ -251,7 +251,7 @@ type Curve = Readonly<{
   labelAt?: number;
   /**
    * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto"（線の両側の空いた側を選ぶ）。
-   * "center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらずその位置に固定する。
+   * "center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
   /** "inline" のとき、線からラベルの箱の縁までのすきま（px）。既定 4。 */
@@ -283,7 +283,7 @@ type ParametricCurve = Readonly<{
   labelAt?: number;
   /**
    * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto"（線の両側の空いた側を選ぶ）。
-   * "center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらずその位置に固定する。
+   * "center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
   /** "inline" のとき、線からラベルの箱の縁までのすきま（px）。既定 4。 */
@@ -306,7 +306,7 @@ type VectorStyle = Readonly<{
   /**
    * 基準点から見たラベルの向き。既定は labelAt があれば "center"（基準点をラベルの中心にする）、
    * 無ければ "auto" である。"auto" は向きを自動で選ぶ。8 方位を渡すと向きを固定する。labelAt が
-   * 無いときの基準点は矢印の中点である。"auto" 以外は罰点によらずその位置に固定する。
+   * 無いときの基準点は矢印の中点である。"auto" 以外は罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
   /** 線や基準点からラベルの箱の縁までのすきま（px）。既定 4。 */
@@ -439,7 +439,7 @@ type Segment = Readonly<{
   /**
    * 基準点から見たラベルの向き。既定は labelAt があれば "center"（基準点をラベルの中心にする）、
    * 無ければ "auto" である。"auto" は向きを自動で選ぶ。8 方位を渡すと向きを固定する。labelAt が
-   * 無いときの基準点は線分の中点である。"auto" 以外は罰点によらずその位置に固定する。
+   * 無いときの基準点は線分の中点である。"auto" 以外は罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
   /** 線や基準点からラベルの箱の縁までのすきま（px）。既定 4。 */
@@ -1023,7 +1023,7 @@ export default function ContourPlot({
   );
 
   // 矢印・線分のラベルの候補の位置。labelAt があれば、labelDir の既定は "center" で、ラベルを
-  // その点に固定する。章の図で手で合わせた位置を、向きの自動選択で動かさないためである。
+  // labelAt の点に固定する。章の図で手で合わせた位置を、向きの自動選択で動かさないためである。
   const linePositions = (
     spec: LabelSpec,
     a: XY,
@@ -2552,7 +2552,7 @@ type Label = Readonly<{ tex: string; pos: LabelPos; box: Box }>;
 /** 置いた等高線のラベル。cut は等高線を切り抜く矩形である。 */
 type ContourLabel = Label & Readonly<{ cut: Box }>;
 
-/** 選んだ位置のラベルと、そのラベルが占める矩形。位置が無ければ何も置かない。 */
+/** 選んだ位置のラベルと占有矩形。位置が無ければ何も置かない。 */
 function placedLabel(tex: string, pos: LabelPos | null, size: GlyphSize): Placement<Label> {
   if (pos === null) return NO_PLACEMENT;
   const box = glyphBox(pos, size);

@@ -62,7 +62,7 @@ describe("aroundPoint", () => {
 describe("fixedPosition", () => {
   const p = { x: 100, y: 100 };
 
-  it('"center" は基準点をそのまま KatexLabel の中心にする', () => {
+  it('"center" は基準点を KatexLabel の中心にする', () => {
     expect(fixedPosition(p, "center", size, 4)).toEqual({ x: 100, y: 100, align: "center" });
   });
 

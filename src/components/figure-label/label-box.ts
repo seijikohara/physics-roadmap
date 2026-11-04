@@ -16,10 +16,10 @@ export type LabelPos = XY & Readonly<{ align: "center" | "left" | "right" }>;
  */
 export type GlyphSize = Readonly<{ width: number; top: number; bottom: number }>;
 
-// .katex の行の箱の、基線より上と下の長さの下限（数式の 1em を単位とする）。KaTeX の字はこの範囲に
-// 収まることが多く、そのときの基線は箱の中心から (LINE_ABOVE − LINE_BELOW) / 2 だけ下にある。字が
-// 範囲を超えると箱が広がり、基線も動く。値は Chrome で字の大きさ 11〜13px のラベルを測って当てはめた。
-// Chrome は行の箱の高さを字の大きさごとに丸めるため、基線の位置に 0.5px ほどのばらつきが残る。
+// .katex の行の箱の、基線より上と下の長さの下限（数式の 1em を単位とする）。字が下限の範囲に収まる
+// とき、基線は箱の中心から (LINE_ABOVE − LINE_BELOW) / 2 だけ下にある。字が範囲を超えると箱が広がり、
+// 基線も動く。値は Chrome で字の大きさ 11〜13px のラベルを測って当てはめた。
+// 実測の基線は字の大きさと書体ごとに 0.5px ほどばらつくので、字形は見積もりの外へ 1px 近く出ることがある。
 const LINE_ABOVE = 0.83;
 const LINE_BELOW = 0.31;
 
