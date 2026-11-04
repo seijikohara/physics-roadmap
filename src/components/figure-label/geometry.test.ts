@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   arrowHead,
   bboxOf,
+  boxGap,
   boxesOverlap,
   clamp,
   cumulativeLength,
@@ -145,6 +146,26 @@ describe("segmentBoxDistance", () => {
     const b = { x: 10 + off - 20, y: 10 + 20 };
     expect(segmentHitsBox(a, b, { x0: -6, x1: 16, y0: -6, y1: 16 })).toBe(true);
     expect(segmentBoxDistance(a, b, UNIT)).toBeCloseTo(8, 9);
+  });
+});
+
+describe("boxGap", () => {
+  it("重なる矩形は 0 を返す", () => {
+    expect(boxGap(UNIT, { x0: 5, x1: 15, y0: 5, y1: 15 })).toBe(0);
+  });
+
+  it("横に並ぶ矩形は横のすきまを返す", () => {
+    expect(boxGap(UNIT, { x0: 13, x1: 20, y0: 0, y1: 10 })).toBe(3);
+    expect(boxGap({ x0: 13, x1: 20, y0: 0, y1: 10 }, UNIT)).toBe(3);
+  });
+
+  it("縦に並ぶ矩形は縦のすきまを返す", () => {
+    expect(boxGap(UNIT, { x0: 0, x1: 10, y0: 14, y1: 20 })).toBe(4);
+    expect(boxGap({ x0: 0, x1: 10, y0: 14, y1: 20 }, UNIT)).toBe(4);
+  });
+
+  it("斜めに離れた矩形は隅どうしの距離を返す", () => {
+    expect(boxGap(UNIT, { x0: 13, x1: 20, y0: 14, y1: 20 })).toBe(5);
   });
 });
 

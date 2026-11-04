@@ -277,6 +277,11 @@ export function inflate(b: Box, d: number): Box {
   return { x0: b.x0 - d, x1: b.x1 + d, y0: b.y0 - d, y1: b.y1 + d };
 }
 
+/** 2 つの矩形のすきま。重なるときは 0 である。 */
+export function boxGap(a: Box, b: Box): number {
+  return Math.hypot(Math.max(a.x0 - b.x1, b.x0 - a.x1, 0), Math.max(a.y0 - b.y1, b.y0 - a.y1, 0));
+}
+
 /** 2 つの矩形が重なるか。 */
 export function boxesOverlap(a: Box, b: Box): boolean {
   return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;

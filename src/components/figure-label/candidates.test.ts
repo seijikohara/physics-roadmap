@@ -430,18 +430,33 @@ describe("onLine の others", () => {
   const scoreOf = (others: readonly Box[], k: number) =>
     onLine([line], size, 5, others)[k].score?.(0) ?? 0;
 
-  it("先に置いたラベルの近くの候補に軽い罰点を与える", () => {
+  it("先に置いたラベルに重なる候補に最大の罰点を与える", () => {
     const here = [plain[mid].box];
     expect(scoreOf(here, mid) - scoreOf([], mid)).toBeCloseTo(LABEL_POLICY.crowd, 9);
   });
 
-  it("近いとみなす距離の外の候補には罰点を与えない", () => {
-    const cx = (plain[mid].box.x0 + plain[mid].box.x1) / 2 + LABEL_POLICY.crowdRadius + 1;
-    const far: readonly Box[] = [{ x0: cx - 5, x1: cx + 5, y0: 45, y1: 55 }];
+  it("すきまに応じて罰点をなめらかに減らす", () => {
+    const b = plain[mid].box;
+    const gap = LABEL_POLICY.crowdRadius / 4;
+    const beside: readonly Box[] = [{ ...b, x0: b.x1 + gap, x1: b.x1 + gap + 10 }];
+    expect(scoreOf(beside, mid) - scoreOf([], mid)).toBeCloseTo(0.75 * LABEL_POLICY.crowd, 9);
+  });
+
+  it("縦のすきまも同じように数える", () => {
+    const b = plain[mid].box;
+    const gap = LABEL_POLICY.crowdRadius / 2;
+    const under: readonly Box[] = [{ ...b, y0: b.y1 + gap, y1: b.y1 + gap + 10 }];
+    expect(scoreOf(under, mid) - scoreOf([], mid)).toBeCloseTo(0.5 * LABEL_POLICY.crowd, 9);
+  });
+
+  it("半径の外の候補には罰点を与えない", () => {
+    const b = plain[mid].box;
+    const x0 = b.x1 + LABEL_POLICY.crowdRadius + 1;
+    const far: readonly Box[] = [{ ...b, x0, x1: x0 + 10 }];
     expect(scoreOf(far, mid)).toBe(scoreOf([], mid));
   });
 
-  it("近いラベルの数だけ罰点を足す", () => {
+  it("先に置いたラベルの数だけ罰点を足す", () => {
     const here = [plain[mid].box, plain[mid].box];
     expect(scoreOf(here, mid) - scoreOf([], mid)).toBeCloseTo(2 * LABEL_POLICY.crowd, 9);
   });

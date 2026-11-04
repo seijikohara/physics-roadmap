@@ -2,6 +2,7 @@
 // 好ましく、配置器は同じ罰点なら前方の候補を選ぶ。
 
 import {
+  boxGap,
   inflate,
   nearestOnPolyline,
   pointAtLength,
@@ -301,9 +302,9 @@ export type OnLinePlacement = Readonly<{ pos: LabelPos; glyph: Box; cut: Box }>;
 /**
  * 線の組の上の候補。字形の中心を線の上に置き、弧長に沿って 4px ごとに並べる。線の曲がり具合（急に
  * 曲がる位置ではラベルの外へ線がはみ出す）を罰点にする。開いた線（窓の縁から縁へ渡る線）は中ほどを、
- * 閉じた線（円など）は右上を少し優先し、同心の等高線のラベルが斜めにそろいやすくする。収まる位置が
+ * 閉じた線（円など）は右上を少し優先する。others は先に置いたラベルの矩形で、近い候補ほど大きな罰点を
+ * 与える。同心の等高線のラベルは、右上の好みと近さの罰点の釣り合いで別の位置へ分かれる。収まる位置が
  * 無い短い線には候補を作らない。線を切り抜く矩形は、字形の矩形を gapPad だけ広げた矩形である。
- * others は先に置いた線の上のラベルの矩形で、近い候補に軽い罰点を与える。
  */
 export function onLine(
   lines: readonly TracedLine[],
@@ -333,9 +334,10 @@ export function onLine(
           const own = d <= LABEL_POLICY.lineTouch ? 1 : d < lineReach ? LABEL_POLICY.nearLine : 0;
           const pa = pointAtLength(line.pts, line.cum, s - w / 2, line.closed);
           const pb = pointAtLength(line.pts, line.cum, s + w / 2, line.closed);
-          const crowded = others.filter(
-            (o) => centerDistance(o, glyph) < LABEL_POLICY.crowdRadius,
-          ).length;
+          const crowded = others.reduce(
+            (sum, o) => sum + Math.max(0, 1 - boxGap(o, glyph) / LABEL_POLICY.crowdRadius),
+            0,
+          );
           const turned =
             penalty +
             own * LABEL_POLICY.ownLine +
@@ -348,11 +350,6 @@ export function onLine(
       };
     });
   });
-}
-
-/** 2 つの矩形の中心の距離。 */
-function centerDistance(a: Box, b: Box): number {
-  return Math.hypot((a.x0 + a.x1 - b.x0 - b.x1) / 2, (a.y0 + a.y1 - b.y0 - b.y1) / 2);
 }
 
 /** 線の組の上で target に最も近い 1 点だけの候補。線が無ければ候補を作らない。 */

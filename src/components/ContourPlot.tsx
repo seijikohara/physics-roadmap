@@ -1138,7 +1138,7 @@ export default function ContourPlot({
       const size = glyphSizeOf(lv.label, CONTOUR_FONT);
       const best = placer.place(
         lv.labelAt === undefined
-          ? onLine(lines, size, CONTOUR_GAP_PAD, placed.slice(paramLabels.placed.length))
+          ? onLine(lines, size, CONTOUR_GAP_PAD, placed)
           : onLineNear(lines, size, CONTOUR_GAP_PAD, lv.labelAt),
         { placed, bounds: plotBounds, exclude: lv.id, avoidFaint: false },
       );
