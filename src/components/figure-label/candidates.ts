@@ -273,11 +273,13 @@ export type OnLinePlacement = Readonly<{ pos: LabelPos; glyph: Box; cut: Box }>;
  * 曲がる位置ではラベルの外へ線がはみ出す）を罰点にする。開いた線（窓の縁から縁へ渡る線）は中ほどを、
  * 閉じた線（円など）は右上を少し優先し、同心の等高線のラベルが斜めにそろいやすくする。収まる位置が
  * 無い短い線には候補を作らない。線を切り抜く矩形は、字形の矩形を gapPad だけ広げた矩形である。
+ * others は先に置いた線の上のラベルの矩形で、近い候補に軽い罰点を与える。
  */
 export function onLine(
   lines: readonly TracedLine[],
   size: GlyphSize,
   gapPad: number,
+  others: readonly Box[] = [],
 ): readonly Candidate<OnLinePlacement>[] {
   const w = size.width + 2 * gapPad;
   // ラベルが乗る線のうち、ラベルの中心から弧長で ownWindow の範囲にある部分は、ラベルが当然重なる部分として
@@ -301,7 +303,14 @@ export function onLine(
           const own = d <= LABEL_POLICY.lineTouch ? 1 : d < lineReach ? LABEL_POLICY.nearLine : 0;
           const pa = pointAtLength(line.pts, line.cum, s - w / 2, line.closed);
           const pb = pointAtLength(line.pts, line.cum, s + w / 2, line.closed);
-          const turned = penalty + own * LABEL_POLICY.ownLine + turnAngle(pa, p, pb) * 3;
+          const crowded = others.filter(
+            (o) => centerDistance(o, glyph) < LABEL_POLICY.crowdRadius,
+          ).length;
+          const turned =
+            penalty +
+            own * LABEL_POLICY.ownLine +
+            crowded * LABEL_POLICY.crowd +
+            turnAngle(pa, p, pb) * 3;
           if (centroid === null) return turned + Math.abs(s / total - 0.5) * 2;
           const phi = Math.atan2(centroid.y - p.y, p.x - centroid.x);
           return turned + (1 - Math.cos(phi - Math.PI / 4));
@@ -309,6 +318,11 @@ export function onLine(
       };
     });
   });
+}
+
+/** 2 つの矩形の中心の距離。 */
+function centerDistance(a: Box, b: Box): number {
+  return Math.hypot((a.x0 + a.x1 - b.x0 - b.x1) / 2, (a.y0 + a.y1 - b.y0 - b.y1) / 2);
 }
 
 /** 線の組の上で target に最も近い 1 点だけの候補。線が無ければ候補を作らない。 */

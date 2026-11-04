@@ -11,7 +11,7 @@ import {
   onLineNear,
   positionsAround,
 } from "./candidates";
-import { boxesOverlap, inflate, type XY } from "./geometry";
+import { boxesOverlap, inflate, type Box, type XY } from "./geometry";
 import { glyphBox, type GlyphSize } from "./label-box";
 import { lineObstacle, tracedLine } from "./obstacles";
 import { createPlacer, lineReach } from "./placer";
@@ -219,6 +219,36 @@ describe("onLine", () => {
     const scores = cands.map((c) => c.score?.(0) ?? 0);
     const middle = scores[Math.floor(scores.length / 2)];
     expect(middle).toBeLessThan(scores[0]);
+  });
+});
+
+describe("onLine の others", () => {
+  const line = tracedLine(
+    [
+      { x: 0, y: 50 },
+      { x: 300, y: 50 },
+    ],
+    false,
+  );
+  const plain = onLine([line], size, 5);
+  const mid = Math.floor(plain.length / 2);
+  const scoreOf = (others: readonly Box[], k: number) =>
+    onLine([line], size, 5, others)[k].score?.(0) ?? 0;
+
+  it("先に置いたラベルの近くの候補に軽い罰点を与える", () => {
+    const here = [plain[mid].box];
+    expect(scoreOf(here, mid) - scoreOf([], mid)).toBeCloseTo(LABEL_POLICY.crowd, 9);
+  });
+
+  it("近いとみなす距離の外の候補には罰点を与えない", () => {
+    const cx = (plain[mid].box.x0 + plain[mid].box.x1) / 2 + LABEL_POLICY.crowdRadius + 1;
+    const far: readonly Box[] = [{ x0: cx - 5, x1: cx + 5, y0: 45, y1: 55 }];
+    expect(scoreOf(far, mid)).toBe(scoreOf([], mid));
+  });
+
+  it("近いラベルの数だけ罰点を足す", () => {
+    const here = [plain[mid].box, plain[mid].box];
+    expect(scoreOf(here, mid) - scoreOf([], mid)).toBeCloseTo(2 * LABEL_POLICY.crowd, 9);
   });
 });
 
