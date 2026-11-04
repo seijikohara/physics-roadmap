@@ -275,6 +275,7 @@ export function besideCurve(
     const perp = { x: -(b.y - a.y) / len, y: (b.x - a.x) / len };
     const off = normalLabelOffset(perp.x, perp.y, size, offset);
     const pref = at === undefined ? Math.abs(i / (visible.length - 1) - 0.8) * 1.5 : 0;
+    const otherSide = at === undefined ? 0.05 : LABEL_POLICY.fixedSide;
     if (dir !== "auto") {
       const pos = fixedPosition(visible[i], dir, size, LABEL_POLICY.lineHalfWidth, offset);
       return [{ box: glyphBox(pos, size), value: pos, score: (penalty) => penalty + pref }];
@@ -288,7 +289,7 @@ export function besideCurve(
       return {
         box: glyphBox(pos, size),
         value: pos,
-        score: (penalty) => penalty + pref + (sgn === 1 ? 0 : 0.05),
+        score: (penalty) => penalty + pref + (sgn === 1 ? 0 : otherSide),
       };
     });
   });

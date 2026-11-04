@@ -96,6 +96,16 @@ describe("besideCurve", () => {
     expect(cands[0].value.x).toBeCloseTo(100, 9);
   });
 
+  it("at があれば、線の反対側の候補に側を保つ罰点を与える", () => {
+    const [same, other] = besideCurve(visible, size, 10);
+    expect((other.score?.(0) ?? 0) - (same.score?.(0) ?? 0)).toBe(LABEL_POLICY.fixedSide);
+  });
+
+  it("at が無ければ、線の反対側の候補の罰点は同点を分けるだけの大きさである", () => {
+    const cands = besideCurve(visible, size, undefined);
+    expect((cands[1].score?.(0) ?? 0) - (cands[0].score?.(0) ?? 0)).toBeCloseTo(0.05, 9);
+  });
+
   it("向きを指定すると、各位置で 1 か所だけを候補にする", () => {
     const cands = besideCurve(visible, size, 10, "above");
     expect(cands).toHaveLength(1);
