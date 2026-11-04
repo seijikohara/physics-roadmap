@@ -462,7 +462,15 @@ export async function openPage(context: BrowserContext, url: string, theme: Them
     await page.close();
     throw new Error(`ページを開けない: ${url}（HTTP ${response?.status() ?? "応答なし"}）`);
   }
+  // 演習の解答の図は閉じた details の中にある。閉じたままでは checkVisibility が偽になって線が測定から
+  // 外れ、スクリーンショットもタイムアウトする。本文の details を開き、開いた中のフォントも待つ。
   await page.evaluate(async () => {
+    for (const details of document.querySelectorAll(".sl-markdown-content details")) {
+      details.setAttribute("open", "");
+    }
+    await new Promise((resolve) => {
+      requestAnimationFrame(resolve);
+    });
     await document.fonts.ready;
   });
   const actual = await page.evaluate(() => document.documentElement.dataset.theme);
@@ -480,18 +488,10 @@ export async function countFigures(page: Page): Promise<number> {
 
 /** 図 `n`（1 始まり）を要素のスクリーンショットで撮り、PNG のバイト列を返す。 */
 export async function shootFigure(page: Page, n: number, outPath?: string): Promise<Buffer> {
-  const figure = page.locator(FIGURE_SELECTOR).nth(n - 1);
-  // 演習の解答の図は閉じた details の中にある。閉じたままでは要素が見えず、スクリーンショットが
-  // タイムアウトするので、先祖の details を開く。
-  await figure.evaluate((el) => {
-    for (const details of document.querySelectorAll("details")) {
-      if (details.contains(el)) details.setAttribute("open", "");
-    }
-  });
-  return figure.screenshot({
-    ...(outPath === undefined ? {} : { path: outPath }),
-    animations: "disabled",
-  });
+  return page
+    .locator(FIGURE_SELECTOR)
+    .nth(n - 1)
+    .screenshot({ ...(outPath === undefined ? {} : { path: outPath }), animations: "disabled" });
 }
 
 /** 表示用に、パスを作業ディレクトリからの相対パスにする。 */
