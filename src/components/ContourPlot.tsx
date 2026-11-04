@@ -17,7 +17,7 @@ import {
   meanOf,
   normalLabelOffset,
   onLine,
-  rankedCandidates,
+  positionCandidates,
   type LabelDir,
 } from "./figure-label/candidates";
 import {
@@ -890,7 +890,7 @@ export default function ContourPlot({
     placed: readonly Box[],
     exclude?: string,
   ): LabelPos | null =>
-    placer.place(rankedCandidates(positions, size), { placed, bounds: viewBounds, exclude }).item;
+    placer.place(positionCandidates(positions, size), { placed, bounds: viewBounds, exclude }).item;
 
   // ラベルは、領域・極座標の角・点・小長方形・矢印・補助線分・曲線・媒介変数曲線・等高線の順に
   // 1 つずつ置く。各段の最後の placed を次の段へ渡し、後のラベルが先のラベルを避けるようにする。

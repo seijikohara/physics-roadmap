@@ -23,8 +23,6 @@ export const LABEL_POLICY = {
   nearLine: 0.25,
   // 線の上のラベルに、同じ線の離れた部分が重なったときの罰点。
   ownLine: 6,
-  // 同点を避けるために、候補の添字に掛ける罰点。前方の候補を優先する。
-  order: 0.1,
 } as const;
 
 /**

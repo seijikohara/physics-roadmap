@@ -7,16 +7,12 @@ import { ownLinesHitBox, type TracedLine } from "./obstacles";
 import { lineReach, type Candidate } from "./placer";
 import { LABEL_POLICY } from "./policy";
 
-/** 位置の列を候補にする。前方の候補を添字の重みで優先する。 */
-export function rankedCandidates(
+/** 位置の列を候補にする。 */
+export function positionCandidates(
   positions: readonly LabelPos[],
   size: GlyphSize,
 ): readonly Candidate<LabelPos>[] {
-  return positions.map((pos, i) => ({
-    box: glyphBox(pos, size),
-    value: pos,
-    score: (penalty) => penalty + i * LABEL_POLICY.order,
-  }));
+  return positions.map((pos) => ({ box: glyphBox(pos, size), value: pos }));
 }
 
 /** ラベルを点から見て置く向き。 */
@@ -153,15 +149,12 @@ export function insideRegion(
   fill: readonly XY[],
   size: GlyphSize,
 ): readonly Candidate<LabelPos>[] {
-  return REGION_LABEL_OFFSETS.map(([dx, dy], i): Candidate<LabelPos> => {
+  return REGION_LABEL_OFFSETS.map(([dx, dy]): Candidate<LabelPos> => {
     const pos: LabelPos = { x: anchor.x + dx, y: anchor.y + dy, align: "center" };
     return {
       box: glyphBox(pos, size),
       value: pos,
-      score: (penalty) => {
-        const p = penalty + i * LABEL_POLICY.order;
-        return pointInPolygon(pos, fill) ? p : p + LABEL_POLICY.outside;
-      },
+      score: (penalty) => (pointInPolygon(pos, fill) ? penalty : penalty + LABEL_POLICY.outside),
     };
   });
 }
