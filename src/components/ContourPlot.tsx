@@ -13,12 +13,14 @@ import {
   besideCurve,
   besideSegment,
   centeredAt,
+  fixedPosition,
   insideRegion,
   meanOf,
   normalLabelOffset,
   onLine,
   positionCandidates,
-  type LabelDir,
+  positionsAround,
+  type LabelDirSpec,
 } from "./figure-label/candidates";
 import {
   boxesOverlap,
@@ -133,10 +135,17 @@ type RegionStyle = Readonly<{
   /** 領域内に置く LaTeX ラベル（例: "D"）。 */
   label?: string;
   /**
-   * ラベルを置く基準の位置（数学座標）。省略時は、描画窓で切り取った領域の重心とする。基準の
-   * 位置が軸・目盛り数字・線に重なるときは、領域の内側に残る近くの空いた位置へずらす。
+   * ラベルを置く基準点（数学座標）。省略時は、描画窓で切り取った領域の重心とする。向きが "auto"
+   * なら、基準点が軸・目盛り数字・線に重なるときに、領域の内側に残る近くの空いた位置へずらす。
    */
   labelAt?: XY;
+  /**
+   * 基準点から見たラベルの向き。既定 "auto"（空いた位置を選ぶ）。"center" や 8 方位を渡すと、
+   * 罰点によらずその位置に固定する。
+   */
+  labelDir?: LabelDirSpec;
+  /** 向きを固定したときの、基準点からラベルの箱の縁までのすきま（px）。既定 4。 */
+  labelOffset?: number;
 }>;
 
 /**
@@ -233,8 +242,15 @@ type Curve = Readonly<{
   label?: string;
   /** ラベルの置き方。既定 "legend"。 */
   labelPlacement?: LabelPlacement;
-  /** "inline" のとき、ラベルを置く位置の x 座標。省略時は空いた位置を自動で選ぶ。 */
+  /** "inline" のとき、ラベルの基準点の x 座標（線の上の点）。省略時は空いた位置を自動で選ぶ。 */
   labelAt?: number;
+  /**
+   * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto"（線の両側の空いた側を選ぶ）。
+   * "center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらずその位置に固定する。
+   */
+  labelDir?: LabelDirSpec;
+  /** "inline" のとき、線からラベルの箱の縁までのすきま（px）。既定 4。 */
+  labelOffset?: number;
   /**
    * 向きを示す矢じり（ArrowMarks を参照）。媒介変数は x で、定義域の [始端, 終端] の順に進む
    * 向き（通常は x が増える向き）を指す。数値 n なら定義域（省略時は描画窓の横範囲）を n 等分
@@ -258,8 +274,15 @@ type ParametricCurve = Readonly<{
   label?: string;
   /** ラベルの置き方。既定 "legend"。 */
   labelPlacement?: LabelPlacement;
-  /** "inline" のとき、ラベルを置く位置の媒介変数 t。省略時は空いた位置を自動で選ぶ。 */
+  /** "inline" のとき、ラベルの基準点の媒介変数 t（線の上の点）。省略時は空いた位置を自動で選ぶ。 */
   labelAt?: number;
+  /**
+   * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto"（線の両側の空いた側を選ぶ）。
+   * "center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらずその位置に固定する。
+   */
+  labelDir?: LabelDirSpec;
+  /** "inline" のとき、線からラベルの箱の縁までのすきま（px）。既定 4。 */
+  labelOffset?: number;
   /**
    * 向きを示す矢じり（ArrowMarks を参照）。t が増える向きを指す。逆向きを示すには tMin と
    * tMax を入れ替えるか、fn の t の符号を反転する。既定は矢じりなし。
@@ -273,8 +296,16 @@ type VectorStyle = Readonly<{
   color?: string;
   /** 矢印に添える LaTeX ラベル（例: "\\nabla f"）。 */
   label?: string;
-  /** ラベルの中心の位置（数学座標）。省略時は、線・他のラベルと重ならない位置を自動で選ぶ。 */
+  /** ラベルの基準点（数学座標）。省略時は、線・他のラベルと重ならない位置を自動で選ぶ。 */
   labelAt?: XY;
+  /**
+   * 基準点から見たラベルの向き。既定は labelAt があれば "center"（基準点をラベルの中心にする）、
+   * 無ければ "auto" である。"auto" は向きを自動で選ぶ。8 方位を渡すと向きを固定する。labelAt が
+   * 無いときの基準点は矢印の中点である。"auto" 以外は罰点によらずその位置に固定する。
+   */
+  labelDir?: LabelDirSpec;
+  /** 線や基準点からラベルの箱の縁までのすきま（px）。既定 4。 */
+  labelOffset?: number;
   /** 破線で描くか。既定は実線。 */
   dashed?: boolean;
 }>;
@@ -352,10 +383,12 @@ type Point = Readonly<{
   /** 点の色。highlight より優先する。 */
   color?: string;
   /**
-   * ラベルを置く向き。省略時は、軸・線・他のラベルと重ならない向きを自動で選ぶ。接点のように
-   * 線が混み合う点で、自動の選択が線に触れるときに指定する。
+   * ラベルを置く向き。既定 "auto" は、軸・線・他のラベルと重ならない向きを自動で選ぶ。接点のように
+   * 線が混み合う点で、自動の選択が線に触れるときに指定する。"center" は点をラベルの中心にする。
    */
-  labelDir?: LabelDir;
+  labelDir?: LabelDirSpec;
+  /** 点の印の端からラベルの箱の縁までのすきま（px）。既定 4。 */
+  labelOffset?: number;
 }>;
 
 /** 小長方形の代表点の選び方。関数を渡すと、小長方形の番号 (i, j) から代表点を返す。 */
@@ -396,8 +429,16 @@ type Segment = Readonly<{
   to: XY;
   /** 線分の中点付近に置く LaTeX ラベル。 */
   label?: string;
-  /** ラベルの中心の位置（数学座標）。省略時は、線分の両側のうち空いた側を自動で選ぶ。 */
+  /** ラベルの基準点（数学座標）。省略時は、線分の両側のうち空いた側を自動で選ぶ。 */
   labelAt?: XY;
+  /**
+   * 基準点から見たラベルの向き。既定は labelAt があれば "center"（基準点をラベルの中心にする）、
+   * 無ければ "auto" である。"auto" は向きを自動で選ぶ。8 方位を渡すと向きを固定する。labelAt が
+   * 無いときの基準点は線分の中点である。"auto" 以外は罰点によらずその位置に固定する。
+   */
+  labelDir?: LabelDirSpec;
+  /** 線や基準点からラベルの箱の縁までのすきま（px）。既定 4。 */
+  labelOffset?: number;
   /** 破線で描くか。既定 true。 */
   dashed?: boolean;
   /** 線の色。既定は強調色（琥珀色）。 */
@@ -899,9 +940,12 @@ export default function ContourPlot({
   // 中心が領域の内側に残る位置を選ぶ。重心は原点や軸の上に来やすい（原点中心の円板など）ため、
   // 重心に固定すると軸線がラベルを貫く。他のラベルより先に置き、他のラベルがこれを避けるようにする。
   const regionLabels = placeInOrder(regionData, [], (r, i, placed) => {
-    const tex = regions[i].label;
+    const { label: tex, labelDir = "auto", labelOffset } = regions[i];
     if (tex === undefined || r.labelAt === null) return NO_PLACEMENT;
     const size = glyphSizeOf(tex, LABEL_FONT);
+    if (labelDir !== "auto") {
+      return placedLabel(tex, fixedPosition(r.labelAt, labelDir, size, 0, labelOffset), size);
+    }
     const best = placer.place(insideRegion(r.labelAt, r.fill, size), {
       placed,
       bounds: plotBounds,
@@ -921,9 +965,13 @@ export default function ContourPlot({
   const pointLabels = placeInOrder(points, polarLabels.placed, (p, i, placed) => {
     if (p.label === undefined) return NO_PLACEMENT;
     const size = glyphSizeOf(p.label, LABEL_FONT);
-    const cands = aroundPoint({ x: x(p.x), y: y(p.y) }, size, markerReach(p));
+    const at = { x: x(p.x), y: y(p.y) };
+    const reach = markerReach(p);
+    const dir = p.labelDir ?? "auto";
     const pos = choosePlacement(
-      p.labelDir === undefined ? Object.values(cands) : [cands[p.labelDir]],
+      dir === "auto"
+        ? Object.values(aroundPoint(at, size, reach, p.labelOffset))
+        : [fixedPosition(at, dir, size, reach, p.labelOffset)],
       size,
       placed,
       `pt${i}`,
@@ -953,15 +1001,32 @@ export default function ContourPlot({
     },
   );
 
-  // 矢印のラベル。labelAt があればその位置に固定する。
+  // 矢印・線分のラベルの候補の位置。labelAt があれば、labelDir の既定は "center" で、ラベルを
+  // その点に固定する。章の図で手で合わせた位置を、向きの自動選択で動かさないためである。
+  const linePositions = (
+    spec: LabelSpec,
+    a: XY,
+    b: XY,
+    size: GlyphSize,
+    auto: (offset?: number) => readonly LabelPos[],
+  ): readonly LabelPos[] => {
+    const { labelAt, labelOffset, labelDir = labelAt === undefined ? "auto" : "center" } = spec;
+    const anchor =
+      labelAt === undefined ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : toScreen(labelAt);
+    const reach = labelAt === undefined ? LABEL_POLICY.lineHalfWidth : 0;
+    if (labelDir !== "auto") return [fixedPosition(anchor, labelDir, size, reach, labelOffset)];
+    return labelAt === undefined
+      ? auto(labelOffset)
+      : positionsAround(anchor, size, reach, labelOffset);
+  };
+
+  // 矢印のラベル。
   const vectorLabels = placeInOrder(vectors, cellLabels.placed, (v, i, placed) => {
     if (v.label === undefined) return NO_PLACEMENT;
     const { from, to } = vectorData[i];
     const size = glyphSizeOf(v.label, LABEL_FONT);
     const pos = choosePlacement(
-      v.labelAt === undefined
-        ? aroundVector(from, to, size, HEAD_HALF)
-        : [{ ...toScreen(v.labelAt), align: "center" }],
+      linePositions(v, from, to, size, (offset) => aroundVector(from, to, size, HEAD_HALF, offset)),
       size,
       placed,
       `vc${i}`,
@@ -973,10 +1038,10 @@ export default function ContourPlot({
   const segmentLabels = placeInOrder(segments, vectorLabels.placed, (s, i, placed) => {
     if (s.label === undefined) return NO_PLACEMENT;
     const size = glyphSizeOf(s.label, LABEL_FONT);
+    const a = toScreen(s.from);
+    const b = toScreen(s.to);
     const pos = choosePlacement(
-      s.labelAt === undefined
-        ? besideSegment(toScreen(s.from), toScreen(s.to), size)
-        : [{ ...toScreen(s.labelAt), align: "center" }],
+      linePositions(s, a, b, size, (offset) => besideSegment(a, b, size, offset)),
       size,
       placed,
       `sg${i}`,
@@ -988,7 +1053,7 @@ export default function ContourPlot({
   const inlineLabelOf = (
     samples: readonly Sample[],
     tex: string,
-    at: number | undefined,
+    spec: CurveLabelSpec,
     placed: readonly Box[],
   ): Placement<Label> => {
     const size = glyphSizeOf(tex, LABEL_FONT);
@@ -1001,17 +1066,20 @@ export default function ContourPlot({
         s.y <= plotBounds.y1,
     );
     if (visible.length < 3) return NO_PLACEMENT;
-    const best = placer.place(besideCurve(visible, size, at), { placed, bounds: viewBounds });
+    const best = placer.place(
+      besideCurve(visible, size, spec.labelAt, spec.labelDir, spec.labelOffset),
+      { placed, bounds: viewBounds },
+    );
     return placedLabel(tex, best.item, size);
   };
   const curveLabels = placeInOrder(curves, segmentLabels.placed, (c, i, placed) =>
     c.label !== undefined && c.labelPlacement === "inline"
-      ? inlineLabelOf(curveSamples[i], c.label, c.labelAt, placed)
+      ? inlineLabelOf(curveSamples[i], c.label, c, placed)
       : NO_PLACEMENT,
   );
   const paramLabels = placeInOrder(parametrics, curveLabels.placed, (pc, i, placed) =>
     pc.label !== undefined && pc.labelPlacement === "inline"
-      ? inlineLabelOf(paramSamples[i], pc.label, pc.labelAt, placed)
+      ? inlineLabelOf(paramSamples[i], pc.label, pc, placed)
       : NO_PLACEMENT,
   );
 
@@ -2411,6 +2479,16 @@ function simplifyPolyline(pts: readonly XY[], eps: number): readonly XY[] {
 // ======================================================================
 // ラベル配置の当たり判定
 // ======================================================================
+
+/** 矢印・線分のラベルの指定。 */
+type LabelSpec = Readonly<{ labelAt?: XY; labelDir?: LabelDirSpec; labelOffset?: number }>;
+
+/** 曲線のそばのラベルの指定。labelAt は線の上の基準点を指す x または媒介変数である。 */
+type CurveLabelSpec = Readonly<{
+  labelAt?: number;
+  labelDir?: LabelDirSpec;
+  labelOffset?: number;
+}>;
 
 /** 置いたラベル（LaTeX・配置先・字形の矩形）。 */
 type Label = Readonly<{ tex: string; pos: LabelPos; box: Box }>;

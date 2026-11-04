@@ -26,24 +26,32 @@ export type LabelDir =
   | "below-left"
   | "below-right";
 
+/**
+ * ラベルの向きの指定。"auto" は向きを自動で選ぶ。"center" は基準点を KatexLabel の中心にする。
+ * 8 方位は基準点から見た向きに固定する。
+ */
+export type LabelDirSpec = "auto" | "center" | LabelDir;
+
+/** ラベルの箱の縁と、線や基準点の間のすきまの既定（px）。 */
+export const DEFAULT_LABEL_OFFSET: number = LABEL_POLICY.lineClearance;
+
 /** 字形の矩形の中心が (cx, cy) に来る、中央寄せの基準点。 */
 export function centeredAt(cx: number, cy: number, size: GlyphSize): LabelPos {
   return { x: cx, y: cy - glyphCenterOffset(size), align: "center" };
 }
 
-/** 点の印の端からラベルの箱の縁までのすきま（px）。 */
-const POINT_GAP = LABEL_POLICY.lineClearance + LABEL_POLICY.glyphSlack;
-
 /**
- * 点のまわりの 8 方向の位置。キーの順が候補の順である。reach は点の中心から印の端までの距離である。
- * 真上・真下・真横は箱の辺を、斜めは箱の角を、印の端からすきまだけ離す。
+ * 点のまわりの 8 方向の位置。キーの順が候補の順である。reach は点の中心から印の端までの距離、offset は
+ * 印の端からラベルの箱の縁までのすきまである。真上・真下・真横は箱の辺を、斜めは箱の角を離す。
+ * 字形の見積もりの誤差のぶんだけ、箱を余分に離す。
  */
 export function aroundPoint(
   p: XY,
   size: GlyphSize,
   reach: number,
+  offset = DEFAULT_LABEL_OFFSET,
 ): Readonly<Record<LabelDir, LabelPos>> {
-  const r = reach + POINT_GAP;
+  const r = reach + offset + LABEL_POLICY.glyphSlack;
   const d = r * Math.SQRT1_2;
   const lift = glyphCenterOffset(size);
   return {
@@ -58,27 +66,63 @@ export function aroundPoint(
   };
 }
 
+/** 基準点から固定の位置。"center" は基準点を KatexLabel の中心にする。 */
+export function fixedPosition(
+  p: XY,
+  dir: Exclude<LabelDirSpec, "auto">,
+  size: GlyphSize,
+  reach: number,
+  offset = DEFAULT_LABEL_OFFSET,
+): LabelPos {
+  return dir === "center"
+    ? { x: p.x, y: p.y, align: "center" }
+    : aroundPoint(p, size, reach, offset)[dir];
+}
+
+/** 基準点のまわりの位置。基準点そのものを最初に試し、続いて 8 方向を試す。 */
+export function positionsAround(
+  p: XY,
+  size: GlyphSize,
+  reach: number,
+  offset = DEFAULT_LABEL_OFFSET,
+): readonly LabelPos[] {
+  return [
+    fixedPosition(p, "center", size, reach),
+    ...Object.values(aroundPoint(p, size, reach, offset)),
+  ];
+}
+
 /**
- * 線の中心からラベルの箱の縁までの距離（px）。線の当たり判定の幅より少し大きくし、まっすぐな線の
- * そばの候補が自分の線に近いと数えられないようにする。
+ * 線の中心からラベルの箱の縁までの距離の、すきまに足す分（px）。既定のすきまの候補を線の当たり判定の
+ * 幅より少し遠くへ置き、まっすぐな線のそばの候補が自分の線に近いと数えられないようにする。
  */
-const LINE_SIDE_GAP = lineReach + 0.25;
+const LINE_SIDE_EXTRA = lineReach - LABEL_POLICY.lineClearance + 0.25;
 
 /**
  * 線の上の点から法線方向へ、字形の矩形の中心を離す距離を求める。矩形を単位法線 (perpX, perpY) へ
  * 射影した半幅に、線から箱の縁までのすきまを足す。
  */
-export function normalLabelOffset(perpX: number, perpY: number, size: GlyphSize): number {
+export function normalLabelOffset(
+  perpX: number,
+  perpY: number,
+  size: GlyphSize,
+  offset = DEFAULT_LABEL_OFFSET,
+): number {
   const h = size.bottom - size.top;
-  return (Math.abs(perpX) * size.width) / 2 + (Math.abs(perpY) * h) / 2 + LINE_SIDE_GAP;
+  return (Math.abs(perpX) * size.width) / 2 + (Math.abs(perpY) * h) / 2 + offset + LINE_SIDE_EXTRA;
 }
 
 /** 線分の中点から直交する両側の位置。 */
-export function besideSegment(a: XY, b: XY, size: GlyphSize): readonly LabelPos[] {
+export function besideSegment(
+  a: XY,
+  b: XY,
+  size: GlyphSize,
+  offset = DEFAULT_LABEL_OFFSET,
+): readonly LabelPos[] {
   const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
   const perp = { x: -(b.y - a.y) / len, y: (b.x - a.x) / len };
   const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-  const off = normalLabelOffset(perp.x, perp.y, size);
+  const off = normalLabelOffset(perp.x, perp.y, size, offset);
   return [
     centeredAt(mid.x + perp.x * off, mid.y + perp.y * off, size),
     centeredAt(mid.x - perp.x * off, mid.y - perp.y * off, size),
@@ -95,13 +139,14 @@ export function aroundVector(
   to: XY,
   size: GlyphSize,
   headHalf: number,
+  offset = DEFAULT_LABEL_OFFSET,
 ): readonly LabelPos[] {
   const len = Math.hypot(to.x - from.x, to.y - from.y) || 1;
   const dir = { x: (to.x - from.x) / len, y: (to.y - from.y) / len };
   const perp = { x: -dir.y, y: dir.x };
   const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-  const side = normalLabelOffset(perp.x, perp.y, size);
-  const along = normalLabelOffset(dir.x, dir.y, size);
+  const side = normalLabelOffset(perp.x, perp.y, size, offset);
+  const along = normalLabelOffset(dir.x, dir.y, size, offset);
   // 矢じりは線より太いので、終点の横の候補は矢じりの半幅だけ余分に離す。
   const headSide = side + headHalf - LABEL_POLICY.lineHalfWidth;
   const at = (base: XY, a: number, p: number): LabelPos =>
@@ -165,12 +210,15 @@ export type CurvePoint = XY & Readonly<{ t: number }>;
 /**
  * 曲線のそばの候補。曲線に沿った各位置で、線の両側へ離した位置を並べる。at があればその媒介変数に
  * 最も近い標本の両側だけを候補にする。指定が無ければ両端を除く 4 点おきの標本を使い、曲線の後半
- * （右寄り）を少し優先する。式のラベルが曲線の終わり近くに付く慣習に合わせるためである。
+ * （右寄り）を少し優先する。式のラベルが曲線の終わり近くに付く慣習に合わせるためである。dir が
+ * "auto" でなければ、線の両側の代わりに、各位置から dir の向きの 1 か所だけを候補にする。
  */
 export function besideCurve(
   visible: readonly CurvePoint[],
   size: GlyphSize,
   at: number | undefined,
+  dir: LabelDirSpec = "auto",
+  offset = DEFAULT_LABEL_OFFSET,
 ): readonly Candidate<LabelPos>[] {
   const idxs =
     at === undefined
@@ -188,8 +236,12 @@ export function besideCurve(
     const b = visible[Math.min(visible.length - 1, i + 2)];
     const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
     const perp = { x: -(b.y - a.y) / len, y: (b.x - a.x) / len };
-    const off = normalLabelOffset(perp.x, perp.y, size);
+    const off = normalLabelOffset(perp.x, perp.y, size, offset);
     const pref = at === undefined ? Math.abs(i / (visible.length - 1) - 0.8) * 1.5 : 0;
+    if (dir !== "auto") {
+      const pos = fixedPosition(visible[i], dir, size, LABEL_POLICY.lineHalfWidth, offset);
+      return [{ box: glyphBox(pos, size), value: pos, score: (penalty) => penalty + pref }];
+    }
     return [1, -1].map((sgn): Candidate<LabelPos> => {
       const pos = centeredAt(
         visible[i].x + sgn * perp.x * off,
