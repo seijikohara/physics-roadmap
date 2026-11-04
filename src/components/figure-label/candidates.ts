@@ -400,27 +400,24 @@ export function stubPenalty(
   line: TracedLine,
   s: number,
   cut: Box,
-  reach: number,
+  searchArc: number,
   stops: readonly Readonly<{ arc: number; reach: number }>[],
   marks: readonly PointMark[],
 ): number {
   const total = line.cum[line.cum.length - 1];
-  const back = exitArc(line, s, -1, cut, reach);
-  const fwd = exitArc(line, s, 1, cut, reach);
+  const back = exitArc(line, s, -1, cut, searchArc);
+  const fwd = exitArc(line, s, 1, cut, searchArc);
   const atEnd =
     !line.closed &&
     (isStub(back, line.pts[0], cut) || isStub(total - fwd, line.pts[line.pts.length - 1], cut));
   // 弧長の差。閉じた線では一周で巻き戻し、0 以上の値にする。
   const gap = (v: number): number => (line.closed ? ((v % total) + total) % total : v);
-  const atStop = stops.some(({ arc, reach: r }) => {
-    const fromBack = gap(arc - back);
-    const inCut = fromBack >= 0 && fromBack <= fwd - back;
+  const atStop = stops.some(({ arc, reach }) => {
     const ahead = gap(arc - fwd);
     const behind = gap(back - arc);
     return (
-      inCut ||
-      (ahead >= 0 && ahead - r < LABEL_POLICY.stubLength) ||
-      (behind >= 0 && behind - r < LABEL_POLICY.stubLength)
+      (ahead >= 0 && ahead - reach < LABEL_POLICY.stubLength) ||
+      (behind >= 0 && behind - reach < LABEL_POLICY.stubLength)
     );
   });
   const touchesMark = marks.some((m) => distanceToBox(m, cut) <= m.reach);

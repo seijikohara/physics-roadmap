@@ -14,11 +14,11 @@ import {
   stubPenalty,
   type PointMark,
 } from "./candidates";
-import { boxesOverlap, inflate, type Box, type XY } from "./geometry";
+import { boxGap, boxesOverlap, distanceToBox, inflate, type Box, type XY } from "./geometry";
 import { glyphBox, type GlyphSize, type LabelPos } from "./label-box";
 import { lineObstacle, tracedLine, type LineObstacle, type TracedLine } from "./obstacles";
 import { createPlacer, lineReach } from "./placer";
-import { LABEL_POLICY } from "./policy";
+import { LABEL_POLICY, OBSTACLE_WEIGHT } from "./policy";
 
 const size: GlyphSize = { width: 20, top: -6, bottom: 4 };
 
@@ -457,9 +457,15 @@ describe("onLine の切れ端の罰点", () => {
   });
 
   it("閉じた線には線の端の切れ端の罰点を与えない", () => {
-    // 始点の上の候補でも、残るのは曲がりと右上の好みの罰点だけである。
-    const [first] = onLine([ring(60)], size, 5);
-    expect(first.score?.(0)).toBeLessThan(LABEL_POLICY.stub);
+    // 弧長 20〜28 の候補の切れ目は、始点の手前 12 以内で終わる。開いた線なら切れ端に当たる。
+    const circle = ring(60);
+    const open = tracedLine(circle.pts, false);
+    [20, 24, 28].forEach((s) => {
+      const { cut } = onLine([circle], size, 5)[s / 4].value;
+      expect(stubPenalty(circle, s, cut, 40, [], [])).toBe(0);
+    });
+    const { cut } = onLine([circle], size, 5)[5].value;
+    expect(stubPenalty(open, 20, cut, 40, [], [])).toBe(stub);
   });
 
   it("切れ端しか残らない短い線にも候補を作る", () => {
@@ -499,13 +505,55 @@ describe("onLine の切れ端の罰点", () => {
   });
 
   it("閉じた線でも印までの残りを始点をまたいで測る", () => {
-    // 円の始点（角 0）の印を、始点の後ろ側の候補からも見つける。
+    // 円の始点（角 0）の印を、始点の後ろ側の候補からも見つける。弧長 352 の候補の切れ目は印に届かず、
+    // 印の端まで弧長で 12 以内に迫る。弧長 336 の候補の切れ目は印の端まで 12 より離れる。
     const circle = ring(60);
     const start = { x: 160, y: 100, reach: 4 };
     const plain = onLine([circle], size, 5);
     const marked = onLine([circle], size, 5, [], [start]);
-    const last = plain.length - 1;
-    expect((marked[last].score?.(0) ?? 0) - (plain[last].score?.(0) ?? 0)).toBeCloseTo(stub, 9);
+    const extra = (s: number): number =>
+      (marked[s / 4].score?.(0) ?? 0) - (plain[s / 4].score?.(0) ?? 0);
+    expect(distanceToBox(start, plain[352 / 4].value.cut)).toBeGreaterThan(start.reach);
+    expect(extra(352)).toBeCloseTo(stub, 9);
+    expect(extra(336)).toBeCloseTo(0, 9);
+  });
+
+  it("別の線の上の点の印には反応しない", () => {
+    // 印は線から 25 離れる。線に下ろした足は切れ目の右端の近くにあるが、線の上の印ではない。
+    const aside = { x: 125, y: 125, reach: 4 };
+    expect(scoreAt(100, [aside]) - scoreAt(100)).toBeCloseTo(0, 9);
+  });
+
+  it("縦の線でも線の端の切れ端に罰点を与える", () => {
+    // 切り抜きの高さは 20 なので、中心が y のとき切れ目の上端は y − 10 である。
+    const upright = tracedLine(
+      [
+        { x: 100, y: 0 },
+        { x: 100, y: 300 },
+      ],
+      false,
+    );
+    const cands = onLine([upright], size, 5);
+    const at = (s: number): number =>
+      stubPenalty(upright, s, cands[(s - 17) / 4].value.cut, 40, [], []);
+    expect(at(17)).toBe(stub);
+    expect(at(25)).toBe(0);
+    expect(at(281)).toBe(stub);
+  });
+
+  it("切れ端しか残らない短い線でも、罰点が範囲の外の罰点より小さく、ラベルが残る", () => {
+    const short = tracedLine(
+      [
+        { x: 0, y: 0 },
+        { x: 40, y: 0 },
+      ],
+      false,
+    );
+    const bounds: Box = { x0: -50, x1: 100, y0: -50, y1: 50 };
+    const best = createPlacer([]).place(onLine([short], size, 5), { placed: [], bounds });
+    expect(best.item).not.toBeNull();
+    expect(best.score).toBeGreaterThanOrEqual(stub);
+    expect(best.score).toBeLessThan(LABEL_POLICY.outside);
   });
 });
 
@@ -541,6 +589,49 @@ describe("stubPenalty の線の端", () => {
   it("線の端が切れ目の奥にある候補には罰点を与えない", () => {
     expect(penalty(6, -hw - 0.01, 14)).toBe(0);
     expect(penalty(94, 86, 100 + hw + 0.01)).toBe(0);
+  });
+
+  it("線の全体が切れ目の中にあるなら、何も残らず罰点を与えない", () => {
+    expect(stubPenalty(line, 50, verticalCut(-10, 110), 60, [], [])).toBe(0);
+  });
+
+  it("線の端が切れ目の奥へ戻っても、切れ目の外の短い線は切れ端である", () => {
+    // 線は切れ目の上端 y = 10 の外へ出て、すぐに切れ目の奥の端へ戻る。
+    const hook = tracedLine(
+      [
+        { x: 50, y: 11.5 },
+        { x: 50, y: 8 },
+        { x: 53, y: 8 },
+        { x: 53, y: 100 },
+      ],
+      false,
+    );
+    expect(stubPenalty(hook, 23.5, verticalCut(10, 40), 40, [], [])).toBe(stub);
+  });
+});
+
+/** 同心円のラベルを内側の円から順に置き、最良の候補の字形の矩形を返す。 */
+function stackRings(radii: readonly number[]): readonly Box[] {
+  return radii.reduce<readonly Box[]>((placed, r) => {
+    const best = onLine([ring(r)], size, 5, placed).reduce((m, c) =>
+      (c.score?.(0) ?? 0) < (m.score?.(0) ?? 0) ? c : m,
+    );
+    return [...placed, best.box];
+  }, []);
+}
+
+describe("定数の釣り合い", () => {
+  it("同心円のラベルは同じ扇形に積み上がらず、先のラベルから離れる", () => {
+    const [inner, outer] = stackRings([60, 80]);
+    const center = 100;
+    const angle = (b: Box): number => Math.atan2(center - (b.y0 + b.y1) / 2, centerX(b) - center);
+    expect(Math.abs(angle(inner) - angle(outer))).toBeGreaterThan(Math.PI / 8);
+    expect(boxGap(inner, outer)).toBeGreaterThan(LABEL_POLICY.labelSpacing);
+  });
+
+  it("線の反対側の罰点は、最も軽い線のすきまの罰点より小さい", () => {
+    expect(LABEL_POLICY.otherSide).toBeGreaterThan(0);
+    expect(LABEL_POLICY.otherSide).toBeLessThan(OBSTACLE_WEIGHT.thinLine * LABEL_POLICY.nearLine);
   });
 });
 

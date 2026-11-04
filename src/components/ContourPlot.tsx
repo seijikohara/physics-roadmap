@@ -258,8 +258,8 @@ type Curve = Readonly<{
   labelAt?: number;
   /**
    * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto" は線の両側から選ぶ。labelAt が
-   * あれば線の進む向きの右側を優先し、線に触れるときだけ反対側へ移す。"center" や 8 方位を渡すと向きを
-   * 固定する。labelAt もあれば、罰点によらず位置を固定する。
+   * あれば線の進む向きの右側を優先し、右側の罰点が反対側より LABEL_POLICY.fixedSide より大きいときだけ
+   * 反対側へ移す。"center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
   /**
@@ -294,8 +294,8 @@ type ParametricCurve = Readonly<{
   labelAt?: number;
   /**
    * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto" は線の両側から選ぶ。labelAt が
-   * あれば線の進む向きの右側を優先し、線に触れるときだけ反対側へ移す。"center" や 8 方位を渡すと向きを
-   * 固定する。labelAt もあれば、罰点によらず位置を固定する。
+   * あれば線の進む向きの右側を優先し、右側の罰点が反対側より LABEL_POLICY.fixedSide より大きいときだけ
+   * 反対側へ移す。"center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
   /**

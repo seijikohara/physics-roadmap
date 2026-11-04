@@ -236,6 +236,47 @@ describe("farPartBoxDistance", () => {
     );
   });
 
+  describe("窓が長い線分を 2 片に切るとき", () => {
+    const long: readonly XY[] = [
+      { x: 0, y: 5 },
+      { x: 100, y: 5 },
+    ];
+    const longCum = cumulativeLength(long);
+
+    it("矩形を左の片へ寄せると、左の片の距離を返す", () => {
+      const left: Box = { x0: 10, x1: 20, y0: 8, y1: 12 };
+      expect(farPartBoxDistance(long, longCum, 50, 10, false, left, 5)).toBe(3);
+    });
+
+    it("矩形を右の片へ寄せると、右の片の距離を返す", () => {
+      const right: Box = { x0: 80, x1: 90, y0: 8, y1: 12 };
+      expect(farPartBoxDistance(long, longCum, 50, 10, false, right, 5)).toBe(3);
+    });
+  });
+
+  it("近い線分のあとに遠い線分が続いても、近い線分の距離を保つ", () => {
+    // 矩形に近いのは 1 本目だけである。2 本目は窓で 2 片に切れ、どちらの片も矩形から遠い。
+    const bent: readonly XY[] = [
+      { x: 0, y: 5 },
+      { x: 30, y: 5 },
+      { x: 30, y: 100 },
+    ];
+    const above: Box = { x0: 10, x1: 20, y0: 8, y1: 12 };
+    expect(farPartBoxDistance(bent, cumulativeLength(bent), 110, 5, false, above, 20)).toBe(3);
+  });
+
+  it("頂点が重なる線でも距離を測る", () => {
+    // 2 本目の線分の長さは 0 である。弧長の比を求められないので、その線分を測らない。
+    const doubled: readonly XY[] = [
+      { x: 0, y: 5 },
+      { x: 10, y: 5 },
+      { x: 10, y: 5 },
+      { x: 20, y: 5 },
+    ];
+    const above: Box = { x0: 12, x1: 18, y0: 8, y1: 12 };
+    expect(farPartBoxDistance(doubled, cumulativeLength(doubled), 0, 1, false, above, 5)).toBe(3);
+  });
+
   it("閉じた線の窓が始点をまたぐとき、長い線分の両端を切る", () => {
     // 一辺 40 の正方形。弧長 2 の窓 ±6 は、始点の前後の辺の一部だけを覆う。
     const square: readonly XY[] = [
