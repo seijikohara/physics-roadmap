@@ -7,6 +7,23 @@ import { scaleLinear } from "@visx/scale";
 import { Circle, Line, LinePath, Polygon } from "@visx/shape";
 import { renderToString } from "katex";
 import { useId } from "react";
+import {
+  bboxOf,
+  boxesOverlap,
+  clamp,
+  cumulativeLength,
+  distanceToSegment,
+  farPartHitsBox,
+  inflate,
+  lerpAt,
+  pointAtLength,
+  pointInPolygon,
+  polylineHitsBox,
+  segmentHitsBox,
+  turnAngle,
+  type Box,
+  type XY,
+} from "./figure-label/geometry";
 import KatexLabel from "./KatexLabel";
 
 /**
@@ -44,9 +61,6 @@ import KatexLabel from "./KatexLabel";
  *     arrows: 4 }]} />
  * ```
  */
-
-/** 数学座標の点。 */
-type XY = Readonly<{ x: number; y: number }>;
 
 /**
  * 軸の目盛り。数値だけ渡すと数値をそのまま描く。$\pi$ など特別な値には `{ value, label }` で
@@ -2339,10 +2353,6 @@ function clippedCentroid(poly: readonly XY[], win: Box): XY | null {
   return { x: sum.cx / (3 * sum.area), y: sum.cy / (3 * sum.area) };
 }
 
-function lerpAt(p: XY, q: XY, t: number): XY {
-  return { x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t };
-}
-
 function meanOf(pts: readonly XY[]): XY {
   const n = pts.length || 1;
   return {
@@ -2571,60 +2581,12 @@ function simplifyPolyline(pts: readonly XY[], eps: number): readonly XY[] {
   return pts.filter((_, k) => keep[k] === 1);
 }
 
-/** 点 p から線分 ab までの距離。 */
-function distanceToSegment(p: XY, a: XY, b: XY): number {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const len2 = dx * dx + dy * dy;
-  const t = len2 === 0 ? 0 : clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / len2, 0, 1);
-  return Math.hypot(p.x - (a.x + dx * t), p.y - (a.y + dy * t));
-}
-
-/** 折れ線の各頂点までの累積の長さ。 */
-function cumulativeLength(pts: readonly XY[]): readonly number[] {
-  // 直前の累積に辺の長さを足す（局所の可変バッファ）。頂点は数千になりうるため、配列を作り直さずに
-  // 積む。
-  const cum = [0];
-  pts.forEach((p, k) => {
-    if (k > 0) cum.push(cum[k - 1] + Math.hypot(p.x - pts[k - 1].x, p.y - pts[k - 1].y));
-  });
-  return cum;
-}
-
-/** 折れ線の始点から弧長 s の位置。閉じた線では s を一周の長さで巻き戻す。 */
-function pointAtLength(pts: readonly XY[], cum: readonly number[], s: number, closed: boolean): XY {
-  const total = cum[cum.length - 1];
-  const wrapped = closed && total > 0 ? ((s % total) + total) % total : s;
-  const t = clamp(wrapped, 0, total);
-  // cum[lo] <= t < cum[hi] となる隣り合う頂点 lo・hi を二分探索で求める。
-  const search = (lo: number, hi: number): readonly [number, number] => {
-    if (!(hi - lo > 1)) return [lo, hi];
-    const mid = (lo + hi) >> 1;
-    return cum[mid] <= t ? search(mid, hi) : search(lo, mid);
-  };
-  const [lo, hi] = search(0, cum.length - 1);
-  const seg = cum[hi] - cum[lo];
-  const u = seg > 0 ? (t - cum[lo]) / seg : 0;
-  return lerpAt(pts[lo], pts[hi], u);
-}
-
-/** 3 点 a→p→b で進む向きが変わる角（ラジアン、0〜π）。 */
-function turnAngle(a: XY, p: XY, b: XY): number {
-  const a1 = Math.atan2(p.y - a.y, p.x - a.x);
-  const a2 = Math.atan2(b.y - p.y, b.x - p.x);
-  const d = Math.abs(a2 - a1) % (2 * Math.PI);
-  return d > Math.PI ? 2 * Math.PI - d : d;
-}
-
 // ======================================================================
 // ラベル配置の当たり判定
 // ======================================================================
 
 /** ラベルの配置先（中心・左端・右端の基準点と寄せ方向）。 */
 type LabelPos = Readonly<{ x: number; y: number; align: "center" | "left" | "right" }>;
-
-/** 当たり判定に使う軸並行の矩形（左上 (x0,y0)・右下 (x1,y1)）。 */
-type Box = Readonly<{ x0: number; x1: number; y0: number; y1: number }>;
 
 /** ラベル配置の障害物となる矩形と、重なったときの罰点。 */
 type BoxObstacle = Readonly<{ box: Box; weight: number }>;
@@ -2692,91 +2654,11 @@ function lineObstacle(id: string, pts: readonly XY[], weight: number): readonly 
   return pts.length >= 2 ? [{ id, pts, weight, bbox: bboxOf(pts) }] : [];
 }
 
-function bboxOf(pts: readonly XY[]): Box {
-  return {
-    x0: pts.reduce((m, p) => Math.min(m, p.x), Infinity),
-    x1: pts.reduce((m, p) => Math.max(m, p.x), -Infinity),
-    y0: pts.reduce((m, p) => Math.min(m, p.y), Infinity),
-    y1: pts.reduce((m, p) => Math.max(m, p.y), -Infinity),
-  };
-}
-
-/** 点が多角形の内側にあるか（交差数の偶奇で判定する。塗りの evenodd 規則と一致させる）。 */
-function pointInPolygon(p: XY, poly: readonly XY[]): boolean {
-  return poly.reduce((inside, a, k) => {
-    const b = poly[k === 0 ? poly.length - 1 : k - 1];
-    return a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x
-      ? !inside
-      : inside;
-  }, false);
-}
-
-/** 折れ線が矩形と交わるか（いずれかの線分が矩形に入るか）。 */
-function polylineHitsBox(pts: readonly XY[], b: Box): boolean {
-  return pts.some((p, k) => k > 0 && segmentHitsBox(pts[k - 1], p, b));
-}
-
-/**
- * 折れ線のうち、弧長 s から window より離れた部分が矩形と交わるか。ラベルが乗る位置の近くを
- * 除いて、同じ線の別の部分（急に折り返す線など）がラベルに重なるかを調べる。
- */
-function farPartHitsBox(
-  pts: readonly XY[],
-  cum: readonly number[],
-  s: number,
-  window: number,
-  closed: boolean,
-  b: Box,
-): boolean {
-  const total = cum[cum.length - 1];
-  return pts.some((p, k) => {
-    if (k === 0) return false;
-    const mid = (cum[k - 1] + cum[k]) / 2;
-    const along = Math.abs(mid - s);
-    const dist = closed ? Math.min(along, total - along) : along;
-    return dist > window && segmentHitsBox(pts[k - 1], p, b);
-  });
-}
-
-/** 線分が矩形と交わるか（Liang–Barsky 法で、線分を矩形で切り取れるかを調べる）。 */
-function segmentHitsBox(a: XY, b: XY, box: Box): boolean {
-  if (
-    Math.max(a.x, b.x) < box.x0 ||
-    Math.min(a.x, b.x) > box.x1 ||
-    Math.max(a.y, b.y) < box.y0 ||
-    Math.min(a.y, b.y) > box.y1
-  ) {
-    return false;
-  }
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const pq: readonly (readonly [number, number])[] = [
-    [-dx, a.x - box.x0],
-    [dx, box.x1 - a.x],
-    [-dy, a.y - box.y0],
-    [dy, box.y1 - a.y],
-  ];
-  // 線分の媒介変数の範囲 [t0, t1] を矩形の 4 辺で順に狭める。範囲が空になれば null にする。
-  const clipped = pq.reduce<Readonly<{ t0: number; t1: number }> | null>(
-    (range, [p, q]) => {
-      if (range === null) return null;
-      if (p === 0) return q < 0 ? null : range;
-      const r = q / p;
-      if (p < 0) {
-        if (r > range.t1) return null;
-        return r > range.t0 ? { t0: r, t1: range.t1 } : range;
-      }
-      if (r < range.t0) return null;
-      return r < range.t1 ? { t0: range.t0, t1: r } : range;
-    },
-    { t0: 0, t1: 1 },
-  );
-  return clipped !== null && clipped.t0 <= clipped.t1;
-}
-
 // 以下のラベル幅の見積もりと配置の補助関数は、FunctionGraph.tsx の同名の関数と同じ内容である。
 // FunctionGraph の関数はモジュール内に閉じており、共有のモジュールへ移すには FunctionGraph を
 // 変更する必要がある。既存の章の描画を変えないため、ここに複製して持つ。
+// ただし、ここにあった矩形の拡大（inflate）と重なりの判定（boxesOverlap）は、figure-label/geometry.ts
+// へ移した。FunctionGraph は boxesOverlap と同じ内容の関数を、まだ自前で持つ。
 // FunctionGraph は当たり判定の矩形に、より広めの見積もり（コマンド名の綴りも字数に数える）を
 // 使う。線や点の印を障害物に数えないため、矩形を広く取ってそれらから離すためである。本図は線と
 // 点の印を障害物に数えるため、すべてのラベルで実幅に近い estimateTexWidthPrecise を使う。広めの
@@ -2908,23 +2790,9 @@ const LINE_CLEARANCE = 1.5;
 /** ラベルどうしの間に残したいすきま（px）。これより近いと軽い罰点を与える。 */
 const LABEL_SPACING = 4;
 
-/** 矩形を四方へ d だけ広げる。 */
-function inflate(b: Box, d: number): Box {
-  return { x0: b.x0 - d, x1: b.x1 + d, y0: b.y0 - d, y1: b.y1 + d };
-}
-
-/** 2 つの矩形が重なるか。 */
-function boxesOverlap(a: Box, b: Box): boolean {
-  return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
-}
-
 // ======================================================================
 // 数値の補助
 // ======================================================================
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
 
 /** 値を [lo, hi] に丸める。NaN は lo とし（その位置で領域の幅を 0 にする）、無限大も端に丸める。 */
 function clampTo(v: number, lo: number, hi: number): number {

@@ -14,10 +14,12 @@
     "lint:text": "textlint \"**/*.{md,mdx}\"",
     "lint:text:fix": "textlint --fix \"**/*.{md,mdx}\"",
     "typecheck": "astro sync && tsc --noEmit",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run lint:text",
+    "test": "vitest run",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run lint:text",
     "figures:shot": "tsx scripts/figures/shot.ts",
     "figures:lint": "tsx scripts/figures/lint.ts",
     "figures:diff": "tsx scripts/figures/diff.ts",
+    "figures:widths": "tsx scripts/figures/widths.ts",
     "prepare": "lefthook install"
   },
   "dependencies": {
@@ -36,7 +38,7 @@
     "@visx/scale": "^4.0.0",
     "@visx/shape": "^4.0.0",
     "astro": "^7.4.4",
-    "katex": "^0.17.0",
+    "katex": "0.17.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "rehype-katex": "^7.0.1",
@@ -58,7 +60,8 @@
     "textlint-rule-preset-ja-spacing": "^3.0.2",
     "textlint-rule-preset-ja-technical-writing": "^12.0.2",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
   },
   "packageManager": "pnpm@11.8.0"
 }
