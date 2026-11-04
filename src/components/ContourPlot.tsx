@@ -748,9 +748,18 @@ export default function ContourPlot({
   });
 
   // ---- ベクトル場 ----
-  const fieldData = fields.map((f) =>
-    fieldGeometry(f, { x0: xMin, x1: xMax, y0: yMin, y1: yMax }, toScreen),
-  );
+  // 矢じりの大半が描画窓の外へ出る矢印は描かない。窓で切ると、矢じりの無い切れ端が残って向きを誤読
+  // させる。
+  const plotWindow: Box = {
+    x0: originX,
+    x1: originX + plotW,
+    y0: originY,
+    y1: originY + plotH,
+  };
+  const fieldData = fields.map((f) => {
+    const fd = fieldGeometry(f, { x0: xMin, x1: xMax, y0: yMin, y1: yMax }, toScreen);
+    return { ...fd, arrows: fd.arrows.filter((a) => headInside(a, plotWindow)) };
+  });
 
   // ---- 曲線・境界の向きの矢じり ----
   // 矢じりは画面座標で向きを求め、横縦の縮尺が異なる図でも線に沿って向くようにする。接線は
@@ -2366,22 +2375,17 @@ function arrowPaths(
   headLen: number,
   headHalf: number,
 ): Readonly<{ shafts: string; heads: string }> {
-  const parts = arrows.flatMap(({ from, to }) => {
-    const len = Math.hypot(to.x - from.x, to.y - from.y);
-    if (!(len > 0)) return [];
-    const ux = (to.x - from.x) / len;
-    const uy = (to.y - from.y) / len;
-    const hl = Math.min(headLen, len * 0.8);
-    const hh = headHalf * (hl / headLen);
-    const bx = to.x - hl * ux;
-    const by = to.y - hl * uy;
+  const parts = arrows.flatMap((arrow) => {
+    const head = arrowHead(arrow, headLen, headHalf);
+    if (head === null) return [];
+    const { from, to } = arrow;
     return [
       {
-        shaft: `M${round2(from.x)} ${round2(from.y)}L${round2(bx)} ${round2(by)}`,
+        shaft: `M${round2(from.x)} ${round2(from.y)}L${round2(head.base.x)} ${round2(head.base.y)}`,
         head:
           `M${round2(to.x)} ${round2(to.y)}` +
-          `L${round2(bx - hh * uy)} ${round2(by + hh * ux)}` +
-          `L${round2(bx + hh * uy)} ${round2(by - hh * ux)}Z`,
+          `L${round2(head.left.x)} ${round2(head.left.y)}` +
+          `L${round2(head.right.x)} ${round2(head.right.y)}Z`,
       },
     ];
   });
@@ -2389,6 +2393,41 @@ function arrowPaths(
     shafts: parts.map((q) => q.shaft).join(""),
     heads: parts.map((q) => q.head).join(""),
   };
+}
+
+/**
+ * 矢じりの根元の中央と両端の点。矢じりの形と短い矢印での縮め方は、通常の矢印（vectors）と同じである。
+ * 長さ 0 の矢印には null を返す。
+ */
+function arrowHead(
+  { from, to }: ScreenArrow,
+  headLen: number,
+  headHalf: number,
+): Readonly<{ base: XY; left: XY; right: XY }> | null {
+  const len = Math.hypot(to.x - from.x, to.y - from.y);
+  if (!(len > 0)) return null;
+  const ux = (to.x - from.x) / len;
+  const uy = (to.y - from.y) / len;
+  const hl = Math.min(headLen, len * 0.8);
+  const hh = headHalf * (hl / headLen);
+  const bx = to.x - hl * ux;
+  const by = to.y - hl * uy;
+  return {
+    base: { x: bx, y: by },
+    left: { x: bx - hh * uy, y: by + hh * ux },
+    right: { x: bx + hh * uy, y: by - hh * ux },
+  };
+}
+
+/**
+ * ベクトル場の矢印の矢じりが、向きの読める程度に窓の中に残るか。矢じりの中ほどが窓の中にあれば
+ * 残るとみなす。先端だけが窓から出る矢印まで省くと、窓の縁の矢印の並びが歯抜けになるためである。
+ */
+function headInside(arrow: ScreenArrow, win: Box): boolean {
+  const head = arrowHead(arrow, FIELD_HEAD_LEN, FIELD_HEAD_HALF);
+  if (head === null) return true;
+  const mid = lerpAt(head.base, arrow.to, 0.5);
+  return mid.x >= win.x0 && mid.x <= win.x1 && mid.y >= win.y0 && mid.y <= win.y1;
 }
 
 /** ArrowMarks を、矢じりを置く媒介変数の値の列にする。 */
