@@ -258,7 +258,7 @@ type Curve = Readonly<{
   labelAt?: number;
   /**
    * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto" は線の両側から選ぶ。labelAt が
-   * あれば線の進む向きの右側を優先し、右側の罰点が反対側より LABEL_POLICY.fixedSide より大きいときだけ
+   * あれば線の進む向きの右側を優先し、右側の罰点が反対側を LABEL_POLICY.fixedSide より大きく上回るときだけ
    * 反対側へ移す。"center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
@@ -294,7 +294,7 @@ type ParametricCurve = Readonly<{
   labelAt?: number;
   /**
    * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto" は線の両側から選ぶ。labelAt が
-   * あれば線の進む向きの右側を優先し、右側の罰点が反対側より LABEL_POLICY.fixedSide より大きいときだけ
+   * あれば線の進む向きの右側を優先し、右側の罰点が反対側を LABEL_POLICY.fixedSide より大きく上回るときだけ
    * 反対側へ移す。"center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
@@ -605,9 +605,6 @@ const CONTOUR_FONT = 11;
 // 斜めの線は矩形の上下の縁で切れるので、4px に線の太さの半分（0.8）と、字の大きさ 11px で字形が
 // 見積もりの上へ出る量（約 0.7）を足す。
 const CONTOUR_GAP_PAD = 5.5;
-// 全レベルの線を切り抜く矩形の、字形の矩形からの余白（px）。隣の線が字形に重なる部分だけを切る。
-// 余白を足すと矩形の角が字形の外へ広がり、字形に触れていない隣の線まで途切れる。
-const GLYPH_CUT_PAD = 0;
 // 領域・点・矢印などのラベル、目盛り数字、軸名の字の大きさ（KatexLabel の fontSize）。
 const LABEL_FONT = 12;
 const TICK_FONT = 11;
@@ -1304,7 +1301,8 @@ export default function ContourPlot({
               />
             </mask>
           ))}
-          {/* 字形の下だけ全レベルの線を切り抜くマスク。隣のレベルの線が字形を貫かないようにする。 */}
+          {/* 字形の見積もりの矩形の下だけ全レベルの線を切り抜くマスク。隣のレベルの線が字形を貫かないように
+              する。矩形に余白を足すと、矩形の角が字形の外へ広がり、字形に触れていない隣の線まで途切れる。 */}
           {contourLabels.length > 0 && (
             <mask
               id={glyphMask}
@@ -1315,19 +1313,16 @@ export default function ContourPlot({
               height={viewH}
             >
               <rect x={0} y={0} width={viewW} height={viewH} fill="#fff" />
-              {contourLabels.map((l) => {
-                const b = inflate(l.box, GLYPH_CUT_PAD);
-                return (
-                  <rect
-                    key={`gl-${l.levelId}`}
-                    x={b.x0}
-                    y={b.y0}
-                    width={b.x1 - b.x0}
-                    height={b.y1 - b.y0}
-                    fill="#000"
-                  />
-                );
-              })}
+              {contourLabels.map((l) => (
+                <rect
+                  key={`gl-${l.levelId}`}
+                  x={l.box.x0}
+                  y={l.box.y0}
+                  width={l.box.x1 - l.box.x0}
+                  height={l.box.y1 - l.box.y0}
+                  fill="#000"
+                />
+              ))}
             </mask>
           )}
           {/* ラベル・目盛り数字の下だけ格子線を切り抜くマスク。等高線のマスクと同じ作りである。 */}

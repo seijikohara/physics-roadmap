@@ -371,25 +371,28 @@ function marksOnLine(
   });
 }
 
+/** 線の上の弧長 t の点が矩形の中にあるか。 */
+function arcInBox(line: TracedLine, t: number, box: Box): boolean {
+  const q = pointAtLength(line.pts, line.cum, t, line.closed);
+  return q.x >= box.x0 && q.x <= box.x1 && q.y >= box.y0 && q.y <= box.y1;
+}
+
 /** 弧長 s から向き dir へ線をたどり、矩形を出る弧長を返す。limit まで出なければ limit 先の弧長を返す。 */
 function exitArc(line: TracedLine, s: number, dir: number, box: Box, limit: number): number {
-  const inside = (t: number): boolean => {
-    const q = pointAtLength(line.pts, line.cum, t, line.closed);
-    return q.x >= box.x0 && q.x <= box.x1 && q.y >= box.y0 && q.y <= box.y1;
-  };
   const steps = Array.from({ length: Math.ceil(limit) }, (_, i) => s + dir * (i + 1));
-  return steps.find((t) => !inside(t)) ?? s + dir * limit;
+  return steps.find((t) => !arcInBox(line, t, box)) ?? s + dir * limit;
 }
 
 /**
- * 線の端 tip までの残りの弧長 rest が、短い切れ端になるか。線の端が切れ目の中にあると rest は 0 以下に
- * なる。exitArc は 1px 刻みなので、線の端が切れ目のすぐ外にあるときも同じである。線の端が切れ目の縁から
- * 線幅の半分より近ければ、丸い端が切れ目の外へ出て点が残るので、切れ端に数える。線の端が切れ目の奥に
- * あるなら何も残らず、切れ端は無い。
+ * 線の端 tip までの残りの弧長 rest が、短い切れ端になるか。exited は、線が探す範囲で切れ目を出たかを
+ * 表す。線の端が切れ目の中にあると rest は 0 以下になる。exitArc は 1px 刻みなので、線の端が切れ目の
+ * すぐ外にあるときも同じである。rest が 0 以下のときと線が切れ目を出ないときは、線の端の位置で判定する。
+ * 線の端が切れ目の縁から線幅の半分の上限より近ければ、丸い端が切れ目の外へ出て点が残るので、切れ端に
+ * 数える。線の端が切れ目の奥にあるなら何も残らず、切れ端は無い。
  */
-function isStub(rest: number, tip: XY, cut: Box): boolean {
+function isStub(rest: number, exited: boolean, tip: XY, cut: Box): boolean {
   if (rest >= LABEL_POLICY.stubLength) return false;
-  return rest > 0 || distanceToBox(tip, inflate(cut, -LABEL_POLICY.lineHalfWidth)) > 0;
+  return (rest > 0 && exited) || distanceToBox(tip, inflate(cut, -LABEL_POLICY.lineHalfWidth)) > 0;
 }
 
 /**
@@ -407,9 +410,11 @@ export function stubPenalty(
   const total = line.cum[line.cum.length - 1];
   const back = exitArc(line, s, -1, cut, searchArc);
   const fwd = exitArc(line, s, 1, cut, searchArc);
+  const exited = (t: number): boolean => !arcInBox(line, t, cut);
   const atEnd =
     !line.closed &&
-    (isStub(back, line.pts[0], cut) || isStub(total - fwd, line.pts[line.pts.length - 1], cut));
+    (isStub(back, exited(back), line.pts[0], cut) ||
+      isStub(total - fwd, exited(fwd), line.pts[line.pts.length - 1], cut));
   // 弧長の差。閉じた線では一周で巻き戻し、0 以上の値にする。
   const gap = (v: number): number => (line.closed ? ((v % total) + total) % total : v);
   const atStop = stops.some(({ arc, reach }) => {

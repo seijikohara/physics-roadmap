@@ -120,7 +120,7 @@ describe("besideCurve", () => {
       expect(side([...across(69.5, 6), ...across(70, 3)])).toBe("below");
     });
 
-    it("線に触れたら反対側へ移る", () => {
+    it("右側の罰点が反対側を fixedSide より大きく上回れば反対側へ移る", () => {
       expect(side(across(67, 3))).toBe("above");
     });
   });
@@ -457,15 +457,14 @@ describe("onLine の切れ端の罰点", () => {
   });
 
   it("閉じた線には線の端の切れ端の罰点を与えない", () => {
-    // 弧長 20〜28 の候補の切れ目は、始点の手前 12 以内で終わる。開いた線なら切れ端に当たる。
+    // 弧長 12〜20 の候補の切れ目は、始点の手前 12 以内で終わる。開いた線なら切れ端に当たる。
     const circle = ring(60);
     const open = tracedLine(circle.pts, false);
-    [20, 24, 28].forEach((s) => {
+    [12, 16, 20].forEach((s) => {
       const { cut } = onLine([circle], size, 5)[s / 4].value;
       expect(stubPenalty(circle, s, cut, 40, [], [])).toBe(0);
+      expect(stubPenalty(open, s, cut, 40, [], [])).toBe(stub);
     });
-    const { cut } = onLine([circle], size, 5)[5].value;
-    expect(stubPenalty(open, 20, cut, 40, [], [])).toBe(stub);
   });
 
   it("切れ端しか残らない短い線にも候補を作る", () => {
@@ -516,6 +515,22 @@ describe("onLine の切れ端の罰点", () => {
     expect(distanceToBox(start, plain[352 / 4].value.cut)).toBeGreaterThan(start.reach);
     expect(extra(352)).toBeCloseTo(stub, 9);
     expect(extra(336)).toBeCloseTo(0, 9);
+  });
+
+  it("印までの残りは、印の中心ではなく印の端から測る", () => {
+    // 印の中心は弧長 150、印の端は 154 である。線は切れ目の左端を 165 と 169 で出るので、残りは 11 と 15 である。
+    const flat = tracedLine(
+      [
+        { x: 0, y: 100 },
+        { x: 300, y: 100 },
+      ],
+      false,
+    );
+    const stops = [{ arc: 150, reach: 4 }];
+    const near: Box = { x0: 165.5, x1: 195.5, y0: 90, y1: 110 };
+    const far: Box = { x0: 169.5, x1: 199.5, y0: 90, y1: 110 };
+    expect(stubPenalty(flat, 181, near, 40, stops, [])).toBe(stub);
+    expect(stubPenalty(flat, 185, far, 40, stops, [])).toBe(0);
   });
 
   it("別の線の上の点の印には反応しない", () => {
@@ -576,9 +591,31 @@ describe("stubPenalty の線の端", () => {
   const hw = LABEL_POLICY.lineHalfWidth;
   const stub = LABEL_POLICY.stub;
 
-  it("線の端が切れ目の中でも、縁から線幅の半分より近い候補に罰点を与える", () => {
+  it("線の端が切れ目の中でも、縁から線幅の半分の上限より近い候補に罰点を与える", () => {
     expect(penalty(6, -0.27, 14)).toBe(stub);
     expect(penalty(94, 86, 100.27)).toBe(stub);
+    expect(penalty(6, -hw + 0.01, 14)).toBe(stub);
+    expect(penalty(94, 86, 100 + hw - 0.01)).toBe(stub);
+  });
+
+  it("線の端が切れ目の横の縁に近い候補にも罰点を与える", () => {
+    const flat = tracedLine(
+      [
+        { x: 0, y: 50 },
+        { x: 100, y: 50 },
+      ],
+      false,
+    );
+    const near: Box = { x0: -0.27, x1: 14, y0: 40, y1: 60 };
+    const deep: Box = { x0: -hw - 0.01, x1: 14, y0: 40, y1: 60 };
+    expect(stubPenalty(flat, 6, near, 40, [], [])).toBe(stub);
+    expect(stubPenalty(flat, 6, deep, 40, [], [])).toBe(0);
+  });
+
+  it("残りの弧長が stubLength より短い候補だけに罰点を与える", () => {
+    // 線は y = 11 と y = 12 で切れ目を出るので、線の端までの残りは 11 と 12 である。
+    expect(penalty(20, 11.5, 30)).toBe(stub);
+    expect(penalty(20, 12.5, 30)).toBe(0);
   });
 
   it("線の端が切れ目のすぐ外にある候補に罰点を与える", () => {
@@ -593,6 +630,11 @@ describe("stubPenalty の線の端", () => {
 
   it("線の全体が切れ目の中にあるなら、何も残らず罰点を与えない", () => {
     expect(stubPenalty(line, 50, verticalCut(-10, 110), 60, [], [])).toBe(0);
+  });
+
+  it("探す範囲で線が切れ目を出なくても、線の端が切れ目の奥にあれば罰点を与えない", () => {
+    // 探す範囲は 40 なので、線の端まで 10 を残して打ち切る。
+    expect(stubPenalty(line, 50, verticalCut(-10, 110), 40, [], [])).toBe(0);
   });
 
   it("線の端が切れ目の奥へ戻っても、切れ目の外の短い線は切れ端である", () => {
@@ -627,6 +669,10 @@ describe("定数の釣り合い", () => {
     const angle = (b: Box): number => Math.atan2(center - (b.y0 + b.y1) / 2, centerX(b) - center);
     expect(Math.abs(angle(inner) - angle(outer))).toBeGreaterThan(Math.PI / 8);
     expect(boxGap(inner, outer)).toBeGreaterThan(LABEL_POLICY.labelSpacing);
+  });
+
+  it("切れ端の罰点は、主役の線に触れる罰点より軽い", () => {
+    expect(LABEL_POLICY.stub).toBeLessThan(OBSTACLE_WEIGHT.line);
   });
 
   it("線の反対側の罰点は、最も軽い線のすきまの罰点より小さい", () => {
