@@ -2,10 +2,9 @@
 
 import {
   bboxOf,
-  boxesOverlap,
   cumulativeLength,
-  farPartHitsBox,
-  polylineHitsBox,
+  farPartBoxDistance,
+  polylineBoxDistance,
   type Box,
   type XY,
 } from "./geometry";
@@ -56,11 +55,6 @@ export function groupObstacle(lines: readonly LineObstacle[], cap: number): Grou
   return { kind: "group", lines, cap };
 }
 
-/** 折れ線の障害物が矩形に入るか。外接矩形で先に絞り、頂点の多い線を調べる回数を減らす。 */
-export function lineHitsBox(line: LineObstacle, box: Box): boolean {
-  return boxesOverlap(box, line.bbox) && polylineHitsBox(line.pts, box);
-}
-
 /** ラベルが乗りうる線の 1 本。弧長の累積を持ち、弧長の窓を調べられるようにする。 */
 export type TracedLine = Readonly<{
   pts: readonly XY[];
@@ -76,19 +70,25 @@ export function tracedLine(pts: readonly XY[], closed: boolean): TracedLine {
 export type LinePosition = Readonly<{ line: number; s: number }>;
 
 /**
- * ラベルが乗る線の組のうち、ラベルが当然重なる部分を除いて、矩形に入る部分があるか。乗っている線は
- * 弧長 s から window より離れた部分だけを調べ、同じ組の他の線は全体を調べる。交わる 2 本の等高線の
- * もう一方や、急に折り返す線の別の部分を見つけるためである。
+ * ラベルが乗る線の組のうち、ラベルが当然重なる部分を除いた線と矩形の距離。乗っている線は弧長 s から
+ * window より離れた部分だけを調べ、同じ組の他の線は全体を調べる。交わる 2 本の等高線のもう一方や、
+ * 急に折り返す線の別の部分を見つけるためである。limit より遠い線分は調べない。
  */
-export function ownLinesHitBox(
+export function ownLinesBoxDistance(
   lines: readonly TracedLine[],
   at: LinePosition,
   window: number,
   box: Box,
-): boolean {
-  return lines.some((line, i) =>
-    i === at.line
-      ? farPartHitsBox(line.pts, line.cum, at.s, window, line.closed, box)
-      : polylineHitsBox(line.pts, box),
+  limit: number,
+): number {
+  return lines.reduce(
+    (best, line, i) =>
+      Math.min(
+        best,
+        i === at.line
+          ? farPartBoxDistance(line.pts, line.cum, at.s, window, line.closed, box, limit)
+          : polylineBoxDistance(line.pts, box, limit),
+      ),
+    Infinity,
   );
 }

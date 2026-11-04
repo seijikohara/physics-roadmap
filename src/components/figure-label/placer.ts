@@ -3,9 +3,8 @@
 // 乱数・DOM・実行環境のフォントに頼らず、同じ入力から同じ配置を返す。配置器は状態を持たない。
 // 既出のラベルの矩形は呼ぶ側が placeInOrder で受け渡す。
 
-import { boxesOverlap, inflate, type Box } from "./geometry";
+import { boxesOverlap, inflate, polylineBoxDistance, type Box } from "./geometry";
 import {
-  lineHitsBox,
   type BoxObstacle,
   type GroupObstacle,
   type LineObstacle,
@@ -75,25 +74,31 @@ export function createPlacer(obstacles: readonly Obstacle[]): Placer {
       outside,
     );
     const byPlaced = placed.reduce((p, q) => nearPenalty(p, q, LABEL_POLICY.labelOverlap), byBoxes);
-    // 線との判定は矩形を広げて行う。線に触れる位置と、触れないがすきまが足りない位置を分けて数え、
-    // すきまが取れない図でも線を横切らない位置を選べるようにする。
-    const touching = inflate(b, LABEL_POLICY.lineTouch);
+    // 線との判定は矩形と線の本当の距離で行い、線の傾きで結果が変わらないようにする。線に触れる位置と、
+    // 触れないがすきまが足りない位置を分けて数え、すきまが取れない図でも線を横切らない位置を選べるよう
+    // にする。外接矩形で先に絞り、頂点の多い線を調べる回数を減らす。
     const padded = inflate(b, lineReach);
+    const touching = inflate(b, LABEL_POLICY.lineTouch);
     const bySolid = solidLines.reduce((p, l) => {
-      if (l.id === exclude || !lineHitsBox(l, padded)) return p;
-      return p + (lineHitsBox(l, touching) ? l.weight : l.weight * LABEL_POLICY.nearLine);
+      if (l.id === exclude || !boxesOverlap(padded, l.bbox)) return p;
+      const d = polylineBoxDistance(l.pts, b, lineReach);
+      if (d <= LABEL_POLICY.lineTouch) return p + l.weight;
+      return d < lineReach ? p + l.weight * LABEL_POLICY.nearLine : p;
     }, byPlaced);
     if (!avoidFaint) return bySolid;
+    const touches = (l: LineObstacle): boolean =>
+      boxesOverlap(touching, l.bbox) &&
+      polylineBoxDistance(l.pts, b, LABEL_POLICY.lineTouch) <= LABEL_POLICY.lineTouch;
     // 淡い線は重なった部分をマスクで切り抜くので、触れるかどうかだけを数える。
     const byFaint = faintLines.reduce(
-      (p, l) => (l.id !== exclude && lineHitsBox(l, touching) ? p + l.weight : p),
+      (p, l) => (l.id !== exclude && touches(l) ? p + l.weight : p),
       bySolid,
     );
     // 群も触れるかどうかだけを数える。すきまの内側まで数えると、密な場ではどの候補も上限に達し、
     // 重なる矢印の少ない位置を選べない。上限に達した群は、残りの線を調べない。
     return groups.reduce((p, group) => {
       const hits = group.lines.reduce(
-        (h, l) => (h < group.cap && lineHitsBox(l, touching) ? h + l.weight : h),
+        (h, l) => (h < group.cap && touches(l) ? h + l.weight : h),
         0,
       );
       return p + Math.min(hits, group.cap);

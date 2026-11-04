@@ -11,7 +11,7 @@ import {
   type XY,
 } from "./geometry";
 import { glyphBox, glyphCenterOffset, type GlyphSize, type LabelPos } from "./label-box";
-import { ownLinesHitBox, type TracedLine } from "./obstacles";
+import { ownLinesBoxDistance, type TracedLine } from "./obstacles";
 import { lineReach, type Candidate } from "./placer";
 import { LABEL_POLICY } from "./policy";
 
@@ -297,11 +297,8 @@ export function onLine(
         box: glyph,
         value,
         score: (penalty) => {
-          const at = { line: li, s };
-          const ownNear = ownLinesHitBox(lines, at, ownWindow, inflate(glyph, lineReach));
-          const ownTouch =
-            ownNear && ownLinesHitBox(lines, at, ownWindow, inflate(glyph, LABEL_POLICY.lineTouch));
-          const own = ownTouch ? 1 : ownNear ? LABEL_POLICY.nearLine : 0;
+          const d = ownLinesBoxDistance(lines, { line: li, s }, ownWindow, glyph, lineReach);
+          const own = d <= LABEL_POLICY.lineTouch ? 1 : d < lineReach ? LABEL_POLICY.nearLine : 0;
           const pa = pointAtLength(line.pts, line.cum, s - w / 2, line.closed);
           const pb = pointAtLength(line.pts, line.cum, s + w / 2, line.closed);
           const turned = penalty + own * LABEL_POLICY.ownLine + turnAngle(pa, p, pb) * 3;

@@ -4,14 +4,16 @@ import {
   boxesOverlap,
   clamp,
   cumulativeLength,
+  distanceToBox,
   distanceToSegment,
-  farPartHitsBox,
+  farPartBoxDistance,
   inflate,
   lerpAt,
   nearestOnPolyline,
   pointAtLength,
   pointInPolygon,
-  polylineHitsBox,
+  polylineBoxDistance,
+  segmentBoxDistance,
   segmentHitsBox,
   turnAngle,
   type Box,
@@ -93,23 +95,77 @@ describe("segmentHitsBox", () => {
   });
 });
 
-describe("polylineHitsBox", () => {
-  it("いずれかの線分が矩形と交われば真を返す", () => {
+describe("polylineBoxDistance", () => {
+  it("線分が矩形と交わるときは 0 を返す", () => {
     const pts: readonly XY[] = [
       { x: -10, y: -10 },
       { x: -10, y: 5 },
       { x: 5, y: 5 },
     ];
-    expect(polylineHitsBox(pts, UNIT)).toBe(true);
-    expect(polylineHitsBox(pts.slice(0, 2), UNIT)).toBe(false);
+    expect(polylineBoxDistance(pts, UNIT, 100)).toBe(0);
   });
 
-  it("1 点だけの折れ線は交わらない", () => {
-    expect(polylineHitsBox([{ x: 5, y: 5 }], UNIT)).toBe(false);
+  it("線分が 1 本も無ければ Infinity を返す", () => {
+    expect(polylineBoxDistance([{ x: 5, y: 5 }], UNIT, 100)).toBe(Infinity);
+  });
+
+  it("広げた範囲の外にある線分は調べない", () => {
+    const far: readonly XY[] = [
+      { x: 30, y: -5 },
+      { x: 30, y: 15 },
+    ];
+    expect(polylineBoxDistance(far, UNIT, 5)).toBe(Infinity);
+    expect(polylineBoxDistance(far, UNIT, 25)).toBe(20);
+  });
+
+  it("keep が偽を返す線分を数えない", () => {
+    const pts: readonly XY[] = [
+      { x: 13, y: -5 },
+      { x: 13, y: 15 },
+      { x: 30, y: 15 },
+    ];
+    expect(polylineBoxDistance(pts, UNIT, 100)).toBe(3);
+    expect(polylineBoxDistance(pts, UNIT, 100, (k) => k !== 1)).toBeCloseTo(Math.hypot(3, 5), 9);
   });
 });
 
-describe("farPartHitsBox", () => {
+describe("segmentBoxDistance", () => {
+  it("線分が矩形を横切るときは 0 を返す", () => {
+    expect(segmentBoxDistance({ x: -5, y: 5 }, { x: 15, y: 5 }, UNIT)).toBe(0);
+  });
+
+  it("矩形の隅から線分の内側までの距離を返す", () => {
+    // 右上の隅 (10, 0) を通る 45 度の線を、外へ 3√2 だけずらした線。
+    const a = { x: 0, y: -16 };
+    const b = { x: 26, y: 10 };
+    expect(segmentBoxDistance(a, b, UNIT)).toBeCloseTo((16 - 10) * Math.SQRT1_2, 9);
+  });
+
+  it("線分の端から矩形の辺までの距離を返す", () => {
+    expect(segmentBoxDistance({ x: 5, y: 13 }, { x: 5, y: 30 }, UNIT)).toBe(3);
+  });
+
+  it("矩形を広げる方式と違い、45 度の線が角の先を通っても距離どおりに測る", () => {
+    // 矩形の隅から 8px 離れた 45 度の線は、6px 広げた矩形の角 (16, 16) の内側を通る。
+    const off = 8 * Math.SQRT2;
+    const a = { x: 10 + off + 20, y: 10 - 20 };
+    const b = { x: 10 + off - 20, y: 10 + 20 };
+    expect(segmentHitsBox(a, b, { x0: -6, x1: 16, y0: -6, y1: 16 })).toBe(true);
+    expect(segmentBoxDistance(a, b, UNIT)).toBeCloseTo(8, 9);
+  });
+});
+
+describe("distanceToBox", () => {
+  it("内側の点は 0 を返す", () => {
+    expect(distanceToBox({ x: 5, y: 5 }, UNIT)).toBe(0);
+  });
+
+  it("隅の外の点は隅までの距離を返す", () => {
+    expect(distanceToBox({ x: 13, y: 14 }, UNIT)).toBe(5);
+  });
+});
+
+describe("farPartBoxDistance", () => {
   // y = 5 を x = 0 から 40 まで進む折れ線（4 本の線分、各長さ 10）。矩形に入るのは 1 本目の線分
   // （中点の弧長 5）だけである。
   const line: readonly XY[] = [0, 10, 20, 30, 40].map((x) => ({ x, y: 5 }));
@@ -117,17 +173,17 @@ describe("farPartHitsBox", () => {
   const box: Box = { x0: 2, x1: 8, y0: 0, y1: 10 };
 
   it("弧長の窓の内側の線分は無視する", () => {
-    expect(farPartHitsBox(line, cum, 5, 6, false, box)).toBe(false);
+    expect(farPartBoxDistance(line, cum, 5, 6, false, box, 1)).toBe(Infinity);
   });
 
-  it("弧長の窓の外側の線分は交差を数える", () => {
-    expect(farPartHitsBox(line, cum, 35, 6, false, box)).toBe(true);
+  it("弧長の窓の外側の線分は距離を数える", () => {
+    expect(farPartBoxDistance(line, cum, 35, 6, false, box, 1)).toBe(0);
   });
 
   it("閉じた線では一周の長さで巻き戻して距離を測る", () => {
     // 一周 40 の閉じた線とみなすと、弧長 38 と 1 本目の線分の中点 5 の距離は 7 になる。
-    expect(farPartHitsBox(line, cum, 38, 8, true, box)).toBe(false);
-    expect(farPartHitsBox(line, cum, 38, 8, false, box)).toBe(true);
+    expect(farPartBoxDistance(line, cum, 38, 8, true, box, 1)).toBe(Infinity);
+    expect(farPartBoxDistance(line, cum, 38, 8, false, box, 1)).toBe(0);
   });
 });
 

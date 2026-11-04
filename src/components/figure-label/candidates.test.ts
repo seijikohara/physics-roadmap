@@ -11,10 +11,10 @@ import {
   onLineNear,
   positionsAround,
 } from "./candidates";
-import { boxesOverlap, inflate } from "./geometry";
+import { boxesOverlap, inflate, type XY } from "./geometry";
 import { glyphBox, type GlyphSize } from "./label-box";
-import { tracedLine } from "./obstacles";
-import { lineReach } from "./placer";
+import { lineObstacle, tracedLine } from "./obstacles";
+import { createPlacer, lineReach } from "./placer";
 import { LABEL_POLICY } from "./policy";
 
 const size: GlyphSize = { width: 20, top: -6, bottom: 4 };
@@ -105,6 +105,41 @@ describe("besideCurve", () => {
     const cands = besideCurve(visible, size, undefined);
     const score = (x: number) => cands.find((c) => c.value.x === x)?.score?.(0) ?? Infinity;
     expect(score(170)).toBeLessThan(score(10));
+  });
+});
+
+/** 点 (100, 100) を中心とする、傾き deg 度の線分の両端。 */
+function lineAt(deg: number): readonly [XY, XY] {
+  const t = (deg * Math.PI) / 180;
+  return [
+    { x: 100 - 80 * Math.cos(t), y: 100 - 80 * Math.sin(t) },
+    { x: 100 + 80 * Math.cos(t), y: 100 + 80 * Math.sin(t) },
+  ];
+}
+
+describe("線の傾きによらない候補", () => {
+  const angles = [0, 1, 2, 3, 10, 30, 45, 60, 80, 89, 90, 135];
+  const bounds = { x0: -500, x1: 500, y0: -500, y1: 500 };
+
+  it.each(angles)("%d 度の線分のそばの候補は、自分の線を除かなくても罰点が 0 である", (deg) => {
+    const [a, b] = lineAt(deg);
+    const placer = createPlacer(lineObstacle("own", [a, b], 6));
+    for (const pos of besideSegment(a, b, size)) {
+      expect(placer.penalty(glyphBox(pos, size), { placed: [], bounds })).toBe(0);
+    }
+  });
+
+  it.each(angles)("%d 度の線のそばの曲線の候補は、自分の線に近いと数えられない", (deg) => {
+    const [a, b] = lineAt(deg);
+    const pts = Array.from({ length: 41 }, (_, i) => ({
+      x: a.x + ((b.x - a.x) * i) / 40,
+      y: a.y + ((b.y - a.y) * i) / 40,
+      t: i,
+    }));
+    const placer = createPlacer(lineObstacle("own", pts, 6));
+    for (const c of besideCurve(pts, size, 20)) {
+      expect(placer.penalty(c.box, { placed: [], bounds })).toBe(0);
+    }
   });
 });
 

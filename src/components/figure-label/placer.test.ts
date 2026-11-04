@@ -4,7 +4,7 @@ import {
   boxObstacle,
   groupObstacle,
   lineObstacle,
-  ownLinesHitBox,
+  ownLinesBoxDistance,
   tracedLine,
   type LineObstacle,
 } from "./obstacles";
@@ -85,6 +85,27 @@ describe("createPlacer の penalty", () => {
     expect(below(LABEL_POLICY.lineTouch / 2)).toBe(6);
     expect(below(lineReach - 1)).toBe(6 * LABEL_POLICY.nearLine);
     expect(below(lineReach + 1)).toBe(0);
+  });
+
+  it("線の傾きによらず、矩形からの距離で判定する", () => {
+    // 45 度の線が矩形の隅から d だけ離れて通る。すきまの帯の外なら、矩形を広げた角の内側を通っても
+    // 数えない。
+    const diagonal = (d: number) => {
+      const off = d * Math.SQRT2;
+      return createPlacer(
+        lineObstacle(
+          "d",
+          [
+            { x: target.x1 + off + 40, y: target.y1 - 40 },
+            { x: target.x1 + off - 40, y: target.y1 + 40 },
+          ],
+          6,
+        ),
+      ).penalty(target, { placed: [], bounds });
+    };
+    expect(diagonal(lineReach + 0.5)).toBe(0);
+    expect(diagonal(lineReach - 0.5)).toBe(6 * LABEL_POLICY.nearLine);
+    expect(diagonal(LABEL_POLICY.lineTouch - 0.5)).toBe(6);
   });
 
   it("淡い線はすきまの内側でも数えない", () => {
@@ -197,7 +218,7 @@ describe("createPlacer の place", () => {
   });
 });
 
-describe("ownLinesHitBox", () => {
+describe("ownLinesBoxDistance", () => {
   // 右へ進んで折り返し、始点の近くへ戻る線。
   const hairpin = tracedLine(
     [
@@ -211,7 +232,7 @@ describe("ownLinesHitBox", () => {
   const label: Box = { x0: 8, x1: 12, y0: -2, y1: 8 };
 
   it("弧長の窓の外にある自分の線を障害物に残す", () => {
-    expect(ownLinesHitBox([hairpin], { line: 0, s: 10 }, 20, label)).toBe(true);
+    expect(ownLinesBoxDistance([hairpin], { line: 0, s: 10 }, 20, label, 5)).toBe(0);
   });
 
   it("弧長の窓の内側にある自分の線を外す", () => {
@@ -223,7 +244,7 @@ describe("ownLinesHitBox", () => {
       false,
     );
     const onLine: Box = { x0: 40, x1: 60, y0: -5, y1: 5 };
-    expect(ownLinesHitBox([straight], { line: 0, s: 50 }, 60, onLine)).toBe(false);
+    expect(ownLinesBoxDistance([straight], { line: 0, s: 50 }, 60, onLine, 5)).toBe(Infinity);
   });
 
   it("閉じた線では始点をまたいで弧長を測る", () => {
@@ -238,7 +259,7 @@ describe("ownLinesHitBox", () => {
       true,
     );
     const nearStart: Box = { x0: -1, x1: 4, y0: -1, y1: 4 };
-    expect(ownLinesHitBox([square], { line: 0, s: 2 }, 25, nearStart)).toBe(false);
+    expect(ownLinesBoxDistance([square], { line: 0, s: 2 }, 25, nearStart, 1)).toBe(Infinity);
   });
 
   it("同じ組の他の線は全体を調べる", () => {
@@ -250,7 +271,7 @@ describe("ownLinesHitBox", () => {
       false,
     );
     const onHairpin: Box = { x0: 8, x1: 12, y0: -2, y1: 2 };
-    expect(ownLinesHitBox([hairpin, other], { line: 0, s: 10 }, 20, onHairpin)).toBe(true);
+    expect(ownLinesBoxDistance([hairpin, other], { line: 0, s: 10 }, 20, onHairpin, 5)).toBe(0);
   });
 });
 

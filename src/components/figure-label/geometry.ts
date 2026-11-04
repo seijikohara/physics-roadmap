@@ -30,30 +30,52 @@ export function pointInPolygon(p: XY, poly: readonly XY[]): boolean {
   }, false);
 }
 
-/** 折れ線が矩形と交わるか（いずれかの線分が矩形に入るか）。 */
-export function polylineHitsBox(pts: readonly XY[], b: Box): boolean {
-  return pts.some((p, k) => k > 0 && segmentHitsBox(pts[k - 1], p, b));
+/**
+ * 折れ線と矩形の距離。交わるときは 0 である。外接矩形を limit だけ広げた範囲の外にある線分は調べない。
+ * 範囲の中に線分が無ければ Infinity を返す。keep は k−1 番目と k 番目の頂点を結ぶ線分を数えるかを返す。
+ * 等高線のラベルは候補が多いので、距離の計算の前に座標の比較で線分を絞り、頂点の多い線でも速く保つ。
+ */
+export function polylineBoxDistance(
+  pts: readonly XY[],
+  box: Box,
+  limit: number,
+  keep: (k: number) => boolean = () => true,
+): number {
+  const reach = inflate(box, limit);
+  return pts.reduce((best, p, k) => {
+    if (k === 0 || best === 0) return best;
+    const q = pts[k - 1];
+    if (
+      Math.max(p.x, q.x) < reach.x0 ||
+      Math.min(p.x, q.x) > reach.x1 ||
+      Math.max(p.y, q.y) < reach.y0 ||
+      Math.min(p.y, q.y) > reach.y1 ||
+      !keep(k)
+    ) {
+      return best;
+    }
+    return Math.min(best, segmentBoxDistance(q, p, box));
+  }, Infinity);
 }
 
 /**
- * 折れ線のうち、弧長 s から window より離れた部分が矩形と交わるか。ラベルが乗る位置の近くを
- * 除いて、同じ線の別の部分（急に折り返す線など）がラベルに重なるかを調べる。
+ * 折れ線のうち、弧長 s から window より離れた部分と矩形の距離。ラベルが乗る位置の近くを除いて、同じ線の
+ * 別の部分（急に折り返す線など）がラベルにどれだけ近いかを調べる。
  */
-export function farPartHitsBox(
+export function farPartBoxDistance(
   pts: readonly XY[],
   cum: readonly number[],
   s: number,
   window: number,
   closed: boolean,
-  b: Box,
-): boolean {
+  box: Box,
+  limit: number,
+): number {
   const total = cum[cum.length - 1];
-  return pts.some((p, k) => {
-    if (k === 0) return false;
+  return polylineBoxDistance(pts, box, limit, (k) => {
     const mid = (cum[k - 1] + cum[k]) / 2;
     const along = Math.abs(mid - s);
-    const dist = closed ? Math.min(along, total - along) : along;
-    return dist > window && segmentHitsBox(pts[k - 1], p, b);
+    return (closed ? Math.min(along, total - along) : along) > window;
   });
 }
 
@@ -100,6 +122,33 @@ export function distanceToSegment(p: XY, a: XY, b: XY): number {
   const len2 = dx * dx + dy * dy;
   const t = len2 === 0 ? 0 : clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / len2, 0, 1);
   return Math.hypot(p.x - (a.x + dx * t), p.y - (a.y + dy * t));
+}
+
+/** 点 p と矩形の距離。点が矩形の内側なら 0 である。 */
+export function distanceToBox(p: XY, box: Box): number {
+  return Math.hypot(
+    Math.max(box.x0 - p.x, 0, p.x - box.x1),
+    Math.max(box.y0 - p.y, 0, p.y - box.y1),
+  );
+}
+
+/**
+ * 線分と矩形の距離。交わるときは 0 である。線分と矩形はどちらも凸なので、離れているときに最も近い組は、
+ * 矩形の 4 隅から線分までと、線分の 2 端から矩形までのどれかである。矩形を四方へ広げて交差を調べる方式と
+ * 違い、線の傾きで値が変わらない。広げる方式は斜めの線に対して角が距離の √2 倍まで伸びる。
+ */
+export function segmentBoxDistance(a: XY, b: XY, box: Box): number {
+  if (segmentHitsBox(a, b, box)) return 0;
+  const corners: readonly XY[] = [
+    { x: box.x0, y: box.y0 },
+    { x: box.x1, y: box.y0 },
+    { x: box.x0, y: box.y1 },
+    { x: box.x1, y: box.y1 },
+  ];
+  return corners.reduce(
+    (d, c) => Math.min(d, distanceToSegment(c, a, b)),
+    Math.min(distanceToBox(a, box), distanceToBox(b, box)),
+  );
 }
 
 /** 折れ線の上で点 p に最も近い点と、点 p からの距離。同点なら始点に近い側の点を返す。 */
