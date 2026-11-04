@@ -29,8 +29,8 @@ const USAGE = `使い方: pnpm run figures:lint -- [<ページ>...] [オプシ�
   --all               全ページを検査する（--dist ならビルド結果、--url なら src/content/docs の章）
   --near <px>         近接とみなす距離の上限（既定: 4）。距離 0 以下は重なり（overlap）
   --json <パス>       詳細を JSON で書き出す（--compare の基準に使える）
-  --labels <パス>     全ラベルの名前・種類・元の書式・フォントサイズ・字形の矩形を JSON で書き出す
-                      （フォントサイズと矩形は、どちらも図 SVG の座標系 = viewBox の単位にそろえる）
+  --labels <パス>     全ラベルの名前・種類・元の書式・フォントサイズ・字形の矩形・配置の枠を JSON で
+                      書き出す（フォントサイズと矩形は、どちらも図 SVG の座標系 = viewBox の単位にそろえる）
   --compare <パス>    --json で書き出した基準と比べ、図ごとに増えた所見と消えた所見だけを出す
                       （所見はページ・図番号・ラベル名・相手・種別で照合し、距離の違いは無視する）
   --fail-on <種別>    overlap なら overlap・outside、near なら near も含めて、該当があれば終了コード 1
@@ -113,6 +113,11 @@ type LabelInfo = Readonly<{
   y?: number;
   width?: number;
   height?: number;
+  /**
+   * ラベルの配置の枠（foreignObject の矩形）。単位は x・y と同じ。部品がラベルに渡した基準点は枠から
+   * 分かるので、字形の矩形と基準点の関係を実測と比べられる。`<text>` には枠が無い。
+   */
+  frame?: Readonly<{ x?: number; y?: number; width?: number; height?: number }>;
 }>;
 /** 図 SVG 1 枚の計測の結果。 */
 type SvgResult = Readonly<{
@@ -1380,6 +1385,9 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
         source: labelSource(l.el),
         fontSize: fontSizeOf(l.el),
         ...svgUserBox(l.rect),
+        ...(l.el.localName === "foreignObject"
+          ? { frame: svgUserBox(fromDom(l.el.getBoundingClientRect())) }
+          : {}),
       })),
     };
   };

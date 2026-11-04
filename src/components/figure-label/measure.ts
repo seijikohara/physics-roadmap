@@ -64,13 +64,20 @@ export function measureTex(tex: string, fontSize: number): LabelSize {
   const tree = __renderToHTMLTree(tex, RENDER_OPTIONS);
   const em = fontSize * KATEX_FONT_SCALE;
   const extent = nodeExtent(tree);
+  const fullWidth = Array.from(tex).some(isFullWidth);
   return {
     width: extent.known ? extent.width * em : legacyTexWidth(tex, fontSize),
-    height: tree.height * em,
-    depth: tree.depth * em,
+    height: Math.max(tree.height, fullWidth ? FULL_WIDTH_HEIGHT : 0) * em,
+    depth: Math.max(tree.depth, fullWidth ? FULL_WIDTH_DEPTH : 0) * em,
     approximate: !extent.known,
   };
 }
+
+// 全角の字の、基線より上と下の長さ（数式の 1em を単位とする）。KaTeX は全角の字の寸法に 'M' の値を
+// 代用する（高さ 0.683em・深さ 0）が、実際に描く Noto Serif JP の字形は基線より下へも沈む。値は Chrome
+// で測った字形の範囲である。
+const FULL_WIDTH_HEIGHT = 0.8;
+const FULL_WIDTH_DEPTH = 0.13;
 
 /**
  * 節点の横幅と、知らない節点を含まずに求まったか。幅は、節点を置く親の字の大きさの 1em を単位とする
