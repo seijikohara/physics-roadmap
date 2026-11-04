@@ -606,7 +606,8 @@ const CONTOUR_FONT = 11;
 // 見積もりの上へ出る量（約 0.7）を足す。
 const CONTOUR_GAP_PAD = 5.5;
 // 全レベルの線を切り抜く矩形の、字形の矩形からの余白（px）。隣の線が字形に重なる部分だけを切る。
-const GLYPH_CUT_PAD = 1;
+// 余白を足すと矩形の角が字形の外へ広がり、字形に触れていない隣の線まで途切れる。
+const GLYPH_CUT_PAD = 0;
 // 領域・点・矢印などのラベル、目盛り数字、軸名の字の大きさ（KatexLabel の fontSize）。
 const LABEL_FONT = 12;
 const TICK_FONT = 11;
