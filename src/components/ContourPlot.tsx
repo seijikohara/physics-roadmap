@@ -1127,10 +1127,11 @@ export default function ContourPlot({
       // 占有矩形を切り抜きの矩形にする。後の等高線のラベルが切れ目を避け、隣り合う線の切れ目が
       // つながって線が大きく欠けるのを防ぐ。
       const { pos, glyph, cut } = best.item;
-      return { item: { tex: lv.label, pos, box: glyph, cut }, box: cut };
+      return { item: { tex: lv.label, pos, box: glyph, cut, levelId: lv.id }, box: cut };
     },
   );
   const contourLabels = contourPlacement.items.filter((l): l is ContourLabel => l !== null);
+  const labeledLevels: ReadonlySet<string> = new Set(contourLabels.map((l) => l.levelId));
 
   // ---- 凡例 ----
   const legendItems: readonly LegendEntry[] =
@@ -1249,24 +1250,30 @@ export default function ContourPlot({
           </Marker>
           {/* 曲線・領域・等高線をプロット矩形でクリップする。 */}
           <RectClipPath id={clip} x={originX} y={originY} width={plotW} height={plotH} />
-          {/* 等高線のラベルの下だけ線を切り抜くマスク。白の部分を描き、黒の矩形の部分を消す。
-              背景色の矩形を上に重ねる方式と違い、領域の塗りの上でも塗りを隠さない。 */}
-          {contourLabels.length > 0 && (
-            <mask id={mask} maskUnits="userSpaceOnUse" x={0} y={0} width={viewW} height={viewH}>
+          {/* 等高線のラベルの下だけ線を切り抜くマスク。レベルごとに作り、同じレベルの線だけに掛ける。
+              全レベルに掛けると、切れ目が隣のレベルの線まで切る。白の部分を描き、黒の矩形の部分を
+              消す。背景色の矩形を上に重ねる方式と違い、領域の塗りの上でも塗りを隠さない。 */}
+          {contourLabels.map((l) => (
+            <mask
+              key={`mk-${l.levelId}`}
+              id={`${mask}-${l.levelId}`}
+              maskUnits="userSpaceOnUse"
+              x={0}
+              y={0}
+              width={viewW}
+              height={viewH}
+            >
               <rect x={0} y={0} width={viewW} height={viewH} fill="#fff" />
-              {contourLabels.map((l, i) => (
-                <rect
-                  key={`mk-${i}`}
-                  x={l.cut.x0}
-                  y={l.cut.y0}
-                  width={l.cut.x1 - l.cut.x0}
-                  height={l.cut.y1 - l.cut.y0}
-                  rx={3}
-                  fill="#000"
-                />
-              ))}
+              <rect
+                x={l.cut.x0}
+                y={l.cut.y0}
+                width={l.cut.x1 - l.cut.x0}
+                height={l.cut.y1 - l.cut.y0}
+                rx={3}
+                fill="#000"
+              />
             </mask>
-          )}
+          ))}
           {/* ラベル・目盛り数字の下だけ格子線を切り抜くマスク。等高線のマスクと同じ作りである。 */}
           {gridCuts.length > 0 && (
             <mask id={gridMask} maskUnits="userSpaceOnUse" x={0} y={0} width={viewW} height={viewH}>
@@ -1469,10 +1476,13 @@ export default function ContourPlot({
               />
             ))}
 
-          <g mask={contourLabels.length > 0 ? `url(#${mask})` : undefined}>
-            {contourData.map((levels, si) =>
-              levels.map((lv, li) =>
-                lv.lines.map((l, k) => (
+          {contourData.map((levels, si) =>
+            levels.map((lv, li) => (
+              <g
+                key={`ctg-${si}-${li}`}
+                mask={labeledLevels.has(lv.id) ? `url(#${mask}-${lv.id})` : undefined}
+              >
+                {lv.lines.map((l, k) => (
                   <LinePath<XY>
                     key={`ct-${si}-${li}-${k}`}
                     data={[...l.pts]}
@@ -1487,10 +1497,10 @@ export default function ContourPlot({
                     // style で渡す。
                     style={{ stroke: lv.color }}
                   />
-                )),
-              ),
-            )}
-          </g>
+                ))}
+              </g>
+            )),
+          )}
 
           {/* ベクトル場。等高線より前面、曲線より奥に描き、閉曲線などの主役の線を矢印の上に残す。
               矢印は数百本になりうるため、場ごとに全矢印の軸を 1 本の path、矢じりを 1 本の path に
@@ -2549,8 +2559,8 @@ type CurveLabelSpec = Readonly<{
 /** 置いたラベル（LaTeX・配置先・字形の矩形）。 */
 type Label = Readonly<{ tex: string; pos: LabelPos; box: Box }>;
 
-/** 置いた等高線のラベル。cut は等高線を切り抜く矩形である。 */
-type ContourLabel = Label & Readonly<{ cut: Box }>;
+/** 置いた等高線のラベル。cut は等高線を切り抜く矩形、levelId はラベルが乗るレベルの id である。 */
+type ContourLabel = Label & Readonly<{ cut: Box; levelId: string }>;
 
 /** 選んだ位置のラベルと占有矩形。位置が無ければ何も置かない。 */
 function placedLabel(tex: string, pos: LabelPos | null, size: GlyphSize): Placement<Label> {
