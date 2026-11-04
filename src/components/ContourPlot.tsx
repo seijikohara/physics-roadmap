@@ -365,9 +365,9 @@ type VectorField = Readonly<{
   /** 矢印の軸の線の太さ（px）。既定 1.4。 */
   width?: number;
   /**
-   * ラベル・目盛り数字に重なる矢印を描かないか。既定 false（ラベルはハローを敷いて矢印の上に
-   * 描く）。密な場で目盛り数字やラベルが読みにくいときに true にする。省くのは矢印 1 本ごとで、
-   * 矢じりの無い切れ端は残さない。
+   * ラベル・目盛り数字の字形から 4px の範囲に入る矢印を描かないか。既定 false（ラベルはハローを
+   * 敷いて矢印の上に描く）。密な場で目盛り数字やラベルが読みにくいときに true にする。省くのは矢印
+   * 1 本ごとで、矢じりの無い切れ端は残さない。
    */
   avoidLabels?: boolean;
   /** 凡例に載せる LaTeX ラベル（例: "\\mathbf{F}=(-y,x)"）。省略時は凡例に載せない。 */
@@ -1116,8 +1116,8 @@ export default function ContourPlot({
       if (lv.labelAt === undefined && !(best.score < LABEL_POLICY.outside)) return NO_PLACEMENT;
       // 占有矩形を切り抜きの矩形にする。後の等高線のラベルが切れ目を避け、隣り合う線の切れ目が
       // つながって線が大きく欠けるのを防ぐ。
-      const { pos, cut } = best.item;
-      return { item: { tex: lv.label, pos, box: cut }, box: cut };
+      const { pos, glyph, cut } = best.item;
+      return { item: { tex: lv.label, pos, box: glyph, cut }, box: cut };
     },
   );
   const contourLabels = contourPlacement.items.filter((l): l is ContourLabel => l !== null);
@@ -1183,22 +1183,22 @@ export default function ContourPlot({
   const gridCuts: readonly Box[] =
     grid || polar !== null
       ? [
-          ...contourLabels.map((l) => l.box),
+          ...contourLabels.map((l) => l.cut),
           ...allLabels.map((l) => inflate(l.box, GRID_CUT_PAD)),
           ...tickBoxes.map((b) => inflate(b, GRID_CUT_PAD)),
         ].map(toEdge)
       : [];
   const gridMaskRef = gridCuts.length > 0 ? `url(#${gridMask})` : undefined;
 
-  // avoidLabels の場では、ラベル・目盛り数字の矩形に触れる矢印と零ベクトルの点を描かない。矢印を
-  // マスクで部分的に切ると、矢じりの無い切れ端が残って向きを誤読させるため、1 本ごと省く。
+  // avoidLabels の場では、ラベル・目盛り数字の字形から線とのすきまの範囲に入る矢印と零ベクトルの点を
+  // 描かない。矢印をマスクで部分的に切ると、矢じりの無い切れ端が残って向きを誤読させるため、1 本ごと
+  // 省く。
   const fieldShown = fieldData.map((fd, i) => {
     if (fields[i].avoidLabels !== true) return fd;
-    const boxes = [
-      ...contourLabels.map((l) => l.box),
-      ...allLabels.map((l) => inflate(l.box, 1)),
-      ...tickBoxes.map((b) => inflate(b, GRID_CUT_PAD)),
-    ];
+    const boxes = [...contourLabels, ...allLabels]
+      .map((l) => l.box)
+      .concat(tickBoxes)
+      .map((b) => inflate(b, LABEL_POLICY.lineClearance));
     return {
       arrows: fd.arrows.filter((a) => !boxes.some((b) => segmentHitsBox(a.from, a.to, b))),
       dots: fd.dots.filter(
@@ -1247,10 +1247,10 @@ export default function ContourPlot({
               {contourLabels.map((l, i) => (
                 <rect
                   key={`mk-${i}`}
-                  x={l.box.x0}
-                  y={l.box.y0}
-                  width={l.box.x1 - l.box.x0}
-                  height={l.box.y1 - l.box.y0}
+                  x={l.cut.x0}
+                  y={l.cut.y0}
+                  width={l.cut.x1 - l.cut.x0}
+                  height={l.cut.y1 - l.cut.y0}
                   rx={3}
                   fill="#000"
                 />
@@ -2509,8 +2509,8 @@ type CurveLabelSpec = Readonly<{
 /** 置いたラベル（LaTeX・配置先・字形の矩形）。 */
 type Label = Readonly<{ tex: string; pos: LabelPos; box: Box }>;
 
-/** 置いた等高線のラベル。box は字形の矩形でなく、等高線を切り抜く矩形である。 */
-type ContourLabel = Label;
+/** 置いた等高線のラベル。cut は等高線を切り抜く矩形である。 */
+type ContourLabel = Label & Readonly<{ cut: Box }>;
 
 /** 選んだ位置のラベルと、そのラベルが占める矩形。位置が無ければ何も置かない。 */
 function placedLabel(tex: string, pos: LabelPos | null, size: GlyphSize): Placement<Label> {
