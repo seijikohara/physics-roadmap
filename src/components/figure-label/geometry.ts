@@ -102,6 +102,25 @@ export function distanceToSegment(p: XY, a: XY, b: XY): number {
   return Math.hypot(p.x - (a.x + dx * t), p.y - (a.y + dy * t));
 }
 
+/** 折れ線の上で点 p に最も近い点と、その距離。同点なら始点に近い側の点を返す。 */
+export function nearestOnPolyline(
+  pts: readonly XY[],
+  p: XY,
+): Readonly<{ point: XY; distance: number }> {
+  const first = { point: pts[0], distance: Math.hypot(p.x - pts[0].x, p.y - pts[0].y) };
+  return pts.reduce((best, b, k) => {
+    if (k === 0) return best;
+    const a = pts[k - 1];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 === 0 ? 0 : clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / len2, 0, 1);
+    const point = lerpAt(a, b, t);
+    const distance = Math.hypot(p.x - point.x, p.y - point.y);
+    return distance < best.distance ? { point, distance } : best;
+  }, first);
+}
+
 /** 折れ線の各頂点までの累積の長さ。 */
 export function cumulativeLength(pts: readonly XY[]): readonly number[] {
   // 直前の累積に辺の長さを足す（局所の可変バッファ）。頂点は数千になりうるため、配列を作り直さずに

@@ -8,6 +8,7 @@ import {
   farPartHitsBox,
   inflate,
   lerpAt,
+  nearestOnPolyline,
   pointAtLength,
   pointInPolygon,
   polylineHitsBox,
@@ -207,5 +208,24 @@ describe("clamp と lerpAt", () => {
     const q = { x: 10, y: 20 };
     expect(lerpAt(p, q, 0.25)).toEqual({ x: 2.5, y: 5 });
     expect(lerpAt(p, q, 1.5)).toEqual({ x: 15, y: 30 });
+  });
+});
+
+describe("nearestOnPolyline", () => {
+  const path = [
+    { x: 0, y: 0 },
+    { x: 10, y: 0 },
+    { x: 10, y: 10 },
+  ];
+
+  it("辺の内側の最も近い点と距離を返す", () => {
+    expect(nearestOnPolyline(path, { x: 5, y: 3 })).toEqual({ point: { x: 5, y: 0 }, distance: 3 });
+  });
+
+  it("端点が最も近いときは端点を返す", () => {
+    expect(nearestOnPolyline(path, { x: -3, y: -4 })).toEqual({
+      point: { x: 0, y: 0 },
+      distance: 5,
+    });
   });
 });

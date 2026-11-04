@@ -8,6 +8,7 @@ import {
   fixedPosition,
   insideRegion,
   onLine,
+  onLineNear,
   positionsAround,
 } from "./candidates";
 import { boxesOverlap, inflate } from "./geometry";
@@ -183,5 +184,39 @@ describe("onLine", () => {
     const scores = cands.map((c) => c.score?.(0) ?? 0);
     const middle = scores[Math.floor(scores.length / 2)];
     expect(middle).toBeLessThan(scores[0]);
+  });
+});
+
+describe("onLineNear", () => {
+  const horizontal = tracedLine(
+    [
+      { x: 0, y: 50 },
+      { x: 200, y: 50 },
+    ],
+    false,
+  );
+  const vertical = tracedLine(
+    [
+      { x: 150, y: 0 },
+      { x: 150, y: 40 },
+    ],
+    false,
+  );
+
+  it("線の上で指定の点に最も近い 1 点へ吸着する", () => {
+    const cands = onLineNear([horizontal, vertical], size, 5, { x: 60, y: 70 });
+    expect(cands).toHaveLength(1);
+    expect((cands[0].box.x0 + cands[0].box.x1) / 2).toBeCloseTo(60, 9);
+    expect((cands[0].box.y0 + cands[0].box.y1) / 2).toBeCloseTo(50, 9);
+  });
+
+  it("線の組の中で最も近い線を選ぶ", () => {
+    const [c] = onLineNear([horizontal, vertical], size, 5, { x: 152, y: 10 });
+    expect((c.box.x0 + c.box.x1) / 2).toBeCloseTo(150, 9);
+    expect((c.box.y0 + c.box.y1) / 2).toBeCloseTo(10, 9);
+  });
+
+  it("線が無ければ候補を作らない", () => {
+    expect(onLineNear([], size, 5, { x: 0, y: 0 })).toHaveLength(0);
   });
 });

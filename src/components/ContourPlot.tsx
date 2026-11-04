@@ -18,6 +18,7 @@ import {
   meanOf,
   normalLabelOffset,
   onLine,
+  onLineNear,
   positionCandidates,
   positionsAround,
   type LabelDirSpec,
@@ -89,9 +90,12 @@ type Tick = number | Readonly<{ value: number; label?: string }>;
 /**
  * 等高線の 1 つの高さ。数値だけ渡すと、ラベルは `labelVar` を左辺にした等式（例: `c=1`）になる。
  * `{ value, label, color }` でラベル（LaTeX）と線の色を個別に指定できる。`label: ""` で
- * その高さだけラベルを省く。
+ * その高さだけラベルを省く。`labelAt`（数学座標）を渡すと、その点に最も近い線の上の点へラベルを
+ * 固定する。省略時は線の上の空いた位置を自動で選ぶ。
  */
-type ContourLevel = number | Readonly<{ value: number; label?: string; color?: string }>;
+type ContourLevel =
+  | number
+  | Readonly<{ value: number; label?: string; color?: string; labelAt?: XY }>;
 
 /** 1 つの関数の等高線の組。 */
 type ContourSet = Readonly<{
@@ -692,7 +696,14 @@ export default function ContourPlot({
           : typeof lv === "number" || lv.label === undefined
             ? `${set.labelVar ?? "c"}=${formatNum(value)}`
             : lv.label;
-      return { id: `c${si}-${li}`, lines, color, label: label === "" ? undefined : label };
+      const at = typeof lv === "number" ? undefined : lv.labelAt;
+      return {
+        id: `c${si}-${li}`,
+        lines,
+        color,
+        label: label === "" ? undefined : label,
+        labelAt: at === undefined ? undefined : toScreen(at),
+      };
     });
   });
 
@@ -1029,7 +1040,8 @@ export default function ContourPlot({
       linePositions(v, from, to, size, (offset) => aroundVector(from, to, size, HEAD_HALF, offset)),
       size,
       placed,
-      `vc${i}`,
+      // 基準点が線の上でも線を避けられるよう、labelAt があれば自分の線も判定に含める。
+      v.labelAt === undefined ? `vc${i}` : undefined,
     );
     return placedLabel(v.label, pos, size);
   });
@@ -1044,7 +1056,7 @@ export default function ContourPlot({
       linePositions(s, a, b, size, (offset) => besideSegment(a, b, size, offset)),
       size,
       placed,
-      `sg${i}`,
+      s.labelAt === undefined ? `sg${i}` : undefined,
     );
     return placedLabel(s.label, pos, size);
   });
@@ -1093,11 +1105,15 @@ export default function ContourPlot({
     (lv, _, placed): Placement<ContourLabel> => {
       if (lv.label === undefined) return NO_PLACEMENT;
       const lines = lv.lines.map((l) => tracedLine(l.pts, l.closed));
+      const size = glyphSizeOf(lv.label, CONTOUR_FONT);
       const best = placer.place(
-        onLine(lines, glyphSizeOf(lv.label, CONTOUR_FONT), CONTOUR_GAP_PAD),
+        lv.labelAt === undefined
+          ? onLine(lines, size, CONTOUR_GAP_PAD)
+          : onLineNear(lines, size, CONTOUR_GAP_PAD, lv.labelAt),
         { placed, bounds: plotBounds, exclude: lv.id, avoidFaint: false },
       );
-      if (best.item === null || !(best.score < LABEL_POLICY.outside)) return NO_PLACEMENT;
+      if (best.item === null) return NO_PLACEMENT;
+      if (lv.labelAt === undefined && !(best.score < LABEL_POLICY.outside)) return NO_PLACEMENT;
       // 占有矩形を切り抜きの矩形にする。後の等高線のラベルが切れ目を避け、隣り合う線の切れ目が
       // つながって線が大きく欠けるのを防ぐ。
       const { pos, cut } = best.item;

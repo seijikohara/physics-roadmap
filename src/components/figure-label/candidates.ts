@@ -1,7 +1,15 @@
 // ラベルを置く候補の生成器。図の要素の種類ごとに、基準点や線から候補の位置を並べる。候補は前方ほど
 // 好ましく、配置器は同じ罰点なら前方の候補を選ぶ。
 
-import { inflate, pointAtLength, pointInPolygon, turnAngle, type Box, type XY } from "./geometry";
+import {
+  inflate,
+  nearestOnPolyline,
+  pointAtLength,
+  pointInPolygon,
+  turnAngle,
+  type Box,
+  type XY,
+} from "./geometry";
 import { glyphBox, glyphCenterOffset, type GlyphSize, type LabelPos } from "./label-box";
 import { ownLinesHitBox, type TracedLine } from "./obstacles";
 import { lineReach, type Candidate } from "./placer";
@@ -271,8 +279,6 @@ export function onLine(
   size: GlyphSize,
   gapPad: number,
 ): readonly Candidate<OnLinePlacement>[] {
-  // 字形の中心を線の上に置く。基準点の y は字形の中心より上にある。
-  const lift = glyphCenterOffset(size);
   const w = size.width + 2 * gapPad;
   // ラベルが乗る線のうち、ラベルの中心から弧長でこの範囲にある部分は、ラベルが当然重なる部分として
   // 当たり判定から外す。判定に使う矩形の対角の半分より長くとる。
@@ -285,11 +291,11 @@ export function onLine(
     const margin = line.closed ? 0 : w / 2 + 2;
     return accumulateSteps(margin, 4, total - margin).map((s): Candidate<OnLinePlacement> => {
       const p = pointAtLength(line.pts, line.cum, s, line.closed);
-      const pos: LabelPos = { x: p.x, y: p.y - lift, align: "center" };
-      const glyph = glyphBox(pos, size);
+      const value = placementOnLine(p, size, gapPad);
+      const { glyph } = value;
       return {
         box: glyph,
-        value: { pos, glyph, cut: inflate(glyph, gapPad) },
+        value,
         score: (penalty) => {
           const at = { line: li, s };
           const ownNear = ownLinesHitBox(lines, at, ownWindow, inflate(glyph, lineReach));
@@ -306,6 +312,31 @@ export function onLine(
       };
     });
   });
+}
+
+/** 線の組の上で target に最も近い 1 点だけの候補。線が無ければ候補を作らない。 */
+export function onLineNear(
+  lines: readonly TracedLine[],
+  size: GlyphSize,
+  gapPad: number,
+  target: XY,
+): readonly Candidate<OnLinePlacement>[] {
+  const nearest = lines
+    .map((line) => nearestOnPolyline(line.pts, target))
+    .reduce<Readonly<{ point: XY; distance: number }> | null>(
+      (best, c) => (best === null || c.distance < best.distance ? c : best),
+      null,
+    );
+  if (nearest === null) return [];
+  const value = placementOnLine(nearest.point, size, gapPad);
+  return [{ box: value.glyph, value }];
+}
+
+/** 線の上の点 p に字形の中心を置く配置先。基準点の y は字形の中心より上にある。 */
+function placementOnLine(p: XY, size: GlyphSize, gapPad: number): OnLinePlacement {
+  const pos: LabelPos = { x: p.x, y: p.y - glyphCenterOffset(size), align: "center" };
+  const glyph = glyphBox(pos, size);
+  return { pos, glyph, cut: inflate(glyph, gapPad) };
 }
 
 /** 点列の平均。 */
