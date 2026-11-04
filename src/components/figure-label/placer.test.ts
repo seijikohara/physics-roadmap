@@ -168,6 +168,24 @@ describe("createPlacer の penalty", () => {
     expect(placer.penalty(target, { placed: [], bounds })).toBe(8);
   });
 
+  it("淡い線と群は、矩形を広げた角の内側でも本当の距離で判定する", () => {
+    // 45 度の線が矩形の隅から 2px 離れて通る。触れる帯の幅を広げた矩形の角は 2.1px 先まで届く。
+    const off = 2 * Math.SQRT2;
+    const line = (faint: boolean) =>
+      lineObstacle(
+        "d",
+        [
+          { x: target.x1 + off + 40, y: target.y1 - 40 },
+          { x: target.x1 + off - 40, y: target.y1 + 40 },
+        ],
+        1,
+        faint,
+      );
+    expect(createPlacer(line(true)).penalty(target, { placed: [], bounds })).toBe(0);
+    const group = groupObstacle(line(true), 4);
+    expect(createPlacer([group]).penalty(target, { placed: [], bounds })).toBe(0);
+  });
+
   it("淡い線も id で除外する", () => {
     const placer = createPlacer(lineObstacle("g", crossing(target), 1, true));
     expect(placer.penalty(target, { placed: [], bounds, exclude: "g" })).toBe(0);
@@ -299,6 +317,26 @@ describe("ownLinesBoxDistance", () => {
     const nearStart: Box = { x0: -1, x1: 4, y0: -1, y1: 4 };
     // 窓の外で最も近いのは左の辺の y = 23 で、矩形の下端 y = 4 から 19 離れる。
     expect(ownLinesBoxDistance([square], { line: 0, s: 2 }, 25, nearStart, 1)).toBe(19);
+  });
+
+  it("先の線の距離を後の線で上書きしない", () => {
+    const near = tracedLine(
+      [
+        { x: 9, y: 3 },
+        { x: 11, y: 3 },
+      ],
+      false,
+    );
+    const far = tracedLine(
+      [
+        { x: 9, y: 4.5 },
+        { x: 11, y: 4.5 },
+      ],
+      false,
+    );
+    const box2: Box = { x0: 8, x1: 12, y0: -2, y1: 2 };
+    expect(ownLinesBoxDistance([near, far], { line: 9, s: 0 }, 20, box2, 5)).toBe(1);
+    expect(ownLinesBoxDistance([far, near], { line: 9, s: 0 }, 20, box2, 5)).toBe(1);
   });
 
   it("同じ組の他の線は全体を調べる", () => {

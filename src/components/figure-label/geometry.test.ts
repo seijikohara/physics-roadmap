@@ -135,8 +135,22 @@ describe("segmentBoxDistance", () => {
     expect(segmentBoxDistance(a, b, UNIT)).toBeCloseTo((16 - 10) * Math.SQRT1_2, 9);
   });
 
-  it("線分の端から矩形の辺までの距離を返す", () => {
+  it("線分の端から矩形の辺までの距離を、どちらの端でも返す", () => {
     expect(segmentBoxDistance({ x: 5, y: 13 }, { x: 5, y: 30 }, UNIT)).toBe(3);
+    expect(segmentBoxDistance({ x: 5, y: 30 }, { x: 5, y: 13 }, UNIT)).toBe(3);
+  });
+
+  it.each([
+    ["左上", { x: 0, y: 0 }, -1, -1],
+    ["右上", { x: 10, y: 0 }, 1, -1],
+    ["左下", { x: 0, y: 10 }, -1, 1],
+    ["右下", { x: 10, y: 10 }, 1, 1],
+  ])("%s の隅に最も近い 45 度の線の距離を返す", (_, corner, sx, sy) => {
+    // 隅から外へ 4px 離れた点を通り、隅を向く方向に直交する線分。
+    const c = { x: corner.x + (sx * 4) / Math.SQRT2, y: corner.y + (sy * 4) / Math.SQRT2 };
+    const a = { x: c.x + sy * 30, y: c.y - sx * 30 };
+    const b = { x: c.x - sy * 30, y: c.y + sx * 30 };
+    expect(segmentBoxDistance(a, b, UNIT)).toBeCloseTo(4, 9);
   });
 
   it("矩形を広げる方式と違い、45 度の線が角の先を通っても距離どおりに測る", () => {
@@ -385,6 +399,15 @@ describe("headInside", () => {
 
   it("矢じりの中ほどが窓の外にある矢印を省く", () => {
     expect(headInside(toX(104), win, 6, 2.4)).toBe(false);
+  });
+
+  it("左・上・下の縁も同じように判定する", () => {
+    const toLeft = { from: { x: 26, y: 50 }, to: { x: -4, y: 50 } };
+    const toTop = { from: { x: 50, y: 26 }, to: { x: 50, y: -4 } };
+    const toBottom = { from: { x: 50, y: 74 }, to: { x: 50, y: 104 } };
+    expect(headInside(toLeft, win, 6, 2.4)).toBe(false);
+    expect(headInside(toTop, win, 6, 2.4)).toBe(false);
+    expect(headInside(toBottom, win, 6, 2.4)).toBe(false);
   });
 
   it("長さ 0 の矢印は残す", () => {

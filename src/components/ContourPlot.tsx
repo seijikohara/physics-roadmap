@@ -257,13 +257,14 @@ type Curve = Readonly<{
   /** "inline" のとき、ラベルの基準点の x 座標（線の上の点）。省略時は空いた位置を自動で選ぶ。 */
   labelAt?: number;
   /**
-   * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto"（線の両側の空いた側を選ぶ）。
-   * "center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
+   * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto" は線の両側から選ぶ。labelAt が
+   * あれば線の進む向きの右側を優先し、線に触れるときだけ反対側へ移す。"center" や 8 方位を渡すと向きを
+   * 固定する。labelAt もあれば、罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
   /**
    * "inline" のとき、線と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、
-   * 線の中心から箱の縁までは labelOffset + 2.25 である。
+   * 線の中心から箱の縁までは labelOffset + 2.25、向きを固定したときは labelOffset + 2 である。
    */
   labelOffset?: number;
   /**
@@ -292,13 +293,14 @@ type ParametricCurve = Readonly<{
   /** "inline" のとき、ラベルの基準点の媒介変数 t（線の上の点）。省略時は空いた位置を自動で選ぶ。 */
   labelAt?: number;
   /**
-   * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto"（線の両側の空いた側を選ぶ）。
-   * "center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
+   * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto" は線の両側から選ぶ。labelAt が
+   * あれば線の進む向きの右側を優先し、線に触れるときだけ反対側へ移す。"center" や 8 方位を渡すと向きを
+   * 固定する。labelAt もあれば、罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
   /**
    * "inline" のとき、線と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、
-   * 線の中心から箱の縁までは labelOffset + 2.25 である。
+   * 線の中心から箱の縁までは labelOffset + 2.25、向きを固定したときは labelOffset + 2 である。
    */
   labelOffset?: number;
   /**
@@ -324,7 +326,8 @@ type VectorStyle = Readonly<{
   labelDir?: LabelDirSpec;
   /**
    * 線や基準点と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、箱の縁
-   * までは基準点から labelOffset + 1、線の中心から labelOffset + 2.25 である。
+   * までは基準点から labelOffset + 1、線の中心から labelOffset + 2.25（向きを固定したときは
+   * labelOffset + 2）である。
    */
   labelOffset?: number;
   /** 破線で描くか。既定は実線。 */
@@ -463,7 +466,8 @@ type Segment = Readonly<{
   labelDir?: LabelDirSpec;
   /**
    * 線や基準点と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、箱の縁
-   * までは基準点から labelOffset + 1、線の中心から labelOffset + 2.25 である。
+   * までは基準点から labelOffset + 1、線の中心から labelOffset + 2.25（向きを固定したときは
+   * labelOffset + 2）である。
    */
   labelOffset?: number;
   /** 破線で描くか。既定 true。 */
@@ -1106,8 +1110,11 @@ export default function ContourPlot({
         s.y >= plotBounds.y0 &&
         s.y <= plotBounds.y1,
     );
-    // 自動で位置を選ぶには接線を求める標本が要る。labelAt があれば、見える標本が 1 つでもラベルを置く。
-    if (visible.length < (spec.labelAt === undefined ? 3 : 1)) return NO_PLACEMENT;
+    // 自動で位置を選ぶには接線を求める標本が要る。labelAt があれば 2 標本で線の両側が決まり、向きも固定
+    // していれば、見える標本が 1 つでもラベルを置ける。
+    const fixedDir = spec.labelDir !== undefined && spec.labelDir !== "auto";
+    const needed = spec.labelAt === undefined ? 3 : fixedDir ? 1 : 2;
+    if (visible.length < needed) return NO_PLACEMENT;
     const best = placer.place(
       besideCurve(visible, size, spec.labelAt, spec.labelDir, spec.labelOffset),
       { placed, bounds: viewBounds },

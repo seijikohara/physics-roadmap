@@ -15,7 +15,7 @@ import {
 } from "./candidates";
 import { boxesOverlap, inflate, type Box, type XY } from "./geometry";
 import { glyphBox, type GlyphSize, type LabelPos } from "./label-box";
-import { lineObstacle, tracedLine, type TracedLine } from "./obstacles";
+import { lineObstacle, tracedLine, type LineObstacle, type TracedLine } from "./obstacles";
 import { createPlacer, lineReach } from "./placer";
 import { LABEL_POLICY } from "./policy";
 
@@ -97,14 +97,39 @@ describe("besideCurve", () => {
     expect(cands[0].value.x).toBeCloseTo(100, 9);
   });
 
-  it("at があれば、線の反対側の候補に側を保つ罰点を与える", () => {
-    const [same, other] = besideCurve(visible, size, 10);
-    expect((other.score?.(0) ?? 0) - (same.score?.(0) ?? 0)).toBe(LABEL_POLICY.fixedSide);
+  describe("at のある曲線の線の側", () => {
+    const bounds = { x0: -500, x1: 500, y0: -500, y1: 500 };
+    // 右へ進む線の候補は、線の進む向きの右側（画面の下）が先である。下側の箱の縦の範囲は
+    // y = 56.25 から 66.25 である。
+    const own = lineObstacle("own", visible, 6);
+    const side = (extra: readonly LineObstacle[]) => {
+      const pos = createPlacer([...own, ...extra]).place(besideCurve(visible, size, 10), {
+        placed: [],
+        bounds,
+      }).item;
+      return (pos?.y ?? 0) > 50 ? "below" : "above";
+    };
+
+    it("何も無ければ線の下に置く", () => {
+      expect(side([])).toBe("below");
+    });
+
+    it("すきまの帯に入るだけなら側を保つ", () => {
+      // 重み 6 と 3 の線が箱の下 3px ほどを通る。帯の罰点は合計 2.25 である。
+      expect(side([...across(69.5, 6), ...across(70, 3)])).toBe("below");
+    });
+
+    it("線に触れたら反対側へ移る", () => {
+      expect(side(across(67, 3))).toBe("above");
+    });
   });
 
   it("at が無ければ、線の反対側の候補の罰点は同点を分けるだけの大きさである", () => {
     const cands = besideCurve(visible, size, undefined);
-    expect((cands[1].score?.(0) ?? 0) - (cands[0].score?.(0) ?? 0)).toBeCloseTo(0.05, 9);
+    expect((cands[1].score?.(0) ?? 0) - (cands[0].score?.(0) ?? 0)).toBeCloseTo(
+      LABEL_POLICY.otherSide,
+      9,
+    );
   });
 
   it("向きを指定すると、各位置で 1 か所だけを候補にする", () => {
@@ -240,6 +265,31 @@ describe("onLine", () => {
   });
 });
 
+/** 高さ y を横切る線の障害物。 */
+function across(y: number, weight: number): readonly LineObstacle[] {
+  return lineObstacle(
+    "other",
+    [
+      { x: 60, y },
+      { x: 140, y },
+    ],
+    weight,
+  );
+}
+
+/** 右端で折り返し、offset だけ下を戻る線。 */
+function hairpinAt(offset: number): TracedLine {
+  return tracedLine(
+    [
+      { x: 0, y: 50 },
+      { x: 300, y: 50 },
+      { x: 300, y: 50 + offset },
+      { x: 200, y: 50 + offset },
+    ],
+    false,
+  );
+}
+
 /** 矩形の中心の x。 */
 function centerX(b: Box): number {
   return (b.x0 + b.x1) / 2;
@@ -310,6 +360,31 @@ describe("onLine の採点", () => {
       false,
     );
     expect(scoreNear(sparse, 100)).toBeLessThan(1);
+  });
+
+  describe("戻る部分までの距離による段階的な罰点", () => {
+    // 箱は線の上下へ 5px 広がる。
+    // 行きの部分の候補の中心は 17 から 4px おきに並ぶ。x = 249 は行きの部分の候補にちょうど重なる。
+    const scoreAt = (offset: number) => scoreNear(hairpinAt(offset), 249);
+    const baseline = scoreAt(30);
+
+    it("戻る部分に触れる候補に罰点の全部を与える", () => {
+      expect(scoreAt(6) - baseline).toBeCloseTo(LABEL_POLICY.ownLine, 0);
+    });
+
+    it("すきまが足りない候補に罰点の一部を与える", () => {
+      const partial = LABEL_POLICY.ownLine * LABEL_POLICY.nearLine;
+      expect(scoreAt(9) - baseline).toBeCloseTo(partial, 0);
+    });
+
+    it("すきまの帯の外縁の近くまで数える", () => {
+      const partial = LABEL_POLICY.ownLine * LABEL_POLICY.nearLine;
+      expect(scoreAt(5 + lineReach - 0.25) - baseline).toBeCloseTo(partial, 0);
+    });
+
+    it("すきまの帯の外の候補には罰点を与えない", () => {
+      expect(scoreAt(5 + lineReach + 1) - baseline).toBeCloseTo(0, 0);
+    });
   });
 
   it("線の曲がり角の候補に、曲がり具合の罰点を与える", () => {
@@ -490,6 +565,22 @@ describe("linePositions", () => {
   it("labelAt と向きなら基準点から向きへ固定する", () => {
     const [pos] = linePositions({ ...none, at, dir: "above" }, a, b, size, auto);
     expect(glyphBox(pos, size).y1).toBeLessThan(at.y);
+  });
+
+  it("基準点からの向きは基準点からの距離で離し、すきまを渡す", () => {
+    const [pos] = linePositions({ ...none, at, dir: "above", offset: 10 }, a, b, size, auto);
+    expect(glyphBox(pos, size).y1).toBeCloseTo(at.y - 10 - LABEL_POLICY.glyphSlack, 9);
+  });
+
+  it("基準点のまわりの候補にもすきまを渡す", () => {
+    const positions = linePositions({ ...none, at, dir: "auto", offset: 10 }, a, b, size, auto);
+    expect(glyphBox(positions[1], size).y1).toBeCloseTo(at.y - 10 - LABEL_POLICY.glyphSlack, 9);
+  });
+
+  it("線の中点からの向きは線の太さの半分も足して離す", () => {
+    const [pos] = linePositions({ ...none, dir: "above", offset: 10 }, a, b, size, auto);
+    const gap = LABEL_POLICY.lineHalfWidth + 10 + LABEL_POLICY.glyphSlack;
+    expect(glyphBox(pos, size).y1).toBeCloseTo(50 - gap, 9);
   });
 
   it("指定が無ければ線のそばの候補を返し、すきまを渡す", () => {

@@ -44,7 +44,8 @@ export type LabelDirSpec = "auto" | "center" | LabelDir;
 
 /**
  * ラベルの字形と、線や基準点の間のすきまの目標の既定（px）。箱は見積もりの誤差の分だけさらに離すので、
- * 箱の縁までは基準点・点の印から offset + 1、線の中心から offset + 2.25 である。
+ * 箱の縁までは基準点・点の印から offset + 1、線の中心から offset + 2.25（線の上の基準点から向きを固定
+ * したときは offset + 2）である。
  */
 export const DEFAULT_LABEL_OFFSET: number = LABEL_POLICY.lineClearance;
 
@@ -277,7 +278,7 @@ export function besideCurve(
     const perp = { x: -(b.y - a.y) / len, y: (b.x - a.x) / len };
     const off = normalLabelOffset(perp.x, perp.y, size, offset);
     const pref = at === undefined ? Math.abs(i / (visible.length - 1) - 0.8) * 1.5 : 0;
-    const otherSide = at === undefined ? 0.05 : LABEL_POLICY.fixedSide;
+    const otherSide = at === undefined ? LABEL_POLICY.otherSide : LABEL_POLICY.fixedSide;
     if (dir !== "auto") {
       const pos = fixedPosition(visible[i], dir, size, LABEL_POLICY.lineHalfWidth, offset);
       return [{ box: glyphBox(pos, size), value: pos, score: (penalty) => penalty + pref }];
