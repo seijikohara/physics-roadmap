@@ -7,13 +7,14 @@ import {
   centeredAt,
   fixedPosition,
   insideRegion,
+  linePositions,
   onLine,
   onLineNear,
   positionsAround,
 } from "./candidates";
 import { boxesOverlap, inflate, type Box, type XY } from "./geometry";
-import { glyphBox, type GlyphSize } from "./label-box";
-import { lineObstacle, tracedLine } from "./obstacles";
+import { glyphBox, type GlyphSize, type LabelPos } from "./label-box";
+import { lineObstacle, tracedLine, type TracedLine } from "./obstacles";
 import { createPlacer, lineReach } from "./placer";
 import { LABEL_POLICY } from "./policy";
 
@@ -99,6 +100,12 @@ describe("besideCurve", () => {
     const cands = besideCurve(visible, size, 10, "above");
     expect(cands).toHaveLength(1);
     expect(cands[0].box.y1).toBeLessThan(50);
+  });
+
+  it("at が無くても向きの指定が効く", () => {
+    const cands = besideCurve(visible, size, undefined, "above");
+    expect(cands.length).toBeGreaterThan(1);
+    expect(cands.every((c) => c.box.y1 < 50)).toBe(true);
   });
 
   it("指定が無ければ曲線の後半を優先する", () => {
@@ -219,6 +226,146 @@ describe("onLine", () => {
     const scores = cands.map((c) => c.score?.(0) ?? 0);
     const middle = scores[Math.floor(scores.length / 2)];
     expect(middle).toBeLessThan(scores[0]);
+  });
+});
+
+/** 矩形の中心の x。 */
+function centerX(b: Box): number {
+  return (b.x0 + b.x1) / 2;
+}
+
+/** 点 (100, 100) を中心とする半径 r の閉じた線。 */
+function ring(r: number): TracedLine {
+  return tracedLine(
+    Array.from({ length: 61 }, (_, i) => {
+      const t = (i * 2 * Math.PI) / 60;
+      return { x: 100 + r * Math.cos(t), y: 100 + r * Math.sin(t) };
+    }),
+    true,
+  );
+}
+
+/** 線のそばの候補の代わりに、受け取ったすきまを x に写した位置を返す。 */
+function auto(offset?: number): readonly LabelPos[] {
+  return [{ x: offset ?? -1, y: 0, align: "center" }];
+}
+
+describe("onLine の採点", () => {
+  // 候補の中心の x が cx に最も近い候補の罰点。
+  const scoreNear = (line: TracedLine, cx: number) => {
+    const near = onLine([line], size, 5).reduce((m, c) =>
+      Math.abs(centerX(c.box) - cx) < Math.abs(centerX(m.box) - cx) ? c : m,
+    );
+    return near.score?.(0) ?? 0;
+  };
+
+  it("折り返す線の離れた部分が重なる候補に、自分の線の罰点を与える", () => {
+    // 右端で折り返し、x = 200 まで 4px 下を戻る線。戻る部分の上の候補だけが重なる。弧長の窓は線分の
+    // 中点で判定するので、実際の等高線と同じく頂点を密に置く。
+    const out = Array.from({ length: 61 }, (_, i) => ({ x: i * 5, y: 50 }));
+    const back = Array.from({ length: 21 }, (_, i) => ({ x: 300 - i * 5, y: 54 }));
+    const hairpin = tracedLine([...out, ...back], false);
+    expect(scoreNear(hairpin, 250) - scoreNear(hairpin, 100)).toBeGreaterThan(5);
+  });
+
+  it("線の曲がり角の候補に、曲がり具合の罰点を与える", () => {
+    const across = Array.from({ length: 31 }, (_, i) => ({ x: i * 5, y: 200 }));
+    const up = Array.from({ length: 30 }, (_, i) => ({ x: 150, y: 195 - i * 5 }));
+    const corner = tracedLine([...across, ...up], false);
+    // 角は線の中ほどにあるので、曲がり具合の罰点が無ければ角の候補が最良になる。
+    expect(scoreNear(corner, 150)).toBeGreaterThan(scoreNear(corner, 75));
+  });
+
+  it("閉じた線では右上の候補を好む", () => {
+    const center = { x: 100, y: 100 };
+    const circle = tracedLine(
+      Array.from({ length: 241 }, (_, i) => {
+        const t = (i * 2 * Math.PI) / 240;
+        return { x: center.x + 60 * Math.cos(t), y: center.y - 60 * Math.sin(t) };
+      }),
+      true,
+    );
+    const best = onLine([circle], size, 5).reduce((m, c) =>
+      (c.score?.(0) ?? 0) < (m.score?.(0) ?? 0) ? c : m,
+    );
+    const cx = (best.box.x0 + best.box.x1) / 2;
+    const cy = (best.box.y0 + best.box.y1) / 2;
+    expect(Math.atan2(center.y - cy, cx - center.x)).toBeCloseTo(Math.PI / 4, 0);
+  });
+
+  it("一周がラベルの幅より短い閉じた線には候補を作らない", () => {
+    // 切り抜きの幅は 20 + 2 × 5 = 30 なので、一周が 38 未満なら収まらない。
+    expect(onLine([ring(5)], size, 5)).toHaveLength(0);
+    expect(onLine([ring(8)], size, 5).length).toBeGreaterThan(0);
+  });
+});
+
+describe("labelOffset の受け渡し", () => {
+  const near = 2;
+  const far = 10;
+  const moved = far - near;
+
+  it("positionsAround", () => {
+    const p = { x: 100, y: 100 };
+    const above = (offset: number) => glyphBox(positionsAround(p, size, 0, offset)[1], size).y1;
+    expect(above(near) - above(far)).toBeCloseTo(moved, 9);
+  });
+
+  it("besideSegment", () => {
+    const a = { x: 0, y: 50 };
+    const b = { x: 100, y: 50 };
+    const side = (offset: number) => glyphBox(besideSegment(a, b, size, offset)[0], size).y0;
+    expect(side(far) - side(near)).toBeCloseTo(moved, 9);
+  });
+
+  it("aroundVector", () => {
+    const a = { x: 0, y: 50 };
+    const b = { x: 100, y: 50 };
+    const side = (offset: number) => glyphBox(aroundVector(a, b, size, 3.6, offset)[0], size).y0;
+    expect(side(far) - side(near)).toBeCloseTo(moved, 9);
+  });
+
+  it("besideCurve の線の両側", () => {
+    const pts = Array.from({ length: 21 }, (_, i) => ({ x: i * 10, y: 50, t: i }));
+    const side = (offset: number) => besideCurve(pts, size, 10, "auto", offset)[0].box.y0;
+    expect(side(far) - side(near)).toBeCloseTo(moved, 9);
+  });
+
+  it("besideCurve の向きの指定", () => {
+    const pts = Array.from({ length: 21 }, (_, i) => ({ x: i * 10, y: 50, t: i }));
+    const above = (offset: number) => besideCurve(pts, size, 10, "above", offset)[0].box.y1;
+    expect(above(near) - above(far)).toBeCloseTo(moved, 9);
+  });
+});
+
+describe("linePositions", () => {
+  const a = { x: 0, y: 50 };
+  const b = { x: 100, y: 50 };
+  const at = { x: 30, y: 80 };
+  const none = { at: undefined, dir: undefined, offset: undefined };
+
+  it("labelAt だけなら基準点に固定する", () => {
+    expect(linePositions({ ...none, at }, a, b, size, auto)).toEqual([
+      { x: 30, y: 80, align: "center" },
+    ]);
+  });
+
+  it('labelAt と "auto" なら基準点のまわりの候補を返す', () => {
+    expect(linePositions({ ...none, at, dir: "auto" }, a, b, size, auto)).toHaveLength(9);
+  });
+
+  it("labelAt と向きなら基準点から向きへ固定する", () => {
+    const [pos] = linePositions({ ...none, at, dir: "above" }, a, b, size, auto);
+    expect(glyphBox(pos, size).y1).toBeLessThan(at.y);
+  });
+
+  it("指定が無ければ線のそばの候補を返し、すきまを渡す", () => {
+    expect(linePositions({ ...none, offset: 7 }, a, b, size, auto)).toEqual(auto(7));
+  });
+
+  it("向きだけなら線の中点を基準点にする", () => {
+    const [pos] = linePositions({ ...none, dir: "center" }, a, b, size, auto);
+    expect(pos).toEqual({ x: 50, y: 50, align: "center" });
   });
 });
 

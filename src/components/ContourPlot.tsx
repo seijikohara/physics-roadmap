@@ -15,22 +15,26 @@ import {
   centeredAt,
   fixedPosition,
   insideRegion,
+  linePositions,
   meanOf,
   normalLabelOffset,
   onLine,
   onLineNear,
   positionCandidates,
-  positionsAround,
   type LabelDirSpec,
+  type LineLabelSpec,
 } from "./figure-label/candidates";
 import {
+  arrowHead,
   boxesOverlap,
   clamp,
   distanceToSegment,
+  headInside,
   inflate,
   lerpAt,
   segmentHitsBox,
   type Box,
+  type ScreenArrow,
   type XY,
 } from "./figure-label/geometry";
 import { glyphBox, glyphSizeOf, type GlyphSize, type LabelPos } from "./figure-label/label-box";
@@ -58,7 +62,7 @@ import KatexLabel from "./KatexLabel";
  * （クライアントディレクティブなし、ハイドレーションなし）。座標は `@visx/scale`、等高線・曲線・
  * 境界は `@visx/shape` の `LinePath`、領域は `Polygon`、軸・線分は `Line`、点は `Circle` で
  * 描く。格子線は `@visx/grid`、クリップは `@visx/clip-path`、軸の矢印は `@visx/marker` を
- * 用いる。軸・目盛り・凡例の寸法と配色は `FunctionGraph` にそろえる。
+ * 用いる。軸・凡例の寸法と配色は `FunctionGraph` にそろえる。目盛り数字だけは軸から 1px 遠い。
  *
  * 等高線は marching squares 法で求める。描画窓を細かい正方の格子に区切り、各セルで等高線が
  * 横切る辺を格子点の値の符号から判定し、辺上の交点を線形補間で求めて線分で結ぶ。線分は交点の
@@ -149,7 +153,10 @@ type RegionStyle = Readonly<{
    * 罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
-  /** 向きを固定したときの、基準点からラベルの箱の縁までのすきま（px）。既定 4。 */
+  /**
+   * 向きを固定したときの、基準点と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに
+   * 離すので、基準点から箱の縁までは labelOffset + 1 である。
+   */
   labelOffset?: number;
 }>;
 
@@ -254,7 +261,10 @@ type Curve = Readonly<{
    * "center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
-  /** "inline" のとき、線からラベルの箱の縁までのすきま（px）。既定 4。 */
+  /**
+   * "inline" のとき、線と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、
+   * 線の中心から箱の縁までは labelOffset + 2.25 である。
+   */
   labelOffset?: number;
   /**
    * 向きを示す矢じり（ArrowMarks を参照）。媒介変数は x で、定義域の [始端, 終端] の順に進む
@@ -286,7 +296,10 @@ type ParametricCurve = Readonly<{
    * "center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
-  /** "inline" のとき、線からラベルの箱の縁までのすきま（px）。既定 4。 */
+  /**
+   * "inline" のとき、線と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、
+   * 線の中心から箱の縁までは labelOffset + 2.25 である。
+   */
   labelOffset?: number;
   /**
    * 向きを示す矢じり（ArrowMarks を参照）。t が増える向きを指す。逆向きを示すには tMin と
@@ -309,7 +322,10 @@ type VectorStyle = Readonly<{
    * 無いときの基準点は矢印の中点である。"auto" 以外は罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
-  /** 線や基準点からラベルの箱の縁までのすきま（px）。既定 4。 */
+  /**
+   * 線や基準点と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、箱の縁
+   * までは基準点から labelOffset + 1、線の中心から labelOffset + 2.25 である。
+   */
   labelOffset?: number;
   /** 破線で描くか。既定は実線。 */
   dashed?: boolean;
@@ -392,7 +408,10 @@ type Point = Readonly<{
    * 線が混み合う点で、自動の選択が線に触れるときに指定する。"center" は点をラベルの中心にする。
    */
   labelDir?: LabelDirSpec;
-  /** 点の印の端からラベルの箱の縁までのすきま（px）。既定 4。 */
+  /**
+   * 点の印の端と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、印の端
+   * から箱の縁までは labelOffset + 1 である。
+   */
   labelOffset?: number;
 }>;
 
@@ -442,7 +461,10 @@ type Segment = Readonly<{
    * 無いときの基準点は線分の中点である。"auto" 以外は罰点によらず位置を固定する。
    */
   labelDir?: LabelDirSpec;
-  /** 線や基準点からラベルの箱の縁までのすきま（px）。既定 4。 */
+  /**
+   * 線や基準点と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、箱の縁
+   * までは基準点から labelOffset + 1、線の中心から labelOffset + 2.25 である。
+   */
   labelOffset?: number;
   /** 破線で描くか。既定 true。 */
   dashed?: boolean;
@@ -576,7 +598,8 @@ const SIMPLIFY_PX = 0.15;
 // 等高線のラベル。目盛り数字と同じ大きさにし、線の数が多くても図が文字で埋まらないようにする。
 const CONTOUR_FONT = 11;
 // 等高線を切り抜く矩形の、字形の矩形からの余白（px）。ラベルと線の切れ目の間に 4px のすきまを残す。
-// 斜めの線は矩形の上下の縁で切れるので、線の太さの半分と字形の見積もりの誤差のぶんだけ広くとる。
+// 斜めの線は矩形の上下の縁で切れるので、4px に線の太さの半分（0.8）と、字の大きさ 11px で字形が
+// 見積もりの上へ出る量（約 0.7）を足す。
 const CONTOUR_GAP_PAD = 5.5;
 // 全レベルの線を切り抜く矩形の、字形の矩形からの余白（px）。隣の線が字形に重なる部分だけを切る。
 const GLYPH_CUT_PAD = 1;
@@ -584,8 +607,8 @@ const GLYPH_CUT_PAD = 1;
 const LABEL_FONT = 12;
 const TICK_FONT = 11;
 const AXIS_NAME_FONT = 13;
-// 目盛り数字の中心と軸の距離（px）。数字の字形を、目盛りの線の端から 4px 離す。y 軸は「−1」のような
-// 2 字の数字の右端で測る。
+// 目盛り数字の中心と軸の距離（px）。FunctionGraph より 1px 遠い。字形と目盛りの線の端のすきまは、
+// 実測で x 軸の「1」が 5.15px、y 軸の「−1」が 4.5px である。
 const X_TICK_OFFSET = 14;
 const Y_TICK_OFFSET = 15;
 
@@ -763,7 +786,10 @@ export default function ContourPlot({
   };
   const fieldData = fields.map((f) => {
     const fd = fieldGeometry(f, { x0: xMin, x1: xMax, y0: yMin, y1: yMax }, toScreen);
-    return { ...fd, arrows: fd.arrows.filter((a) => headInside(a, plotWindow)) };
+    return {
+      ...fd,
+      arrows: fd.arrows.filter((a) => headInside(a, plotWindow, FIELD_HEAD_LEN, FIELD_HEAD_HALF)),
+    };
   });
 
   // ---- 曲線・境界の向きの矢じり ----
@@ -1026,24 +1052,11 @@ export default function ContourPlot({
     },
   );
 
-  // 矢印・線分のラベルの候補の位置。labelAt があれば、labelDir の既定は "center" で、ラベルを
-  // labelAt の点に固定する。章の図で手で合わせた位置を、向きの自動選択で動かさないためである。
-  const linePositions = (
-    spec: LabelSpec,
-    a: XY,
-    b: XY,
-    size: GlyphSize,
-    auto: (offset?: number) => readonly LabelPos[],
-  ): readonly LabelPos[] => {
-    const { labelAt, labelOffset, labelDir = labelAt === undefined ? "auto" : "center" } = spec;
-    const anchor =
-      labelAt === undefined ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : toScreen(labelAt);
-    const reach = labelAt === undefined ? LABEL_POLICY.lineHalfWidth : 0;
-    if (labelDir !== "auto") return [fixedPosition(anchor, labelDir, size, reach, labelOffset)];
-    return labelAt === undefined
-      ? auto(labelOffset)
-      : positionsAround(anchor, size, reach, labelOffset);
-  };
+  const lineSpec = (spec: LabelSpec): LineLabelSpec => ({
+    at: spec.labelAt === undefined ? undefined : toScreen(spec.labelAt),
+    dir: spec.labelDir,
+    offset: spec.labelOffset,
+  });
 
   // 矢印のラベル。
   const vectorLabels = placeInOrder(vectors, cellLabels.placed, (v, i, placed) => {
@@ -1051,7 +1064,9 @@ export default function ContourPlot({
     const { from, to } = vectorData[i];
     const size = glyphSizeOf(v.label, LABEL_FONT);
     const pos = choosePlacement(
-      linePositions(v, from, to, size, (offset) => aroundVector(from, to, size, HEAD_HALF, offset)),
+      linePositions(lineSpec(v), from, to, size, (offset) =>
+        aroundVector(from, to, size, HEAD_HALF, offset),
+      ),
       size,
       placed,
       // 基準点が線の上でも線を避けられるよう、labelAt があれば自分の線も判定に含める。
@@ -1067,7 +1082,7 @@ export default function ContourPlot({
     const a = toScreen(s.from);
     const b = toScreen(s.to);
     const pos = choosePlacement(
-      linePositions(s, a, b, size, (offset) => besideSegment(a, b, size, offset)),
+      linePositions(lineSpec(s), a, b, size, (offset) => besideSegment(a, b, size, offset)),
       size,
       placed,
       s.labelAt === undefined ? `sg${i}` : undefined,
@@ -1091,7 +1106,8 @@ export default function ContourPlot({
         s.y >= plotBounds.y0 &&
         s.y <= plotBounds.y1,
     );
-    if (visible.length < 3) return NO_PLACEMENT;
+    // 自動で位置を選ぶには接線を求める標本が要る。labelAt があれば、見える標本が 1 つでもラベルを置く。
+    if (visible.length < (spec.labelAt === undefined ? 3 : 1)) return NO_PLACEMENT;
     const best = placer.place(
       besideCurve(visible, size, spec.labelAt, spec.labelDir, spec.labelOffset),
       { placed, bounds: viewBounds },
@@ -2328,9 +2344,6 @@ function clippedCentroid(poly: readonly XY[], win: Box): XY | null {
 // ベクトル場と向きの矢じり
 // ======================================================================
 
-/** 画面上の矢印（始点・終点）。 */
-type ScreenArrow = Readonly<{ from: XY; to: XY }>;
-
 /**
  * ベクトル場を格子点（または at の点）で評価し、画面上の矢印と、零ベクトルを示す点にする。
  * 長さは座標の単位で決めてから両端を toScreen で写し、横縦の縮尺が異なる図でも矢印の成分を
@@ -2436,41 +2449,6 @@ function arrowPaths(
     shafts: parts.map((q) => q.shaft).join(""),
     heads: parts.map((q) => q.head).join(""),
   };
-}
-
-/**
- * 矢じりの根元の中央と両端の点。矢じりの形と短い矢印での縮め方は、通常の矢印（vectors）と同じである。
- * 長さ 0 の矢印には null を返す。
- */
-function arrowHead(
-  { from, to }: ScreenArrow,
-  headLen: number,
-  headHalf: number,
-): Readonly<{ base: XY; left: XY; right: XY }> | null {
-  const len = Math.hypot(to.x - from.x, to.y - from.y);
-  if (!(len > 0)) return null;
-  const ux = (to.x - from.x) / len;
-  const uy = (to.y - from.y) / len;
-  const hl = Math.min(headLen, len * 0.8);
-  const hh = headHalf * (hl / headLen);
-  const bx = to.x - hl * ux;
-  const by = to.y - hl * uy;
-  return {
-    base: { x: bx, y: by },
-    left: { x: bx - hh * uy, y: by + hh * ux },
-    right: { x: bx + hh * uy, y: by - hh * ux },
-  };
-}
-
-/**
- * ベクトル場の矢印の矢じりが、向きの読める程度に窓の中に残るか。矢じりの中ほどが窓の中にあれば
- * 残るとみなす。先端だけが窓から出る矢印まで省くと、窓の縁の矢印の並びが歯抜けになるためである。
- */
-function headInside(arrow: ScreenArrow, win: Box): boolean {
-  const head = arrowHead(arrow, FIELD_HEAD_LEN, FIELD_HEAD_HALF);
-  if (head === null) return true;
-  const mid = lerpAt(head.base, arrow.to, 0.5);
-  return mid.x >= win.x0 && mid.x <= win.x1 && mid.y >= win.y0 && mid.y <= win.y1;
 }
 
 /** ArrowMarks を、矢じりを置く媒介変数の値の列にする。 */

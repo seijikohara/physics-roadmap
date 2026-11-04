@@ -211,6 +211,49 @@ export function turnAngle(a: XY, p: XY, b: XY): number {
   return d > Math.PI ? 2 * Math.PI - d : d;
 }
 
+/** 画面上の矢印（始点・終点）。 */
+export type ScreenArrow = Readonly<{ from: XY; to: XY }>;
+
+/**
+ * 矢じりの根元の中央と両端の点。矢じりの長さは矢印の 8 割を超えないように縮め、短い矢印でも形を保つ。
+ * 長さ 0 の矢印には null を返す。
+ */
+export function arrowHead(
+  { from, to }: ScreenArrow,
+  headLen: number,
+  headHalf: number,
+): Readonly<{ base: XY; left: XY; right: XY }> | null {
+  const len = Math.hypot(to.x - from.x, to.y - from.y);
+  if (!(len > 0)) return null;
+  const ux = (to.x - from.x) / len;
+  const uy = (to.y - from.y) / len;
+  const hl = Math.min(headLen, len * 0.8);
+  const hh = headHalf * (hl / headLen);
+  const bx = to.x - hl * ux;
+  const by = to.y - hl * uy;
+  return {
+    base: { x: bx, y: by },
+    left: { x: bx - hh * uy, y: by + hh * ux },
+    right: { x: bx + hh * uy, y: by - hh * ux },
+  };
+}
+
+/**
+ * 矢印の矢じりが、向きの読める程度に窓の中に残るか。矢じりの中ほどが窓の中にあれば残るとみなす。
+ * 先端だけが窓から出る矢印まで省くと、窓の縁の矢印の並びが歯抜けになるためである。
+ */
+export function headInside(
+  arrow: ScreenArrow,
+  win: Box,
+  headLen: number,
+  headHalf: number,
+): boolean {
+  const head = arrowHead(arrow, headLen, headHalf);
+  if (head === null) return true;
+  const mid = lerpAt(head.base, arrow.to, 0.5);
+  return mid.x >= win.x0 && mid.x <= win.x1 && mid.y >= win.y0 && mid.y <= win.y1;
+}
+
 /** 矩形を四方へ d だけ広げる。 */
 export function inflate(b: Box, d: number): Box {
   return { x0: b.x0 - d, x1: b.x1 + d, y0: b.y0 - d, y1: b.y1 + d };

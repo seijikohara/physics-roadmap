@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  arrowHead,
   bboxOf,
   boxesOverlap,
   clamp,
@@ -7,6 +8,7 @@ import {
   distanceToBox,
   distanceToSegment,
   farPartBoxDistance,
+  headInside,
   inflate,
   lerpAt,
   nearestOnPolyline,
@@ -17,6 +19,7 @@ import {
   segmentHitsBox,
   turnAngle,
   type Box,
+  type ScreenArrow,
   type XY,
 } from "./geometry";
 
@@ -283,5 +286,51 @@ describe("nearestOnPolyline", () => {
       point: { x: 0, y: 0 },
       distance: 5,
     });
+  });
+});
+
+describe("arrowHead", () => {
+  it("矢じりの根元と両端の点を返す", () => {
+    const head = arrowHead({ from: { x: 0, y: 0 }, to: { x: 20, y: 0 } }, 6, 2.4);
+    expect(head).toEqual({
+      base: { x: 14, y: 0 },
+      left: { x: 14, y: 2.4 },
+      right: { x: 14, y: -2.4 },
+    });
+  });
+
+  it("短い矢印では矢じりを矢印の 8 割に縮める", () => {
+    const head = arrowHead({ from: { x: 0, y: 0 }, to: { x: 5, y: 0 } }, 6, 2.4);
+    expect(head?.base.x).toBeCloseTo(1, 9);
+    expect(head?.left.y).toBeCloseTo(1.6, 9);
+  });
+
+  it("長さ 0 の矢印には null を返す", () => {
+    expect(arrowHead({ from: { x: 1, y: 1 }, to: { x: 1, y: 1 } }, 6, 2.4)).toBeNull();
+  });
+});
+
+/** 先端が (x, 50) にある、長さ 30 の右向きの矢印。 */
+function toX(x: number): ScreenArrow {
+  return { from: { x: x - 30, y: 50 }, to: { x, y: 50 } };
+}
+
+describe("headInside", () => {
+  const win: Box = { x0: 0, x1: 100, y0: 0, y1: 100 };
+
+  it("矢じりが窓の中にあれば真を返す", () => {
+    expect(headInside(toX(90), win, 6, 2.4)).toBe(true);
+  });
+
+  it("先端だけが窓から出る矢印を残す", () => {
+    expect(headInside(toX(102), win, 6, 2.4)).toBe(true);
+  });
+
+  it("矢じりの中ほどが窓の外にある矢印を省く", () => {
+    expect(headInside(toX(104), win, 6, 2.4)).toBe(false);
+  });
+
+  it("長さ 0 の矢印は残す", () => {
+    expect(headInside({ from: { x: 50, y: 50 }, to: { x: 50, y: 50 } }, win, 6, 2.4)).toBe(true);
   });
 });

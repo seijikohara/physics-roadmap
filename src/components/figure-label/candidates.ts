@@ -40,7 +40,10 @@ export type LabelDir =
  */
 export type LabelDirSpec = "auto" | "center" | LabelDir;
 
-/** ラベルの箱の縁と、線や基準点の間のすきまの既定（px）。 */
+/**
+ * ラベルの字形と、線や基準点の間のすきまの目標の既定（px）。箱は見積もりの誤差の分だけさらに離すので、
+ * 箱の縁までは基準点・点の印から offset + 1、線の中心から offset + 2.25 である。
+ */
 export const DEFAULT_LABEL_OFFSET: number = LABEL_POLICY.lineClearance;
 
 /** 字形の矩形の中心が (cx, cy) に来る、中央寄せの基準点。 */
@@ -98,6 +101,32 @@ export function positionsAround(
     fixedPosition(p, "center", size, reach),
     ...Object.values(aroundPoint(p, size, reach, offset)),
   ];
+}
+
+/** 矢印・線分のラベルの指定。at は画面座標の基準点である。 */
+export type LineLabelSpec = Readonly<{
+  at: XY | undefined;
+  dir: LabelDirSpec | undefined;
+  offset: number | undefined;
+}>;
+
+/**
+ * 矢印・線分（a から b）のラベルの候補の位置。at があれば dir の既定は "center" で、ラベルを at に固定
+ * する。章の図で手で合わせた位置を、向きの自動選択で動かさないためである。at が無いときの基準点は線の
+ * 中点で、向きの指定も無ければ auto が返す位置を使う。
+ */
+export function linePositions(
+  spec: LineLabelSpec,
+  a: XY,
+  b: XY,
+  size: GlyphSize,
+  auto: (offset?: number) => readonly LabelPos[],
+): readonly LabelPos[] {
+  const { at, offset, dir = at === undefined ? "auto" : "center" } = spec;
+  const anchor = at ?? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  const reach = at === undefined ? LABEL_POLICY.lineHalfWidth : 0;
+  if (dir !== "auto") return [fixedPosition(anchor, dir, size, reach, offset)];
+  return at === undefined ? auto(offset) : positionsAround(anchor, size, reach, offset);
 }
 
 /**

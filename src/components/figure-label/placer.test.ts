@@ -155,6 +155,24 @@ describe("createPlacer の penalty", () => {
     const placer = createPlacer([group(), group()]);
     expect(placer.penalty(target, { placed: [], bounds })).toBe(2);
   });
+
+  it("上限は群ごとに別々に数える", () => {
+    const group = () =>
+      groupObstacle(
+        Array.from({ length: 5 }, (): readonly LineObstacle[] =>
+          lineObstacle("f", crossing(target), 1, true),
+        ).flat(),
+        4,
+      );
+    const placer = createPlacer([group(), group()]);
+    expect(placer.penalty(target, { placed: [], bounds })).toBe(8);
+  });
+
+  it("淡い線も id で除外する", () => {
+    const placer = createPlacer(lineObstacle("g", crossing(target), 1, true));
+    expect(placer.penalty(target, { placed: [], bounds, exclude: "g" })).toBe(0);
+    expect(placer.penalty(target, { placed: [], bounds })).toBe(1);
+  });
 });
 
 describe("createPlacer の place", () => {
@@ -197,6 +215,7 @@ describe("createPlacer の place", () => {
   });
 
   it("最良に届かない候補の好みの計算を打ち切る", () => {
+    // 呼ばれた候補を記録する（テストの中に閉じた可変のバッファ）。
     const called: string[] = [];
     const cands: readonly Candidate<string>[] = [
       { box: free, value: "a" },
@@ -211,6 +230,21 @@ describe("createPlacer の place", () => {
     ];
     expect(placer.place(cands, options).item).toBe("a");
     expect(called).toEqual([]);
+  });
+
+  it("好みの罰点を足すと負ける候補が、障害物の罰点が小さくても選ばれる", () => {
+    const light = { box: free, value: "light", score: (p: number) => p + 10 };
+    const heavy = { box: busy, value: "heavy" };
+    expect(placer.place([light, heavy], options)).toEqual({ item: "heavy", score: 8 });
+  });
+
+  it("打ち切りは障害物の罰点が最良に届くときだけ行う", () => {
+    // busy の罰点 8 は最良の 10 に届かないので、好みの罰点を足して 13 になり、選ばれない。
+    const cands: readonly Candidate<string>[] = [
+      { box: free, value: "a", score: (p) => p + 10 },
+      { box: busy, value: "b", score: (p) => p + 5 },
+    ];
+    expect(placer.place(cands, options)).toEqual({ item: "a", score: 10 });
   });
 
   it("候補が無ければ null を返す", () => {
@@ -277,6 +311,7 @@ describe("ownLinesBoxDistance", () => {
 
 describe("bestOf", () => {
   it("score に最良の罰点を渡す", () => {
+    // 受け取った値を順に記録する（テストの中に閉じた可変のバッファ）。
     const seen: number[] = [];
     bestOf([3, 1, 2], (v, _, best) => {
       seen.push(best);
@@ -294,6 +329,7 @@ describe("placeInOrder", () => {
   it("置いた矩形を次のラベルへ渡し、置かなかったものを null にする", () => {
     const b1 = box(0, 0);
     const b2 = box(20, 0);
+    // 受け取った矩形の数を順に記録する（テストの中に閉じた可変のバッファ）。
     const seen: number[] = [];
     const result = placeInOrder(["a", "skip", "b"], [], (s, i, placed) => {
       seen.push(placed.length);
