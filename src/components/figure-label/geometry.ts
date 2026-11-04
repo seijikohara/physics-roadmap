@@ -30,37 +30,46 @@ export function pointInPolygon(p: XY, poly: readonly XY[]): boolean {
   }, false);
 }
 
+/** 線分 pq が範囲 reach の外にあるか。距離の計算の前に座標の比較で線分を絞るために使う。 */
+function segmentOutside(p: XY, q: XY, reach: Box): boolean {
+  return (
+    Math.max(p.x, q.x) < reach.x0 ||
+    Math.min(p.x, q.x) > reach.x1 ||
+    Math.max(p.y, q.y) < reach.y0 ||
+    Math.min(p.y, q.y) > reach.y1
+  );
+}
+
 /**
  * 折れ線と矩形の距離。交わるときは 0 である。外接矩形を limit だけ広げた範囲の外にある線分は調べない。
- * 範囲の中に線分が無ければ Infinity を返す。keep は k−1 番目と k 番目の頂点を結ぶ線分を数えるかを返す。
- * 等高線のラベルは候補が多いので、距離の計算の前に座標の比較で線分を絞り、頂点の多い線でも速く保つ。
+ * 範囲の中に線分が無ければ Infinity を返す。等高線のラベルは候補が多いので、距離の計算の前に座標の比較で
+ * 線分を絞り、頂点の多い線でも速く保つ。
  */
-export function polylineBoxDistance(
-  pts: readonly XY[],
-  box: Box,
-  limit: number,
-  keep: (k: number) => boolean = () => true,
-): number {
+export function polylineBoxDistance(pts: readonly XY[], box: Box, limit: number): number {
   const reach = inflate(box, limit);
   return pts.reduce((best, p, k) => {
-    if (k === 0 || best === 0) return best;
-    const q = pts[k - 1];
-    if (
-      Math.max(p.x, q.x) < reach.x0 ||
-      Math.min(p.x, q.x) > reach.x1 ||
-      Math.max(p.y, q.y) < reach.y0 ||
-      Math.min(p.y, q.y) > reach.y1 ||
-      !keep(k)
-    ) {
-      return best;
-    }
-    return Math.min(best, segmentBoxDistance(q, p, box));
+    if (k === 0 || best === 0 || segmentOutside(p, pts[k - 1], reach)) return best;
+    return Math.min(best, segmentBoxDistance(pts[k - 1], p, box));
   }, Infinity);
+}
+
+/** 弧長の区間の列から、区間 [lo, hi] を除いた残りの区間の列を返す。 */
+function withoutInterval(
+  pieces: readonly (readonly [number, number])[],
+  lo: number,
+  hi: number,
+): readonly (readonly [number, number])[] {
+  return pieces.flatMap(([a, b]): readonly (readonly [number, number])[] => {
+    if (hi <= a || lo >= b) return [[a, b]];
+    return [...(a < lo ? ([[a, lo]] as const) : []), ...(hi < b ? ([[hi, b]] as const) : [])];
+  });
 }
 
 /**
  * 折れ線のうち、弧長 s から window より離れた部分と矩形の距離。ラベルが乗る位置の近くを除いて、同じ線の
- * 別の部分（急に折り返す線など）がラベルにどれだけ近いかを調べる。
+ * 別の部分（急に折り返す線など）がラベルにどれだけ近いかを調べる。間引いた折れ線は 1 本の線分が長い
+ * ので、線分を丸ごと内外に分けず、線分を弧長の窓で切って窓の外の部分だけを測る。閉じた線では窓が始点を
+ * またぐので、一周ずらした窓も除く。
  */
 export function farPartBoxDistance(
   pts: readonly XY[],
@@ -72,11 +81,20 @@ export function farPartBoxDistance(
   limit: number,
 ): number {
   const total = cum[cum.length - 1];
-  return polylineBoxDistance(pts, box, limit, (k) => {
-    const mid = (cum[k - 1] + cum[k]) / 2;
-    const along = Math.abs(mid - s);
-    return (closed ? Math.min(along, total - along) : along) > window;
-  });
+  const centers = closed ? [s - total, s, s + total] : [s];
+  const reach = inflate(box, limit);
+  return pts.reduce((best, p, k) => {
+    if (k === 0 || best === 0 || segmentOutside(p, pts[k - 1], reach)) return best;
+    const q = pts[k - 1];
+    const a = cum[k - 1];
+    const b = cum[k];
+    const far = centers.reduce<readonly (readonly [number, number])[]>(
+      (rest, c) => withoutInterval(rest, c - window, c + window),
+      b > a ? [[a, b]] : [],
+    );
+    const at = (t: number): XY => lerpAt(q, p, (t - a) / (b - a));
+    return far.reduce((d, [u, v]) => Math.min(d, segmentBoxDistance(at(u), at(v), box)), best);
+  }, Infinity);
 }
 
 /** 線分が矩形と交わるか（Liang–Barsky 法で、線分を矩形で切り取れるかを調べる）。 */

@@ -120,16 +120,6 @@ describe("polylineBoxDistance", () => {
     expect(polylineBoxDistance(far, UNIT, 5)).toBe(Infinity);
     expect(polylineBoxDistance(far, UNIT, 25)).toBe(20);
   });
-
-  it("keep が偽を返す線分を数えない", () => {
-    const pts: readonly XY[] = [
-      { x: 13, y: -5 },
-      { x: 13, y: 15 },
-      { x: 30, y: 15 },
-    ];
-    expect(polylineBoxDistance(pts, UNIT, 100)).toBe(3);
-    expect(polylineBoxDistance(pts, UNIT, 100, (k) => k !== 1)).toBeCloseTo(Math.hypot(3, 5), 9);
-  });
 });
 
 describe("segmentBoxDistance", () => {
@@ -184,9 +174,46 @@ describe("farPartBoxDistance", () => {
   });
 
   it("閉じた線では一周の長さで巻き戻して距離を測る", () => {
-    // 一周 40 の閉じた線とみなすと、弧長 38 と 1 本目の線分の中点 5 の距離は 7 になる。
-    expect(farPartBoxDistance(line, cum, 38, 8, true, box, 1)).toBe(Infinity);
-    expect(farPartBoxDistance(line, cum, 38, 8, false, box, 1)).toBe(0);
+    // 矩形は x = 2 から 8 にある。一周 40 の閉じた線では、弧長 38 の窓 ±12 が弧長 10 までを覆う。
+    expect(farPartBoxDistance(line, cum, 38, 12, true, box, 1)).toBe(Infinity);
+    expect(farPartBoxDistance(line, cum, 38, 12, false, box, 1)).toBe(0);
+  });
+
+  it("長い線分を弧長の窓で切り、窓の外の部分だけを測る", () => {
+    const long: readonly XY[] = [
+      { x: 0, y: 5 },
+      { x: 100, y: 5 },
+    ];
+    const longCum = cumulativeLength(long);
+    const on: Box = { x0: 45, x1: 55, y0: 0, y1: 10 };
+    // 窓の外の端は x = 40 と 60 で、矩形から 5 離れる。
+    expect(farPartBoxDistance(long, longCum, 50, 10, false, on, 20)).toBe(5);
+  });
+
+  it("長い線分でも、窓が線分全体を覆えば数えない", () => {
+    const short: readonly XY[] = [
+      { x: 40, y: 5 },
+      { x: 60, y: 5 },
+    ];
+    const on: Box = { x0: 45, x1: 55, y0: 0, y1: 10 };
+    expect(farPartBoxDistance(short, cumulativeLength(short), 10, 15, false, on, 20)).toBe(
+      Infinity,
+    );
+  });
+
+  it("閉じた線の窓が始点をまたぐとき、長い線分の両端を切る", () => {
+    // 一辺 40 の正方形。弧長 2 の窓 ±6 は、始点の前後の辺の一部だけを覆う。
+    const square: readonly XY[] = [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+      { x: 0, y: 40 },
+      { x: 0, y: 0 },
+    ];
+    const near: Box = { x0: -1, x1: 3, y0: -1, y1: 3 };
+    const cumSquare = cumulativeLength(square);
+    // 窓の外で最も近いのは、上の辺の x = 8 と左の辺の y = 4 である。
+    expect(farPartBoxDistance(square, cumSquare, 2, 6, true, near, 10)).toBeCloseTo(1, 9);
   });
 });
 

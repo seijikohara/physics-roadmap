@@ -266,7 +266,11 @@ describe("ownLinesBoxDistance", () => {
   const label: Box = { x0: 8, x1: 12, y0: -2, y1: 8 };
 
   it("弧長の窓の外にある自分の線を障害物に残す", () => {
+    // 戻る部分は y = 6 を通り、矩形の中を横切る。
     expect(ownLinesBoxDistance([hairpin], { line: 0, s: 10 }, 20, label, 5)).toBe(0);
+    // 矩形を戻る部分より上で止めると、距離は戻る部分までの 2 になる。乗っている部分は距離 0 だが窓の内側である。
+    const above: Box = { ...label, y1: 4 };
+    expect(ownLinesBoxDistance([hairpin], { line: 0, s: 10 }, 20, above, 5)).toBe(2);
   });
 
   it("弧長の窓の内側にある自分の線を外す", () => {
@@ -293,7 +297,8 @@ describe("ownLinesBoxDistance", () => {
       true,
     );
     const nearStart: Box = { x0: -1, x1: 4, y0: -1, y1: 4 };
-    expect(ownLinesBoxDistance([square], { line: 0, s: 2 }, 25, nearStart, 1)).toBe(Infinity);
+    // 窓の外で最も近いのは左の辺の y = 23 で、矩形の下端 y = 4 から 19 離れる。
+    expect(ownLinesBoxDistance([square], { line: 0, s: 2 }, 25, nearStart, 1)).toBe(19);
   });
 
   it("同じ組の他の線は全体を調べる", () => {
@@ -305,6 +310,8 @@ describe("ownLinesBoxDistance", () => {
       false,
     );
     const onHairpin: Box = { x0: 8, x1: 12, y0: -2, y1: 2 };
+    // 乗っている線だけなら、最も近いのは y = 6 を戻る部分で距離は 4 である。
+    expect(ownLinesBoxDistance([hairpin], { line: 0, s: 10 }, 20, onHairpin, 5)).toBe(4);
     expect(ownLinesBoxDistance([hairpin, other], { line: 0, s: 10 }, 20, onHairpin, 5)).toBe(0);
   });
 });

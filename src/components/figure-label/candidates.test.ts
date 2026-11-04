@@ -270,18 +270,56 @@ describe("onLine の採点", () => {
   };
 
   it("折り返す線の離れた部分が重なる候補に、自分の線の罰点を与える", () => {
-    // 右端で折り返し、x = 200 まで 4px 下を戻る線。戻る部分の上の候補だけが重なる。弧長の窓は線分の
-    // 中点で判定するので、実際の等高線と同じく頂点を密に置く。
-    const out = Array.from({ length: 61 }, (_, i) => ({ x: i * 5, y: 50 }));
-    const back = Array.from({ length: 21 }, (_, i) => ({ x: 300 - i * 5, y: 54 }));
-    const hairpin = tracedLine([...out, ...back], false);
+    // 右端で折り返し、x = 200 まで 4px 下を戻る線。戻る部分の上の候補だけが重なる。
+    const hairpin = tracedLine(
+      [
+        { x: 0, y: 50 },
+        { x: 300, y: 50 },
+        { x: 300, y: 54 },
+        { x: 200, y: 54 },
+      ],
+      false,
+    );
     expect(scoreNear(hairpin, 250) - scoreNear(hairpin, 100)).toBeGreaterThan(5);
   });
 
+  it("頂点の数によらず、同じ形の線の採点が一致する", () => {
+    const sparse = tracedLine(
+      [
+        { x: 0, y: 100 },
+        { x: 300, y: 100 },
+      ],
+      false,
+    );
+    const dense = tracedLine(
+      Array.from({ length: 301 }, (_, i) => ({ x: i, y: 100 })),
+      false,
+    );
+    for (const x of [60, 100, 150, 200, 240]) {
+      expect(scoreNear(sparse, x)).toBeCloseTo(scoreNear(dense, x), 9);
+    }
+  });
+
+  it("長い線分の上の候補に、乗っている線の罰点を与えない", () => {
+    const sparse = tracedLine(
+      [
+        { x: 0, y: 100 },
+        { x: 300, y: 100 },
+      ],
+      false,
+    );
+    expect(scoreNear(sparse, 100)).toBeLessThan(1);
+  });
+
   it("線の曲がり角の候補に、曲がり具合の罰点を与える", () => {
-    const across = Array.from({ length: 31 }, (_, i) => ({ x: i * 5, y: 200 }));
-    const up = Array.from({ length: 30 }, (_, i) => ({ x: 150, y: 195 - i * 5 }));
-    const corner = tracedLine([...across, ...up], false);
+    const corner = tracedLine(
+      [
+        { x: 0, y: 200 },
+        { x: 150, y: 200 },
+        { x: 150, y: 50 },
+      ],
+      false,
+    );
     // 角は線の中ほどにあるので、曲がり具合の罰点が無ければ角の候補が最良になる。
     expect(scoreNear(corner, 150)).toBeGreaterThan(scoreNear(corner, 75));
   });
