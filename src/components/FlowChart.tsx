@@ -6,6 +6,8 @@ import { Graph } from "@visx/network";
 import { Bar, LinePath, Polygon } from "@visx/shape";
 import { renderToString } from "katex";
 import { useId } from "react";
+import { segmentHitsBox, type Box } from "./figure-label/geometry";
+import { labelWidthMargin, measureLabel } from "./figure-label/measure";
 
 /**
  * インライン SVG として描く、ビルド時生成の静的なフローチャート。
@@ -108,6 +110,11 @@ const LINE_H = NODE_FONT * 1.5;
 const EDGE_LINE_H = EDGE_FONT * 1.4;
 const PAD_X = 14;
 const PAD_Y = 12;
+// 菱形の輪郭とラベルの角のすきま（px）。線とラベルのすきまの目標と同じ値にする。
+const DIAMOND_CLEARANCE = 4;
+// エッジとクラスタの見出しの背景チップの、字の左右の余白（px）。チップは線を断ち切るので、線の端と字の
+// すきまになる。線とラベルのすきまの目標より、線の太さの半分の余裕を見る。
+const CHIP_PAD_X = 5;
 
 // dagre のレイアウト間隔。
 const NODE_SEP = 30;
@@ -179,7 +186,7 @@ export default function FlowChart({
         `FlowChart: エッジ "${e.from}" → "${e.to}" が未定義のノードを参照しています。`,
       );
     }
-    const lab = e.label ? measureLabel(e.label, EDGE_FONT, EDGE_LINE_H) : undefined;
+    const lab = e.label ? chipSize(e.label, EDGE_FONT, EDGE_LINE_H) : undefined;
     g.setEdge(
       e.from,
       e.to,
@@ -229,14 +236,21 @@ export default function FlowChart({
       );
     }
     // dagre は端点を外接矩形の上に置くため、菱形ノードでは矢印が輪郭から浮く。菱形の端点だけを
-    // 輪郭上へ付け替える。矩形ノード・クラスタの端点は dagre の結果のまま使う。
+    // 輪郭上へ付け替える。隣の箱を横切る端は routeAroundNodes が移す。
     // 経路が 1 点だけのときは、始点側で付け替えた点を終点側でもう一度付け替える。
     const last = ed.points.length - 1;
-    const points = ed.points.map((p, j) => {
+    const clipped = ed.points.map((p, j) => {
       const head =
         j === 0 ? clipToDiamond({ x: p.x, y: p.y }, nodeById.get(e.from)) : { x: p.x, y: p.y };
       return j === last ? clipToDiamond(head, nodeById.get(e.to)) : head;
     });
+    const points = routeAroundNodes(
+      clipped,
+      nodeById.get(e.from),
+      nodeById.get(e.to),
+      graphNodes,
+      rankdir,
+    );
     const lab =
       e.label && typeof ed.x === "number" && typeof ed.y === "number"
         ? { text: e.label, x: ed.x, y: ed.y }
@@ -363,7 +377,7 @@ type NodeMeta = Readonly<{
 }>;
 
 /** レイアウト後の中心座標を加えたノード。 */
-type PlacedNode = NodeMeta & Readonly<{ x: number; y: number }>;
+export type PlacedNode = NodeMeta & Readonly<{ x: number; y: number }>;
 
 type Pt = Readonly<{ x: number; y: number }>;
 
@@ -393,6 +407,62 @@ function clipToDiamond(p: Pt, node: PlacedNode | undefined): Pt {
   const s = Math.abs(dx) / (node.width / 2) + Math.abs(dy) / (node.height / 2);
   if (s <= 1e-9) return p;
   return { x: node.x + dx / s, y: node.y + dy / s };
+}
+
+/** ノードの外接矩形。 */
+function nodeBox(n: PlacedNode): Box {
+  return {
+    x0: n.x - n.width / 2,
+    x1: n.x + n.width / 2,
+    y0: n.y - n.height / 2,
+    y1: n.y + n.height / 2,
+  };
+}
+
+/**
+ * ノードの、経路の次の点 next に向いたランクの方向の辺の中央。閉路のエッジは dagre が逆向きの経路で返すので、
+ * 始点でも前のランクの側の辺になることがある。
+ */
+function rankSideCenter(n: PlacedNode, next: Pt, rankdir: "TB" | "LR"): Pt {
+  if (rankdir === "TB") {
+    return { x: n.x, y: n.y + (Math.sign(next.y - n.y || 1) * n.height) / 2 };
+  }
+  return { x: n.x + (Math.sign(next.x - n.x || 1) * n.width) / 2, y: n.y };
+}
+
+/** ランクの方向へ進んでから横へ折れる点。 */
+function elbowOf(start: Pt, next: Pt, rankdir: "TB" | "LR"): Pt {
+  return rankdir === "TB" ? { x: start.x, y: next.y } : { x: next.x, y: start.y };
+}
+
+/**
+ * 経路の両端の線分が、両端のノードのほかの箱を突き抜けるときに、端をランクの方向の辺の中央へ移す。
+ *
+ * dagre は端点を、ノードの中心から次の経路点へ向かう半直線の上に置く。次の経路点が横へ大きく離れると、線分が
+ * 寝て、隣のノードの箱を横切る。ランクの方向の辺の中央から出すと線分が立つ。隣のノードが背の高い箱で、移した
+ * 線分もまだ箱に当たるときは、ランクの方向へ進んでから横へ折れる点を足す。
+ */
+export function routeAroundNodes(
+  points: readonly Pt[],
+  from: PlacedNode | undefined,
+  to: PlacedNode | undefined,
+  nodes: readonly PlacedNode[],
+  rankdir: "TB" | "LR",
+): readonly Pt[] {
+  if (from === undefined || to === undefined || points.length < 2) return points;
+  const others = nodes.filter((n) => n.id !== from.id && n.id !== to.id).map(nodeBox);
+  const hits = (a: Pt, b: Pt): boolean => others.some((box) => segmentHitsBox(a, b, box));
+  // 端の点を、ノードの辺の中央と、必要なら折れ点に置き換える。端から見た順に返す。
+  const moved = (n: PlacedNode, next: Pt): readonly Pt[] => {
+    const end = rankSideCenter(n, next, rankdir);
+    return hits(end, next) ? [end, elbowOf(end, next, rankdir)] : [end];
+  };
+  const last = points.length - 1;
+  const head = hits(points[0], points[1]) ? moved(from, points[1]) : [points[0]];
+  const tail = hits(points[last - 1], points[last])
+    ? moved(to, points[last - 1]).toReversed()
+    : [points[last]];
+  return [...head, ...points.slice(1, last), ...tail];
 }
 
 /** ノードのトーンごとの塗り・輪郭の CSS 変数。未指定（中立）は既定色。 */
@@ -468,7 +538,7 @@ function EdgeShape({ link }: Readonly<{ link: PlacedLink }>) {
 
 /** エッジラベル。線の上に重なっても読めるよう、背景チップを敷いてから組版を載せる。 */
 function EdgeLabel({ text, cx, cy }: Readonly<{ text: string; cx: number; cy: number }>) {
-  const { width, height } = measureLabel(text, EDGE_FONT, EDGE_LINE_H);
+  const { width, height } = chipSize(text, EDGE_FONT, EDGE_LINE_H);
   return (
     <Group>
       <Bar
@@ -487,7 +557,7 @@ function EdgeLabel({ text, cx, cy }: Readonly<{ text: string; cx: number; cy: nu
 
 /** クラスタの見出し。上辺の中央に、背景チップで枠線を断ち切って載せる。 */
 function ClusterLabel({ label, cx, top }: Readonly<{ label: string; cx: number; top: number }>) {
-  const { width, height } = measureLabel(label, CLUSTER_FONT, CLUSTER_FONT * 1.4);
+  const { width, height } = chipSize(label, CLUSTER_FONT, CLUSTER_FONT * 1.4);
   return (
     <Group>
       <Bar
@@ -593,21 +663,36 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/**
+ * 幅 width の菱形の高さ。矩形のラベルの角が菱形の輪郭から DIAMOND_CLEARANCE だけ内側に収まる高さを
+ * 求める。角 (w/2, h/2) が輪郭の内側に入る条件は w / width + h / height ≤ 1 である。幅は
+ * contentW × 1.5 + PAD_X × 2 なので、w / width は 2/3 を大きく超えない。ラベルが小さい菱形が潰れない
+ * よう、下限をラベルの高さと余白から決める。
+ */
+export function diamondHeight(contentW: number, contentH: number, width: number): number {
+  const w = contentW + DIAMOND_CLEARANCE * 2;
+  const h = contentH + DIAMOND_CLEARANCE * 2;
+  return Math.max(contentH * 1.7 + PAD_Y * 2, h / (1 - w / width));
+}
+
 /** ノードの外形と内枠を、ラベルの行・数式から見積もる。 */
 function measureNode(n: FlowNode): NodeMeta {
   const shape = n.shape ?? "rect";
-  const { width: contentW, height: contentH } = measureLabel(n.label, NODE_FONT, LINE_H);
+  const content = labelSize(n.label, NODE_FONT, LINE_H);
+  // 短いラベルのノードが細くなりすぎないよう、幅の下限を字 2 個分にする。
+  const contentW = Math.max(content.width, NODE_FONT * 2);
+  const contentH = content.height;
   const labelW = contentW;
   const labelH = contentH;
   if (shape === "diamond") {
-    // 菱形に矩形のラベルを収めるには対角線を広げる必要がある。安全側に大きく取る。
+    const width = contentW * 1.5 + PAD_X * 2;
     return {
       id: n.id,
       label: n.label,
       shape,
       tone: n.tone,
-      width: contentW * 1.5 + PAD_X * 2,
-      height: contentH * 1.7 + PAD_Y * 2,
+      width,
+      height: diamondHeight(contentW, contentH, width),
       labelW,
       labelH,
     };
@@ -624,56 +709,25 @@ function measureNode(n: FlowNode): NodeMeta {
   };
 }
 
-/** ラベル（複数行・数式混在）の表示幅・高さを見積もる。DOM の無いビルド時の概算。 */
-function measureLabel(
+/** 背景チップの寸法。ラベルの幅に左右の余白を足す。 */
+function chipSize(
   label: string,
   fontSize: number,
   lineH: number,
 ): Readonly<{ width: number; height: number }> {
-  const lines = label.split("\n");
-  const maxW = lines.reduce((acc, line) => Math.max(acc, lineWidth(line, fontSize)), 0);
-  return { width: Math.max(maxW, fontSize * 2), height: lines.length * lineH };
-}
-
-/** ラベル 1 行（数式混在）の表示幅を見積もる。 */
-function lineWidth(line: string, fontSize: number): number {
-  // 区切りの幅は先頭から順に足す。足す順を変えると浮動小数の丸めが変わり、ノードの寸法がずれる。
-  const w = line
-    .split(/(\$[^$]*\$)/g)
-    .filter((seg) => seg.length > 0)
-    .reduce(
-      (acc, seg) =>
-        acc +
-        (seg.startsWith("$") && seg.endsWith("$") && seg.length >= 2
-          ? texWidth(seg.slice(1, -1), fontSize)
-          : plainWidth(seg, fontSize)),
-      0,
-    );
-  // 数式を含む行は、foreignObject 内の KaTeX 描画幅がブラウザ・フォントの違いで
-  // 変動する。見積もりの過小評価で枠外へはみ出すのを防ぐため、安全余白を 1 文字分足す。
-  return line.includes("$") ? w + fontSize * 0.6 : w;
-}
-
-/** 地の文（全角・半角混在）のおおよその表示幅。全角は 1em、半角は約 0.55em。 */
-function plainWidth(s: string, fontSize: number): number {
-  // 文字列をコードポイント単位に分け、先頭から順に幅を足す。
-  return Array.from(s).reduce((w, ch) => {
-    // Latin-1 の範囲（コードポイント 0xFF 以下）を半角とみなす。
-    const halfWidth = (ch.codePointAt(0) ?? 0) <= 0xff;
-    return w + (halfWidth ? fontSize * 0.55 : fontSize);
-  }, 0);
+  const { width, height } = labelSize(label, fontSize, lineH);
+  return { width: width + CHIP_PAD_X * 2, height };
 }
 
 /**
- * LaTeX のおおよその表示幅。コマンド（\word）を 1 グリフと数え、装飾記号を除いて概算する。
- *
- * 係数は安全側（広め）に取る。foreignObject 内の KaTeX 実描画幅はブラウザ・フォント読込で
- * 変動し、過小評価するとノード枠から数式がはみ出すためである。根号 `\sqrt` の surd 記号は
- * 通常のグリフより横に広いため、根号 1 つにつき余分な幅を加える。
+ * ラベル（複数行・数式混在）の表示幅・高さを、KaTeX の組版の木から見積もる。幅には見積もりの誤差のぶんの
+ * 余白を足す。
  */
-function texWidth(tex: string, fontSize: number): number {
-  const commands = (tex.match(/\\[a-zA-Z]+/g) ?? []).length;
-  const rest = tex.replace(/\\[a-zA-Z]+/g, "").replace(/[{}^_$\s]/g, "");
-  const sqrtCount = (tex.match(/\\sqrt/g) ?? []).length;
-  return (rest.length + commands) * fontSize * 0.66 + sqrtCount * fontSize * 0.5;
+function labelSize(
+  label: string,
+  fontSize: number,
+  lineH: number,
+): Readonly<{ width: number; height: number }> {
+  const { width, height } = measureLabel(label, fontSize, lineH);
+  return { width: width + labelWidthMargin(width), height };
 }
