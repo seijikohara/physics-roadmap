@@ -280,6 +280,20 @@ describe("besideVectorCandidates", () => {
     expect(cands.at(-1)?.score?.(0)).toBe(LABEL_POLICY.vectorEnd);
   });
 
+  it("割合の順に線の脇の位置を返す", () => {
+    expect(cands.slice(2, 4).map((c) => c.value)).toEqual(
+      besideSegment(from, to, size, undefined, [0.35]),
+    );
+  });
+
+  it("すきまを線の脇と先端のまわりの両方に使う", () => {
+    const wide = besideVectorCandidates(from, to, size, 3.6, 9, [0.5]);
+    expect(wide.slice(0, 2).map((c) => c.value)).toEqual(besideSegment(from, to, size, 9));
+    expect(wide.slice(2).map((c) => c.value)).toEqual(
+      aroundVector(from, to, size, 3.6, 9).slice(2),
+    );
+  });
+
   it("線の脇の候補の罰点は先端の候補より軽い", () => {
     expect(cands[2].score?.(0)).toBeLessThan(LABEL_POLICY.vectorEnd);
   });
@@ -326,10 +340,28 @@ describe("pointPositions", () => {
     expect(pointPositions(p, size, 4, "left")).toEqual([aroundPoint(p, size, 4).left]);
   });
 
+  it("すきまを自動の 8 方向にも使う", () => {
+    expect(pointPositions(p, size, 4, "auto", 9)).toEqual(
+      Object.values(aroundPoint(p, size, 4, 9)),
+    );
+  });
+
   it("すきまを向きの指定にも使う", () => {
     expect(pointPositions(p, size, 4, "left", 9)).toEqual([aroundPoint(p, size, 4, 9).left]);
   });
 });
+
+function rounded(values: readonly number[]) {
+  return values.map((v) => Math.round(v * 1e6) / 1e6);
+}
+
+function signed(values: readonly number[]) {
+  return values.flatMap((v) => [v, -v]);
+}
+
+function same(a: number, b: number) {
+  return Math.abs(a - b) < 1e-9;
+}
 
 function preference(cand: Candidate<LabelPos>) {
   return cand.score?.(0);
@@ -353,7 +385,7 @@ describe("widelyAroundPoint", () => {
       eight["below-right"],
       eight["below-left"],
     ]);
-    expect(new Set(cands.slice(0, 8).map((c) => c.value))).toEqual(new Set(Object.values(eight)));
+    expect(cands.slice(6, 8).map((c) => c.value)).toEqual([eight.right, eight.left]);
   });
 
   it("どの候補も点の印と重ならない", () => {
@@ -370,6 +402,48 @@ describe("widelyAroundPoint", () => {
   it("罰点は元の罰点に足す", () => {
     const far = cands.at(-1);
     expect(far?.score?.(5)).toBe(5 + 2 * LABEL_POLICY.farRingPenalty);
+  });
+
+  const ringOf = (k: number, from = cands) =>
+    from.filter((c) => preference(c) === k * LABEL_POLICY.farRingPenalty);
+
+  it.each([
+    [0, [4, 5], [4, 8, 10]],
+    [1, [4, 8, 11], [4, 8, 12, 16]],
+    [2, [4, 8, 12, 16, 17], [4, 8, 12, 16, 20, 22]],
+  ])("輪 %i は 4 辺に沿って、辺の範囲と輪のぶんだけずらす", (k, vertical, horizontal) => {
+    const r = clearance + k * step;
+    const slid = ringOf(k)
+      .slice(8)
+      .map((c) => c.box);
+    const offsetY = (b: Box) => (b.y0 + b.y1) / 2 - p.y;
+    const offsetX = (b: Box) => (b.x0 + b.x1) / 2 - p.x;
+    expect(rounded(slid.filter((b) => same(b.x0, p.x + r)).map(offsetY))).toEqual(signed(vertical));
+    expect(rounded(slid.filter((b) => same(b.x1, p.x - r)).map(offsetY))).toEqual(signed(vertical));
+    expect(rounded(slid.filter((b) => same(b.y1, p.y - r)).map(offsetX))).toEqual(
+      signed(horizontal),
+    );
+    expect(rounded(slid.filter((b) => same(b.y0, p.y + r)).map(offsetX))).toEqual(
+      signed(horizontal),
+    );
+  });
+
+  it.each([0, 1, 2])("輪 %i の 8 方向は、その輪のすきまの aroundPoint である", (k) => {
+    const gap = LABEL_POLICY.lineClearance + k * step;
+    expect(
+      ringOf(k)
+        .slice(0, 8)
+        .map((c) => c.value),
+    ).toEqual(expect.arrayContaining(Object.values(aroundPoint(p, size, reach, gap))));
+  });
+
+  it.each([0, 1, 2])("指定のすきまを輪 %i にも足す", (k) => {
+    const wide = widelyAroundPoint(p, size, reach, 10);
+    expect(
+      ringOf(k, wide)
+        .slice(0, 8)
+        .map((c) => c.value),
+    ).toEqual(expect.arrayContaining(Object.values(aroundPoint(p, size, reach, 10 + k * step))));
   });
 
   it("近い輪は箱の辺の範囲でずらし、点と箱の縁の距離を保つ", () => {

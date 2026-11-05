@@ -1022,7 +1022,7 @@ export default function ContourPlot({
     return placedLabel(ray.label, pos, size);
   });
 
-  // 点のラベル。点の周囲 8 方向の候補から選ぶ（FunctionGraph と同じ候補）。
+  // 点のラベル。点の周囲 8 方向の候補から選ぶ。
   const pointLabels = placeInOrder(points, polarLabels.placed, (p, i, placed) => {
     if (p.label === undefined) return NO_PLACEMENT;
     const size = glyphSizeOf(p.label, LABEL_FONT);
@@ -1082,7 +1082,7 @@ export default function ContourPlot({
     return placedLabel(v.label, pos, size);
   });
 
-  // 補助線分のラベル。中点から線分に直交する両側を候補にする（FunctionGraph と同じ方式）。
+  // 補助線分のラベル。中点から線分に直交する両側を候補にする。
   const segmentLabels = placeInOrder(segments, vectorLabels.placed, (s, i, placed) => {
     if (s.label === undefined) return NO_PLACEMENT;
     const size = glyphSizeOf(s.label, LABEL_FONT);

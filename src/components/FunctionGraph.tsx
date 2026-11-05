@@ -39,7 +39,7 @@ import {
   type Candidate,
   type Label,
 } from "./figure-label/placer";
-import { OBSTACLE_WEIGHT } from "./figure-label/policy";
+import { LABEL_POLICY, OBSTACLE_WEIGHT } from "./figure-label/policy";
 import KatexLabel from "./KatexLabel";
 
 /**
@@ -245,9 +245,6 @@ const AXIS_NAME_FONT = 13;
 const X_TICK_OFFSET = 14;
 const Y_TICK_OFFSET = 15;
 
-// 既出のラベルと同じ行に並ぶときに残したいすきま（px）。「P dx」のように 1 続きの式に読まれるのを防ぐ。
-const LABEL_ROW_GAP = 10;
-
 // 線分・矢印のラベルを置く、線の上の割合。中点を優先する。
 const SEGMENT_FRACTIONS: readonly number[] = [0.5, 0.35, 0.65, 0.2, 0.8];
 // 補助線のラベルを置く、線の上の割合。線の始点から測り、前の割合ほど優先する。曲線が線に両端で
@@ -426,11 +423,22 @@ export default function FunctionGraph({
   // 軸名（x・y）。描く位置は下の軸名の KatexLabel と同じである。既出のラベルとして扱い、同じ行に並ぶ
   // ラベルが「Z₀ Re」のように 1 続きに読まれるのを避ける。
   const axisNameBoxes: readonly Box[] = [
-    glyphBox(
-      { x: originX + plotW + 14, y: axisY - 11, align: "center" },
-      glyphSizeOf(xLabel, AXIS_NAME_FONT),
-    ),
-    glyphBox({ x: axisX + 8, y: originY - 9, align: "left" }, glyphSizeOf(yLabel, AXIS_NAME_FONT)),
+    ...(xLabel === ""
+      ? []
+      : [
+          glyphBox(
+            { x: originX + plotW + 14, y: axisY - 11, align: "center" },
+            glyphSizeOf(xLabel, AXIS_NAME_FONT),
+          ),
+        ]),
+    ...(yLabel === ""
+      ? []
+      : [
+          glyphBox(
+            { x: axisX + 8, y: originY - 9, align: "left" },
+            glyphSizeOf(yLabel, AXIS_NAME_FONT),
+          ),
+        ]),
   ];
   const tickMarks: readonly (readonly XY[])[] = [
     ...xt.map((t) => [
@@ -511,7 +519,12 @@ export default function FunctionGraph({
     placed: readonly Box[],
     exclude?: string,
   ): LabelPos | null =>
-    placer.place(candidates, { placed, bounds: viewBounds, exclude, rowGap: LABEL_ROW_GAP }).item;
+    placer.place(candidates, {
+      placed,
+      bounds: viewBounds,
+      exclude,
+      rowGap: LABEL_POLICY.rowGap,
+    }).item;
 
   // 線のラベルの候補。位置も向きも指定が無ければ auto を使い、指定があれば linePositions に従う。
   const lineCandidates = (
@@ -571,14 +584,19 @@ export default function FunctionGraph({
     const size = glyphSizeOf(p.label, LABEL_FONT);
     const at = toScreen(p);
     const reach = markerReach(p);
-    const auto = p.labelDir === undefined || p.labelDir === "auto";
-    const pointCandidates = auto
-      ? widelyAroundPoint(at, size, reach, p.labelOffset)
-      : positionCandidates(pointPositions(at, size, reach, p.labelDir, p.labelOffset), size);
+    const candidates = (): readonly Candidate<LabelPos>[] => {
+      if (p.labelAt !== undefined) return lineCandidates(p, at, at, size, () => []);
+      if (p.labelDir !== undefined && p.labelDir !== "auto") {
+        return positionCandidates(pointPositions(at, size, reach, p.labelDir, p.labelOffset), size);
+      }
+      return avoidingBands(
+        widelyAroundPoint(at, size, reach, p.labelOffset),
+        tickBands,
+        W.tickBand,
+      );
+    };
     const pos = choosePlacement(
-      p.labelAt === undefined
-        ? avoidingBands(pointCandidates, tickBands, W.tickBand)
-        : lineCandidates(p, at, at, size, () => []),
+      candidates(),
       placed,
       // 基準点が点の上でも印を避けられるよう、labelAt があれば自分の印も判定に含める。
       p.labelAt === undefined ? `pt${i}` : undefined,

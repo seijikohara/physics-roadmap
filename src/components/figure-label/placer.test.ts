@@ -420,6 +420,11 @@ describe("createPlacer の rowGap", () => {
     expect(placer.penalty(right, { placed: [left], bounds, rowGap: 10 })).toBe(LABEL_POLICY.near);
   });
 
+  it("rowGap の範囲は候補の左にも右にも効く", () => {
+    const leftOf = box(34, 50);
+    expect(placer.penalty(leftOf, { placed: [left], bounds, rowGap: 10 })).toBe(LABEL_POLICY.near);
+  });
+
   it("rowGap より遠ければ罰しない", () => {
     const right = box(71, 50);
     expect(placer.penalty(right, { placed: [left], bounds, rowGap: 10 })).toBe(0);

@@ -562,8 +562,8 @@ function measureLine(
 // 旧来の見積もり（組版の木に知らない節点があるときの代わり）
 // ======================================================================
 
-// 以下は ContourPlot・FunctionGraph の estimateTexWidthPrecise と同じ内容である。字を数えて
-// 1 字 0.72em とし、安全側に広めに取る。
+// 以下は、部品が組版の木を使う前の見積もりと同じ内容である。字を数えて 1 字 0.72em とし、安全側に
+// 広めに取る。
 
 /** 字形を持たず、引数の中身だけが幅を持つ組版コマンド（\mathrm{A} は A の幅になる）。 */
 const LAYOUT_ONLY_COMMANDS: ReadonlySet<string> = new Set([
