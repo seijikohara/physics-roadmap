@@ -541,6 +541,9 @@ const MESH_OPACITY = 0.5;
 const OUTLINE_WIDTH = 0.9;
 const OUTLINE_OPACITY = 0.8;
 
+// 暗いテーマの網目・縁取りの色へ、白を混ぜる割合。
+const DARK_EDGE_LIGHTEN = 0.3;
+
 // 面に隠れた線・点を淡く描くときの不透明度の下限。0 にすると線の行方を追えなくなる。
 const FADE_FLOOR = 0.2;
 
@@ -559,6 +562,8 @@ type Face = Readonly<{
   opacity: number;
   /** 網目・縁取りの線の色。 */
   edgeColor: string;
+  /** 暗いテーマの網目・縁取りの線の色。global.css が CSS 変数 --edge から読む。 */
+  darkEdgeColor: string;
   /** BSP 木の分割平面に使う大きな平面図形か。曲面のセルは false。 */
   splitter: boolean;
 }>;
@@ -1175,6 +1180,7 @@ export default function SurfacePlot({
         異なる値だけを各要素に書く。多角形は自身の fill で塗りなしを上書きする。
       */}
       <g
+        className="surface-plot-faces"
         fill="none"
         fillOpacity={commonOpacity}
         strokeWidth={MESH_WIDTH}
@@ -1198,11 +1204,15 @@ export default function SurfacePlot({
                 strokeWidth={seam ? 0.5 : undefined}
                 strokeOpacity={seam ? 1 : undefined}
               />
-              {meshD && <path d={meshD} stroke={face.edgeColor} />}
+              {meshD && (
+                <path d={meshD} stroke={face.edgeColor} style={{ "--edge": face.darkEdgeColor }} />
+              )}
               {outlineD && (
                 <path
+                  className="surface-plot-outline"
                   d={outlineD}
                   stroke={face.edgeColor}
+                  style={{ "--edge": face.darkEdgeColor }}
                   strokeWidth={OUTLINE_WIDTH}
                   strokeOpacity={OUTLINE_OPACITY}
                 />
@@ -1778,6 +1788,7 @@ function buildSurface(
         fill: fillOf(n, nl, zMid),
         opacity,
         edgeColor,
+        darkEdgeColor: darkEdgeOf(base, color),
         splitter: false,
       },
     ];
@@ -1848,6 +1859,7 @@ function buildPlane(p: PlanePatch, ctx: BuildCtx): Readonly<{ face: Face | null 
       fill: color,
       opacity: p.opacity ?? 0.25,
       edgeColor: base ? toHex(mix(base, BLACK, 0.3)) : color,
+      darkEdgeColor: darkEdgeOf(base, color),
       splitter: true,
     },
   };
@@ -1886,6 +1898,7 @@ function buildBox(b: Box3, ctx: BuildCtx): readonly Face[] {
         fill: base ? litColor(base, scale3(n, 1 / nl), ctx.light, ctx.fwd) : color,
         opacity: b.opacity ?? 0.75,
         edgeColor: base ? toHex(mix(base, BLACK, 0.45)) : color,
+        darkEdgeColor: darkEdgeOf(base, color),
         splitter: true,
       },
     ];
@@ -1933,6 +1946,7 @@ function buildRegion(r: FloorRegion, ctx: BuildCtx): Readonly<{ face: Face | nul
       fill: color,
       opacity: r.opacity ?? 0.35,
       edgeColor: base ? toHex(mix(base, BLACK, 0.3)) : color,
+      darkEdgeColor: darkEdgeOf(base, color),
       splitter: true,
     },
   };
@@ -2321,6 +2335,14 @@ function hex2(v: number): string {
 /** 色 a と b を割合 t（0 で a、1 で b）で混ぜる。 */
 function mix(a: RGB, b: RGB, t: number): RGB {
   return { r: a.r + (b.r - a.r) * t, g: a.g + (b.g - a.g) * t, b: a.b + (b.b - a.b) * t };
+}
+
+/**
+ * 暗いテーマの網目・縁取りの色。面の色に白を混ぜて作る。明るいテーマの線は面の色を暗くして作るので、暗い
+ * 背景の上では見えなくなる。線の色相を保つのは、線の色が面の区別の手がかりになるためである。
+ */
+function darkEdgeOf(base: RGB | null, color: string): string {
+  return base ? toHex(mix(base, WHITE, DARK_EDGE_LIGHTEN)) : color;
 }
 
 /**

@@ -25,6 +25,14 @@ const OPAQUE_FLOOR: Props["planes"] = [
   },
 ];
 
+describe("SurfacePlot の暗いテーマ", () => {
+  it("global.css が線の色を替える class を付ける", () => {
+    const html = render({ planes: OPAQUE_FLOOR });
+    expect(html).toContain('class="surface-plot-faces"');
+    expect(html).toContain('class="surface-plot-outline"');
+  });
+});
+
 describe("SurfacePlot のラベル", () => {
   it("有限の標本が無い曲線のラベルは置かない", () => {
     const html = render({
