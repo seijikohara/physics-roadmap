@@ -8,7 +8,6 @@ import { Circle, Line, LinePath, Polygon } from "@visx/shape";
 import { renderToString } from "katex";
 import { useId } from "react";
 import {
-  aroundPoint,
   aroundVector,
   besideCurve,
   besideSegment,
@@ -20,6 +19,7 @@ import {
   normalLabelOffset,
   onLine,
   onLineNear,
+  pointPositions,
   positionCandidates,
   type LabelDirSpec,
   type LineLabelSpec,
@@ -33,6 +33,7 @@ import {
   inflate,
   lerpAt,
   segmentHitsBox,
+  visiblePieces,
   type Box,
   type ScreenArrow,
   type XY,
@@ -45,7 +46,14 @@ import {
   tracedLine,
   type LineObstacle,
 } from "./figure-label/obstacles";
-import { NO_PLACEMENT, createPlacer, placeInOrder, type Placement } from "./figure-label/placer";
+import {
+  NO_PLACEMENT,
+  createPlacer,
+  placeInOrder,
+  placedLabel,
+  type Label,
+  type Placement,
+} from "./figure-label/placer";
 import { FIELD_PENALTY_CAP, LABEL_POLICY, OBSTACLE_WEIGHT } from "./figure-label/policy";
 import KatexLabel from "./KatexLabel";
 
@@ -62,7 +70,7 @@ import KatexLabel from "./KatexLabel";
  * （クライアントディレクティブなし、ハイドレーションなし）。座標は `@visx/scale`、等高線・曲線・
  * 境界は `@visx/shape` の `LinePath`、領域は `Polygon`、軸・線分は `Line`、点は `Circle` で
  * 描く。格子線は `@visx/grid`、クリップは `@visx/clip-path`、軸の矢印は `@visx/marker` を
- * 用いる。軸・凡例の寸法と配色は `FunctionGraph` にそろえる。目盛り数字だけは軸から 1px 遠い。
+ * 用いる。軸・目盛り数字・凡例の寸法と配色は `FunctionGraph` にそろえる。
  *
  * 等高線は marching squares 法で求める。描画窓を細かい正方の格子に区切り、各セルで等高線が
  * 横切る辺を格子点の値の符号から判定し、辺上の交点を線形補間で求めて線分で結ぶ。線分は交点の
@@ -609,7 +617,7 @@ const CONTOUR_GAP_PAD = 5.5;
 const LABEL_FONT = 12;
 const TICK_FONT = 11;
 const AXIS_NAME_FONT = 13;
-// 目盛り数字の中心と軸の距離（px）。FunctionGraph より 1px 遠い。字形と目盛りの線の端のすきまは、
+// 目盛り数字の中心と軸の距離（px）。FunctionGraph と同じである。字形と目盛りの線の端のすきまは、
 // 実測で x 軸の「1」が 5.15px、y 軸の「−1」が 4.5px である。
 const X_TICK_OFFSET = 14;
 const Y_TICK_OFFSET = 15;
@@ -1014,17 +1022,14 @@ export default function ContourPlot({
     return placedLabel(ray.label, pos, size);
   });
 
-  // 点のラベル。点の周囲 8 方向の候補から選ぶ（FunctionGraph と同じ候補）。
+  // 点のラベル。点の周囲 8 方向の候補から選ぶ。
   const pointLabels = placeInOrder(points, polarLabels.placed, (p, i, placed) => {
     if (p.label === undefined) return NO_PLACEMENT;
     const size = glyphSizeOf(p.label, LABEL_FONT);
     const at = { x: x(p.x), y: y(p.y) };
     const reach = markerReach(p);
-    const dir = p.labelDir ?? "auto";
     const pos = choosePlacement(
-      dir === "auto"
-        ? Object.values(aroundPoint(at, size, reach, p.labelOffset))
-        : [fixedPosition(at, dir, size, reach, p.labelOffset)],
+      pointPositions(at, size, reach, p.labelDir, p.labelOffset),
       size,
       placed,
       `pt${i}`,
@@ -1077,7 +1082,7 @@ export default function ContourPlot({
     return placedLabel(v.label, pos, size);
   });
 
-  // 補助線分のラベル。中点から線分に直交する両側を候補にする（FunctionGraph と同じ方式）。
+  // 補助線分のラベル。中点から線分に直交する両側を候補にする。
   const segmentLabels = placeInOrder(segments, vectorLabels.placed, (s, i, placed) => {
     if (s.label === undefined) return NO_PLACEMENT;
     const size = glyphSizeOf(s.label, LABEL_FONT);
@@ -2513,18 +2518,6 @@ function orientationHeads(
 /** 曲線の 1 標本（画面座標）。ok は描く範囲内かつ有限か。t は元の x または媒介変数。 */
 type Sample = Readonly<{ x: number; y: number; ok: boolean; t: number }>;
 
-/** 標本列から、描く範囲内の連続した部分ごとの折れ線を取り出す（ラベル配置の障害物に使う）。 */
-function visiblePieces(samples: readonly Sample[]): readonly (readonly XY[])[] {
-  // 描く範囲内の連続した部分の始まり（直前が範囲外か先頭の、範囲内の標本）の番号。
-  const starts = samples.flatMap((s, k) => (s.ok && (k === 0 || !samples[k - 1].ok) ? [k] : []));
-  // 終わり（直前が範囲内の、範囲外の標本）の番号。始まりと終わりは交互に現れるので、i 番目の終わりが
-  // i 番目の始まりに対応する。始まりごとに先頭から探すと、標本数 × 部分の数の時間がかかる。
-  const ends = samples.flatMap((s, k) => (!s.ok && k > 0 && samples[k - 1].ok ? [k] : []));
-  return starts.map((start, i) =>
-    samples.slice(start, ends.at(i) ?? samples.length).map((s) => ({ x: s.x, y: s.y })),
-  );
-}
-
 /**
  * 折れ線を Ramer–Douglas–Peucker 法で間引く。始点と終点を結ぶ線分から最も離れた頂点が eps を
  * 超えれば残して両側を再帰的に調べ、超えなければ間の頂点を捨てる。閉じた線（始点と終点が同じ）
@@ -2571,18 +2564,8 @@ type CurveLabelSpec = Readonly<{
   labelOffset?: number;
 }>;
 
-/** 置いたラベル（LaTeX・配置先・字形の矩形）。 */
-type Label = Readonly<{ tex: string; pos: LabelPos; box: Box }>;
-
 /** 置いた等高線のラベル。cut は等高線を切り抜く矩形、levelId はラベルが乗るレベルの id である。 */
 type ContourLabel = Label & Readonly<{ cut: Box; levelId: string }>;
-
-/** 選んだ位置のラベルと占有矩形。位置が無ければ何も置かない。 */
-function placedLabel(tex: string, pos: LabelPos | null, size: GlyphSize): Placement<Label> {
-  if (pos === null) return NO_PLACEMENT;
-  const box = glyphBox(pos, size);
-  return { item: { tex, pos, box }, box };
-}
 
 /** 点の中心から印の端までの距離（px）。白抜きの点は輪郭の線の太さの半分だけ広い。 */
 function markerReach(p: Point): number {

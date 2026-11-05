@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Box } from "./geometry";
+import { glyphBox, type GlyphSize, type LabelPos } from "./label-box";
 import {
   boxObstacle,
   groupObstacle,
@@ -14,6 +15,7 @@ import {
   createPlacer,
   lineReach,
   placeInOrder,
+  placedLabel,
   type Candidate,
 } from "./placer";
 import { FIELD_PENALTY_CAP, LABEL_POLICY } from "./policy";
@@ -384,5 +386,58 @@ describe("placeInOrder", () => {
     expect(result.items).toEqual(["a", null, "b"]);
     expect(result.placed).toEqual([b1, b2]);
     expect(seen).toEqual([0, 1, 1]);
+  });
+});
+
+describe("placedLabel", () => {
+  const size: GlyphSize = { width: 20, top: -6, bottom: 4 };
+
+  it("位置があれば字形の矩形をラベルと占有矩形の両方に持たせる", () => {
+    const pos: LabelPos = { x: 10, y: 20, align: "left" };
+    const glyph = glyphBox(pos, size);
+    expect(placedLabel("x", pos, size)).toEqual({
+      item: { tex: "x", pos, box: glyph },
+      box: glyph,
+    });
+  });
+
+  it("位置が無ければ何も置かない", () => {
+    expect(placedLabel("x", null, size)).toBe(NO_PLACEMENT);
+  });
+});
+
+describe("createPlacer の rowGap", () => {
+  const placer = createPlacer([]);
+  const left = box(50, 50);
+
+  it("既定では labelSpacing より遠い横のラベルを罰しない", () => {
+    const right = box(60 + LABEL_POLICY.labelSpacing + 1, 50);
+    expect(placer.penalty(right, { placed: [left], bounds })).toBe(0);
+  });
+
+  it("rowGap の範囲の横のラベルを近いと数える", () => {
+    const right = box(66, 50);
+    expect(placer.penalty(right, { placed: [left], bounds, rowGap: 10 })).toBe(LABEL_POLICY.near);
+  });
+
+  it("rowGap の範囲は候補の左にも右にも効く", () => {
+    const leftOf = box(34, 50);
+    expect(placer.penalty(leftOf, { placed: [left], bounds, rowGap: 10 })).toBe(LABEL_POLICY.near);
+  });
+
+  it("rowGap より遠ければ罰しない", () => {
+    const right = box(71, 50);
+    expect(placer.penalty(right, { placed: [left], bounds, rowGap: 10 })).toBe(0);
+  });
+
+  it("縦の近さは rowGap で広げない", () => {
+    const below = box(50, 60 + LABEL_POLICY.labelSpacing + 1);
+    expect(placer.penalty(below, { placed: [left], bounds, rowGap: 10 })).toBe(0);
+  });
+
+  it("矩形の障害物との近さには使わない", () => {
+    const withBox = createPlacer([boxObstacle(left, 3)]);
+    const right = box(66, 50);
+    expect(withBox.penalty(right, { placed: [], bounds, rowGap: 10 })).toBe(0);
   });
 });

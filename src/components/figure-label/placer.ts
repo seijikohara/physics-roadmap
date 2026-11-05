@@ -10,6 +10,7 @@ import {
   type LineObstacle,
   type Obstacle,
 } from "./obstacles";
+import { glyphBox, type GlyphSize, type LabelPos } from "./label-box";
 import { LABEL_POLICY } from "./policy";
 
 /**
@@ -33,6 +34,11 @@ export type PlaceOptions = Readonly<{
   exclude?: string;
   /** 淡い線と群を避けるか。既定 true。線の上に置くラベルは false にする。 */
   avoidFaint?: boolean;
+  /**
+   * 既出のラベルと横に並ぶときに残したいすきま（px）。既定は LABEL_POLICY.labelSpacing である。同じ行に
+   * 並ぶ 2 つのラベルは 1 続きの式に読まれやすいので、広く取る図で指定する。
+   */
+  rowGap?: number;
 }>;
 
 /** 配置の結果。候補が無ければ item は null になる。 */
@@ -57,7 +63,13 @@ export function createPlacer(obstacles: readonly Obstacle[]): Placer {
   const groups = obstacles.filter((o): o is GroupObstacle => o.kind === "group");
 
   const penalty = (b: Box, options: PlaceOptions): number => {
-    const { placed, bounds, exclude, avoidFaint = true } = options;
+    const {
+      placed,
+      bounds,
+      exclude,
+      avoidFaint = true,
+      rowGap = LABEL_POLICY.labelSpacing,
+    } = options;
     const outside =
       b.x0 < bounds.x0 || b.x1 > bounds.x1 || b.y0 < bounds.y0 || b.y1 > bounds.y1
         ? LABEL_POLICY.outside
@@ -65,15 +77,20 @@ export function createPlacer(obstacles: readonly Obstacle[]): Placer {
     // 目盛り数字・軸名・点の印・既出のラベルとは、重なりに加えて接するほどの近さも軽く罰し、
     // 隣り合う文字が 1 続きの式に見える（c=4 と目盛り 2 が「c=4 2」に見えるなど）のを避ける。
     const near = inflate(b, LABEL_POLICY.labelSpacing);
-    const nearPenalty = (p: number, other: Box, weight: number): number => {
+    const nearRow: Box = { ...near, x0: b.x0 - rowGap, x1: b.x1 + rowGap };
+    const nearPenalty = (p: number, other: Box, weight: number, zone: Box): number => {
       if (boxesOverlap(b, other)) return p + weight;
-      return boxesOverlap(near, other) ? p + LABEL_POLICY.near : p;
+      return boxesOverlap(zone, other) ? p + LABEL_POLICY.near : p;
     };
     const byBoxes = boxes.reduce(
-      (p, o) => (o.id !== undefined && o.id === exclude ? p : nearPenalty(p, o.box, o.weight)),
+      (p, o) =>
+        o.id !== undefined && o.id === exclude ? p : nearPenalty(p, o.box, o.weight, near),
       outside,
     );
-    const byPlaced = placed.reduce((p, q) => nearPenalty(p, q, LABEL_POLICY.labelOverlap), byBoxes);
+    const byPlaced = placed.reduce(
+      (p, q) => nearPenalty(p, q, LABEL_POLICY.labelOverlap, nearRow),
+      byBoxes,
+    );
     // 線との判定は矩形と線の本当の距離で行い、線の傾きで結果が変わらないようにする。線に触れる位置と、
     // 触れないがすきまが足りない位置を分けて数え、すきまが取れない図でも線を横切らない位置を選べるよう
     // にする。外接矩形で先に絞り、頂点の多い線を調べる回数を減らす。
@@ -140,6 +157,16 @@ export type Placement<T> = Readonly<{ item: T | null; box: Box | null }>;
 
 /** 何も置かない結果。 */
 export const NO_PLACEMENT: Placement<never> = { item: null, box: null };
+
+/** 置いたラベル（LaTeX・配置先・字形の矩形）。 */
+export type Label = Readonly<{ tex: string; pos: LabelPos; box: Box }>;
+
+/** 選んだ位置のラベルと占有矩形。位置が無ければ何も置かない。 */
+export function placedLabel(tex: string, pos: LabelPos | null, size: GlyphSize): Placement<Label> {
+  if (pos === null) return NO_PLACEMENT;
+  const box = glyphBox(pos, size);
+  return { item: { tex, pos, box }, box };
+}
 
 /**
  * sources の順にラベルを 1 つずつ置く。place には、先に置いたラベルの占有矩形 placed を

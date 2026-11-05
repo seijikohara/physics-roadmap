@@ -2,22 +2,27 @@ import { describe, expect, it } from "vitest";
 import {
   aroundPoint,
   aroundVector,
+  avoidingBands,
   besideCurve,
   besideSegment,
+  besideSegmentCandidates,
+  besideVectorCandidates,
   centeredAt,
   fixedPosition,
   insideRegion,
   linePositions,
   onLine,
   onLineNear,
+  pointPositions,
   positionsAround,
   stubPenalty,
+  widelyAroundPoint,
   type PointMark,
 } from "./candidates";
 import { boxGap, boxesOverlap, distanceToBox, inflate, type Box, type XY } from "./geometry";
 import { glyphBox, type GlyphSize, type LabelPos } from "./label-box";
 import { lineObstacle, tracedLine, type LineObstacle, type TracedLine } from "./obstacles";
-import { createPlacer, lineReach } from "./placer";
+import { createPlacer, lineReach, type Candidate } from "./placer";
 import { LABEL_POLICY, OBSTACLE_WEIGHT } from "./policy";
 
 const size: GlyphSize = { width: 20, top: -6, bottom: 4 };
@@ -196,6 +201,278 @@ describe("besideSegment", () => {
     for (const pos of besideSegment(a, b, size)) {
       expect(boxesOverlap(inflate(glyphBox(pos, size), lineReach), line)).toBe(false);
     }
+  });
+});
+
+describe("besideSegment の割合", () => {
+  const a = { x: 0, y: 0 };
+  const b = { x: 100, y: 0 };
+  const midX = (pos: LabelPos) => {
+    const box = glyphBox(pos, size);
+    return (box.x0 + box.x1) / 2;
+  };
+
+  it("既定は中点の両側の 2 か所である", () => {
+    const xs = besideSegment(a, b, size).map(midX);
+    expect(xs).toHaveLength(2);
+    expect(xs[0]).toBeCloseTo(50, 9);
+    expect(xs[1]).toBeCloseTo(50, 9);
+  });
+
+  it("割合の順に、各割合の両側を返す", () => {
+    const xs = besideSegment(a, b, size, undefined, [0.8, 0.2]).map(midX);
+    expect(xs[0]).toBeCloseTo(80, 9);
+    expect(xs[1]).toBeCloseTo(80, 9);
+    expect(xs[2]).toBeCloseTo(20, 9);
+    expect(xs[3]).toBeCloseTo(20, 9);
+  });
+
+  it("a から b へ進む向きの右側を先に返す", () => {
+    const [first, second] = besideSegment(a, b, size);
+    expect(glyphBox(first, size).y0).toBeGreaterThan(0);
+    expect(glyphBox(second, size).y1).toBeLessThan(0);
+  });
+
+  it("両端の位置を入れ替えると先に返す側が変わる", () => {
+    const [first] = besideSegment(b, a, size);
+    expect(glyphBox(first, size).y1).toBeLessThan(0);
+  });
+});
+
+describe("besideSegmentCandidates", () => {
+  const a = { x: 0, y: 0 };
+  const b = { x: 100, y: 0 };
+
+  it("割合ごとに線分の両側を返す", () => {
+    expect(besideSegmentCandidates(a, b, size, undefined, [0.5, 0.2])).toHaveLength(4);
+  });
+
+  it("中点の候補には罰点を足さない", () => {
+    const [first] = besideSegmentCandidates(a, b, size, undefined, [0.5]);
+    expect(first.score?.(3)).toBe(3);
+  });
+
+  it("中点から離れるほど罰点を足す", () => {
+    const cands = besideSegmentCandidates(a, b, size, undefined, [0.35, 0.8]);
+    expect(cands[0].score?.(0)).toBeCloseTo(0.15 * LABEL_POLICY.offCenter, 9);
+    expect(cands[2].score?.(0)).toBeCloseTo(0.3 * LABEL_POLICY.offCenter, 9);
+  });
+
+  it("すきまを besideSegment と同じに扱う", () => {
+    const [first] = besideSegmentCandidates(a, b, size, 9, [0.5]);
+    expect(first.value).toEqual(besideSegment(a, b, size, 9)[0]);
+  });
+});
+
+describe("besideVectorCandidates", () => {
+  const from = { x: 0, y: 0 };
+  const to = { x: 100, y: 0 };
+  const cands = besideVectorCandidates(from, to, size, 3.6, undefined, [0.5, 0.35]);
+
+  it("線の脇を先に試し、続いて aroundVector の中点の脇を除いた位置を試す", () => {
+    const around = aroundVector(from, to, size, 3.6);
+    expect(cands.slice(0, 2).map((c) => c.value)).toEqual(besideSegment(from, to, size));
+    expect(cands.slice(4).map((c) => c.value)).toEqual(around.slice(2));
+  });
+
+  it("先端と根元のまわりには vectorEnd の罰点を足す", () => {
+    expect(cands[4].score?.(1)).toBe(1 + LABEL_POLICY.vectorEnd);
+    expect(cands.at(-1)?.score?.(0)).toBe(LABEL_POLICY.vectorEnd);
+  });
+
+  it("割合の順に線の脇の位置を返す", () => {
+    expect(cands.slice(2, 4).map((c) => c.value)).toEqual(
+      besideSegment(from, to, size, undefined, [0.35]),
+    );
+  });
+
+  it("すきまを線の脇と先端のまわりの両方に使う", () => {
+    const wide = besideVectorCandidates(from, to, size, 3.6, 9, [0.5]);
+    expect(wide.slice(0, 2).map((c) => c.value)).toEqual(besideSegment(from, to, size, 9));
+    expect(wide.slice(2).map((c) => c.value)).toEqual(
+      aroundVector(from, to, size, 3.6, 9).slice(2),
+    );
+  });
+
+  it("線の脇の候補の罰点は先端の候補より軽い", () => {
+    expect(cands[2].score?.(0)).toBeLessThan(LABEL_POLICY.vectorEnd);
+  });
+});
+
+describe("avoidingBands", () => {
+  const pos: LabelPos = { x: 50, y: 50, align: "center" };
+  const inside: Box = { x0: 0, x1: 100, y0: 40, y1: 60 };
+  const elsewhere: Box = { x0: 0, x1: 100, y0: 200, y1: 220 };
+  const cand: Candidate<LabelPos> = { box: glyphBox(pos, size), value: pos };
+
+  it("重なる帯の本数だけ罰点を足す", () => {
+    const [one] = avoidingBands([cand], [inside, inside], 3);
+    expect(one.score?.(1)).toBe(7);
+  });
+
+  it("重ならない帯は数えない", () => {
+    const [one] = avoidingBands([cand], [elsewhere], 3);
+    expect(one.score?.(1)).toBe(1);
+  });
+
+  it("候補の元の罰点を保つ", () => {
+    const scored: Candidate<LabelPos> = { ...cand, score: (penalty) => penalty + 2 };
+    const [one] = avoidingBands([scored], [inside], 3);
+    expect(one.score?.(1)).toBe(6);
+  });
+
+  it("候補の矩形と値を変えない", () => {
+    const [one] = avoidingBands([cand], [inside], 3);
+    expect(one.box).toEqual(cand.box);
+    expect(one.value).toEqual(cand.value);
+  });
+});
+
+describe("pointPositions", () => {
+  const p = { x: 100, y: 100 };
+
+  it("自動なら 8 方向を返す", () => {
+    expect(pointPositions(p, size, 4)).toEqual(Object.values(aroundPoint(p, size, 4)));
+    expect(pointPositions(p, size, 4, "auto")).toHaveLength(8);
+  });
+
+  it("向きの指定があればその 1 か所を返す", () => {
+    expect(pointPositions(p, size, 4, "left")).toEqual([aroundPoint(p, size, 4).left]);
+  });
+
+  it("すきまを自動の 8 方向にも使う", () => {
+    expect(pointPositions(p, size, 4, "auto", 9)).toEqual(
+      Object.values(aroundPoint(p, size, 4, 9)),
+    );
+  });
+
+  it("すきまを向きの指定にも使う", () => {
+    expect(pointPositions(p, size, 4, "left", 9)).toEqual([aroundPoint(p, size, 4, 9).left]);
+  });
+});
+
+function rounded(values: readonly number[]) {
+  return values.map((v) => Math.round(v * 1e6) / 1e6);
+}
+
+function signed(values: readonly number[]) {
+  return values.flatMap((v) => [v, -v]);
+}
+
+function same(a: number, b: number) {
+  return Math.abs(a - b) < 1e-9;
+}
+
+function preference(cand: Candidate<LabelPos>) {
+  return cand.score?.(0);
+}
+
+describe("widelyAroundPoint", () => {
+  const p = { x: 100, y: 100 };
+  const reach = 4;
+  const cands = widelyAroundPoint(p, size, reach);
+  const near = (cand: Candidate<LabelPos>) => distanceToBox(p, cand.box);
+  const step = LABEL_POLICY.farRing;
+  const clearance = reach + LABEL_POLICY.lineClearance + LABEL_POLICY.glyphSlack;
+
+  it("先頭は aroundPoint の 8 方向で、上側を先に試す", () => {
+    const eight = aroundPoint(p, size, reach);
+    expect(cands.slice(0, 6).map((c) => c.value)).toEqual([
+      eight.above,
+      eight["above-right"],
+      eight["above-left"],
+      eight.below,
+      eight["below-right"],
+      eight["below-left"],
+    ]);
+    expect(cands.slice(6, 8).map((c) => c.value)).toEqual([eight.right, eight.left]);
+  });
+
+  it("どの候補も点の印と重ならない", () => {
+    for (const cand of cands) {
+      expect(near(cand)).toBeGreaterThan(reach);
+    }
+  });
+
+  it("輪が 1 つ遠くなるごとに罰点が増える", () => {
+    const scores = [...new Set(cands.map(preference))];
+    expect(scores).toEqual([0, 1, 2].map((k) => k * LABEL_POLICY.farRingPenalty));
+  });
+
+  it("罰点は元の罰点に足す", () => {
+    const far = cands.at(-1);
+    expect(far?.score?.(5)).toBe(5 + 2 * LABEL_POLICY.farRingPenalty);
+  });
+
+  const ringOf = (k: number, from = cands) =>
+    from.filter((c) => preference(c) === k * LABEL_POLICY.farRingPenalty);
+
+  it.each([
+    [0, [4, 5], [4, 8, 10]],
+    [1, [4, 8, 11], [4, 8, 12, 16]],
+    [2, [4, 8, 12, 16, 17], [4, 8, 12, 16, 20, 22]],
+  ])("輪 %i は 4 辺に沿って、辺の範囲と輪のぶんだけずらす", (k, vertical, horizontal) => {
+    const r = clearance + k * step;
+    const slid = ringOf(k)
+      .slice(8)
+      .map((c) => c.box);
+    const offsetY = (b: Box) => (b.y0 + b.y1) / 2 - p.y;
+    const offsetX = (b: Box) => (b.x0 + b.x1) / 2 - p.x;
+    expect(rounded(slid.filter((b) => same(b.x0, p.x + r)).map(offsetY))).toEqual(signed(vertical));
+    expect(rounded(slid.filter((b) => same(b.x1, p.x - r)).map(offsetY))).toEqual(signed(vertical));
+    expect(rounded(slid.filter((b) => same(b.y1, p.y - r)).map(offsetX))).toEqual(
+      signed(horizontal),
+    );
+    expect(rounded(slid.filter((b) => same(b.y0, p.y + r)).map(offsetX))).toEqual(
+      signed(horizontal),
+    );
+  });
+
+  it.each([0, 1, 2])("輪 %i の 8 方向は、その輪のすきまの aroundPoint である", (k) => {
+    const gap = LABEL_POLICY.lineClearance + k * step;
+    expect(
+      ringOf(k)
+        .slice(0, 8)
+        .map((c) => c.value),
+    ).toEqual(expect.arrayContaining(Object.values(aroundPoint(p, size, reach, gap))));
+  });
+
+  it.each([0, 1, 2])("指定のすきまを輪 %i にも足す", (k) => {
+    const wide = widelyAroundPoint(p, size, reach, 10);
+    expect(
+      ringOf(k, wide)
+        .slice(0, 8)
+        .map((c) => c.value),
+    ).toEqual(expect.arrayContaining(Object.values(aroundPoint(p, size, reach, 10 + k * step))));
+  });
+
+  it("近い輪は箱の辺の範囲でずらし、点と箱の縁の距離を保つ", () => {
+    const first = cands.filter((c) => preference(c) === 0).slice(8);
+    expect(first.length).toBeGreaterThan(0);
+    for (const cand of first) {
+      expect(near(cand)).toBeCloseTo(clearance, 9);
+    }
+  });
+
+  it("遠い輪は箱の辺の範囲の外までずらす", () => {
+    const third = cands.filter((c) => preference(c) === 2 * LABEL_POLICY.farRingPenalty);
+    const r = clearance + 2 * step;
+    const toLeftOfPoint = third.filter((c) => c.box.x1 < p.x && c.box.y0 >= p.y + r - 1e-9);
+    const inSpan = third.filter((c) => c.box.x0 <= p.x && c.box.x1 >= p.x);
+    expect(toLeftOfPoint.length).toBeGreaterThan(0);
+    expect(inSpan.length).toBeGreaterThan(0);
+  });
+
+  it("すきまを全部の輪に足す", () => {
+    const wide = widelyAroundPoint(p, size, reach, 10);
+    expect(wide).toHaveLength(cands.length);
+    expect(near(wide[0])).toBeCloseTo(reach + 10 + LABEL_POLICY.glyphSlack, 9);
+  });
+
+  it("同じ入力から同じ候補を返す", () => {
+    expect(widelyAroundPoint(p, size, reach).map((c) => c.value)).toEqual(
+      cands.map((c) => c.value),
+    );
   });
 });
 

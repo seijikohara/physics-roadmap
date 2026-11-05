@@ -34,7 +34,7 @@
 - `src/components/`: React アイランドのコンポーネント
 - `src/components/figure-label/`: 図のラベルの寸法・幾何・配置器の共通モジュール（DOM を使わない純粋な TypeScript）
   - `measure.ts`: KaTeX の組版の木から幅・高さを見積もる。`label-box.ts`: 基準点と寸法から字形の矩形を求める。
-  - `obstacles.ts`・`candidates.ts`・`placer.ts`・`policy.ts`: 障害物・候補の生成器・配置器・罰点とすきまの定数。今は`ContourPlot`が使う。
+  - `obstacles.ts`・`candidates.ts`・`placer.ts`・`policy.ts`: 障害物・候補の生成器・配置器・罰点とすきまの定数。今は`ContourPlot`と`FunctionGraph`が使う。
 - `src/styles/`: スタイル
 - `.claude/agents/`: 執筆と検証のサブエージェント定義
 - `docs/`: 設計と計画のドキュメント
@@ -127,6 +127,9 @@
   - `labelDir`は基準点から見た向きで、`"auto"`・`"center"`・8 方位を渡す。`labelAt`だけなら基準点を固定して向きを自動で選び、`labelAt`と`labelDir`の両方があれば完全に固定する。曲線・媒介変数曲線の`labelAt`だけの指定では、線の進む向きの右側を優先し、右側の罰点が反対側を`fixedSide`（2.5）より大きく上回るときだけ反対側へ移す。
   - 矢印・線分は、`labelAt`があるときの`labelDir`の既定が`"center"`である。`labelAt`の点をラベルの中心にする。向きを自動で選ぶには`labelDir: "auto"`を渡す。
   - `labelOffset`は線や基準点と字形のすきまの目標（px）で、既定は 4 である。箱は見積もりの誤差の分だけさらに離すので、箱の縁までは基準点・点の印から`labelOffset + 1`、線の中心から`labelOffset + 2.25`（向きを固定したときは`labelOffset + 2`）である。
+- `FunctionGraph`のラベルも配置器が置く。ラベルは補助線分・ベクトル・点・補助線（漸近線）の順に置き、後のラベルが先のラベルを避けるので、配置は要素の順序に依存する。次の指定で位置を調整する。
+  - 点・補助線分・ベクトル・補助線は`labelAt`・`labelDir`・`labelOffset`を受ける。意味は`ContourPlot`の矢印・線分と同じで、`labelAt`があるときの`labelDir`の既定は`"center"`である。
+  - 点のラベルは、自動で置くと点のまわりの 3 重の輪から位置を選ぶので、点から離れることがある。点の近くに固定するときは`labelDir`を渡す。
 - ドラッグやスライダーなど双方向性が必要な図のみ、クライアントアイランドで読み込む。
 - データグラフは visx を標準とする。高水準の図が要るときは`@visx/xychart`を導入する。データ図が必要な章で導入する。双方向性が要る場合は、その時点で描画手段を選定する。
 

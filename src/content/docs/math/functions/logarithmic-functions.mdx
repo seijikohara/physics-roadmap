@@ -270,11 +270,11 @@ $$
       { fn: (x) => x, label: "y=x", dashed: true, labelX: 3.4 },
     ]}
     points={[
-      { x: 1, y: 2, label: "(1,2)" },
+      { x: 1, y: 2, label: "(1,2)", labelAt: { x: 0.8, y: 3.1 } },
       { x: 2, y: 1, label: "(2,1)", highlight: true },
     ]}
     asymptotes={[
-      { x: 0, label: "x=0" },
+      { x: 0, label: "x=0", labelAt: { x: 0, y: 4.5 }, labelDir: "right" },
       { y: 0, label: "y=0" },
     ]}
     ariaLabel="指数関数 y=2^x と対数関数 y=log_2 x を、破線の直線 y=x とともに重ねた図。2 本の曲線は y=x に関して鏡のように対称で、点 (1,2) と点 (2,1) が y=x をはさんで向かい合う。指数関数のグラフは x 軸（y=0）を、対数関数のグラフは y 軸（x=0）を漸近線とし、2 本の漸近線も y=x に関して入れ替わる。"

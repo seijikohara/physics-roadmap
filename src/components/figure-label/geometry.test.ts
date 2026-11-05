@@ -5,6 +5,7 @@ import {
   boxGap,
   boxesOverlap,
   clamp,
+  columnBand,
   cumulativeLength,
   distanceToBox,
   distanceToSegment,
@@ -16,9 +17,11 @@ import {
   pointAtLength,
   pointInPolygon,
   polylineBoxDistance,
+  rowBand,
   segmentBoxDistance,
   segmentHitsBox,
   turnAngle,
+  visiblePieces,
   type Box,
   type ScreenArrow,
   type XY,
@@ -453,5 +456,63 @@ describe("headInside", () => {
 
   it("長さ 0 の矢印は残す", () => {
     expect(headInside({ from: { x: 50, y: 50 }, to: { x: 50, y: 50 } }, win, 6, 2.4)).toBe(true);
+  });
+});
+
+function sample(x: number, ok: boolean) {
+  return { x, y: x * 2, ok };
+}
+
+describe("visiblePieces", () => {
+  it("描く範囲の中の連続した部分ごとに折れ線を返す", () => {
+    const samples = [
+      sample(0, false),
+      sample(1, true),
+      sample(2, true),
+      sample(3, false),
+      sample(4, true),
+    ];
+    expect(visiblePieces(samples)).toEqual([
+      [
+        { x: 1, y: 2 },
+        { x: 2, y: 4 },
+      ],
+      [{ x: 4, y: 8 }],
+    ]);
+  });
+
+  it("先頭が範囲の中で、部分が 3 つ以上あっても始まりと終わりを対応させる", () => {
+    const oks = [true, false, true, false, true, true, false];
+    const pieces = visiblePieces(oks.map((ok, i) => sample(i, ok)));
+    expect(pieces.map((piece) => piece.map((p) => p.x))).toEqual([[0], [2], [4, 5]]);
+  });
+
+  it("全部が範囲の中なら 1 本にまとめる", () => {
+    expect(visiblePieces([sample(0, true), sample(1, true)])).toHaveLength(1);
+  });
+
+  it("範囲の中の標本が無ければ空を返す", () => {
+    expect(visiblePieces([sample(0, false)])).toEqual([]);
+    expect(visiblePieces([])).toEqual([]);
+  });
+});
+
+describe("rowBand と columnBand", () => {
+  const boxes: readonly Box[] = [
+    { x0: 10, x1: 20, y0: 5, y1: 15 },
+    { x0: 30, x1: 40, y0: 8, y1: 18 },
+  ];
+
+  it("行の帯は矩形の縦の範囲を囲み、横の範囲を指定の値にする", () => {
+    expect(rowBand(boxes, 0, 100)).toEqual([{ x0: 0, x1: 100, y0: 5, y1: 18 }]);
+  });
+
+  it("列の帯は矩形の横の範囲を囲み、縦の範囲を指定の値にする", () => {
+    expect(columnBand(boxes, 0, 100)).toEqual([{ x0: 10, x1: 40, y0: 0, y1: 100 }]);
+  });
+
+  it("矩形が無ければ帯を作らない", () => {
+    expect(rowBand([], 0, 100)).toEqual([]);
+    expect(columnBand([], 0, 100)).toEqual([]);
   });
 });

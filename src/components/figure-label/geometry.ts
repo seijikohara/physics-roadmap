@@ -20,6 +20,39 @@ export function bboxOf(pts: readonly XY[]): Box {
   };
 }
 
+/** 線の標本。ok は描く範囲の中にあって有限かを表す。 */
+export type LineSample = XY & Readonly<{ ok: boolean }>;
+
+/** 標本の列から、描く範囲の中の連続した部分ごとの折れ線を取り出す（ラベル配置の障害物に使う）。 */
+export function visiblePieces(samples: readonly LineSample[]): readonly (readonly XY[])[] {
+  // 描く範囲内の連続した部分の始まり（直前が範囲外か先頭の、範囲内の標本）の番号。
+  const starts = samples.flatMap((s, k) => (s.ok && (k === 0 || !samples[k - 1].ok) ? [k] : []));
+  // 終わり（直前が範囲内の、範囲外の標本）の番号。始まりと終わりは交互に現れるので、i 番目の終わりが
+  // i 番目の始まりに対応する。始まりごとに先頭から探すと、標本数 × 部分の数の時間がかかる。
+  const ends = samples.flatMap((s, k) => (!s.ok && k > 0 && samples[k - 1].ok ? [k] : []));
+  return starts.map((start, i) =>
+    samples.slice(start, ends.at(i) ?? samples.length).map((s) => ({ x: s.x, y: s.y })),
+  );
+}
+
+/** 矩形の列の、左上と右下の角の列。 */
+function cornersOf(boxes: readonly Box[]): readonly XY[] {
+  return boxes.flatMap((b) => [
+    { x: b.x0, y: b.y0 },
+    { x: b.x1, y: b.y1 },
+  ]);
+}
+
+/** 矩形の列を囲む、横の範囲が x0 から x1 の行の帯。矩形が無ければ帯を作らない。 */
+export function rowBand(boxes: readonly Box[], x0: number, x1: number): readonly Box[] {
+  return boxes.length === 0 ? [] : [{ ...bboxOf(cornersOf(boxes)), x0, x1 }];
+}
+
+/** 矩形の列を囲む、縦の範囲が y0 から y1 の列の帯。矩形が無ければ帯を作らない。 */
+export function columnBand(boxes: readonly Box[], y0: number, y1: number): readonly Box[] {
+  return boxes.length === 0 ? [] : [{ ...bboxOf(cornersOf(boxes)), y0, y1 }];
+}
+
 /** 点が多角形の内側にあるか（交差数の偶奇で判定する。塗りの evenodd 規則と一致させる）。 */
 export function pointInPolygon(p: XY, poly: readonly XY[]): boolean {
   return poly.reduce((inside, a, k) => {
