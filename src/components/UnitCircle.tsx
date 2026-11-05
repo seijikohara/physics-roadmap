@@ -80,7 +80,7 @@ const PROJECTION_FRACTIONS: readonly number[] = [0.6, 0.45, 0.75, 0.3, 0.9];
 const ANGLE_RADII: readonly number[] = [1.7, 2, 2.3, 2.7];
 
 // 角のラベルを試す向き。二等分線からのずれを、角の半分に対する割合で表す。同じ罰点なら前の向きを選ぶ。
-const ANGLE_SPREADS: readonly number[] = [0, 0.45, -0.45];
+const ANGLE_SPREADS: readonly number[] = [0, 0.2, -0.2, 0.45, -0.45];
 
 // 先端のラベルを円の外向きへ寄せる罰点の係数。
 const POINT_OUTWARD_WEIGHT = 2;
@@ -174,7 +174,7 @@ export default function UnitCircle({
           ...lineObstacle("proj-y", [tip, { x: cx, y: tipY }], W.edge),
         ]
       : []),
-    ...(showAngle ? lineObstacle("arc", arcPts, W.edge) : []),
+    ...(showAngle ? lineObstacle("arc", arcPts, W.line) : []),
   ]);
   const place = (
     tex: string,
