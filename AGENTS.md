@@ -34,7 +34,7 @@
 - `src/components/`: React アイランドのコンポーネント
 - `src/components/figure-label/`: 図のラベルの寸法・幾何・配置器の共通モジュール（DOM を使わない純粋な TypeScript）
   - `measure.ts`: KaTeX の組版の木から幅・高さを見積もる。`label-box.ts`: 基準点と寸法から字形の矩形を求める。
-  - `obstacles.ts`・`candidates.ts`・`placer.ts`・`policy.ts`: 障害物・候補の生成器・配置器・罰点とすきまの定数。今は`ContourPlot`・`FunctionGraph`・`SurfacePlot`・`SpaceVectorDiagram`が使う。
+  - `obstacles.ts`・`candidates.ts`・`placer.ts`・`policy.ts`: 障害物・候補の生成器・配置器・罰点とすきまの定数。`ContourPlot`・`FunctionGraph`・`SurfacePlot`・`SpaceVectorDiagram`・`UnitCircle`・`Triangle`が使う。
 - `src/styles/`: スタイル
 - `.claude/agents/`: 執筆と検証のサブエージェント定義
 - `docs/`: 設計と計画のドキュメント
@@ -133,6 +133,8 @@
 - `FunctionGraph`のラベルも配置器が置く。ラベルは補助線分・ベクトル・点・補助線（漸近線）の順に置き、後のラベルが先のラベルを避けるので、配置は要素の順序に依存する。次の指定で位置を調整する。
   - 点・補助線分・ベクトル・補助線は`labelAt`・`labelDir`・`labelOffset`を受ける。意味は`ContourPlot`の矢印・線分と同じで、`labelAt`があるときの`labelDir`の既定は`"center"`である。
   - 点のラベルは、自動で置くと点のまわりの 3 重の輪から位置を選ぶので、点から離れることがある。点の近くに固定するときは`labelDir`を渡す。
+- `UnitCircle`のラベルは先端の座標・余弦・角・正弦の順に、`Triangle`のラベルは頂点・足・辺・高さ・角の順に、配置器が置く。`Triangle`の頂点と辺は`labelDir`・`labelOffset`を受ける。`NumberLine`・`AreaModel`は位置が決まっているので配置器を使わず、字形の寸法から少なくとも 4px のすきまを取る。行のラベルは基線をそろえる。
+- `ContourPlot`の曲線の`labelPlacement`は、線のそばに置く`"inline"`と凡例に載せる`"legend"`を選ぶ指定である。
 - `SurfacePlot`・`SpaceVectorDiagram`のラベルも配置器が置く。ラベルは曲面・平面・領域・曲線・線分・点の順（`SpaceVectorDiagram`は平行四辺形・ベクトル・点の順）に置き、後のラベルが先のラベルを避ける。次の指定で位置を調整する。
   - `labelDir`は基準点から見た画面の上の向きである。空間の向きではない。`labelOffset`の意味は 2 次元の図と同じである。
   - 点・線分・ベクトルの`labelAt`は空間の点で、`labelAt`があるときの`labelDir`の既定は`"center"`である。曲面・平面・平行四辺形の`labelAt`も空間の点だが、向きの指定が無ければ基準点とそのまわりから自動で選ぶ。領域の`labelAt`は面の上の`x`・`y`である。曲線の`labelAt`は媒介変数である。

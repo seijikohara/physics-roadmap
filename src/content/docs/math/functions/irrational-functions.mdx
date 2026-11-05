@@ -131,15 +131,14 @@ $f$ の値域 $y \ge 0$ が、逆関数 $y = \sqrt{x}$ の定義域 $x \ge 0$ �
     yMax={5}
     equalScale
     curves={[
-      { fn: (x) => x * x, domain: [0, 5], label: "y=x^2", color: "#3b82f6", labelX: 1.9 },
+      { fn: (x) => x * x, domain: [0, 5], label: "y=x^2", color: "#3b82f6"},
       {
         fn: (x) => Math.sqrt(x),
         domain: [0, 5],
         label: "y=\\sqrt{x}",
         color: "#f59e0b",
-        labelX: 4.2,
       },
-      { fn: (x) => x, label: "y=x", dashed: true, labelX: 4.4 },
+      { fn: (x) => x, label: "y=x", dashed: true},
     ]}
     points={[
       { x: 2, y: 4, label: "(2,4)" },
@@ -200,14 +199,12 @@ $$
         domain: [0, 6],
         label: "y=\\sqrt{x}",
         color: "#94a3b8",
-        labelX: 4.5,
       },
       {
         fn: (x) => Math.sqrt(x - 1) + 2,
         domain: [1, 6],
         label: "y=\\sqrt{x-1}+2",
         color: "#3b82f6",
-        labelX: 4.2,
       },
     ]}
     points={[

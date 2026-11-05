@@ -19,6 +19,8 @@ export const LABEL_POLICY = {
   slideStep: 4,
   farRing: 6,
   farRingPenalty: 1.5,
+  // 角の二等分線の上で、次の距離の候補へ移るときの罰点。主役の辺に近い罰点（重み 6 の 1/4）より軽くする。
+  bisectorStep: 0.3,
   // 線分・矢印のラベルが中点から離れるときの罰点の係数。線分の長さに対する割合に掛ける。格子線に触れる
   // 罰点（1）だけでは中点の候補が動かない値にする。
   offCenter: 8,

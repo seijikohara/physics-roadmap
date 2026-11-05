@@ -107,6 +107,26 @@ export function pointPositions(
     : [fixedPosition(p, dir, size, reach, offset)];
 }
 
+/**
+ * 角の二等分線の上の候補。頂点 v から単位ベクトル bisector の向きへ、距離 distances の位置を中心にする。
+ * 前の距離ほど好み、後の距離には添字に比例する軽い罰点を足す。
+ */
+export function alongBisector(
+  v: XY,
+  bisector: XY,
+  size: GlyphSize,
+  distances: readonly number[],
+): readonly Candidate<LabelPos>[] {
+  return distances.map((d, i): Candidate<LabelPos> => {
+    const pos = centeredAt(v.x + bisector.x * d, v.y + bisector.y * d, size);
+    return {
+      box: glyphBox(pos, size),
+      value: pos,
+      score: (penalty) => penalty + i * LABEL_POLICY.bisectorStep,
+    };
+  });
+}
+
 /** 箱をずらす量を、小さい順に正負の組で並べる。limit はずらす量の上限である。 */
 function slideOffsets(limit: number): readonly number[] {
   const count = Math.ceil(limit / LABEL_POLICY.slideStep);
@@ -159,6 +179,26 @@ export function withPenalty(
   extra: number,
 ): readonly Candidate<LabelPos>[] {
   return cands.map((c) => ({ ...c, score: (penalty) => (c.score?.(penalty) ?? penalty) + extra }));
+}
+
+/**
+ * 基準点 p から見て向き (u.x, u.y)（長さ 1）に近い候補を好む罰点を足す。箱の中心が真逆の向きにあるとき
+ * 2 × weight、同じ向きのとき 0 である。図形の外側へ出したい頂点の名前などに使う。
+ */
+export function preferringDirection(
+  cands: readonly Candidate<LabelPos>[],
+  p: XY,
+  u: XY,
+  weight: number,
+): readonly Candidate<LabelPos>[] {
+  return cands.map((c) => {
+    const dx = (c.box.x0 + c.box.x1) / 2 - p.x;
+    const dy = (c.box.y0 + c.box.y1) / 2 - p.y;
+    const len = Math.hypot(dx, dy) || 1;
+    // 丸めで 1 をわずかに超えても、足す罰点を 0 以上に保つ。
+    const extra = Math.max(0, 1 - (dx * u.x + dy * u.y) / len) * weight;
+    return { ...c, score: (penalty) => (c.score?.(penalty) ?? penalty) + extra };
+  });
 }
 
 /** 同じ位置とみなす、2 つの印の距離の上限（px）。投影の丸めの差を吸収する。 */

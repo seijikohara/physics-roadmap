@@ -3,6 +3,8 @@ import { scaleLinear } from "@visx/scale";
 import { Circle, Line } from "@visx/shape";
 import { useId } from "react";
 import type { ReactNode } from "react";
+import { aroundPoint } from "./figure-label/candidates";
+import { glyphSizeOf } from "./figure-label/label-box";
 import KatexLabel from "./KatexLabel";
 
 /**
@@ -69,6 +71,9 @@ const VIEW_H = 96;
 const PAD = 24; // 軸の左右の余白。矢印と端のラベルを収める。
 const AXIS_Y = 56; // 軸線の縦位置。
 const TICK_LEN = 5; // 目盛りの縦棒の長さ（軸の上下へ伸ばす半分）。
+const TICK_FONT = 12; // 目盛り数字の字の大きさ（KatexLabel の fontSize）。
+const POINT_FONT = 13; // 点のラベルの字の大きさ（KatexLabel の fontSize）。
+const ENDPOINT_REACH = 5.4; // 端点の丸の中心から線の外縁までの距離（半径 4.5・線の太さ 1.8）。
 
 export default function NumberLine({
   min,
@@ -90,6 +95,9 @@ export default function NumberLine({
   // 区間を負／正の無限大側へ伸ばすときは、軸の端まで描く。
   const left = PAD;
   const right = VIEW_W - PAD;
+
+  const tickY = tickRowY((ticks ?? []).map((t) => t.label ?? String(t.value)));
+  const pointY = pointRowY(points.flatMap((p) => (p.label === undefined ? [] : [p.label])));
 
   return (
     <svg
@@ -152,12 +160,7 @@ export default function NumberLine({
               stroke={AXIS}
               strokeWidth={1.5}
             />
-            <KatexLabel
-              tex={t.label ?? String(t.value)}
-              x={tx}
-              y={AXIS_Y + TICK_LEN + 12}
-              fontSize={12}
-            />
+            <KatexLabel tex={t.label ?? String(t.value)} x={tx} y={tickY} fontSize={TICK_FONT} />
           </g>
         );
       })}
@@ -183,13 +186,33 @@ export default function NumberLine({
           <g key={`pt-${i}`}>
             <Circle cx={px} cy={AXIS_Y} r={4} fill={color} />
             {p.label !== undefined && (
-              <KatexLabel tex={p.label} x={px} y={AXIS_Y - 14} fontSize={13} />
+              <KatexLabel tex={p.label} x={px} y={pointY} fontSize={POINT_FONT} />
             )}
           </g>
         );
       })}
     </svg>
   );
+}
+
+/**
+ * 目盛り数字の行の基準点の y。行の中でいちばん高い字形も、目盛りの線の下端から少なくともすきまの目標だけ
+ * 離す。数字だけの行の位置を動かさないよう、既定の高さを下限にする。基線をそろえるので、ラベルごとには
+ * 決めない。
+ */
+function tickRowY(labels: readonly string[]): number {
+  const ys = labels.map(
+    (tex) => aroundPoint({ x: 0, y: AXIS_Y + TICK_LEN }, glyphSizeOf(tex, TICK_FONT), 0).below.y,
+  );
+  return ys.reduce((a, b) => Math.max(a, b), AXIS_Y + TICK_LEN + 12);
+}
+
+/** 点のラベルの行の基準点の y。行の中でいちばん低い字形も、点の印から少なくともすきまの目標だけ離す。 */
+function pointRowY(labels: readonly string[]): number {
+  const ys = labels.map(
+    (tex) => aroundPoint({ x: 0, y: AXIS_Y }, glyphSizeOf(tex, POINT_FONT), ENDPOINT_REACH).above.y,
+  );
+  return ys.reduce((a, b) => Math.min(a, b), AXIS_Y - 14);
 }
 
 /** 区間の端点。閉端は塗りつぶし（黒丸）、開端は白抜き（白丸）で描く。 */

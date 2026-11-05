@@ -1,5 +1,28 @@
 import { scaleLinear } from "@visx/scale";
 import { Circle, Line, Polygon } from "@visx/shape";
+import { Fragment, type ReactNode } from "react";
+import {
+  alongBisector,
+  besideSegmentCandidates,
+  lineLabelCandidates,
+  pointLabelCandidates,
+  preferringDirection,
+  widelyAroundPoint,
+  type LabelDirSpec,
+} from "./figure-label/candidates";
+import type { Box, XY } from "./figure-label/geometry";
+import { glyphSizeOf, type GlyphSize, type LabelPos } from "./figure-label/label-box";
+import { boxObstacle, lineObstacle } from "./figure-label/obstacles";
+import {
+  createPlacer,
+  NO_PLACEMENT,
+  placedLabel,
+  placeInOrder,
+  type Candidate,
+  type Label,
+  type Placement,
+} from "./figure-label/placer";
+import { LABEL_POLICY, OBSTACLE_WEIGHT } from "./figure-label/policy";
 import KatexLabel from "./KatexLabel";
 
 /**
@@ -9,24 +32,34 @@ import KatexLabel from "./KatexLabel";
  * よる三角比の定義や、正弦定理・余弦定理の図に使う。本コンポーネントはクライアント
  * JavaScript を一切載せない。Astro がビルド時に HTML へ描画する（クライアントディレク
  * ティブなし、ハイドレーションなし）。横縦で同じ倍率にし、形を歪めない。ラベルは
- * KatexLabel を介して KaTeX で組版する。
+ * KatexLabel を介して KaTeX で組版し、`figure-label/` の配置器が線と点を避ける位置へ置く。
  */
 
-type Vertex = Readonly<{
-  /** 頂点の数学座標。 */
-  x: number;
-  y: number;
-  /** 頂点に添える LaTeX ラベル（例: "A"）。 */
-  label?: string;
+/** ラベルの向きとすきまの指定。意味は FunctionGraph の同じ名前の指定と同じである。 */
+type LabelProps = Readonly<{
+  /** 基準点から見たラベルの向き。"auto" は向きを自動で選ぶ。 */
+  labelDir?: LabelDirSpec;
+  /** 線や点の印とラベルの字形のすきまの目標（px）。既定は 4。 */
+  labelOffset?: number;
 }>;
 
+type Vertex = LabelProps &
+  Readonly<{
+    /** 頂点の数学座標。 */
+    x: number;
+    y: number;
+    /** 頂点に添える LaTeX ラベル（例: "A"）。 */
+    label?: string;
+  }>;
+
 /** 辺に添えるラベル。`from`・`to` は vertices の添字（0,1,2）。 */
-type EdgeLabel = Readonly<{
-  from: number;
-  to: number;
-  /** 辺の中点付近に置く LaTeX ラベル（例: "c"、"a"）。 */
-  label: string;
-}>;
+type EdgeLabel = LabelProps &
+  Readonly<{
+    from: number;
+    to: number;
+    /** 辺の中点付近に置く LaTeX ラベル（例: "c"、"a"）。 */
+    label: string;
+  }>;
 
 /** 頂点での内角の印とラベル。`at` は vertices の添字。 */
 type AngleMark = Readonly<{
@@ -86,6 +119,29 @@ const VIEW_W = 320;
 const VIEW_H = 240;
 const PAD = 36;
 
+// 配置の範囲。viewBox の縁から 2px 内側に収める。
+const VIEW_BOUNDS: Box = { x0: 2, x1: VIEW_W - 2, y0: 2, y1: VIEW_H - 2 };
+
+// 頂点・足の点の半径（px）、角の弧の半径（px）、頂点と足の直角の印の辺の長さ（px）。
+const VERTEX_R = 3.2;
+const FOOT_R = 3;
+const ARC_R = 20;
+const RIGHT_MARK = 12;
+const FOOT_MARK = 11;
+
+// 頂点の名前・辺・高さの字の大きさと、角のラベルの字の大きさ（KatexLabel の fontSize）。
+const NAME_FONT = 13;
+const ANGLE_FONT = 12;
+
+// 辺と高さのラベルを線に沿って試す位置（線の長さに対する割合）。前の位置ほど優先する。
+const EDGE_FRACTIONS: readonly number[] = [0.5, 0.4, 0.6, 0.3, 0.7];
+
+// 角のラベルを試す、頂点からの距離（px）。前の距離ほど優先する。
+const ANGLE_DISTANCES: readonly number[] = [34, 38, 30, 42, 46, 50, 56];
+
+// 頂点の名前と辺のラベルを、重心と反対の向きへ寄せる罰点の係数。
+const OUTWARD_WEIGHT = 2;
+
 export default function Triangle({
   vertices,
   edges = [],
@@ -128,6 +184,154 @@ export default function Triangle({
     y: (P[0].y + P[1].y + P[2].y) / 3,
   };
 
+  // ---- ラベルの配置 ----
+  // 辺・補助線・垂線・弧・直角の印・頂点を障害物に積み、頂点 → 足 → 辺 → 高さ → 角の順にラベルを置く。図形の
+  // 外に置くラベルを先に置き、内側の角のラベルが残りを使う。
+  const W = OBSTACLE_WEIGHT;
+  const screenOf = (q: Pt): XY => ({ x: sx(q.x), y: sy(q.y) });
+  const outwardFrom = (q: XY): XY => unitVec(centroid, q);
+  const angleMarks = angles.flatMap((a) => {
+    if (a.right === true) {
+      const others = otherVertices(P, a.at);
+      return lineObstacle(
+        `ang${a.at}`,
+        rightMark(P[a.at], others[0], others[1], RIGHT_MARK),
+        W.thinLine,
+      );
+    }
+    const { start, end, mid } = arcOf(P, a.at);
+    return lineObstacle(`ang${a.at}`, [start, mid, end], W.thinLine);
+  });
+  const footMarks = perpendiculars.flatMap((pp, i) =>
+    lineObstacle(
+      `fm${i}`,
+      rightMark(screenOf(pp.foot), screenOf(pp.from), screenOf(pp.toward), FOOT_MARK),
+      W.thinLine,
+    ),
+  );
+  const placer = createPlacer([
+    ...P.map((q, i) => boxObstacle(pointBox(q, VERTEX_R), W.point, `v${i}`)),
+    ...perpendiculars.map((pp, i) =>
+      boxObstacle(pointBox(screenOf(pp.foot), FOOT_R), W.point, `f${i}`),
+    ),
+    ...lineObstacle("sides", [P[0], P[1], P[2], P[0]], W.line),
+    ...segments.flatMap((s) => lineObstacle("sg", [screenOf(s.from), screenOf(s.to)], W.edge)),
+    ...perpendiculars.flatMap((pp, i) =>
+      lineObstacle(`pp${i}`, [screenOf(pp.from), screenOf(pp.foot)], W.edge),
+    ),
+    ...angleMarks,
+    ...footMarks,
+  ]);
+  const place = (
+    tex: string,
+    fontSize: number,
+    candidates: (size: GlyphSize) => readonly Candidate<LabelPos>[],
+    placed: readonly Box[],
+    exclude?: string,
+  ): Placement<Label> => {
+    const size = glyphSizeOf(tex, fontSize);
+    const pos = placer.place(candidates(size), {
+      placed,
+      bounds: VIEW_BOUNDS,
+      exclude,
+      rowGap: LABEL_POLICY.rowGap,
+    }).item;
+    return placedLabel(tex, pos, size);
+  };
+
+  const vertexLabels = placeInOrder(vertices, [], (v, i, placed) => {
+    if (v.label === undefined) return NO_PLACEMENT;
+    const at = P[i];
+    return place(
+      v.label,
+      NAME_FONT,
+      (size) =>
+        pointLabelCandidates(
+          { at: undefined, dir: v.labelDir, offset: v.labelOffset },
+          at,
+          size,
+          VERTEX_R,
+          () =>
+            preferringDirection(
+              widelyAroundPoint(at, size, VERTEX_R, v.labelOffset),
+              at,
+              outwardFrom(at),
+              OUTWARD_WEIGHT,
+            ),
+        ),
+      placed,
+      `v${i}`,
+    );
+  });
+  const footLabels = placeInOrder(perpendiculars, vertexLabels.placed, (pp, i, placed) => {
+    if (pp.footLabel === undefined) return NO_PLACEMENT;
+    const at = screenOf(pp.foot);
+    return place(
+      pp.footLabel,
+      NAME_FONT,
+      (size) =>
+        preferringDirection(
+          widelyAroundPoint(at, size, FOOT_R),
+          at,
+          outwardFrom(at),
+          OUTWARD_WEIGHT,
+        ),
+      placed,
+      `f${i}`,
+    );
+  });
+  const edgeLabels = placeInOrder(edges, footLabels.placed, (e, _, placed) => {
+    const p1 = P[e.from];
+    const p2 = P[e.to];
+    return place(
+      e.label,
+      NAME_FONT,
+      (size) => {
+        const spec = { at: undefined, dir: e.labelDir, offset: e.labelOffset };
+        const mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+        return lineLabelCandidates(spec, p1, p2, size, (offset) =>
+          preferringDirection(
+            besideSegmentCandidates(p1, p2, size, offset, EDGE_FRACTIONS),
+            mid,
+            outwardFrom(mid),
+            OUTWARD_WEIGHT,
+          ),
+        );
+      },
+      placed,
+    );
+  });
+  const heightLabels = placeInOrder(perpendiculars, edgeLabels.placed, (pp, i, placed) => {
+    if (pp.label === undefined) return NO_PLACEMENT;
+    const a = screenOf(pp.from);
+    const b = screenOf(pp.foot);
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    return place(
+      pp.label,
+      NAME_FONT,
+      (size) =>
+        preferringDirection(
+          besideSegmentCandidates(a, b, size, undefined, EDGE_FRACTIONS),
+          mid,
+          outwardFrom(mid),
+          OUTWARD_WEIGHT,
+        ),
+      placed,
+      `pp${i}`,
+    );
+  });
+  const angleLabels = placeInOrder(angles, heightLabels.placed, (a, _, placed) => {
+    if (a.right === true || a.label === undefined) return NO_PLACEMENT;
+    const v = P[a.at];
+    const { bisector } = arcOf(P, a.at);
+    return place(
+      a.label,
+      ANGLE_FONT,
+      (size) => alongBisector(v, bisector, size, ANGLE_DISTANCES),
+      placed,
+    );
+  });
+
   return (
     <svg
       className="triangle-figure"
@@ -147,19 +351,12 @@ export default function Triangle({
 
       {/* 角の印。 */}
       {angles.map((a, i) => {
-        const v = P[a.at];
-        const others = [0, 1, 2].filter((k) => k !== a.at).map((k) => P[k]);
-        const u1 = unitVec(v, others[0]);
-        const u2 = unitVec(v, others[1]);
         if (a.right) {
-          const d = 12;
-          const c1 = { x: v.x + u1.x * d, y: v.y + u1.y * d };
-          const c2 = { x: v.x + u2.x * d, y: v.y + u2.y * d };
-          const c3 = { x: c1.x + u2.x * d, y: c1.y + u2.y * d };
+          const others = otherVertices(P, a.at);
           return (
             <polyline
               key={`ang-${i}`}
-              points={`${c1.x},${c1.y} ${c3.x},${c3.y} ${c2.x},${c2.y}`}
+              points={markPoints(rightMark(P[a.at], others[0], others[1], RIGHT_MARK))}
               fill="none"
               stroke={MARK}
               strokeWidth={1.3}
@@ -167,31 +364,16 @@ export default function Triangle({
           );
         }
         // 弧と角ラベル。
-        const rr = 20;
-        const a1 = Math.atan2(u1.y, u1.x);
-        const a2 = Math.atan2(u2.y, u2.x);
-        const start = { x: v.x + rr * Math.cos(a1), y: v.y + rr * Math.sin(a1) };
-        const end = { x: v.x + rr * Math.cos(a2), y: v.y + rr * Math.sin(a2) };
-        const diff = wrapBelowPi(wrapAbovePi(a2 - a1));
-        const sweepFlag = diff > 0 ? 1 : 0;
-        const bis = { x: (u1.x + u2.x) / 2, y: (u1.y + u2.y) / 2 };
-        const bisLen = Math.hypot(bis.x, bis.y) || 1;
+        const { start, end, sweepFlag } = arcOf(P, a.at);
         return (
           <g key={`ang-${i}`}>
             <path
-              d={`M ${start.x} ${start.y} A ${rr} ${rr} 0 0 ${sweepFlag} ${end.x} ${end.y}`}
+              d={`M ${start.x} ${start.y} A ${ARC_R} ${ARC_R} 0 0 ${sweepFlag} ${end.x} ${end.y}`}
               fill="none"
               stroke={MARK}
               strokeWidth={1.3}
             />
-            {a.label !== undefined && (
-              <KatexLabel
-                tex={a.label}
-                x={v.x + (bis.x / bisLen) * 34}
-                y={v.y + (bis.y / bisLen) * 34}
-                fontSize={12}
-              />
-            )}
+            {labelNode(angleLabels.items[i], ANGLE_FONT)}
           </g>
         );
       })}
@@ -212,17 +394,6 @@ export default function Triangle({
       {perpendiculars.map((pp, i) => {
         const f = { x: sx(pp.from.x), y: sy(pp.from.y) };
         const h = { x: sx(pp.foot.x), y: sy(pp.foot.y) };
-        const u1 = unitVec(h, f);
-        const u2 = unitVec(h, { x: sx(pp.toward.x), y: sy(pp.toward.y) });
-        const d = 11;
-        const c1 = { x: h.x + u1.x * d, y: h.y + u1.y * d };
-        const c2 = { x: h.x + u2.x * d, y: h.y + u2.y * d };
-        const c3 = { x: c1.x + u2.x * d, y: c1.y + u2.y * d };
-        const mid = { x: (f.x + h.x) / 2, y: (f.y + h.y) / 2 };
-        const hOut = { x: mid.x - centroid.x, y: mid.y - centroid.y };
-        const hLen = Math.hypot(hOut.x, hOut.y) || 1;
-        const footOut = { x: h.x - centroid.x, y: h.y - centroid.y };
-        const footLen = Math.hypot(footOut.x, footOut.y) || 1;
         return (
           <g key={`perp-${i}`}>
             <Line
@@ -233,68 +404,30 @@ export default function Triangle({
               strokeDasharray="4 3"
             />
             <polyline
-              points={`${c1.x},${c1.y} ${c3.x},${c3.y} ${c2.x},${c2.y}`}
+              points={markPoints(rightMark(h, f, screenOf(pp.toward), FOOT_MARK))}
               fill="none"
               stroke={MARK}
               strokeWidth={1.3}
             />
-            <Circle cx={h.x} cy={h.y} r={3} fill={STROKE} />
-            {pp.label !== undefined && (
-              <KatexLabel
-                tex={pp.label}
-                x={mid.x + (hOut.x / hLen) * 16}
-                y={mid.y + (hOut.y / hLen) * 16}
-                fontSize={13}
-              />
-            )}
-            {pp.footLabel !== undefined && (
-              <KatexLabel
-                tex={pp.footLabel}
-                x={h.x + (footOut.x / footLen) * 16}
-                y={h.y + (footOut.y / footLen) * 16}
-                fontSize={13}
-              />
-            )}
+            <Circle cx={h.x} cy={h.y} r={FOOT_R} fill={STROKE} />
+            {labelNode(heightLabels.items[i], NAME_FONT)}
+            {labelNode(footLabels.items[i], NAME_FONT)}
           </g>
         );
       })}
 
-      {/* 辺のラベル。中点から外側（重心の反対側）へ少しずらす。 */}
-      {edges.map((e, i) => {
-        const p1 = P[e.from];
-        const p2 = P[e.to];
-        const mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-        const out = { x: mid.x - centroid.x, y: mid.y - centroid.y };
-        const len = Math.hypot(out.x, out.y) || 1;
-        return (
-          <KatexLabel
-            key={`edge-${i}`}
-            tex={e.label}
-            x={mid.x + (out.x / len) * 16}
-            y={mid.y + (out.y / len) * 16}
-            fontSize={13}
-          />
-        );
-      })}
+      {/* 辺のラベル。中点のそばの、重心と反対の側を好む。 */}
+      {edgeLabels.items.map((l, i) => (
+        <Fragment key={`edge-${i}`}>{labelNode(l, NAME_FONT)}</Fragment>
+      ))}
 
-      {/* 頂点の点と名前。名前は外側へずらす。 */}
-      {P.map((p, i) => {
-        const out = { x: p.x - centroid.x, y: p.y - centroid.y };
-        const len = Math.hypot(out.x, out.y) || 1;
-        return (
-          <g key={`v-${i}`}>
-            <Circle cx={p.x} cy={p.y} r={3.2} fill={STROKE} />
-            {vertices[i].label !== undefined && (
-              <KatexLabel
-                tex={vertices[i].label ?? ""}
-                x={p.x + (out.x / len) * 18}
-                y={p.y + (out.y / len) * 18}
-                fontSize={13}
-              />
-            )}
-          </g>
-        );
-      })}
+      {/* 頂点の点と名前。名前は重心と反対の向きを好む。 */}
+      {P.map((p, i) => (
+        <g key={`v-${i}`}>
+          <Circle cx={p.x} cy={p.y} r={VERTEX_R} fill={STROKE} />
+          {labelNode(vertexLabels.items[i], NAME_FONT)}
+        </g>
+      ))}
     </svg>
   );
 }
@@ -313,6 +446,61 @@ function wrapAbovePi(diff: number): number {
 /** 角の差が π より大きければ 2π を引き、π 以下にする。 */
 function wrapBelowPi(diff: number): number {
   return diff > Math.PI ? wrapBelowPi(diff - 2 * Math.PI) : diff;
+}
+
+/** 頂点 at のほかの 2 頂点。 */
+function otherVertices(P: readonly XY[], at: number): readonly XY[] {
+  return [0, 1, 2].filter((k) => k !== at).map((k) => P[k]);
+}
+
+/** 頂点 v の直角の印の折れ線。a・b は直角をはさむ辺の上の点、d は印の辺の長さである。 */
+function rightMark(v: XY, a: XY, b: XY, d: number): readonly XY[] {
+  const u1 = unitVec(v, a);
+  const u2 = unitVec(v, b);
+  const c1 = { x: v.x + u1.x * d, y: v.y + u1.y * d };
+  const c2 = { x: v.x + u2.x * d, y: v.y + u2.y * d };
+  return [c1, { x: c1.x + u2.x * d, y: c1.y + u2.y * d }, c2];
+}
+
+/** 折れ線を polyline の points 属性にする。 */
+function markPoints(pts: readonly XY[]): string {
+  return pts.map((q) => `${q.x},${q.y}`).join(" ");
+}
+
+/** 点の印の占める矩形。 */
+function pointBox(q: XY, r: number): Box {
+  return { x0: q.x - r, x1: q.x + r, y0: q.y - r, y1: q.y + r };
+}
+
+/** 置いたラベルを描く。ラベルの無い要素では何も描かない。 */
+function labelNode(l: Label | null, fontSize: number): ReactNode {
+  return (
+    l && <KatexLabel tex={l.tex} x={l.pos.x} y={l.pos.y} fontSize={fontSize} align={l.pos.align} />
+  );
+}
+
+/** 頂点 at の内角の弧の始点・中点・終点と、掃く向き、角の二等分線の単位ベクトル。 */
+function arcOf(
+  P: readonly XY[],
+  at: number,
+): Readonly<{ start: XY; mid: XY; end: XY; sweepFlag: 0 | 1; bisector: XY }> {
+  const v = P[at];
+  const others = otherVertices(P, at);
+  const u1 = unitVec(v, others[0]);
+  const u2 = unitVec(v, others[1]);
+  const a1 = Math.atan2(u1.y, u1.x);
+  const a2 = Math.atan2(u2.y, u2.x);
+  const diff = wrapBelowPi(wrapAbovePi(a2 - a1));
+  const bis = { x: (u1.x + u2.x) / 2, y: (u1.y + u2.y) / 2 };
+  const bisLen = Math.hypot(bis.x, bis.y) || 1;
+  const bisector = { x: bis.x / bisLen, y: bis.y / bisLen };
+  return {
+    start: { x: v.x + ARC_R * Math.cos(a1), y: v.y + ARC_R * Math.sin(a1) },
+    mid: { x: v.x + ARC_R * bisector.x, y: v.y + ARC_R * bisector.y },
+    end: { x: v.x + ARC_R * Math.cos(a2), y: v.y + ARC_R * Math.sin(a2) },
+    sweepFlag: diff > 0 ? 1 : 0,
+    bisector,
+  };
 }
 
 /** v から w へ向かう単位ベクトル（SVG 座標）。 */

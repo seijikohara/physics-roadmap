@@ -193,7 +193,7 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
             />
             {name(80, 104, a)}
             {name(240, 104, b)}
-            {region(160, 104, `${a} \\cap ${b} = \\varnothing`)}
+            {region(160, 170, `${a} \\cap ${b} = \\varnothing`)}
           </>
         );
       }
@@ -338,8 +338,8 @@ export default function VennDiagram({ variant, ariaLabel, labels }: VennDiagramP
             {name(110, 70, a)}
             {name(210, 70, b)}
             {region(160, 112, `${a} \\cap ${b}`)}
-            {region(90, 112, `${a} \\cap \\overline{${b}}`)}
-            {region(230, 112, `\\overline{${a}} \\cap ${b}`)}
+            {region(102, 112, `${a} \\cap \\overline{${b}}`)}
+            {region(218, 112, `\\overline{${a}} \\cap ${b}`)}
             {region(48, 178, `\\overline{${a}} \\cap \\overline{${b}}`)}
           </>
         );

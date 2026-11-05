@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  alongBisector,
   anchoredCandidates,
   aroundPoint,
   aroundVector,
@@ -19,6 +20,7 @@ import {
   pointLabelCandidates,
   pointPositions,
   positionsAround,
+  preferringDirection,
   preferringOwnMark,
   stubPenalty,
   widelyAroundPoint,
@@ -1284,5 +1286,43 @@ describe("nearestCurvePoint", () => {
     expect(nearestCurvePoint(samples, 1.2)).toBe(1);
     expect(nearestCurvePoint(samples, 5)).toBe(2);
     expect(nearestCurvePoint(samples, -1)).toBe(0);
+  });
+});
+
+/** 中心が (x, y) の小さな箱の候補。 */
+const candidateAt = (x: number, y: number): Candidate<LabelPos> => ({
+  box: { x0: x - 1, x1: x + 1, y0: y - 1, y1: y + 1 },
+  value: { x, y, align: "center" },
+});
+
+describe("preferringDirection", () => {
+  const p = { x: 0, y: 0 };
+  it("同じ向きの候補には罰点を足さず、真逆の向きには 2 倍の係数を足す", () => {
+    const [ahead, opposite, side] = preferringDirection(
+      [candidateAt(10, 0), candidateAt(-10, 0), candidateAt(0, 10)],
+      p,
+      { x: 1, y: 0 },
+      3,
+    );
+    expect(ahead.score?.(5)).toBeCloseTo(5);
+    expect(opposite.score?.(5)).toBeCloseTo(11);
+    expect(side.score?.(5)).toBeCloseTo(8);
+  });
+
+  it("候補の元の罰点を保つ", () => {
+    const scored = { ...candidateAt(-10, 0), score: (penalty: number) => penalty + 2 };
+    const [cand] = preferringDirection([scored], p, { x: 1, y: 0 }, 3);
+    expect(cand.score?.(1)).toBeCloseTo(9);
+  });
+});
+
+describe("alongBisector", () => {
+  it("二等分線の上の距離に字形の中心を置き、後の距離ほど罰点を足す", () => {
+    const [first, second] = alongBisector({ x: 0, y: 0 }, { x: 1, y: 0 }, size, [10, 20]);
+    expect((first.box.x0 + first.box.x1) / 2).toBeCloseTo(10);
+    expect((first.box.y0 + first.box.y1) / 2).toBeCloseTo(0);
+    expect((second.box.x0 + second.box.x1) / 2).toBeCloseTo(20);
+    expect(first.score?.(1)).toBe(1);
+    expect(second.score?.(1)).toBeCloseTo(1 + LABEL_POLICY.bisectorStep);
   });
 });
