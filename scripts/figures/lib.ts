@@ -13,13 +13,22 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { chromium } from "playwright-core";
 import type { Browser, BrowserContext, Page } from "playwright-core";
+import { compareFigureIds, figureIds, parseFigureId } from "./figure-id.ts";
+import type { FigureId } from "./figure-id.ts";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const CONTENT_DIR = path.join(ROOT, "src/content/docs");
 export const DEFAULT_URL = "http://localhost:4321/physics-roadmap";
 
-/** 章のキャプション「図 N」と番号をそろえるため、記事本文の中の figure だけを数える。 */
+/** 章のキャプション「図 N」と番号をそろえるため、記事本文の中の figure を 1 つの系列に数える。 */
 export const FIGURE_SELECTOR = ".sl-markdown-content figure";
+
+/**
+ * figure の外の図。キャプションが無いので、figure の番号をずらさないよう別の系列に数える。
+ * 凡例の見本と KaTeX の svg は role="img" を持たない。
+ */
+export const STANDALONE_SELECTOR =
+  '.sl-markdown-content svg[role="img"]:not(figure svg, foreignObject svg)';
 
 /** 撮影の邪魔になる固定ヘッダーを隠す。fixed 配置なので、隠しても本文の配置は変わらない。 */
 const SHOT_STYLE = "header.header { visibility: hidden !important; }";
@@ -342,13 +351,13 @@ export function pageUrl(baseUrl: string, route: string): string {
   return route === "" ? `${baseUrl}/` : `${baseUrl}/${route}/`;
 }
 
-/** "1,3" のような図番号の並びを、昇順の配列に解析する。 */
-export function parseFigureList(value: string): readonly number[] {
-  const nums = value.split(",").map((t) => Number(t.trim()));
-  if (nums.some((n) => !Number.isInteger(n) || n < 1)) {
-    throw new UsageError(`--only には 1 以上の図番号をカンマ区切りで指定する: ${value}`);
+/** "1,3,s2" のような図番号の並びを、figure → figure の外の順の配列に解析する。 */
+export function parseFigureList(value: string): readonly FigureId[] {
+  const ids = value.split(",").map((t) => parseFigureId(t));
+  if (ids.includes(null)) {
+    throw new UsageError(`--only には図番号（1, s1 の形）をカンマ区切りで指定する: ${value}`);
   }
-  return [...new Set(nums)].toSorted((a, b) => a - b);
+  return [...new Set(ids.filter((id) => id !== null))].toSorted(compareFigureIds);
 }
 
 /** 非同期の処理を、並びの順に 1 つずつ実行して結果を集める。 */
@@ -481,17 +490,22 @@ export async function openPage(context: BrowserContext, url: string, theme: Them
   return page;
 }
 
-/** 記事本文の図の数を返す。 */
-export async function countFigures(page: Page): Promise<number> {
-  return page.locator(FIGURE_SELECTOR).count();
+/** 記事本文の図の番号の並びを返す。 */
+export async function listFigures(page: Page): Promise<readonly FigureId[]> {
+  const figures = await page.locator(FIGURE_SELECTOR).count();
+  return figureIds(figures, await page.locator(STANDALONE_SELECTOR).count());
 }
 
-/** 図 `n`（1 始まり）を要素のスクリーンショットで撮り、PNG のバイト列を返す。 */
-export async function shootFigure(page: Page, n: number, outPath?: string): Promise<Buffer> {
-  return page
-    .locator(FIGURE_SELECTOR)
-    .nth(n - 1)
-    .screenshot({ ...(outPath === undefined ? {} : { path: outPath }), animations: "disabled" });
+/** 図を要素のスクリーンショットで撮り、PNG のバイト列を返す。 */
+export async function shootFigure(page: Page, id: FigureId, outPath?: string): Promise<Buffer> {
+  const element =
+    typeof id === "number"
+      ? page.locator(FIGURE_SELECTOR).nth(id - 1)
+      : page.locator(STANDALONE_SELECTOR).nth(Number(id.slice(1)) - 1);
+  return element.screenshot({
+    ...(outPath === undefined ? {} : { path: outPath }),
+    animations: "disabled",
+  });
 }
 
 /** 表示用に、パスを作業ディレクトリからの相対パスにする。 */

@@ -63,7 +63,7 @@ pnpm run figures:lint -- src/content/docs/math/functions/<slug>.mdx
 
 - 出力は図番号ごとの表で、ラベル名・相手・距離（px）・種別を示す。相手は線の要素名と色・class、marker の矢じり、または相手のラベル名である。
 - 種別は overlap（距離 0 以下）・near（0 より大きく 4px 未満）・outside（図の表示範囲の外へのはみ出し）である。4px は、ラベルと線のすきまの目標である。
-- 図番号は記事本文の`figure`の出現順で、章のキャプション「図 N」と一致する。
+- 図番号は記事本文の`figure`の出現順で、章のキャプション「図 N」と一致する。キャプションの無い`figure`の外の図は別の系列で`図 s1`・`図 s2`と数える。
 - 距離は、ラベルの枠ではなく字形の実際の範囲から測る。
 - marker で描く矢じり（軸の矢印・FlowChart のエッジの矢じり）も障害物として測る。格子線と、領域や曲面の大きな塗りは、計測の対象外である。
 
@@ -75,7 +75,7 @@ pnpm run figures:lint -- src/content/docs/math/functions/<slug>.mdx
 pnpm run figures:shot -- src/content/docs/math/functions/<slug>.mdx
 ```
 
-- 記事本文の`figure`要素を 1 枚ずつ PNG に撮る。出力先は`.figures/shots/<ページ名>/fig-NN-light.png`で、書いたファイルの一覧を標準出力に出す。
+- 記事本文の`figure`要素と`figure`の外の図を 1 枚ずつ PNG に撮る。出力先は`.figures/shots/<ページ名>/fig-NN-light.png`（`figure`の外の図は`fig-sNN-light.png`）で、書いたファイルの一覧を標準出力に出す。
 - 既定の解像度は 2 倍であり、細い線やラベルの輪郭まで鮮明に写る。
 - 生成された PNG を Read ツールで読み込み、図を 1 枚ずつ目視する。
 - キャプションを除いて図だけを見たいときは`--no-caption`を付ける。
