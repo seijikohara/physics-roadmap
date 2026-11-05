@@ -455,7 +455,7 @@ $$
         meshEvery: 3,
       },
     ]}
-    planes={[{ kind: "planeZ", z: 0, x: [-1.5, 1.5], y: [-1.5, 1.5], color: "#10b981", opacity: 0.22, label: "z=0" }]}
+    planes={[{ kind: "planeZ", z: 0, x: [-1.5, 1.5], y: [-1.5, 1.5], color: "#10b981", opacity: 0.22, label: "z=0", labelDir: "above", labelOffset: 7 }]}
     curves={[
       { fn: (t) => ({ x: t, y: 0, z: 0 }), t: [-1.5, 1.5], color: "#3b82f6", width: 2.6, hidden: "show" },
       { fn: (t) => ({ x: 0, y: t, z: 0 }), t: [-1.5, 1.5], color: "#3b82f6", width: 2.6, hidden: "show" },

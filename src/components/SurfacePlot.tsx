@@ -1,5 +1,33 @@
 import { LinePath } from "@visx/shape";
 import { Fragment } from "react";
+import {
+  anchoredCandidates,
+  aroundPoint,
+  besideCurve,
+  besideSegmentCandidates,
+  besideVectorCandidates,
+  centeredAt,
+  insideRegion,
+  lineLabelCandidates,
+  nearestCurvePoint,
+  pointLabelCandidates,
+  positionCandidates,
+  preferringOwnMark,
+  widelyAroundPoint,
+  withPenalty,
+  type CurvePoint,
+  type LabelDirSpec,
+} from "./figure-label/candidates";
+import { chainEdges, type Box, type XY } from "./figure-label/geometry";
+import { glyphBox, glyphSizeOf, type GlyphSize, type LabelPos } from "./figure-label/label-box";
+import {
+  boxObstacle,
+  groupObstacle,
+  lineObstacle,
+  type LineObstacle,
+} from "./figure-label/obstacles";
+import { createPlacer, placedLabel, placeInOrder, type Candidate } from "./figure-label/placer";
+import { FIELD_PENALTY_CAP, LABEL_POLICY, OBSTACLE_WEIGHT } from "./figure-label/policy";
 import KatexLabel from "./KatexLabel";
 import {
   DEFAULT_AZIMUTH_DEG,
@@ -9,6 +37,7 @@ import {
   makeProjector,
   minMax,
   projectedBounds,
+  toXY,
   viewBasis,
 } from "./projection3d";
 import type { ScreenPoint, Vec3, ViewBasis } from "./projection3d";
@@ -21,7 +50,8 @@ import type { ScreenPoint, Vec3, ViewBasis } from "./projection3d";
  * 柱などを、双方向性に頼らず静的な図で表す。本コンポーネントはクライアント JavaScript を
  * 一切載せない。Astro がビルド時に HTML へ描画する（クライアントディレクティブなし、
  * ハイドレーションなし）。線は `@visx/shape` の `LinePath`、面は polygon を手計算で置く。
- * ラベルは KatexLabel を介して KaTeX で組版する。
+ * ラベルは KatexLabel を介して KaTeX で組版し、`figure-label/` の配置器が線・点・目盛り・面の縁を
+ * 避ける位置へ置く。`labelAt` は基準点、`labelDir` は基準点から見た画面の上の向きである。
  *
  * 投影は SpaceVectorDiagram と共有する正投影（`projection3d.ts`）で、既定の視点では $x$ 軸が
  * 左手前、$y$ 軸が右奥、$z$ 軸が上を向く。図ごとに方位角・仰角を上書きできる。
@@ -52,6 +82,17 @@ import type { ScreenPoint, Vec3, ViewBasis } from "./projection3d";
  *     at: [{ x: 0, y: 0, z: 1 }, { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }] }]} />
  * ```
  */
+
+/**
+ * ラベルの向きとすきまの指定。向きは画面の上の方位で、基準点から見た向きである。意味は ContourPlot・
+ * FunctionGraph の `labelDir`・`labelOffset` と同じである。
+ */
+type LabelPlacementProps = Readonly<{
+  /** 基準点から見たラベルの向き。"auto" は向きを自動で選ぶ。 */
+  labelDir?: LabelDirSpec;
+  /** 線や基準点とラベルの字形のすきまの目標（px）。既定は 4。 */
+  labelOffset?: number;
+}>;
 
 /** 閉区間 [下端, 上端]。 */
 type Range = readonly [number, number];
@@ -87,9 +128,10 @@ type SurfaceStyle = Readonly<{
   hide?: (p: Vec3, uv: Readonly<{ u: number; v: number }>) => boolean;
   /** 曲面に添える LaTeX ラベル。 */
   label?: string;
-  /** ラベルを置く空間の点。省略時は曲面の右端の外側に置く。 */
+  /** ラベルの基準点（空間の点）。省略時は曲面の右端の外側に置く。 */
   labelAt?: Vec3;
-}>;
+}> &
+  LabelPlacementProps;
 
 /** 円板（または扇形・円環）の定義域。極座標の網を張る。 */
 type Disk = Readonly<{
@@ -155,9 +197,10 @@ type PlaneStyle = Readonly<{
   outline?: boolean;
   /** 平面に添える LaTeX ラベル（例: "z = 2"）。 */
   label?: string;
-  /** ラベルを置く空間の点。省略時は平面の右端の外側に置く。 */
+  /** ラベルの基準点（空間の点）。省略時は平面の右端の外側に置く。 */
   labelAt?: Vec3;
-}>;
+}> &
+  LabelPlacementProps;
 
 /** 平面の一部（半透明の長方形・多角形）。 */
 type PlanePatch = PlaneStyle &
@@ -236,9 +279,12 @@ type RegionStyle = Readonly<{
   outline?: boolean;
   /** 領域に添える LaTeX ラベル（例: "D"）。領域の重心付近に置く。 */
   label?: string;
+  /** ラベルの基準点（領域の面の上の x・y）。省略時は領域の重心である。 */
+  labelAt?: Readonly<{ x: number; y: number }>;
   /** 境界の曲線の標本数。既定 48。 */
   samples?: number;
-}>;
+}> &
+  LabelPlacementProps;
 
 /** 床の上の領域。多角形、または 2 曲線にはさまれた領域で指定する。 */
 type FloorRegion = RegionStyle &
@@ -291,7 +337,8 @@ type SpaceCurve = Readonly<{
    * 矢じりは hidden に従って淡く描く（または描かない）。既定は矢じりなし。
    */
   arrows?: number | readonly number[];
-}>;
+}> &
+  LabelPlacementProps;
 
 /** 空間の線分。arrow を付けると矢印（空間ベクトル）になる。 */
 type SpaceSegment = Readonly<{
@@ -307,9 +354,12 @@ type SpaceSegment = Readonly<{
   dashed?: boolean;
   /** 線分の中点付近に置く LaTeX ラベル。 */
   label?: string;
+  /** ラベルの基準点（空間の点）。`labelDir` の既定は "center" である。 */
+  labelAt?: Vec3;
   /** 面に隠れた部分の描き方。既定 "fade"。 */
   hidden?: HiddenMode;
-}>;
+}> &
+  LabelPlacementProps;
 
 /**
  * 空間のベクトル場。格子点（または `at` の各点）で関数を評価し、各点に矢印を描く。長さはすべて
@@ -366,15 +416,20 @@ type SpaceField = Readonly<{
 
 /** 空間の 1 点。塗りつぶしの小丸で描く。 */
 type SpacePoint = Vec3 &
+  LabelPlacementProps &
   Readonly<{
     /** 点に添える LaTeX ラベル。 */
     label?: string;
+    /** ラベルの基準点（空間の点）。`labelDir` の既定は "center" である。 */
+    labelAt?: Vec3;
     /** 点の色。既定は本文の文字色。 */
     color?: string;
     /** 強調色（琥珀色）で描くか。既定 false。color を指定するとそちらを優先する。 */
     highlight?: boolean;
     /** 床（$z = 0$）へ鉛直に落とし込みの破線を引くか。既定 false。 */
     drop?: boolean;
+    /** 白抜きの丸で描くか（含まない端点など）。既定 false（塗りつぶし）。 */
+    open?: boolean;
     /** 面に隠れた点の描き方。既定 "fade"。 */
     hidden?: HiddenMode;
   }>;
@@ -443,11 +498,6 @@ const FIELD_DOT_R = 1.8;
 const FIELD_MIN_PX = 0.5;
 // 格子の 1 軸あたりの分割数の上限。指定を誤ったときに、ビルドが止まらないようにする。
 const FIELD_MAX_DIVISIONS = 40;
-// ラベル配置で、ベクトル場の矢印 1 本に近づくごとの罰点と、1 つの場あたりの罰点の上限。上限を
-// 軸・線分・曲線の罰点（6）より小さくし、場が図全体を覆う場合も、ラベルは線を避けることを優先し、
-// そのうえで近い矢印の少ない位置を選ぶ。罰点が有限なので、ラベルが置けなくなることはない。
-const FIELD_WEIGHT = 1;
-const FIELD_MAX_PENALTY = 4;
 
 // 描画領域。幅は他の図と同じ 320 とし、高さは内容に合わせて決める（空白の帯を作らない）。
 const VIEW_W = 320;
@@ -458,6 +508,32 @@ const MARGIN = 28;
 // 矢じり。長さ（線方向）と半幅（直交方向）を px で与える（SpaceVectorDiagram とそろえる）。
 const HEAD_LEN = 9;
 const HEAD_HALF = 3.6;
+
+// 点の半径（px）と、白抜きの点の線の太さ（px）。
+const POINT_R = 3.4;
+const OPEN_POINT_STROKE = 1.8;
+
+// ラベルと目盛り数字の字の大きさ（KatexLabel の fontSize）。
+const LABEL_FONT = 12;
+const TICK_FONT = 11;
+
+// 目盛りの線の半分の長さ（px）と、目盛りの中心から数字の箱の縁までの距離（px）。
+const TICK_HALF = 3;
+const TICK_LABEL_GAP = 9;
+
+// 線分・矢印のラベルを線に沿って試す位置（線の長さに対する割合）。前の位置ほど優先する。
+const SEGMENT_FRACTIONS: readonly number[] = [0.5, 0.35, 0.65, 0.2, 0.8];
+
+// 面のラベルが基準点のまわりから離れるときの罰点。遠い輪の罰点（1.5）に足す。合わせた 2.5 は、軸に近い
+// だけの罰点（1.5）より重く、面の縁に触れる罰点（3）より軽い。縁に触れるときだけ基準点から動く。
+const SHAPE_RING_PENALTY = 1;
+
+// 網目の線は面の上のどこにでもあるので、触れる本数の罰点を打ち切る。面のラベルが線を避けられなくならない
+// よう、縁取りの線の重み（3）より軽くする。
+const MESH_PENALTY_CAP = 2.5;
+
+// 面の上の点や基準点のラベルが網目に触れる罰点の上限。遠い輪の罰点（1.5）より軽くする。
+const SURFACE_MESH_PENALTY_CAP = 1;
 
 // 網目・縁取りの線。網目は面の濃淡を邪魔しないよう細く淡く、縁取りは形を締めるよう濃くする。
 const MESH_WIDTH = 0.5;
@@ -585,7 +661,7 @@ export default function SurfacePlot({
       : [];
 
   const curvePts = curves.map((c) => {
-    const n = Math.max(2, c.samples ?? 160);
+    const n = curveSampleCount(c);
     // 添字 i ≤ n の範囲だけを作る。n + 1 のままだと、整数の直前の n で丸められて範囲の外の添字ができる。
     return Array.from({ length: Math.floor(n) + 1 }, (_, i): Vec3 => {
       const t = c.t[0] + ((c.t[1] - c.t[0]) * i) / n;
@@ -712,53 +788,22 @@ export default function SurfacePlot({
   });
 
   // ---- ラベルの配置 ----
-  // 軸・線分・曲線を当たり判定の線分に積み、ラベルが線や既出のラベルに重ならない候補を選ぶ。
-  const obstacleSegs: readonly Seg[] = [
-    ...axisDefs.map((a) => segOf(project(a.from), project(a.to))),
-    ...segPts.map((s) => segOf(project(s.from), project(s.to))),
-    ...curvePts.flatMap((pts) => polylineSegs(pts.filter(isFiniteVec).map(project), 40)),
-  ];
-  // ベクトル場の矢印は、場ごとにまとめて別に持つ。近い本数の罰点に場ごとの上限を設けるためで
-  // ある（FIELD_MAX_PENALTY を参照）。
-  const fieldSegs: readonly (readonly Seg[])[] = fieldDraws.map((fd) =>
-    fd.arrows.map((a) => segOf(a.sFrom, a.sTo)),
-  );
-  // 点そのものも小さな矩形として積み、ラベルが点の印を覆わないようにする。
-  const pointBoxes: readonly Box[] = pointPts.map((p) => {
-    const s = project(p);
-    return { x0: s.sx - 3, x1: s.sx + 3, y0: s.sy - 3, y1: s.sy + 3 };
-  });
-  /** 既出のラベルの矩形 placed を避け、依頼 req の候補から罰点の最も小さいずらしを選ぶ。 */
-  const chooseOffset = (placed: readonly Box[], { cx, cy, cands, tex }: LabelRequest): Offset => {
-    const w = estimateTexWidth(tex);
-    return cands.reduce<Readonly<{ c: Offset; p: number }>>(
-      (best, c, i) => {
-        const box = boxFor(cx + c.dx, cy + c.dy, w);
-        const p0 = i * 0.1; // 同点なら前方の候補を優先。
-        const p1 =
-          box.x0 < 2 || box.x1 > VIEW_W - 2 || box.y0 < 2 || box.y1 > viewH - 2 ? p0 + 1000 : p0;
-        // ラベル同士の重なりは最優先で避ける（線分近接より重く罰する）。
-        const p2 = placed.reduce((p, q) => (boxesOverlap(box, q) ? p + 15 : p), p1);
-        const p3 = obstacleSegs.reduce((p, s) => (segBoxDist(s, box) < 3 ? p + 6 : p), p2);
-        const p4 = fieldSegs.reduce(
-          (p, group) => p + Math.min(fieldHits(group, box), FIELD_MAX_PENALTY),
-          p3,
-        );
-        return p4 < best.p ? { c, p: p4 } : best;
-      },
-      { c: cands[0], p: Infinity },
-    ).c;
-  };
+  // 軸・線分・曲線・面の縁を障害物に積み、ラベルが線や既出のラベルに重ならない候補を選ぶ。
+  const screenOf = (p: Vec3): XY => toXY(project(p));
+  const viewBounds: Box = { x0: 2, x1: VIEW_W - 2, y0: 2, y1: viewH - 2 };
+  const W = OBSTACLE_WEIGHT;
 
-  // 軸名は終点の外側へ置き、当たり判定に積む（以降のラベルが軸名を避ける）。
-  const axisLabelPos = axisDefs.map((a) => {
+  // 軸名は終点の外側へ置き、既出のラベルとして扱う。同じ行に並ぶラベルが 1 続きに読まれるのを避ける。
+  const axisLabelPos: readonly XY[] = axisDefs.map((a) => {
     const from = project(a.from);
     const end = project(a.to);
     const ang = Math.atan2(end.sy - from.sy, end.sx - from.sx);
     return { x: end.sx + Math.cos(ang) * 12, y: end.sy + Math.sin(ang) * 12 };
   });
-  const axisBoxes = axisDefs.map((a, i) =>
-    boxFor(axisLabelPos[i].x, axisLabelPos[i].y, estimateTexWidth(a.label)),
+  const axisNameBoxes: readonly Box[] = axisDefs.flatMap((a, i) =>
+    a.label === ""
+      ? []
+      : [glyphBox({ ...axisLabelPos[i], align: "center" }, glyphSizeOf(a.label, LABEL_FONT))],
   );
 
   // 目盛り。目盛り線は軸に直交する床（$z$ 軸は水平）の向きに短く引き、数字はその外側へ置く。
@@ -772,186 +817,295 @@ export default function SurfacePlot({
       });
       const c = project(p);
       const text = formatTick(v);
-      const w = estimateTexWidth(text, 11);
+      const size = glyphSizeOf(text, TICK_FONT);
       // 数字の中心を、目盛り線の端から数字の半幅ぶん外へ離す。
-      const off = 7 + Math.abs(sp.out.sx) * (w / 2) + Math.abs(sp.out.sy) * 6;
-      const lx = c.sx + sp.out.sx * off;
-      const ly = c.sy + sp.out.sy * off;
+      const halfH = (size.bottom - size.top) / 2;
+      const off =
+        TICK_LABEL_GAP + Math.abs(sp.out.sx) * (size.width / 2) + Math.abs(sp.out.sy) * halfH;
+      const pos = centeredAt(c.sx + sp.out.sx * off, c.sy + sp.out.sy * off, size);
       return {
         key: `${sp.axis}-${v}`,
         at: p,
-        a: { sx: c.sx - sp.dir.sx * 3, sy: c.sy - sp.dir.sy * 3 },
-        b: { sx: c.sx + sp.dir.sx * 3, sy: c.sy + sp.dir.sy * 3 },
-        lx,
-        ly,
+        a: { sx: c.sx - sp.dir.sx * TICK_HALF, sy: c.sy - sp.dir.sy * TICK_HALF },
+        b: { sx: c.sx + sp.dir.sx * TICK_HALF, sy: c.sy + sp.dir.sy * TICK_HALF },
+        pos,
         text,
-        box: boxFor(lx, ly, w),
+        box: glyphBox(pos, size),
       };
     }),
   );
 
-  // 曲面・平面のラベル。指定の点があればその点を、なければ図形の右端の外側を基準にする。
-  const shapeRequest = (
-    key: string,
-    tex: string,
-    at: Vec3 | undefined,
+  // 面の辺のうち、描き方が flag の辺の両端を並べる。
+  const faceEdges = (flag: EdgeFlag): readonly (readonly [XY, XY])[] =>
+    faceDraws.flatMap(({ face, sp }) =>
+      sp.flatMap((a, i): readonly (readonly [XY, XY])[] =>
+        face.edges[i] === flag ? [[toXY(a), toXY(sp[(i + 1) % sp.length])]] : [],
+      ),
+    );
+
+  // 描く点の添字。hidden が "hide" で面に隠れた点は、印もラベルも描かない。
+  const shownPoints: readonly number[] = points.flatMap((p, i) =>
+    pointLevel(pointPts[i], p.hidden ?? "fade") > 0 ? [i] : [],
+  );
+
+  // 空間曲線の標本（画面座標と媒介変数）。曲線のラベルの候補に使う。
+  const curveSamples: readonly (readonly CurvePoint[])[] = curves.map((c, i) => {
+    const n = curveSampleCount(c);
+    return curvePts[i].flatMap((p, k) =>
+      isFiniteVec(p) ? [{ ...screenOf(p), t: c.t[0] + ((c.t[1] - c.t[0]) * k) / n }] : [],
+    );
+  });
+
+  const obstacles = [
+    ...tickItems.map((t) => boxObstacle(t.box, W.tick)),
+    ...shownPoints.map((i) => {
+      const { x, y } = screenOf(pointPts[i]);
+      const r = markerReach(points[i]);
+      return boxObstacle({ x0: x - r, x1: x + r, y0: y - r, y1: y + r }, W.point, `pt${i}`);
+    }),
+    ...axisDefs.flatMap((a) =>
+      runObstacles(`ax-${a.key}`, visibleRuns([a.from, a.to], "fade"), W.axis),
+    ),
+    ...tickItems.flatMap((t) => lineObstacle("tk", [toXY(t.a), toXY(t.b)], W.thinLine)),
+    // 破線の曲線は比べる相手や補助の線なので、主役の曲線より軽い。
+    ...curves.flatMap((c, i) =>
+      runObstacles(
+        `cv${i}`,
+        visibleRuns(curvePts[i], c.hidden ?? "fade"),
+        c.dashed ? W.line : W.curve,
+      ),
+    ),
+    ...segments.flatMap((s, i) =>
+      runObstacles(
+        `sg${i}`,
+        visibleRuns([segPts[i].from, segPts[i].to], s.hidden ?? "fade"),
+        W.line,
+      ),
+    ),
+    ...dropLines.flatMap((d) => runObstacles("dp", visibleRuns([d.from, d.to], "fade"), W.edge)),
+    ...chainEdges(faceEdges("outline")).flatMap((pts) => lineObstacle("ol", pts, W.edge)),
+    ...gridLines.flatMap((g) => runObstacles("gd", visibleRuns([g.a, g.b], "hide"), W.grid, true)),
+    ...fieldDraws.map((fd) =>
+      groupObstacle(
+        fd.arrows.flatMap((a) =>
+          lineObstacle("fd", [toXY(a.sFrom), toXY(a.sTo)], W.fieldArrow, true),
+        ),
+        FIELD_PENALTY_CAP,
+      ),
+    ),
+  ];
+  const meshLines = faceEdges("mesh").flatMap((pts) => lineObstacle("ms", pts, W.grid, true));
+  const placer = createPlacer([...obstacles, groupObstacle(meshLines, MESH_PENALTY_CAP)]);
+  // 面の上の点や基準点のラベルは、面から離れられない。網目を強く避けると遠くへ逃げて、点との対応が読めなく
+  // なるので、すぐ外へ出られるときだけ外を選ぶ軽い罰点にする。
+  const surfacePlacer = createPlacer([
+    ...obstacles,
+    groupObstacle(meshLines, SURFACE_MESH_PENALTY_CAP),
+  ]);
+
+  // 曲面・平面のラベルの候補。基準点の指定が無ければ、図形の右端の外側を右から順に試す。
+  const shapeCandidates = (
+    spec: LabelPlacementProps & Readonly<{ labelAt?: Vec3 }>,
     verts: readonly Vec3[],
-  ): readonly LabelRequest[] => {
-    const w = estimateTexWidth(tex);
-    if (at) {
-      const a = project(toView(at));
-      return [{ key, tex, cx: a.sx, cy: a.sy, cands: aroundCands(w) }];
+    size: GlyphSize,
+  ): readonly Candidate<LabelPos>[] => {
+    if (spec.labelAt !== undefined) {
+      const at = screenOf(toView(spec.labelAt));
+      const fixed = anchoredCandidates(at, size, spec.labelDir, spec.labelOffset);
+      // 向きの指定が無ければ、幅の広いラベルが面の縁の外へ出られるよう、遠い位置も試す。遠い位置には
+      // 軽い罰点を足し、線に近いだけの基準点から動かないようにする。
+      return spec.labelDir === undefined || spec.labelDir === "auto"
+        ? [
+            ...fixed,
+            ...withPenalty(widelyAroundPoint(at, size, 0, spec.labelOffset), SHAPE_RING_PENALTY),
+          ]
+        : fixed;
     }
     if (verts.length === 0) return [];
-    const sps = verts.map(project);
-    const anchor = sps.reduce((m, p) => (p.sx > m.sx ? p : m), sps[0]);
-    return [{ key, tex, cx: anchor.sx, cy: anchor.sy, cands: sideCands(w) }];
+    const anchor = verts.map(screenOf).reduce((m, q) => (q.x > m.x ? q : m), screenOf(verts[0]));
+    const dir = spec.labelDir ?? "auto";
+    if (dir !== "auto") return anchoredCandidates(anchor, size, dir, spec.labelOffset);
+    const around = aroundPoint(anchor, size, 0, spec.labelOffset);
+    return [
+      ...positionCandidates(
+        [
+          around.right,
+          around["above-right"],
+          around["below-right"],
+          around.above,
+          around.below,
+          around.left,
+        ],
+        size,
+      ),
+      ...withPenalty(widelyAroundPoint(anchor, size, 0, spec.labelOffset), SHAPE_RING_PENALTY),
+    ];
   };
-  const shapeRequests: readonly LabelRequest[] = [
-    ...surfaces.flatMap((s, i) =>
-      s.label !== undefined
-        ? shapeRequest(`s-${i}`, s.label, s.labelAt, surfaceBuilt[i].verts)
-        : [],
+
+  const regionCandidates = (
+    r: FloorRegion,
+    face: Face,
+    size: GlyphSize,
+  ): readonly Candidate<LabelPos>[] => {
+    const anchor =
+      r.labelAt === undefined
+        ? screenOf(centroid(face.pts))
+        : screenOf({ ...r.labelAt, z: face.pts[0].z });
+    if (r.labelDir !== undefined && r.labelDir !== "auto") {
+      return anchoredCandidates(anchor, size, r.labelDir, r.labelOffset);
+    }
+    return insideRegion(anchor, face.pts.map(screenOf), size);
+  };
+
+  // 曲線のラベルの候補。線の両側に続けて、基準の点のまわりの 8 方向を試す。線が基準の点で曲がるときに、
+  // 線の両側がどちらも他の線にかかることがあるためである。
+  const curveCandidates = (
+    c: SpaceCurve,
+    i: number,
+    size: GlyphSize,
+  ): readonly Candidate<LabelPos>[] => {
+    const samples = curveSamples[i];
+    const at = c.labelAt ?? c.t[1];
+    const dir = c.labelDir ?? "auto";
+    const beside = besideCurve(samples, size, at, dir, c.labelOffset);
+    if (dir !== "auto" || samples.length === 0) return beside;
+    const on = samples[nearestCurvePoint(samples, at)];
+    const around = aroundPoint(on, size, LABEL_POLICY.lineHalfWidth, c.labelOffset);
+    return [
+      ...beside,
+      ...withPenalty(positionCandidates(Object.values(around), size), LABEL_POLICY.fixedSide),
+    ];
+  };
+
+  const segmentCandidates = (
+    s: SpaceSegment,
+    i: number,
+    size: GlyphSize,
+  ): readonly Candidate<LabelPos>[] => {
+    const a = screenOf(segPts[i].from);
+    const b = screenOf(segPts[i].to);
+    const spec = {
+      at: s.labelAt === undefined ? undefined : screenOf(toView(s.labelAt)),
+      dir: s.labelDir,
+      offset: s.labelOffset,
+    };
+    return lineLabelCandidates(spec, a, b, size, (offset) =>
+      s.arrow
+        ? besideVectorCandidates(a, b, size, HEAD_HALF, offset, SEGMENT_FRACTIONS)
+        : besideSegmentCandidates(a, b, size, offset, SEGMENT_FRACTIONS),
+    );
+  };
+
+  // 点のラベルが読み違えられる相手の印。他の点と、線分の両端である。
+  const marksOtherThan = (i: number): readonly XY[] => [
+    ...shownPoints.flatMap((k) => (k === i ? [] : [screenOf(pointPts[k])])),
+    ...segPts.flatMap((s) => [screenOf(s.from), screenOf(s.to)]),
+  ];
+
+  const pointCandidates = (
+    p: SpacePoint,
+    i: number,
+    size: GlyphSize,
+  ): readonly Candidate<LabelPos>[] => {
+    const at = screenOf(pointPts[i]);
+    const reach = markerReach(p);
+    const spec = {
+      at: p.labelAt === undefined ? undefined : screenOf(toView(p.labelAt)),
+      dir: p.labelDir,
+      offset: p.labelOffset,
+    };
+    return pointLabelCandidates(spec, at, size, reach, () =>
+      preferringOwnMark(
+        widelyAroundPoint(at, size, reach, p.labelOffset),
+        at,
+        marksOtherThan(i),
+        W.point,
+      ),
+    );
+  };
+
+  // ラベルは、曲面・平面・領域・曲線・線分・点の順に 1 つずつ置く。後のラベルが先のラベルを避ける。
+  const labelRequests: readonly LabelRequest[] = [
+    ...surfaces.flatMap((s, i): readonly LabelRequest[] =>
+      s.label === undefined
+        ? []
+        : [
+            {
+              key: `s-${i}`,
+              tex: s.label,
+              candidates: (size) => shapeCandidates(s, surfaceBuilt[i].verts, size),
+              onSurface: s.labelAt !== undefined,
+            },
+          ],
     ),
-    ...planes.flatMap((p, i) =>
-      p.label !== undefined
-        ? shapeRequest(`p-${i}`, p.label, p.labelAt, planeBuilt[i].face?.pts ?? [])
-        : [],
+    ...planes.flatMap((pl, i): readonly LabelRequest[] =>
+      pl.label === undefined
+        ? []
+        : [
+            {
+              key: `p-${i}`,
+              tex: pl.label,
+              candidates: (size) => shapeCandidates(pl, planeBuilt[i].face?.pts ?? [], size),
+              onSurface: pl.labelAt !== undefined,
+            },
+          ],
     ),
-    ...regions.flatMap((r, i) => {
+    ...regions.flatMap((r, i): readonly LabelRequest[] => {
       const face = regionBuilt[i].face;
       if (r.label === undefined || !face) return [];
-      // 領域のラベルは重心に置く（床の上の領域は内側に余白があることが多い）。
-      const c = project(centroid(face.pts));
       return [
         {
           key: `r-${i}`,
           tex: r.label,
-          cx: c.sx,
-          cy: c.sy,
-          cands: aroundCands(estimateTexWidth(r.label)),
+          candidates: (size) => regionCandidates(r, face, size),
+          onSurface: true,
         },
       ];
     }),
+    ...curves.flatMap((c, i): readonly LabelRequest[] =>
+      c.label === undefined
+        ? []
+        : [{ key: `c-${i}`, tex: c.label, candidates: (size) => curveCandidates(c, i, size) }],
+    ),
+    ...segments.flatMap((s, i): readonly LabelRequest[] =>
+      s.label === undefined
+        ? []
+        : [
+            {
+              key: `g-${i}`,
+              tex: s.label,
+              candidates: (size) => segmentCandidates(s, i, size),
+              // 基準点が線の上でも線を避けられるよう、labelAt があれば自分の線も判定に含める。
+              exclude: s.labelAt === undefined ? `sg${i}` : undefined,
+            },
+          ],
+    ),
+    ...shownPoints.flatMap((i): readonly LabelRequest[] => {
+      const p = points[i];
+      return p.label === undefined
+        ? []
+        : [
+            {
+              key: `pt-${i}`,
+              tex: p.label,
+              candidates: (size) => pointCandidates(p, i, size),
+              // 基準点が点の上でも印を避けられるよう、labelAt があれば自分の印も判定に含める。
+              exclude: p.labelAt === undefined ? `pt${i}` : undefined,
+              onSurface: true,
+            },
+          ];
+    }),
   ];
-
-  const curveRequests = curves.flatMap((c, i): readonly LabelRequest[] => {
-    if (c.label === undefined) return [];
-    const t = c.labelAt ?? c.t[1];
-    const p = c.fn(t);
-    if (!isFiniteVec(p)) return [];
-    const sp = project(toView(p));
-    // 接線の向きを数値微分で求め、接線に直交する向きへ逃がす。
-    const dt = (c.t[1] - c.t[0]) * 1e-3;
-    const q = c.fn(t - dt);
-    const sq = isFiniteVec(q) ? project(toView(q)) : { sx: sp.sx - 1, sy: sp.sy };
-    const len = Math.hypot(sp.sx - sq.sx, sp.sy - sq.sy) || 1;
-    const tx = (sp.sx - sq.sx) / len;
-    const ty = (sp.sy - sq.sy) / len;
-    const nx = -ty;
-    const ny = tx;
-    const w = estimateTexWidth(c.label);
-    const clear = w / 2 + 6;
-    return [
-      {
-        key: `c-${i}`,
-        tex: c.label,
-        cx: sp.sx,
-        cy: sp.sy,
-        cands: [
-          { dx: nx * 12, dy: ny * 12 },
-          { dx: -nx * 12, dy: -ny * 12 },
-          { dx: tx * clear, dy: ty * clear },
-          { dx: nx * clear, dy: ny * clear },
-          { dx: -nx * clear, dy: -ny * clear },
-          { dx: tx * clear + nx * 10, dy: ty * clear + ny * 10 },
-          { dx: tx * clear - nx * 10, dy: ty * clear - ny * 10 },
-        ],
-      },
-    ];
-  });
-
-  const segRequests = segments.flatMap((s, i): readonly LabelRequest[] => {
-    if (s.label === undefined) return [];
-    const a = project(segPts[i].from);
-    const b = project(segPts[i].to);
-    const len = Math.hypot(b.sx - a.sx, b.sy - a.sy) || 1;
-    const px = -(b.sy - a.sy) / len;
-    const py = (b.sx - a.sx) / len;
-    const ax = (b.sx - a.sx) / len;
-    const ay = (b.sy - a.sy) / len;
-    const clear = estimateTexWidth(s.label) / 2 + 8;
-    const cand = (al: number, pe: number): Offset => ({
-      dx: ax * al + px * pe,
-      dy: ay * al + py * pe,
-    });
-    return [
-      {
-        key: `g-${i}`,
-        tex: s.label,
-        cx: (a.sx + b.sx) / 2,
-        cy: (a.sy + b.sy) / 2,
-        cands: [
-          cand(0, 12),
-          cand(0, -12),
-          cand(0, clear),
-          cand(0, -clear),
-          cand(20, clear),
-          cand(20, -clear),
-          cand(-20, clear),
-          cand(-20, -clear),
-        ],
-      },
-    ];
-  });
-
-  const pointRequests = points.flatMap((p, i): readonly LabelRequest[] => {
-    if (p.label === undefined) return [];
-    const sp = project(pointPts[i]);
-    return [
-      {
-        key: `pt-${i}`,
-        tex: p.label,
-        cx: sp.sx,
-        cy: sp.sy,
-        cands: [
-          { dx: 0, dy: -13 },
-          { dx: 13, dy: -11 },
-          { dx: -13, dy: -11 },
-          { dx: 0, dy: 14 },
-          { dx: 13, dy: 12 },
-          { dx: -13, dy: 12 },
-          { dx: estimateTexWidth(p.label) / 2 + 7, dy: 0 },
-          { dx: -(estimateTexWidth(p.label) / 2 + 7), dy: 0 },
-        ],
-      },
-    ];
-  });
-
-  // 点・軸名・目盛り数字の矩形を先に積み、曲面・平面・領域・曲線・線分・点のラベルをこの順に
-  // 1 つずつ置く。置いたラベルの矩形を積み足し、後のラベルが避ける。
-  const placedLabels = [
-    ...shapeRequests,
-    ...curveRequests,
-    ...segRequests,
-    ...pointRequests,
-  ].reduce<
-    Readonly<{
-      placed: readonly Box[];
-      labels: readonly Readonly<{ key: string; tex: string; x: number; y: number }>[];
-    }>
-  >(
-    (acc, req) => {
-      const best = chooseOffset(acc.placed, req);
-      const x = req.cx + best.dx;
-      const y = req.cy + best.dy;
-      return {
-        placed: [...acc.placed, boxFor(x, y, estimateTexWidth(req.tex))],
-        labels: [...acc.labels, { key: req.key, tex: req.tex, x, y }],
-      };
-    },
-    { placed: [...pointBoxes, ...axisBoxes, ...tickItems.map((t) => t.box)], labels: [] },
-  ).labels;
+  const placedLabels = placeInOrder(labelRequests, axisNameBoxes, (req, _, placed) => {
+    const size = glyphSizeOf(req.tex, LABEL_FONT);
+    const pos = (req.onSurface === true ? surfacePlacer : placer).place(req.candidates(size), {
+      placed,
+      bounds: viewBounds,
+      exclude: req.exclude,
+      rowGap: LABEL_POLICY.rowGap,
+    }).item;
+    return placedLabel(req.tex, pos, size);
+  }).items;
 
   // ---- 空間曲線の向きの矢じり ----
   // 矢じりの中心を曲線の上の点に合わせ、接線の向きは前後のごく近い 2 点を投影した差で求める。
@@ -1261,14 +1415,26 @@ export default function SurfacePlot({
         const mode = p.hidden ?? "fade";
         const level = pointLevel(pointPts[i], mode);
         if (level <= 0) return null;
-        return (
+        const opacity = mode === "fade" ? Math.max(0.35, level) : level;
+        return p.open ? (
           <circle
             key={`pt-${i}`}
             cx={r1(sp.sx)}
             cy={r1(sp.sy)}
-            r={3.4}
+            r={POINT_R}
+            fill="var(--sl-color-bg, #fff)"
+            stroke={color}
+            strokeWidth={OPEN_POINT_STROKE}
+            opacity={opacity}
+          />
+        ) : (
+          <circle
+            key={`pt-${i}`}
+            cx={r1(sp.sx)}
+            cy={r1(sp.sy)}
+            r={POINT_R}
             fill={color}
-            fillOpacity={mode === "fade" ? Math.max(0.35, level) : level}
+            fillOpacity={opacity}
           />
         );
       })}
@@ -1282,9 +1448,9 @@ export default function SurfacePlot({
           <g key={`tl-${t.key}`} opacity={level < 1 ? Math.max(0.35, level) : undefined}>
             <KatexLabel
               tex={t.text}
-              x={t.lx}
-              y={t.ly}
-              fontSize={11}
+              x={t.pos.x}
+              y={t.pos.y}
+              fontSize={TICK_FONT}
               className="surface-plot-label"
             />
           </g>
@@ -1296,20 +1462,24 @@ export default function SurfacePlot({
           tex={a.label}
           x={axisLabelPos[i].x}
           y={axisLabelPos[i].y}
-          fontSize={12}
+          fontSize={LABEL_FONT}
           className="surface-plot-label"
         />
       ))}
-      {placedLabels.map((l) => (
-        <KatexLabel
-          key={`lb-${l.key}`}
-          tex={l.tex}
-          x={l.x}
-          y={l.y}
-          fontSize={12}
-          className="surface-plot-label"
-        />
-      ))}
+      {placedLabels.map(
+        (l, i) =>
+          l && (
+            <KatexLabel
+              key={`lb-${labelRequests[i].key}`}
+              tex={l.tex}
+              x={l.pos.x}
+              y={l.pos.y}
+              fontSize={LABEL_FONT}
+              align={l.pos.align}
+              className="surface-plot-label"
+            />
+          ),
+      )}
     </svg>
   );
 }
@@ -2292,28 +2462,38 @@ function unitOf(d: ScreenPoint): ScreenPoint {
   return { sx: d.sx / len, sy: d.sy / len };
 }
 
-/** ラベル幅 w の、基準点の右側を優先する配置候補（曲面・平面の右端の外側に置く）。 */
-function sideCands(w: number): readonly Offset[] {
-  return [
-    { dx: w / 2 + 8, dy: 0 },
-    { dx: w / 2 + 6, dy: -12 },
-    { dx: w / 2 + 6, dy: 12 },
-    { dx: 0, dy: -14 },
-    { dx: 0, dy: 14 },
-    { dx: -(w / 2 + 8), dy: 0 },
-  ];
+/**
+ * 線の可視の区間を障害物にする。面に隠れて淡く描く区間は、見える度合いのぶんだけ軽い。描かない区間は
+ * 障害物にしない。
+ */
+function runObstacles(
+  id: string,
+  runs: readonly Run[],
+  weight: number,
+  faint = false,
+): readonly LineObstacle[] {
+  return runs.flatMap((run) => lineObstacle(id, run.pts.map(toXY), weight * run.level, faint));
 }
 
-/** ラベル幅 w の、基準点そのものを優先する配置候補（指定の点・領域の重心に置く）。 */
-function aroundCands(w: number): readonly Offset[] {
-  return [
-    { dx: 0, dy: 0 },
-    { dx: 0, dy: -14 },
-    { dx: 0, dy: 14 },
-    { dx: w / 2 + 8, dy: 0 },
-    { dx: -(w / 2 + 8), dy: 0 },
-  ];
+/** 曲線を分ける小区間の数。 */
+function curveSampleCount(c: SpaceCurve): number {
+  return Math.max(2, c.samples ?? 160);
 }
+
+/** 点の中心から印の端までの距離（px）。 */
+function markerReach(p: SpacePoint): number {
+  return p.open === true ? POINT_R + OPEN_POINT_STROKE / 2 : POINT_R;
+}
+
+/** 1 つのラベルの配置の依頼。候補は寸法を受けて作り、exclude は判定から外す障害物の id である。 */
+type LabelRequest = Readonly<{
+  key: string;
+  tex: string;
+  candidates: (size: GlyphSize) => readonly Candidate<LabelPos>[];
+  exclude?: string;
+  /** 面の上に置くラベルか。面の上のどこにでもある網目を軽くしか避けない。 */
+  onSurface?: boolean;
+}>;
 
 /**
  * 向きの矢じりの指定（数値なら等分の個数、配列なら位置）を、矢じりを置く媒介変数の値の列にする。
@@ -2342,101 +2522,4 @@ function arrowHead(from: ScreenPoint, to: ScreenPoint, len: number, half: number
     `${r1(bx - half * sin)},${r1(by + half * cos)}`,
     `${r1(bx + half * sin)},${r1(by - half * cos)}`,
   ].join(" ");
-}
-
-// ---------------------------------------------------------------------------
-// ラベルの当たり判定（SpaceVectorDiagram と同じ方式）
-// ---------------------------------------------------------------------------
-
-/** 当たり判定に使う線分（画面座標の端点 a→b）。 */
-type Seg = Readonly<{ ax: number; ay: number; bx: number; by: number }>;
-
-function segOf(a: ScreenPoint, b: ScreenPoint): Seg {
-  return { ax: a.sx, ay: a.sy, bx: b.sx, by: b.sy };
-}
-
-/** 折れ線を高々 maxSegs 本の線分に間引く（曲線の当たり判定を軽くする）。 */
-function polylineSegs(pts: readonly ScreenPoint[], maxSegs: number): readonly Seg[] {
-  if (pts.length < 2) return [];
-  const stride = Math.max(1, Math.ceil((pts.length - 1) / maxSegs));
-  // 始点の添字 0, stride, 2·stride, … のうち、末尾の点より前にあるものの個数。
-  return Array.from({ length: Math.ceil((pts.length - 1) / stride) }, (_, k) => {
-    const i = k * stride;
-    return segOf(pts[i], pts[Math.min(i + stride, pts.length - 1)]);
-  });
-}
-
-/** 当たり判定に使う軸並行の矩形（左上 (x0,y0)・右下 (x1,y1)）。 */
-type Box = Readonly<{ x0: number; x1: number; y0: number; y1: number }>;
-
-/** ラベルの中心を基準点からずらす量。 */
-type Offset = Readonly<{ dx: number; dy: number }>;
-
-/** 1 つのラベルの配置の依頼。基準点 (cx, cy) と、優先順に並べたずらしの候補を持つ。 */
-type LabelRequest = Readonly<{
-  key: string;
-  tex: string;
-  cx: number;
-  cy: number;
-  cands: readonly Offset[];
-}>;
-
-/** ラベルの想定文字高（viewBox 単位）。当たり判定の縦幅に使う。 */
-const LABEL_H = 15;
-
-/** 中心 (cx, cy) と推定文字幅から、ラベルが占める矩形を求める（中央寄せ前提）。 */
-function boxFor(cx: number, cy: number, w: number): Box {
-  return { x0: cx - w / 2, x1: cx + w / 2, y0: cy - LABEL_H / 2, y1: cy + LABEL_H / 2 };
-}
-
-function boxesOverlap(a: Box, b: Box): boolean {
-  return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
-}
-
-/** 点 (px, py) から矩形 b までの最短距離（矩形の内部なら 0）。 */
-function pointToBox(px: number, py: number, b: Box): number {
-  const dx = Math.max(b.x0 - px, 0, px - b.x1);
-  const dy = Math.max(b.y0 - py, 0, py - b.y1);
-  return Math.hypot(dx, dy);
-}
-
-/** 線分 s と矩形 b の最短距離の近似。線分を標本化し、各点から矩形までの距離の最小を返す。 */
-function segBoxDist(s: Seg, b: Box): number {
-  const N = 16;
-  // 標本点 i から先の最小を、それまでの最小 min と比べながら求める。ラベルの配置で何度も呼ぶため、
-  // 標本の配列を作らずに数える。
-  const minFrom = (i: number, min: number): number => {
-    if (i > N) return min;
-    const t = i / N;
-    const d = pointToBox(s.ax + (s.bx - s.ax) * t, s.ay + (s.by - s.ay) * t, b);
-    return minFrom(i + 1, d < min ? d : min);
-  };
-  return minFrom(0, Infinity);
-}
-
-/**
- * ベクトル場の矢印の群 group のうち、矩形 box の近く（3 px 未満）を通る矢印に FIELD_WEIGHT ずつ
- * 与えた罰点の合計。FIELD_MAX_PENALTY に達したら、それ以上は数えない。
- */
-function fieldHits(group: readonly Seg[], box: Box): number {
-  return group.reduce((hits, s) => {
-    if (hits >= FIELD_MAX_PENALTY) return hits;
-    // 矢印は数百本になりうるため、外接矩形で遠い矢印を先に除き、標本化による距離の計算を省く。
-    if (
-      Math.max(s.ax, s.bx) < box.x0 - 3 ||
-      Math.min(s.ax, s.bx) > box.x1 + 3 ||
-      Math.max(s.ay, s.by) < box.y0 - 3 ||
-      Math.min(s.ay, s.by) > box.y1 + 3
-    ) {
-      return hits;
-    }
-    return segBoxDist(s, box) < 3 ? hits + FIELD_WEIGHT : hits;
-  }, 0);
-}
-
-/** LaTeX 文字列の表示幅をおおまかに見積もる（DOM が無いビルド時の概算。安全側に広めに取る）。 */
-function estimateTexWidth(tex: string, fontSize = 12): number {
-  // LaTeX コマンドは 1 グリフ相当に畳み、装飾記号（{ } ^ _ $ 空白）は幅 0 とする。
-  const visible = tex.replace(/\\[a-zA-Z]+/g, "x").replace(/[{}^_$\s]/g, "");
-  return Math.max(visible.length * fontSize * 0.6, 14);
 }

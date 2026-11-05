@@ -13,12 +13,11 @@ import {
   besideSegment,
   besideSegmentCandidates,
   besideVectorCandidates,
-  linePositions,
-  pointPositions,
+  lineLabelCandidates,
+  pointLabelCandidates,
   positionCandidates,
   widelyAroundPoint,
   type LabelDirSpec,
-  type LineLabelSpec,
 } from "./figure-label/candidates";
 import {
   clamp,
@@ -535,15 +534,8 @@ export default function FunctionGraph({
     auto: (offset: number | undefined) => readonly Candidate<LabelPos>[],
   ): readonly Candidate<LabelPos>[] => {
     const { labelAt, labelDir, labelOffset } = spec;
-    if (labelAt === undefined && (labelDir === undefined || labelDir === "auto")) {
-      return auto(labelOffset);
-    }
     const at = labelAt === undefined ? undefined : toScreen(labelAt);
-    const fixed: LineLabelSpec = { at, dir: labelDir, offset: labelOffset };
-    return positionCandidates(
-      linePositions(fixed, a, b, size, () => []),
-      size,
-    );
+    return lineLabelCandidates({ at, dir: labelDir, offset: labelOffset }, a, b, size, auto);
   };
 
   // ラベルは、補助線分・ベクトル・点・補助線の順に 1 つずつ置く。動ける範囲の狭いラベルを先に置く。
@@ -584,19 +576,15 @@ export default function FunctionGraph({
     const size = glyphSizeOf(p.label, LABEL_FONT);
     const at = toScreen(p);
     const reach = markerReach(p);
-    const candidates = (): readonly Candidate<LabelPos>[] => {
-      if (p.labelAt !== undefined) return lineCandidates(p, at, at, size, () => []);
-      if (p.labelDir !== undefined && p.labelDir !== "auto") {
-        return positionCandidates(pointPositions(at, size, reach, p.labelDir, p.labelOffset), size);
-      }
-      return avoidingBands(
-        widelyAroundPoint(at, size, reach, p.labelOffset),
-        tickBands,
-        W.tickBand,
-      );
+    const spec = {
+      at: p.labelAt === undefined ? undefined : toScreen(p.labelAt),
+      dir: p.labelDir,
+      offset: p.labelOffset,
     };
     const pos = choosePlacement(
-      candidates(),
+      pointLabelCandidates(spec, at, size, reach, () =>
+        avoidingBands(widelyAroundPoint(at, size, reach, p.labelOffset), tickBands, W.tickBand),
+      ),
       placed,
       // 基準点が点の上でも印を避けられるよう、labelAt があれば自分の印も判定に含める。
       p.labelAt === undefined ? `pt${i}` : undefined,

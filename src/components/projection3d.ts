@@ -28,6 +28,11 @@ export type Vec3 = Readonly<{ x: number; y: number; z: number }>;
 /** 画面上の点（またはベクトル）。SVG と同じく下向きが正の sy を持つ。 */
 export type ScreenPoint = Readonly<{ sx: number; sy: number }>;
 
+/** 画面の点を、ラベルの配置器の座標（`figure-label/`）にする。 */
+export function toXY(p: ScreenPoint): Readonly<{ x: number; y: number }> {
+  return { x: p.sx, y: p.sy };
+}
+
 /** 視点が決める投影の基底。各軸の単位ベクトルの画面上の向きと、視線方向を持つ。 */
 export type ViewBasis = Readonly<{
   /** $x$ 軸の単位ベクトルを写す画面ベクトル（倍率 1）。 */
