@@ -370,6 +370,21 @@
 }
 
 /*
+ * 暗いテーマの面の線。面の色はビルド時に光の計算で決める 16 進の色なので、面より暗い網目と縁取りは暗い
+ * 背景の上で見えなくなる。線だけを、面ごとの色を明るくした色（SurfacePlot の --edge）に替える。1 色にすると
+ * 重なった面の線の区別が消える。塗りを明るくすると、色相がずれて、キャプションの色名と合わなくなり、面の上の
+ * 点や線も沈む。
+ */
+:root[data-theme="dark"] .surface-plot-faces > path {
+  stroke: var(--edge);
+  stroke-opacity: 0.45;
+}
+
+:root[data-theme="dark"] .surface-plot-faces > .surface-plot-outline {
+  stroke-opacity: 0.7;
+}
+
+/*
  * 図中のラベル・目盛り数字は曲面や網目の上に重なることが多い。背景色のハローを敷き、
  * 下の線や塗りから文字を浮かせて読めるようにする。
  */
