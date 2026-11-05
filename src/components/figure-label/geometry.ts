@@ -35,6 +35,24 @@ export function visiblePieces(samples: readonly LineSample[]): readonly (readonl
   );
 }
 
+/** 矩形の列の、左上と右下の角の列。 */
+function cornersOf(boxes: readonly Box[]): readonly XY[] {
+  return boxes.flatMap((b) => [
+    { x: b.x0, y: b.y0 },
+    { x: b.x1, y: b.y1 },
+  ]);
+}
+
+/** 矩形の列を囲む、横の範囲が x0 から x1 の行の帯。矩形が無ければ帯を作らない。 */
+export function rowBand(boxes: readonly Box[], x0: number, x1: number): readonly Box[] {
+  return boxes.length === 0 ? [] : [{ ...bboxOf(cornersOf(boxes)), x0, x1 }];
+}
+
+/** 矩形の列を囲む、縦の範囲が y0 から y1 の列の帯。矩形が無ければ帯を作らない。 */
+export function columnBand(boxes: readonly Box[], y0: number, y1: number): readonly Box[] {
+  return boxes.length === 0 ? [] : [{ ...bboxOf(cornersOf(boxes)), y0, y1 }];
+}
+
 /** 点が多角形の内側にあるか（交差数の偶奇で判定する。塗りの evenodd 規則と一致させる）。 */
 export function pointInPolygon(p: XY, poly: readonly XY[]): boolean {
   return poly.reduce((inside, a, k) => {

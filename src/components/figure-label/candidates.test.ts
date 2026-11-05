@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   aroundPoint,
   aroundVector,
+  avoidingBands,
   besideCurve,
   besideSegment,
   besideSegmentCandidates,
@@ -212,7 +213,10 @@ describe("besideSegment の割合", () => {
   };
 
   it("既定は中点の両側の 2 か所である", () => {
-    expect(besideSegment(a, b, size).map(midX)).toEqual([50, 50]);
+    const xs = besideSegment(a, b, size).map(midX);
+    expect(xs).toHaveLength(2);
+    expect(xs[0]).toBeCloseTo(50, 9);
+    expect(xs[1]).toBeCloseTo(50, 9);
   });
 
   it("割合の順に、各割合の両側を返す", () => {
@@ -278,6 +282,35 @@ describe("besideVectorCandidates", () => {
 
   it("線の脇の候補の罰点は先端の候補より軽い", () => {
     expect(cands[2].score?.(0)).toBeLessThan(LABEL_POLICY.vectorEnd);
+  });
+});
+
+describe("avoidingBands", () => {
+  const pos: LabelPos = { x: 50, y: 50, align: "center" };
+  const inside: Box = { x0: 0, x1: 100, y0: 40, y1: 60 };
+  const elsewhere: Box = { x0: 0, x1: 100, y0: 200, y1: 220 };
+  const cand: Candidate<LabelPos> = { box: glyphBox(pos, size), value: pos };
+
+  it("重なる帯の本数だけ罰点を足す", () => {
+    const [one] = avoidingBands([cand], [inside, inside], 3);
+    expect(one.score?.(1)).toBe(7);
+  });
+
+  it("重ならない帯は数えない", () => {
+    const [one] = avoidingBands([cand], [elsewhere], 3);
+    expect(one.score?.(1)).toBe(1);
+  });
+
+  it("候補の元の罰点を保つ", () => {
+    const scored: Candidate<LabelPos> = { ...cand, score: (penalty) => penalty + 2 };
+    const [one] = avoidingBands([scored], [inside], 3);
+    expect(one.score?.(1)).toBe(6);
+  });
+
+  it("候補の矩形と値を変えない", () => {
+    const [one] = avoidingBands([cand], [inside], 3);
+    expect(one.box).toEqual(cand.box);
+    expect(one.value).toEqual(cand.value);
   });
 });
 

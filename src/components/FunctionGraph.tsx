@@ -9,6 +9,7 @@ import { renderToString } from "katex";
 import { useId } from "react";
 import type { ReactNode } from "react";
 import {
+  avoidingBands,
   besideSegment,
   besideSegmentCandidates,
   besideVectorCandidates,
@@ -20,8 +21,9 @@ import {
   type LineLabelSpec,
 } from "./figure-label/candidates";
 import {
-  bboxOf,
-  boxesOverlap,
+  clamp,
+  columnBand,
+  rowBand,
   visiblePieces,
   type Box,
   type LineSample,
@@ -364,12 +366,22 @@ export default function FunctionGraph({
         ];
 
   // ---- ラベルの自動配置 ----
-  // 候補位置を採点し、最も衝突の少ない位置を選ぶ。ビルド時に一度だけ走る。障害物は、軸・軸名・目盛り
-  // 数字・点の印（矩形）と、曲線・補助線・ベクトルなどの線（折れ線）、目盛りに沿った格子線である。
+  // 候補位置を採点し、最も衝突の少ない位置を選ぶ。ビルド時に一度だけ走る。障害物は、軸・目盛り数字・
+  // 点の印（矩形）と、曲線・補助線・ベクトルなどの線（折れ線）、目盛りに沿った格子線である。軸名は
+  // 既出のラベルとして扱う。
   const viewBounds: Box = { x0: 2, x1: VIEW_W - 2, y0: 2, y1: VIEW_H - 2 };
   const toScreen = (p: XY): XY => ({ x: x(p.x), y: y(p.y) });
   const screenPieces = (samples: readonly CurveSample[]): readonly (readonly XY[])[] =>
-    visiblePieces(samples.map((s): LineSample => ({ x: x(s.xv), y: y(s.yv), ok: s.visible })));
+    visiblePieces(
+      samples.map(
+        // 曲線の定義域が描画窓より広いとき、窓の外は描かれないので障害物から外す。
+        (s): LineSample => ({
+          x: x(s.xv),
+          y: y(s.yv),
+          ok: s.visible && s.xv >= xMin && s.xv <= xMax,
+        }),
+      ),
+    );
 
   // 空ラベルの目盛り（格子線だけを残し数字を省く目盛り）は字形をもたないので、障害物から外す。
   const tickBoxOf = (t: Tick, pos: LabelPos): Box =>
@@ -387,12 +399,8 @@ export default function FunctionGraph({
   // 目盛り数字の行と列の帯。点や補助線のラベルが入ると、数字に重ならなくても目盛りの 1 つに見える。
   // 線分と矢印のラベルは線に添うので目盛りに見えにくく、帯を避けると線の中ほどから外れる。
   const tickBands: readonly Box[] = [
-    ...(xTickBoxes.length === 0
-      ? []
-      : [{ ...bboxOf(cornersOf(xTickBoxes)), x0: originX, x1: originX + plotW }]),
-    ...(yTickBoxes.length === 0
-      ? []
-      : [{ ...bboxOf(cornersOf(yTickBoxes)), y0: originY, y1: originY + plotH }]),
+    ...rowBand(xTickBoxes, originX, originX + plotW),
+    ...columnBand(yTickBoxes, originY, originY + plotH),
   ];
   const W = OBSTACLE_WEIGHT;
   const axisObstacles = [
@@ -497,15 +505,6 @@ export default function FunctionGraph({
     ...gridLines.flatMap((pts) => lineObstacle("gd", pts, W.grid, true)),
   ]);
 
-  // 目盛り数字の帯に入る候補に罰点を足す。
-  const avoidTickBands = (
-    candidates: readonly Candidate<LabelPos>[],
-  ): readonly Candidate<LabelPos>[] =>
-    candidates.map((c) => {
-      const extra = tickBands.filter((b) => boxesOverlap(c.box, b)).length * W.tickBand;
-      return { ...c, score: (penalty) => (c.score?.(penalty) ?? penalty) + extra };
-    });
-
   // 候補から最も罰点の小さい位置を選ぶ。同点なら前方の候補を優先する。
   const choosePlacement = (
     candidates: readonly Candidate<LabelPos>[],
@@ -578,10 +577,11 @@ export default function FunctionGraph({
       : positionCandidates(pointPositions(at, size, reach, p.labelDir, p.labelOffset), size);
     const pos = choosePlacement(
       p.labelAt === undefined
-        ? avoidTickBands(pointCandidates)
+        ? avoidingBands(pointCandidates, tickBands, W.tickBand)
         : lineCandidates(p, at, at, size, () => []),
       placed,
-      `pt${i}`,
+      // 基準点が点の上でも印を避けられるよう、labelAt があれば自分の印も判定に含める。
+      p.labelAt === undefined ? `pt${i}` : undefined,
     );
     return placedLabel(p.label, pos, size);
   });
@@ -593,8 +593,10 @@ export default function FunctionGraph({
     const fractions = a.x === undefined ? H_LINE_FRACTIONS : V_LINE_FRACTIONS;
     const pos = choosePlacement(
       lineCandidates(a, ends[0], ends[1], size, (offset) =>
-        avoidTickBands(
+        avoidingBands(
           positionCandidates(besideSegment(ends[0], ends[1], size, offset, fractions), size),
+          tickBands,
+          W.tickBand,
         ),
       ),
       placed,
@@ -919,10 +921,6 @@ export default function FunctionGraph({
   );
 }
 
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
-
 /** 浮動小数の丸め誤差を抑え、目盛り数値を短い文字列にする（小数第 3 位まで）。 */
 function formatNum(v: number): string {
   return String(Math.round(v * 1000) / 1000);
@@ -961,14 +959,6 @@ type CurveSample = Readonly<{ xv: number; yv: number; visible: boolean }>;
 
 /** 凡例の 1 項目。曲線と媒介変数曲線を同じ見た目で並べるために正規化する。 */
 type LegendEntry = Readonly<{ label: string; color: string; dashed: boolean }>;
-
-/** 矩形の列の、左上と右下の角の列。 */
-function cornersOf(boxes: readonly Box[]): readonly XY[] {
-  return boxes.flatMap((b) => [
-    { x: b.x0, y: b.y0 },
-    { x: b.x1, y: b.y1 },
-  ]);
-}
 
 /** 点の中心から印の端までの距離（px）。白抜きの点は輪郭の線の太さの半分だけ広い。 */
 function markerReach(p: Point): number {

@@ -3,6 +3,7 @@
 
 import {
   boxGap,
+  boxesOverlap,
   distanceToBox,
   inflate,
   nearestOnPolyline,
@@ -138,6 +139,18 @@ function slidAroundPoint(
       centeredAt(p.x + s, p.y + r + halfH, size),
     ]),
   ];
+}
+
+/** 帯に重なる候補に、重なる帯 1 本につき weight の罰点を足す。候補の元の罰点は保つ。 */
+export function avoidingBands(
+  cands: readonly Candidate<LabelPos>[],
+  bands: readonly Box[],
+  weight: number,
+): readonly Candidate<LabelPos>[] {
+  return cands.map((c) => {
+    const extra = bands.filter((b) => boxesOverlap(c.box, b)).length * weight;
+    return { ...c, score: (penalty) => (c.score?.(penalty) ?? penalty) + extra };
+  });
 }
 
 /** 8 方向を試す順。目盛り数字は軸の下に並ぶので、同じ罰点なら上側を選ぶ。 */
