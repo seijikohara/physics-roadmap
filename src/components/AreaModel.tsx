@@ -1,5 +1,7 @@
 import { Bar, Line } from "@visx/shape";
 import { useId } from "react";
+import { aroundPoint } from "./figure-label/candidates";
+import { glyphSizeOf } from "./figure-label/label-box";
 import KatexLabel from "./KatexLabel";
 
 /**
@@ -56,6 +58,8 @@ const HIGHLIGHT = "#f59e0b";
 // 描画領域。正方形に近い図を中央へ収める。
 const VIEW_W = 320;
 const VIEW_H = 240;
+// 辺のラベルの字の大きさ（KatexLabel の fontSize）。
+const EDGE_FONT = 14;
 const PAD_L = 40; // 縦の辺ラベルを左へ収める余白。
 const PAD_T = 28; // 横の辺ラベルを上へ収める余白。
 const PAD_R = 16;
@@ -101,6 +105,12 @@ export default function AreaModel({
   );
 
   const cellOf = (col: number, row: number) => cells.find((c) => c.col === col && c.row === row);
+
+  // 列のラベルの行の高さ。行の中でいちばん低い字形も、枠からすきまの目標だけ離す。基線をそろえるので、ラベル
+  // ごとには決めない。
+  const columnY = columns
+    .map((c) => aroundPoint({ x: 0, y: originY }, glyphSizeOf(c.label, EDGE_FONT), 0).above.y)
+    .reduce((a, b) => Math.min(a, b), originY - 12);
 
   return (
     <svg
@@ -169,13 +179,26 @@ export default function AreaModel({
       {/* 横の辺ラベル（上）。 */}
       {columns.map((c, ci) => {
         const cx = (colEdges[ci] + colEdges[ci + 1]) / 2;
-        return <KatexLabel key={`col-${ci}`} tex={c.label} x={cx} y={originY - 12} />;
+        return (
+          <KatexLabel key={`col-${ci}`} tex={c.label} x={cx} y={columnY} fontSize={EDGE_FONT} />
+        );
       })}
 
       {/* 縦の辺ラベル（左）。 */}
       {rows.map((r, ri) => {
         const cy = (rowEdges[ri] + rowEdges[ri + 1]) / 2;
-        return <KatexLabel key={`row-${ri}`} tex={r.label} x={originX - 18} y={cy} />;
+        // 高さは同じ行のセルのラベルとそろえ、基線を合わせる。
+        const pos = aroundPoint({ x: originX, y: cy }, glyphSizeOf(r.label, EDGE_FONT), 0).left;
+        return (
+          <KatexLabel
+            key={`row-${ri}`}
+            tex={r.label}
+            x={pos.x}
+            y={cy}
+            fontSize={EDGE_FONT}
+            align={pos.align}
+          />
+        );
       })}
     </svg>
   );

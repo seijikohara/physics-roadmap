@@ -192,25 +192,22 @@ $$
   yMin={-2.5}
   yMax={2.5}
   curves={[
-    { fn: (x) => Math.sin(x), color: "#64748b", label: "\\sin\\theta", labelX: -2.4, dashed: true },
+    { fn: (x) => Math.sin(x), color: "#64748b", label: "\\sin\\theta", dashed: true },
     {
       fn: (x) => Math.sqrt(3) * Math.cos(x),
       color: "#cbd5e1",
       label: "\\sqrt{3}\\cos\\theta",
-      labelX: 5.0,
       dashed: true,
     },
     {
       fn: (x) => Math.sin(x) + Math.sqrt(3) * Math.cos(x),
       color: "#2563eb",
       label: "\\sin\\theta+\\sqrt{3}\\cos\\theta",
-      labelX: 1.2,
     },
     {
       fn: (x) => 2 * Math.sin(x + Math.PI / 3),
       color: "#dc2626",
       label: "2\\sin(\\theta+\\frac{\\pi}{3})",
-      labelX: 3.7,
       // 和（青い実線）と完全に一致するため、上に載る合成曲線は破線にして下の実線を透かす。
       // 実線どうしだと青が赤に隠れ、一致が見えなくなる。
       dashed: true,

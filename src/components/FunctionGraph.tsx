@@ -74,8 +74,6 @@ type Curve = Readonly<{
   color?: string;
   /** 曲線に添える LaTeX ラベル。凡例（legend）に色見本とともにまとめて表示する。 */
   label?: string;
-  /** 後方互換のため残す。凡例方式の導入により現在は未使用。 */
-  labelX?: number;
   /** 破線で描くか。既定は実線。 */
   dashed?: boolean;
   /** この曲線だけの定義域 [min, max]。省略時は描画窓の横範囲全体。 */

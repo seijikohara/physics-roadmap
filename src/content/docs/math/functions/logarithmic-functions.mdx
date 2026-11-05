@@ -259,15 +259,14 @@ $$
     yMax={5}
     equalScale
     curves={[
-      { fn: (x) => Math.pow(2, x), label: "y=2^x", color: "#3b82f6", labelX: 1.7 },
+      { fn: (x) => Math.pow(2, x), label: "y=2^x", color: "#3b82f6"},
       {
         fn: (x) => Math.log2(x),
         domain: [0.05, 5],
         label: "y=\\log_2 x",
         color: "#f59e0b",
-        labelX: 4,
       },
-      { fn: (x) => x, label: "y=x", dashed: true, labelX: 3.4 },
+      { fn: (x) => x, label: "y=x", dashed: true},
     ]}
     points={[
       { x: 1, y: 2, label: "(1,2)", labelAt: { x: 0.8, y: 3.1 } },
@@ -321,8 +320,8 @@ $$
     yMin={-3}
     yMax={3}
     curves={[
-      { fn: (x) => Math.log2(x), domain: [0.05, 6], label: "y=\\log_2 x", color: "#3b82f6", labelX: 4.5 },
-      { fn: (x) => Math.log(x) / Math.log(0.5), domain: [0.05, 6], label: "y=\\log_{1/2} x", color: "#f59e0b", labelX: 4.5 },
+      { fn: (x) => Math.log2(x), domain: [0.05, 6], label: "y=\\log_2 x", color: "#3b82f6"},
+      { fn: (x) => Math.log(x) / Math.log(0.5), domain: [0.05, 6], label: "y=\\log_{1/2} x", color: "#f59e0b"},
     ]}
     points={[{ x: 1, y: 0, label: "(1,0)", highlight: true }]}
     asymptotes={[{ x: 0, label: "x=0" }]}
