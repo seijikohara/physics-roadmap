@@ -664,7 +664,7 @@ $x=1$ の面は滑らかな曲面である。2 つの面に共通する点は立
     surfaces={[
       { kind: "parametric", fn: (th, z) => ({ x: Math.cos(th), y: Math.sin(th), z }), u: [0, 2 * Math.PI], v: [0, 1.4], opacity: 0.3, resolution: [32, 4], label: "S_1", labelAt: { x: 0.3, y: -1.35, z: 0.8 } },
       { kind: "graph", f: () => 1.4, disk: { r: 1 }, color: "#10b981", opacity: 0.45, label: "S_2", labelAt: { x: 0, y: 0.2, z: 1.6 } },
-      { kind: "graph", f: () => 0, disk: { r: 1 }, color: "#f59e0b", opacity: 0.45, label: "S_3", labelAt: { x: 1.45, y: 0.9, z: 0 } },
+      { kind: "graph", f: () => 0, disk: { r: 1 }, color: "#f59e0b", opacity: 0.45, label: "S_3", labelAt: { x: 1.45, y: 0.9, z: 0 }, labelDir: "above" },
     ]}
     ariaLabel="半径 1・高さ 1.4 の円柱の表面を、3 つの部分に塗り分けた図。側面 S1 は青い半透明の面、上のふた S2 は緑の円板、下のふた S3 は琥珀色の円板である。3 つの部分は、上下の 2 つの円で接する。"
   />
@@ -769,7 +769,7 @@ $\beta=\gamma=0$ とすると、$(\alpha\vec{a})\times(\delta\vec{b})=\alpha\del
     ]}
     segments={[
       { from: sph(1, Math.PI / 4, 0), to: plus(sph(1, Math.PI / 4, 0), sphPhi(1, Math.PI / 4, 0), Math.PI / 4), arrow: true, color: "#dc2626", width: 2.4, label: "\\Delta\\varphi\\,\\vec{r}_\\varphi", hidden: "show" },
-      { from: sph(1, Math.PI / 4, 0), to: plus(sph(1, Math.PI / 4, 0), sphTheta(1, Math.PI / 4, 0), Math.PI / 4), arrow: true, color: "#2563eb", width: 2.4, label: "\\Delta\\theta\\,\\vec{r}_\\theta", hidden: "show" },
+      { from: sph(1, Math.PI / 4, 0), to: plus(sph(1, Math.PI / 4, 0), sphTheta(1, Math.PI / 4, 0), Math.PI / 4), arrow: true, color: "#2563eb", width: 2.4, label: "\\Delta\\theta\\,\\vec{r}_\\theta", labelDir: "above-right", labelOffset: 8, hidden: "show" },
     ]}
     points={[{ ...sph(1, Math.PI / 4, 0), label: "\\mathrm{P}_0", hidden: "show" }]}
     ariaLabel="半径 1 の球面の一部（淡い青）の上に、図 2 の小さな長方形 K の像である曲がった四辺形を琥珀色で塗った図。四辺形の頂点 P0（天頂角 π/4・方位角 0 の点）から、経線の向きの赤い矢印 Δφ r_φ と、緯線の向きの青い矢印 Δθ r_θ を描く。2 本の矢印が張る平行四辺形を紫で塗ってある。平行四辺形は P0 で球面に接し、四辺形から少し外へずれる。"

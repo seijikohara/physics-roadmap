@@ -315,6 +315,41 @@ export function inflate(b: Box, d: number): Box {
   return { x0: b.x0 - d, x1: b.x1 + d, y0: b.y0 - d, y1: b.y1 + d };
 }
 
+/** 端点の同一視に使う、0.01 の格子の上の点の名前。 */
+const pointKey = (p: XY): string => `${Math.round(p.x * 100)},${Math.round(p.y * 100)}`;
+
+/**
+ * 向きのそろわない線分の列を、端点を共有する線分どうしでつないだ折れ線の列にする。多角形の網の縁のように
+ * 細かい辺に分かれた線を、1 本の線として扱うために使う。端点は 0.01 の格子で同じ点とみなす。
+ */
+export function chainEdges(edges: readonly (readonly [XY, XY])[]): readonly (readonly XY[])[] {
+  // 端点から辺を引く索引と使用済みの印。辺の数に比例する回数で作り直すと遅いので、局所の可変の表で持つ。
+  const touching = new Map<string, number[]>();
+  for (const [i, [a, b]] of edges.entries()) {
+    for (const k of [pointKey(a), pointKey(b)]) touching.set(k, [...(touching.get(k) ?? []), i]);
+  }
+  const used = new Set<number>();
+  const extend = (from: XY): readonly XY[] => {
+    const tail: XY[] = [];
+    let at = from;
+    for (;;) {
+      const next = (touching.get(pointKey(at)) ?? []).find((i) => !used.has(i));
+      if (next === undefined) return tail;
+      used.add(next);
+      const [a, b] = edges[next];
+      at = pointKey(a) === pointKey(at) ? b : a;
+      tail.push(at);
+    }
+  };
+  return edges.flatMap(([a, b], i) => {
+    if (used.has(i)) return [];
+    used.add(i);
+    const forward = extend(b);
+    const backward = extend(a);
+    return [[...backward.toReversed(), a, b, ...forward]];
+  });
+}
+
 /** 2 つの矩形のすきま。重なるときは 0 である。 */
 export function boxGap(a: Box, b: Box): number {
   return Math.hypot(Math.max(a.x0 - b.x1, b.x0 - a.x1, 0), Math.max(a.y0 - b.y1, b.y0 - a.y1, 0));

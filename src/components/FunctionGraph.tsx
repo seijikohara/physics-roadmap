@@ -13,12 +13,11 @@ import {
   besideSegment,
   besideSegmentCandidates,
   besideVectorCandidates,
-  linePositions,
+  lineLabelCandidates,
   pointPositions,
   positionCandidates,
   widelyAroundPoint,
   type LabelDirSpec,
-  type LineLabelSpec,
 } from "./figure-label/candidates";
 import {
   clamp,
@@ -535,15 +534,8 @@ export default function FunctionGraph({
     auto: (offset: number | undefined) => readonly Candidate<LabelPos>[],
   ): readonly Candidate<LabelPos>[] => {
     const { labelAt, labelDir, labelOffset } = spec;
-    if (labelAt === undefined && (labelDir === undefined || labelDir === "auto")) {
-      return auto(labelOffset);
-    }
     const at = labelAt === undefined ? undefined : toScreen(labelAt);
-    const fixed: LineLabelSpec = { at, dir: labelDir, offset: labelOffset };
-    return positionCandidates(
-      linePositions(fixed, a, b, size, () => []),
-      size,
-    );
+    return lineLabelCandidates({ at, dir: labelDir, offset: labelOffset }, a, b, size, auto);
   };
 
   // ラベルは、補助線分・ベクトル・点・補助線の順に 1 つずつ置く。動ける範囲の狭いラベルを先に置く。

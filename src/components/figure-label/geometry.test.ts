@@ -4,6 +4,7 @@ import {
   bboxOf,
   boxGap,
   boxesOverlap,
+  chainEdges,
   clamp,
   columnBand,
   cumulativeLength,
@@ -514,5 +515,70 @@ describe("rowBand と columnBand", () => {
   it("矩形が無ければ帯を作らない", () => {
     expect(rowBand([], 0, 100)).toEqual([]);
     expect(columnBand([], 0, 100)).toEqual([]);
+  });
+});
+
+describe("chainEdges", () => {
+  const a = { x: 0, y: 0 };
+  const b = { x: 1, y: 0 };
+  const c = { x: 2, y: 0 };
+  const d = { x: 3, y: 0 };
+  const far = { x: 10, y: 10 };
+  const farther = { x: 11, y: 10 };
+
+  it("端点を共有する辺を 1 本の折れ線につなぐ", () => {
+    expect(
+      chainEdges([
+        [a, b],
+        [b, c],
+        [c, d],
+      ]),
+    ).toEqual([[a, b, c, d]]);
+  });
+
+  it("辺の向きと順序がそろわなくてもつなぐ", () => {
+    expect(
+      chainEdges([
+        [c, b],
+        [c, d],
+        [a, b],
+      ]),
+    ).toEqual([[d, c, b, a]]);
+  });
+
+  it("離れた辺は別の折れ線にする", () => {
+    expect(
+      chainEdges([
+        [a, b],
+        [far, farther],
+      ]),
+    ).toEqual([
+      [a, b],
+      [far, farther],
+    ]);
+  });
+
+  it("閉じた線は始点へ戻って終わる", () => {
+    const up = { x: 1, y: 1 };
+    const [line] = chainEdges([
+      [a, b],
+      [b, up],
+      [up, a],
+    ]);
+    expect(line).toHaveLength(4);
+    expect(line.at(0)).toEqual(line.at(-1));
+  });
+
+  it("0.01 の格子で同じ点とみなす", () => {
+    expect(
+      chainEdges([
+        [a, b],
+        [{ x: 1.001, y: 0 }, c],
+      ]),
+    ).toHaveLength(1);
+  });
+
+  it("辺が無ければ空を返す", () => {
+    expect(chainEdges([])).toEqual([]);
   });
 });

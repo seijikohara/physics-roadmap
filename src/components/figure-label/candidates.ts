@@ -153,6 +153,31 @@ export function avoidingBands(
   });
 }
 
+/** 候補の全部に extra の罰点を足す。候補の元の罰点は保つ。 */
+export function withPenalty(
+  cands: readonly Candidate<LabelPos>[],
+  extra: number,
+): readonly Candidate<LabelPos>[] {
+  return cands.map((c) => ({ ...c, score: (penalty) => (c.score?.(penalty) ?? penalty) + extra }));
+}
+
+/**
+ * 自分の印より他の印に近い候補に weight の罰点を足す。ラベルが別の点や線の端のものに読まれるのを防ぐ。
+ * 自分の印と同じ位置にある印は数えない。
+ */
+export function preferringOwnMark(
+  cands: readonly Candidate<LabelPos>[],
+  own: XY,
+  others: readonly XY[],
+  weight: number,
+): readonly Candidate<LabelPos>[] {
+  return cands.map((c) => {
+    const mine = distanceToBox(own, c.box);
+    if (!others.some((o) => distanceToBox(o, c.box) < mine)) return c;
+    return { ...c, score: (penalty) => (c.score?.(penalty) ?? penalty) + weight };
+  });
+}
+
 /** 8 方向を試す順。目盛り数字は軸の下に並ぶので、同じ罰点なら上側を選ぶ。 */
 const UPPER_FIRST: readonly LabelDir[] = [
   "above",
@@ -206,6 +231,24 @@ export function positionsAround(
   ];
 }
 
+/**
+ * 基準点からの候補。向きの指定が無ければ、基準点を最初に試し、続いて 8 方向を試す。向きの指定があれば
+ * その 1 か所だけを返す。"center" は基準点を KatexLabel の中心にする。
+ */
+export function anchoredCandidates(
+  anchor: XY,
+  size: GlyphSize,
+  dir: LabelDirSpec = "auto",
+  offset = DEFAULT_LABEL_OFFSET,
+): readonly Candidate<LabelPos>[] {
+  return positionCandidates(
+    dir === "auto"
+      ? positionsAround(anchor, size, 0, offset)
+      : [fixedPosition(anchor, dir, size, 0, offset)],
+    size,
+  );
+}
+
 /** 矢印・線分のラベルの指定。at は画面座標の基準点である。 */
 export type LineLabelSpec = Readonly<{
   at: XY | undefined;
@@ -230,6 +273,25 @@ export function linePositions(
   const reach = at === undefined ? LABEL_POLICY.lineHalfWidth : 0;
   if (dir !== "auto") return [fixedPosition(anchor, dir, size, reach, offset)];
   return at === undefined ? auto(offset) : positionsAround(anchor, size, reach, offset);
+}
+
+/**
+ * 線のラベルの候補。位置も向きも指定が無ければ auto の候補を使い、指定があれば linePositions に従う。
+ */
+export function lineLabelCandidates(
+  spec: LineLabelSpec,
+  a: XY,
+  b: XY,
+  size: GlyphSize,
+  auto: (offset: number | undefined) => readonly Candidate<LabelPos>[],
+): readonly Candidate<LabelPos>[] {
+  if (spec.at === undefined && (spec.dir === undefined || spec.dir === "auto")) {
+    return auto(spec.offset);
+  }
+  return positionCandidates(
+    linePositions(spec, a, b, size, () => []),
+    size,
+  );
 }
 
 /**
