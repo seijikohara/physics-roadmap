@@ -8,6 +8,7 @@ import {
   measureLabel,
   measureText,
 } from "../../src/components/figure-label/measure.ts";
+import type { FigureId } from "./figure-id.ts";
 import { UsageError, parseCli, parsePositive, runMain, writeJson } from "./lib.ts";
 
 const USAGE = `使い方: pnpm run figures:widths -- <labels.json> [オプション]
@@ -29,7 +30,7 @@ const OPTIONS = {
 /** figures:lint の --labels が書き出すラベル 1 件。 */
 type MeasuredLabel = Readonly<{
   page: string;
-  figure: number;
+  figure: FigureId;
   svg: number;
   component: string;
   name: string;

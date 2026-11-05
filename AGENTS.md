@@ -53,7 +53,7 @@
 - `pnpm run typecheck`: `astro sync`で Astro の型宣言を生成してから、TypeScript の型を`tsc --noEmit`で検査する。
 - `pnpm run test`: Vitest で単体テスト（`src/**/*.test.ts`・`scripts/**/*.test.ts`）を実行する。
 - `pnpm run check`: format:check・lint・typecheck・test・lint:text をまとめて実行する。
-- `pnpm run figures:shot -- <ページ>...`: 章の図を 1 枚ずつ PNG に撮る（出力先は`.figures/shots`）。
+- `pnpm run figures:shot -- <ページ>...`: 章の図を 1 枚ずつ PNG に撮る（出力先は`.figures/shots`）。`figure`の外の図も撮る。
 - `pnpm run figures:lint -- <ページ>...`: 図のラベルと線・点・他のラベルの重なりと近接を一覧にする（`--all`で全ページ）。
 - `pnpm run figures:diff -- --base <基準の dist>`: 2 つのビルド結果を比べ、変わった図の前後を左右に並べた PNG を書き出す。
 - `pnpm run figures:widths -- <labels.json>`: ラベルの幅の見積もり（`src/components/figure-label/`）と実測の誤差を、種類・部品ごとの表にする。
@@ -66,6 +66,7 @@
 - スクリプトは`scripts/figures/*.ts`（TypeScript）で、tsx で実行する。
 - スクリプトも「コードの書き方」の節のイミュータビリティの規則に従う。
 - `figures:lint`の近接（near）の閾値は既定で 4px である。4px は、ラベルと線のすきまの目標である。
+- 図は 2 系列で数える。`figure`要素の番号（`図 3`）は章のキャプションと一致する。キャプションの無い`figure`の外の図は別の系列（`図 s1`、ファイル名は`fig-s01`）で数える。`figures:shot`の`--only`は`1,s2`の形で受ける。`figure`の外の図は SVG だけを扱うので、HTML の凡例は比べない。
 - `figures:widths`の入力は`figures:lint`の`--labels`の出力である。`--worst <N>`で誤差の大きいラベルを出す。
   `pnpm run figures:lint -- --dist .figures/base --all --labels .figures/base-labels.json`
 - 図の変更の前後比較は、次の順に行う。

@@ -3,12 +3,14 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import type { Browser, Page } from "playwright-core";
+import { extractFigures, figureFileStem, standaloneId } from "./figure-id.ts";
+import type { FigureId, PageFigures } from "./figure-id.ts";
 import {
   UsageError,
   closeAll,
-  countFigures,
   displayPath,
   listDistPages,
+  listFigures,
   mapSeries,
   newThemedContext,
   openPage,
@@ -27,7 +29,8 @@ import type { StaticServer, Theme } from "./lib.ts";
 
 const USAGE = `使い方: pnpm run figures:diff -- --base <基準の dist> [オプション]
 
-基準と変更後のビルド結果を比べ、記事本文の figure の HTML が変わった図だけを撮る。
+基準と変更後のビルド結果を比べ、記事本文の図の HTML が変わった図だけを撮る。
+figure の外の図（キャプションの無い SVG）は s1, s2, ... と数え、凡例を含まない SVG だけを比べる。
 左に基準、右に変更後を並べた 1 枚の PNG を <out>/<ページ名>/fig-NN.png に書く。
 基準は、変更前に pnpm build した dist を、既存の基準と置き換えてコピーして作る。
   rm -rf .figures/base && mkdir -p .figures && cp -R dist .figures/base
@@ -48,62 +51,14 @@ const OPTIONS = {
 } as const;
 
 /** 文字列の中の区間。 */
-type Span = Readonly<{ start: number; end: number }>;
-
 /** 変わった図のあるページ。 */
-type Change = Readonly<{ route: string; figures: readonly number[]; total: number }>;
+type Change = Readonly<{ route: string; figures: readonly FigureId[]; total: number }>;
 
 /** 図の数が違うページ。 */
-type CountDiff = Readonly<{ route: string; base: number; changed: number }>;
+type CountDiff = Readonly<{ route: string; base: string; changed: string }>;
 
 /** 撮った図。CSS 上の幅と、data URL に埋め込む base64 の PNG を持つ。 */
 type Shot = Readonly<{ base64: string; width: number }>;
-
-/** 記事本文の div の終わりの位置を、div の入れ子の深さを数えて求める。 */
-function contentEnd(html: string, start: number): number {
-  const tokens = [...html.slice(start).matchAll(/<div\b[^>]*>|<\/div>/g)];
-  const found = tokens.reduce<Readonly<{ depth: number; end: number | null }>>(
-    (acc, m) => {
-      if (acc.end !== null) return acc;
-      const depth = acc.depth + (m[0].startsWith("</") ? -1 : 1);
-      return { depth, end: depth === 0 ? start + m.index + m[0].length : null };
-    },
-    { depth: 0, end: null },
-  );
-  return found.end ?? html.length;
-}
-
-/**
- * 記事本文のすべての figure の HTML を、文書の順に返す。
- *
- * 番号をブラウザの `.sl-markdown-content figure`（入れ子も数える文書順）とそろえるため、開始タグの順に
- * 並べ、入れ子は対応する終了タグまでを 1 つの図として切り出す。
- */
-function extractFigures(html: string): readonly string[] {
-  const start = html.search(/<div\b[^>]*\bclass="[^"]*\bsl-markdown-content\b[^"]*"[^>]*>/);
-  if (start < 0) return [];
-  const body = html.slice(start, contentEnd(html, start));
-  const tokens = [...body.matchAll(/<figure\b[^>]*>|<\/figure>/g)];
-  const { spans } = tokens.reduce<Readonly<{ spans: readonly Span[]; open: readonly number[] }>>(
-    (acc, m) => {
-      if (!m[0].startsWith("</")) {
-        return {
-          spans: [...acc.spans, { start: m.index, end: body.length }],
-          open: [...acc.open, acc.spans.length],
-        };
-      }
-      const top = acc.open.at(-1);
-      if (top === undefined) return acc;
-      const end = m.index + m[0].length;
-      return {
-        spans: acc.spans.map((s, i) => (i === top ? { ...s, end } : s)),
-        open: acc.open.slice(0, -1),
-      };
-    },
-    { spans: [], open: [] },
-  );
-  return spans.map((s) => body.slice(s.start, s.end));
-}
 
 /**
  * 図の中の id を振り直し、図と無関係な id の変化を差として数えないようにする。
@@ -123,9 +78,26 @@ function normalizeIds(figure: string): string {
   );
 }
 
-function readFigures(distDir: string, route: string): readonly string[] {
+function readFigures(distDir: string, route: string): PageFigures {
   return extractFigures(readFileSync(path.join(distDir, route, "index.html"), "utf8"));
 }
+
+/** 同じ系列の図を番号の順に比べ、変わった図の番号を返す。 */
+function changedFigures(
+  a: readonly string[],
+  b: readonly string[],
+  idOf: (n: number) => FigureId,
+): readonly FigureId[] {
+  return a
+    .slice(0, Math.min(a.length, b.length))
+    .flatMap((fig, i) => (normalizeIds(fig) === normalizeIds(b[i] ?? "") ? [] : [idOf(i + 1)]));
+}
+
+/** ページの図の枚数を、報告の文にする。 */
+const countText = (p: PageFigures): string =>
+  p.standalone.length === 0
+    ? `${p.figures.length} 枚`
+    : `${p.figures.length} 枚（figure の外に ${p.standalone.length} 枚）`;
 
 /** 2 つのビルド結果の共通のページを比べ、変わった図と図の数の違いを返す。 */
 function findChanges(
@@ -136,18 +108,27 @@ function findChanges(
   const compared = common.map((route) => {
     const a = readFigures(baseDir, route);
     const b = readFigures(distDir, route);
-    const figures = a
-      .slice(0, Math.min(a.length, b.length))
-      .flatMap((fig, i) => (normalizeIds(fig) === normalizeIds(b[i] ?? "") ? [] : [i + 1]));
-    return { route, a: a.length, b: b.length, figures };
+    const figures = [
+      ...changedFigures(a.figures, b.figures, (n) => n),
+      ...changedFigures(a.standalone, b.standalone, standaloneId),
+    ];
+    return { route, a, b, figures };
   });
   return {
     changes: compared
       .filter((c) => c.figures.length > 0)
-      .map((c) => ({ route: c.route, figures: c.figures, total: c.b })),
+      .map((c) => ({
+        route: c.route,
+        figures: c.figures,
+        total: c.b.figures.length + c.b.standalone.length,
+      })),
     countDiffs: compared
-      .filter((c) => c.a !== c.b)
-      .map((c) => ({ route: c.route, base: c.a, changed: c.b })),
+      .filter(
+        (c) =>
+          c.a.figures.length !== c.b.figures.length ||
+          c.a.standalone.length !== c.b.standalone.length,
+      )
+      .map((c) => ({ route: c.route, base: countText(c.a), changed: countText(c.b) })),
   };
 }
 
@@ -158,7 +139,7 @@ function clearOldOutputs(outDir: string): void {
     .filter((entry) => entry.isDirectory())
     .map((entry) => path.join(outDir, entry.name));
   for (const dir of dirs) {
-    for (const file of readdirSync(dir).filter((f) => /^fig-\d+(-light|-dark)?\.png$/.test(f))) {
+    for (const file of readdirSync(dir).filter((f) => /^fig-s?\d+(-light|-dark)?\.png$/.test(f))) {
       rmSync(path.join(dir, file));
     }
     if (readdirSync(dir).length === 0) rmSync(dir, { recursive: true });
@@ -166,8 +147,8 @@ function clearOldOutputs(outDir: string): void {
 }
 
 /** 図を撮り、CSS 上の幅（IHDR の幅を倍率で割った値）と base64 の PNG を返す。 */
-async function shoot(page: Page, n: number, scale: number): Promise<Shot> {
-  const png = await shootFigure(page, n);
+async function shoot(page: Page, id: FigureId, scale: number): Promise<Shot> {
+  const png = await shootFigure(page, id);
   return { base64: png.toString("base64"), width: png.readUInt32BE(16) / scale };
 }
 
@@ -232,7 +213,7 @@ async function writeComposites(
     await mapSeries(options.changes, async ({ route, figures, total }) => {
       const basePage = await openPage(baseContext, pageUrl(baseServer.baseUrl, route), theme);
       const newPage = await openPage(newContext, pageUrl(newServer.baseUrl, route), theme);
-      if ((await countFigures(newPage)) !== total) {
+      if ((await listFigures(newPage)).length !== total) {
         console.warn(
           `警告: ${route} の図の数が HTML と表示で合わない。図の番号がずれている恐れがある。`,
         );
@@ -240,11 +221,11 @@ async function writeComposites(
       const dir = path.join(options.outDir, pageName(route));
       mkdirSync(dir, { recursive: true });
       const suffix = options.themes.length > 1 ? `-${theme}` : "";
-      await mapSeries(figures, async (n) => {
-        const file = path.join(dir, `fig-${String(n).padStart(2, "0")}${suffix}.png`);
+      await mapSeries(figures, async (id) => {
+        const file = path.join(dir, `${figureFileStem(id)}${suffix}.png`);
         const html = compositeHtml(
-          await shoot(basePage, n, scale),
-          await shoot(newPage, n, scale),
+          await shoot(basePage, id, scale),
+          await shoot(newPage, id, scale),
           theme,
         );
         await composer.setContent(html, { waitUntil: "load" });
@@ -283,7 +264,7 @@ function reportLines(
       ? [
           "## 図の数が違うページ",
           "",
-          ...r.countDiffs.map((c) => `- ${c.route}: 基準 ${c.base} 枚・変更後 ${c.changed} 枚`),
+          ...r.countDiffs.map((c) => `- ${c.route}: 基準 ${c.base}・変更後 ${c.changed}`),
           "",
         ]
       : []),

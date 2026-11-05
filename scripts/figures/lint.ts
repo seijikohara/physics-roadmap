@@ -4,7 +4,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import type { BrowserContext } from "playwright-core";
+import { compareFigureIds } from "./figure-id.ts";
+import type { FigureId } from "./figure-id.ts";
 import {
+  FIGURE_SELECTOR,
+  STANDALONE_SELECTOR,
   UsageError,
   distDirOf,
   mapSeries,
@@ -127,11 +131,13 @@ type SvgResult = Readonly<{
   labelList?: readonly LabelInfo[];
 }>;
 /** 図 1 つの計測の結果。 */
-type FigureResult = Readonly<{ figure: number; svgs: readonly SvgResult[] }>;
+type FigureResult = Readonly<{ figure: FigureId; svgs: readonly SvgResult[] }>;
 /** ページ 1 つの計測の結果。 */
 type PageResult = Readonly<{ route: string; url: string; figures: readonly FigureResult[] }>;
 /** 計測の設定。 */
 type MeasureOptions = Readonly<{
+  figureSelector: string;
+  standaloneSelector: string;
   near: number;
   sampleStep: number;
   maxSamples: number;
@@ -198,7 +204,7 @@ type RawFinding = Readonly<{ key: string; finding: Omit<Finding, "count"> }>;
  * 座標はすべて画面の CSS px で扱う（getBoundingClientRect と getScreenCTM が同じ座標系を返す）。
  */
 function measureFigures(options: MeasureOptions): readonly FigureResult[] {
-  const { near, sampleStep, maxSamples, smallFill } = options;
+  const { figureSelector, standaloneSelector, near, sampleStep, maxSamples, smallFill } = options;
   const SKIP_ANCESTORS: ReadonlySet<string> = new Set([
     "foreignObject",
     "defs",
@@ -1392,12 +1398,16 @@ function measureFigures(options: MeasureOptions): readonly FigureResult[] {
     };
   };
 
-  return [...document.querySelectorAll(".sl-markdown-content figure")].map((fig, i) => ({
+  const inFigures = [...document.querySelectorAll(figureSelector)].map((fig, i) => ({
     figure: i + 1,
     svgs: [...fig.querySelectorAll<SVGSVGElement>('svg[role="img"]')]
       .filter((s) => s.closest("foreignObject") === null && s.closest("figure") === fig)
       .map(measureSvg),
   }));
+  const standalone = [...document.querySelectorAll<SVGSVGElement>(standaloneSelector)].map(
+    (svg, i): FigureResult => ({ figure: `s${i + 1}`, svgs: [measureSvg(svg)] }),
+  );
+  return [...inFigures, ...standalone];
 }
 
 /* oxlint-enable unicorn/consistent-function-scoping */
@@ -1432,7 +1442,7 @@ const findingTable = (findings: readonly Finding[]): readonly string[] => [
 /** 図の情報を添えた所見。 */
 type Located = Readonly<{
   route: string;
-  figure: number;
+  figure: FigureId;
   svg: number;
   heading: string;
   finding: Finding;
@@ -1513,7 +1523,7 @@ function comparisonLines(
     const b = gb[0]?.item;
     if (a === undefined || b === undefined) return 0;
     if (a.route !== b.route) return a.route < b.route ? -1 : 1;
-    return a.figure === b.figure ? a.svg - b.svg : a.figure - b.figure;
+    return a.figure === b.figure ? a.svg - b.svg : compareFigureIds(a.figure, b.figure);
   });
   return groups.flatMap((group, gi) => {
     const head = group[0]?.item;
@@ -1660,6 +1670,8 @@ async function main(): Promise<void> {
   // ページの指定はサーバを立てる前に解決し、誤りなら何も起動せずに終える。
   const routes = resolvePages(positionals, { distDir: distDirOf(values), all: values.all });
   const options: MeasureOptions = {
+    figureSelector: FIGURE_SELECTOR,
+    standaloneSelector: STANDALONE_SELECTOR,
     near,
     sampleStep: SAMPLE_STEP,
     maxSamples: MAX_SAMPLES,
