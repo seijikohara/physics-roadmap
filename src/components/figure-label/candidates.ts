@@ -140,6 +140,18 @@ function slidAroundPoint(
   ];
 }
 
+/** 8 方向を試す順。目盛り数字は軸の下に並ぶので、同じ罰点なら上側を選ぶ。 */
+const UPPER_FIRST: readonly LabelDir[] = [
+  "above",
+  "above-right",
+  "above-left",
+  "below",
+  "below-right",
+  "below-left",
+  "right",
+  "left",
+];
+
 /**
  * 点のまわりを広く調べる候補。曲線が点を通る図では、aroundPoint の 8 方向がどれも線や数字にかかることが
  * 多い。8 方向に続けて箱を辺に沿ってずらした位置を試し、同じ並びを farRing ずつ遠い 2 つの輪でも試す。
@@ -155,8 +167,9 @@ export function widelyAroundPoint(
   return [0, 1, 2].flatMap((k) => {
     const extra = k * LABEL_POLICY.farRing;
     const gap = offset + extra;
+    const eight = aroundPoint(p, size, reach, gap);
     const positions = [
-      ...Object.values(aroundPoint(p, size, reach, gap)),
+      ...UPPER_FIRST.map((dir) => eight[dir]),
       ...slidAroundPoint(p, size, reach, gap, extra),
     ];
     return positions.map((pos): Candidate<LabelPos> => ({
@@ -247,6 +260,46 @@ export function besideSegment(
       centeredAt(on.x - perp.x * off, on.y - perp.y * off, size),
     ];
   });
+}
+
+/** 線分のそばの候補。fractions の順に並べ、中点から離れるほど offCenter の罰点を足す。 */
+export function besideSegmentCandidates(
+  a: XY,
+  b: XY,
+  size: GlyphSize,
+  offset: number | undefined,
+  fractions: readonly number[],
+): readonly Candidate<LabelPos>[] {
+  return fractions.flatMap((f) =>
+    besideSegment(a, b, size, offset, [f]).map((pos): Candidate<LabelPos> => ({
+      box: glyphBox(pos, size),
+      value: pos,
+      score: (penalty) => penalty + Math.abs(f - 0.5) * LABEL_POLICY.offCenter,
+    })),
+  );
+}
+
+/**
+ * 矢印のそばの候補。線の脇を besideSegmentCandidates の順に試し、最後に aroundVector の先端と根元の
+ * まわりを vectorEnd の罰点付きで試す。
+ */
+export function besideVectorCandidates(
+  from: XY,
+  to: XY,
+  size: GlyphSize,
+  headHalf: number,
+  offset: number | undefined,
+  fractions: readonly number[],
+): readonly Candidate<LabelPos>[] {
+  const ends = aroundVector(from, to, size, headHalf, offset).slice(2);
+  return [
+    ...besideSegmentCandidates(from, to, size, offset, fractions),
+    ...ends.map((pos): Candidate<LabelPos> => ({
+      box: glyphBox(pos, size),
+      value: pos,
+      score: (penalty) => penalty + LABEL_POLICY.vectorEnd,
+    })),
+  ];
 }
 
 /**

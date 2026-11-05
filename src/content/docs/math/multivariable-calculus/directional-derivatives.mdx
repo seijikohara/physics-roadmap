@@ -864,7 +864,12 @@ $$
     ]}
     yTicks={[2, -2]}
     asymptotes={[
-      { y: 2 * Math.SQRT2, label: "2\\sqrt2" },
+      {
+        y: 2 * Math.SQRT2,
+        label: "2\\sqrt2",
+        labelAt: { x: 1.96, y: 2 * Math.SQRT2 },
+        labelDir: "above",
+      },
       { y: -2 * Math.SQRT2, label: "-2\\sqrt2" },
     ]}
     curves={[{ fn: (t) => 2 * Math.SQRT2 * Math.cos(t), domain: [0, Math.PI], label: "2\\sqrt2\\cos\\theta" }]}

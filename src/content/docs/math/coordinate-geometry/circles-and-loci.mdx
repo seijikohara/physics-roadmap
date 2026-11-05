@@ -263,7 +263,13 @@ $$
     parametrics={[{ fn: (t) => ({ x: 3, y: t }), tMin: -2, tMax: 4, label: "x=3" }]}
     segments={[
       { from: { x: 3, y: 3 }, to: { x: 1, y: 1 }, label: "\\mathrm{AP}", dashed: true },
-      { from: { x: 3, y: 3 }, to: { x: 5, y: 1 }, label: "\\mathrm{BP}", dashed: true },
+      {
+        from: { x: 3, y: 3 },
+        to: { x: 5, y: 1 },
+        label: "\\mathrm{BP}",
+        dashed: true,
+        labelAt: { x: 4.33, y: 2.3 },
+      },
     ]}
     points={[
       { x: 1, y: 1, label: "\\mathrm{A}(1,1)", highlight: true },

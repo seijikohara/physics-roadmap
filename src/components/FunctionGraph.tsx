@@ -9,8 +9,9 @@ import { renderToString } from "katex";
 import { useId } from "react";
 import type { ReactNode } from "react";
 import {
-  aroundVector,
   besideSegment,
+  besideSegmentCandidates,
+  besideVectorCandidates,
   linePositions,
   pointPositions,
   positionCandidates,
@@ -18,7 +19,7 @@ import {
   type LabelDirSpec,
   type LineLabelSpec,
 } from "./figure-label/candidates";
-import { visiblePieces, type Box, type LineSample, type XY } from "./figure-label/geometry";
+import { bboxOf, visiblePieces, type Box, type LineSample, type XY } from "./figure-label/geometry";
 import { glyphBox, glyphSizeOf, type GlyphSize, type LabelPos } from "./figure-label/label-box";
 import { boxObstacle, lineObstacle } from "./figure-label/obstacles";
 import {
@@ -26,6 +27,7 @@ import {
   createPlacer,
   placeInOrder,
   placedLabel,
+  type Candidate,
   type Label,
 } from "./figure-label/placer";
 import { OBSTACLE_WEIGHT } from "./figure-label/policy";
@@ -72,47 +74,39 @@ type Curve = Readonly<{
   domain?: readonly [number, number];
 }>;
 
-/** 平面上の 1 点。塗りつぶし（黒丸）または白抜き（白丸）で表す。 */
-type Point = Readonly<{
-  x: number;
-  y: number;
-  /** 点に添える LaTeX ラベル。 */
-  label?: string;
-  /** 白抜き（その点を含まない）で描くか。既定は false（塗りつぶし）。 */
-  open?: boolean;
-  /** 強調色で描くか。既定は false。 */
-  highlight?: boolean;
-  /**
-   * ラベルを置く向き。既定 "auto" は、軸・線・他のラベルと重ならない向きを自動で選ぶ。"center" は
-   * 点をラベルの中心にする。
-   */
-  labelDir?: LabelDirSpec;
-  /**
-   * 点の印の端と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、印の端
-   * から箱の縁までは labelOffset + 1 である。
-   */
-  labelOffset?: number;
-}>;
-
-/** 線のラベルの位置の指定。補助線・補助線分・ベクトルで共通である。 */
-type LineLabelProps = Readonly<{
+/** ラベルの位置の指定。点・補助線・補助線分・ベクトルで共通である。 */
+type LabelProps = Readonly<{
   /** ラベルの基準点（数学座標）。既定では自動で選ぶ。 */
   labelAt?: XY;
   /**
-   * 基準点から見たラベルの向き。既定は labelAt があれば "center"（基準点をラベルの中心にする）、
-   * 無ければ "auto" である。"auto" は向きを自動で選ぶ。8 方位を渡すと向きを固定する。
+   * 基準点から見たラベルの向き。基準点は labelAt、無ければ点そのものや線の中点である。既定は labelAt が
+   * あれば "center"（基準点をラベルの中心にする）、無ければ "auto" である。"auto" は向きを自動で選ぶ。
+   * 8 方位を渡すと向きを固定する。
    */
   labelDir?: LabelDirSpec;
   /**
-   * 線や基準点と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、箱の縁
-   * までは基準点から labelOffset + 1、線の中心から labelOffset + 2.25（向きを固定したときは
-   * labelOffset + 2）である。
+   * 線・点の印・基準点と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、
+   * 箱の縁までは基準点・点の印の端から labelOffset + 1、線の中心から labelOffset + 2.25（向きを固定した
+   * ときは labelOffset + 2）である。
    */
   labelOffset?: number;
 }>;
 
+/** 平面上の 1 点。塗りつぶし（黒丸）または白抜き（白丸）で表す。 */
+type Point = LabelProps &
+  Readonly<{
+    x: number;
+    y: number;
+    /** 点に添える LaTeX ラベル。 */
+    label?: string;
+    /** 白抜き（その点を含まない）で描くか。既定は false（塗りつぶし）。 */
+    open?: boolean;
+    /** 強調色で描くか。既定は false。 */
+    highlight?: boolean;
+  }>;
+
 /** 縦または横の漸近線・補助線。`x` を指定すれば縦線、`y` を指定すれば横線。 */
-type AsymptoteLine = LineLabelProps &
+type AsymptoteLine = LabelProps &
   Readonly<{
     x?: number;
     y?: number;
@@ -123,7 +117,7 @@ type AsymptoteLine = LineLabelProps &
   }>;
 
 /** 2 点を結ぶ補助線分。傾きの三角形の辺など、限定した区間の補助線に使う。 */
-type Segment = LineLabelProps &
+type Segment = LabelProps &
   Readonly<{
     from: XY;
     to: XY;
@@ -134,7 +128,7 @@ type Segment = LineLabelProps &
   }>;
 
 /** 矢印付きベクトル（有向線分）。始点 from から終点 to へ矢じり付きで描く。 */
-type Vec = LineLabelProps &
+type Vec = LabelProps &
   Readonly<{
     from: XY;
     to: XY;
@@ -242,7 +236,10 @@ const AXIS_NAME_FONT = 13;
 const X_TICK_OFFSET = 14;
 const Y_TICK_OFFSET = 15;
 
-// 補助線分のラベルを置く、線分の上の割合。中点を優先する。
+// 既出のラベルと同じ行に並ぶときに残したいすきま（px）。「P dx」のように 1 続きの式に読まれるのを防ぐ。
+const LABEL_ROW_GAP = 10;
+
+// 線分・矢印のラベルを置く、線の上の割合。中点を優先する。
 const SEGMENT_FRACTIONS: readonly number[] = [0.5, 0.35, 0.65, 0.2, 0.8];
 // 補助線のラベルを置く、線の上の割合。線の始点から測り、前の割合ほど優先する。曲線が線に両端で
 // 近づく図（指数関数の y=0 など）でも、線の中ほどの空いた区間を選べる。縦線は始点が下端で上寄りを、
@@ -370,17 +367,24 @@ export default function FunctionGraph({
   // 空ラベルの目盛り（格子線だけを残し数字を省く目盛り）は字形をもたないので、障害物から外す。
   const tickBoxOf = (t: Tick, pos: LabelPos): Box =>
     glyphBox(pos, glyphSizeOf(tickLabel(t), TICK_FONT));
-  const tickBoxes: readonly Box[] = [
-    ...xt.flatMap((t) =>
-      tickLabel(t) === ""
-        ? []
-        : [tickBoxOf(t, { x: x(tickValue(t)), y: axisY + X_TICK_OFFSET, align: "center" })],
-    ),
-    ...yt.flatMap((t) =>
-      tickLabel(t) === ""
-        ? []
-        : [tickBoxOf(t, { x: axisX - Y_TICK_OFFSET, y: y(tickValue(t)), align: "center" })],
-    ),
+  const xTickBoxes: readonly Box[] = xt.flatMap((t) =>
+    tickLabel(t) === ""
+      ? []
+      : [tickBoxOf(t, { x: x(tickValue(t)), y: axisY + X_TICK_OFFSET, align: "center" })],
+  );
+  const yTickBoxes: readonly Box[] = yt.flatMap((t) =>
+    tickLabel(t) === ""
+      ? []
+      : [tickBoxOf(t, { x: axisX - Y_TICK_OFFSET, y: y(tickValue(t)), align: "center" })],
+  );
+  // 目盛り数字の行と列の帯。ラベルが入ると、数字に重ならなくても目盛りの 1 つに見える。
+  const tickBands: readonly Box[] = [
+    ...(xTickBoxes.length === 0
+      ? []
+      : [{ ...bboxOf(cornersOf(xTickBoxes)), x0: originX, x1: originX + plotW }]),
+    ...(yTickBoxes.length === 0
+      ? []
+      : [{ ...bboxOf(cornersOf(yTickBoxes)), y0: originY, y1: originY + plotH }]),
   ];
   const W = OBSTACLE_WEIGHT;
   const axisObstacles = [
@@ -458,7 +462,8 @@ export default function FunctionGraph({
   };
 
   const placer = createPlacer([
-    ...tickBoxes.map((box) => boxObstacle(box, W.tick)),
+    ...[...xTickBoxes, ...yTickBoxes].map((box) => boxObstacle(box, W.tick)),
+    ...tickBands.map((box) => boxObstacle(box, W.tickBand)),
     ...axisObstacles,
     ...points.map((p, i) => {
       const px = x(p.x);
@@ -466,11 +471,16 @@ export default function FunctionGraph({
       const r = markerReach(p);
       return boxObstacle({ x0: px - r, x1: px + r, y0: py - r, y1: py + r }, W.point, `pt${i}`);
     }),
+    // 破線の曲線は比べる相手や補助の線なので、主役の曲線より軽い。
     ...curveSamples.flatMap((s, i) =>
-      screenPieces(s).flatMap((piece) => lineObstacle(`cv${i}`, piece, W.curve)),
+      screenPieces(s).flatMap((piece) =>
+        lineObstacle(`cv${i}`, piece, curves[i].dashed ? W.line : W.curve),
+      ),
     ),
     ...paramSamples.flatMap((s, i) =>
-      screenPieces(s).flatMap((piece) => lineObstacle(`pm${i}`, piece, W.curve)),
+      screenPieces(s).flatMap((piece) =>
+        lineObstacle(`pm${i}`, piece, parametrics[i].dashed ? W.line : W.curve),
+      ),
     ),
     ...vectors.flatMap((v, i) =>
       lineObstacle(`vc${i}`, [toScreen(v.from), toScreen(v.to)], W.line),
@@ -486,20 +496,33 @@ export default function FunctionGraph({
     ...gridLines.flatMap((pts) => lineObstacle("gd", pts, W.grid, true)),
   ]);
 
-  // 候補の位置から最も罰点の小さい位置を選ぶ。同点なら前方の候補を優先する。
+  // 候補から最も罰点の小さい位置を選ぶ。同点なら前方の候補を優先する。
   const choosePlacement = (
-    positions: readonly LabelPos[],
-    size: GlyphSize,
+    candidates: readonly Candidate<LabelPos>[],
     placed: readonly Box[],
     exclude?: string,
   ): LabelPos | null =>
-    placer.place(positionCandidates(positions, size), { placed, bounds: viewBounds, exclude }).item;
+    placer.place(candidates, { placed, bounds: viewBounds, exclude, rowGap: LABEL_ROW_GAP }).item;
 
-  const lineSpec = (spec: LineLabelProps): LineLabelSpec => ({
-    at: spec.labelAt === undefined ? undefined : toScreen(spec.labelAt),
-    dir: spec.labelDir,
-    offset: spec.labelOffset,
-  });
+  // 線のラベルの候補。位置も向きも指定が無ければ auto を使い、指定があれば linePositions に従う。
+  const lineCandidates = (
+    spec: LabelProps,
+    a: XY,
+    b: XY,
+    size: GlyphSize,
+    auto: (offset: number | undefined) => readonly Candidate<LabelPos>[],
+  ): readonly Candidate<LabelPos>[] => {
+    const { labelAt, labelDir, labelOffset } = spec;
+    if (labelAt === undefined && (labelDir === undefined || labelDir === "auto")) {
+      return auto(labelOffset);
+    }
+    const at = labelAt === undefined ? undefined : toScreen(labelAt);
+    const fixed: LineLabelSpec = { at, dir: labelDir, offset: labelOffset };
+    return positionCandidates(
+      linePositions(fixed, a, b, size, () => []),
+      size,
+    );
+  };
 
   // ラベルは、補助線分・ベクトル・点・補助線の順に 1 つずつ置く。動ける範囲の狭いラベルを先に置く。
   // 各段の最後の placed を次の段へ渡し、後のラベルが先のラベルを避けるようにする。
@@ -509,10 +532,9 @@ export default function FunctionGraph({
     const a = toScreen(s.from);
     const b = toScreen(s.to);
     const pos = choosePlacement(
-      linePositions(lineSpec(s), a, b, size, (offset) =>
-        besideSegment(a, b, size, offset, SEGMENT_FRACTIONS),
+      lineCandidates(s, a, b, size, (offset) =>
+        besideSegmentCandidates(a, b, size, offset, SEGMENT_FRACTIONS),
       ),
-      size,
       placed,
       s.labelAt === undefined ? `sg${i}` : undefined,
     );
@@ -525,10 +547,9 @@ export default function FunctionGraph({
     const from = toScreen(v.from);
     const to = toScreen(v.to);
     const pos = choosePlacement(
-      linePositions(lineSpec(v), from, to, size, (offset) =>
-        aroundVector(from, to, size, HEAD_HALF, offset),
+      lineCandidates(v, from, to, size, (offset) =>
+        besideVectorCandidates(from, to, size, HEAD_HALF, offset, SEGMENT_FRACTIONS),
       ),
-      size,
       placed,
       // 基準点が線の上でも線を避けられるよう、labelAt があれば自分の線も判定に含める。
       v.labelAt === undefined ? `vc${i}` : undefined,
@@ -542,11 +563,15 @@ export default function FunctionGraph({
     const at = toScreen(p);
     const reach = markerReach(p);
     const auto = p.labelDir === undefined || p.labelDir === "auto";
-    const candidates = auto
+    const pointCandidates = auto
       ? widelyAroundPoint(at, size, reach, p.labelOffset)
       : positionCandidates(pointPositions(at, size, reach, p.labelDir, p.labelOffset), size);
-    const best = placer.place(candidates, { placed, bounds: viewBounds, exclude: `pt${i}` });
-    return placedLabel(p.label, best.item, size);
+    const pos = choosePlacement(
+      p.labelAt === undefined ? pointCandidates : lineCandidates(p, at, at, size, () => []),
+      placed,
+      `pt${i}`,
+    );
+    return placedLabel(p.label, pos, size);
   });
 
   const asymptoteLabels = placeInOrder(asymptotes, pointLabels.placed, (a, i, placed) => {
@@ -555,10 +580,9 @@ export default function FunctionGraph({
     const size = glyphSizeOf(a.label, LABEL_FONT);
     const fractions = a.x === undefined ? H_LINE_FRACTIONS : V_LINE_FRACTIONS;
     const pos = choosePlacement(
-      linePositions(lineSpec(a), ends[0], ends[1], size, (offset) =>
-        besideSegment(ends[0], ends[1], size, offset, fractions),
+      lineCandidates(a, ends[0], ends[1], size, (offset) =>
+        positionCandidates(besideSegment(ends[0], ends[1], size, offset, fractions), size),
       ),
-      size,
       placed,
       a.labelAt === undefined ? `as${i}` : undefined,
     );
@@ -923,6 +947,14 @@ type CurveSample = Readonly<{ xv: number; yv: number; visible: boolean }>;
 
 /** 凡例の 1 項目。曲線と媒介変数曲線を同じ見た目で並べるために正規化する。 */
 type LegendEntry = Readonly<{ label: string; color: string; dashed: boolean }>;
+
+/** 矩形の列の、左上と右下の角の列。 */
+function cornersOf(boxes: readonly Box[]): readonly XY[] {
+  return boxes.flatMap((b) => [
+    { x: b.x0, y: b.y0 },
+    { x: b.x1, y: b.y1 },
+  ]);
+}
 
 /** 点の中心から印の端までの距離（px）。白抜きの点は輪郭の線の太さの半分だけ広い。 */
 function markerReach(p: Point): number {

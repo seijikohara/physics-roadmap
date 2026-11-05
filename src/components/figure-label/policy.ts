@@ -15,7 +15,13 @@ export const LABEL_POLICY = {
   // 罰点は、線や数字に近い罰点より軽くし、すきまの取れる遠い位置を選べるようにする。
   slideStep: 4,
   farRing: 6,
-  farRingPenalty: 1,
+  farRingPenalty: 1.5,
+  // 線分・矢印のラベルが中点から離れるときの罰点の係数。線分の長さに対する割合に掛ける。格子線に触れる
+  // 罰点（1）だけでは中点の候補が動かない値にする。
+  offCenter: 8,
+  // 矢印のラベルを軸の脇ではなく先端や根元のまわりに置く候補の罰点。先端のそばのラベルは、そこにある点の
+  // ラベルのように読める。
+  vectorEnd: 3,
   // 線の縁とラベルの間に残すすきま（px）。点の印とラベルの間のすきまも同じ値にする。
   lineClearance: 4,
   // 線の太さの半分の上限（px）。当たり判定は線の中心で行うので、線の縁からのすきまに直すために足す。
@@ -57,6 +63,8 @@ export const LABEL_POLICY = {
 export const OBSTACLE_WEIGHT = {
   point: 12,
   tick: 8,
+  // 目盛り数字の行と列の帯。帯に入ったラベルは目盛りの 1 つに見える。
+  tickBand: 3,
   axisName: 8,
   sampleDot: 8,
   axis: 6,

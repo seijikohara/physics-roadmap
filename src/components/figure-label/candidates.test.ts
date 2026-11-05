@@ -4,6 +4,8 @@ import {
   aroundVector,
   besideCurve,
   besideSegment,
+  besideSegmentCandidates,
+  besideVectorCandidates,
   centeredAt,
   fixedPosition,
   insideRegion,
@@ -233,6 +235,52 @@ describe("besideSegment の割合", () => {
   });
 });
 
+describe("besideSegmentCandidates", () => {
+  const a = { x: 0, y: 0 };
+  const b = { x: 100, y: 0 };
+
+  it("割合ごとに線分の両側を返す", () => {
+    expect(besideSegmentCandidates(a, b, size, undefined, [0.5, 0.2])).toHaveLength(4);
+  });
+
+  it("中点の候補には罰点を足さない", () => {
+    const [first] = besideSegmentCandidates(a, b, size, undefined, [0.5]);
+    expect(first.score?.(3)).toBe(3);
+  });
+
+  it("中点から離れるほど罰点を足す", () => {
+    const cands = besideSegmentCandidates(a, b, size, undefined, [0.35, 0.8]);
+    expect(cands[0].score?.(0)).toBeCloseTo(0.15 * LABEL_POLICY.offCenter, 9);
+    expect(cands[2].score?.(0)).toBeCloseTo(0.3 * LABEL_POLICY.offCenter, 9);
+  });
+
+  it("すきまを besideSegment と同じに扱う", () => {
+    const [first] = besideSegmentCandidates(a, b, size, 9, [0.5]);
+    expect(first.value).toEqual(besideSegment(a, b, size, 9)[0]);
+  });
+});
+
+describe("besideVectorCandidates", () => {
+  const from = { x: 0, y: 0 };
+  const to = { x: 100, y: 0 };
+  const cands = besideVectorCandidates(from, to, size, 3.6, undefined, [0.5, 0.35]);
+
+  it("線の脇を先に試し、続いて aroundVector の中点の脇を除いた位置を試す", () => {
+    const around = aroundVector(from, to, size, 3.6);
+    expect(cands.slice(0, 2).map((c) => c.value)).toEqual(besideSegment(from, to, size));
+    expect(cands.slice(4).map((c) => c.value)).toEqual(around.slice(2));
+  });
+
+  it("先端と根元のまわりには vectorEnd の罰点を足す", () => {
+    expect(cands[4].score?.(1)).toBe(1 + LABEL_POLICY.vectorEnd);
+    expect(cands.at(-1)?.score?.(0)).toBe(LABEL_POLICY.vectorEnd);
+  });
+
+  it("線の脇の候補の罰点は先端の候補より軽い", () => {
+    expect(cands[2].score?.(0)).toBeLessThan(LABEL_POLICY.vectorEnd);
+  });
+});
+
 describe("pointPositions", () => {
   const p = { x: 100, y: 100 };
 
@@ -262,9 +310,17 @@ describe("widelyAroundPoint", () => {
   const step = LABEL_POLICY.farRing;
   const clearance = reach + LABEL_POLICY.lineClearance + LABEL_POLICY.glyphSlack;
 
-  it("先頭は aroundPoint の 8 方向である", () => {
-    const eight = Object.values(aroundPoint(p, size, reach));
-    expect(cands.slice(0, 8).map((c) => c.value)).toEqual(eight);
+  it("先頭は aroundPoint の 8 方向で、上側を先に試す", () => {
+    const eight = aroundPoint(p, size, reach);
+    expect(cands.slice(0, 6).map((c) => c.value)).toEqual([
+      eight.above,
+      eight["above-right"],
+      eight["above-left"],
+      eight.below,
+      eight["below-right"],
+      eight["below-left"],
+    ]);
+    expect(new Set(cands.slice(0, 8).map((c) => c.value))).toEqual(new Set(Object.values(eight)));
   });
 
   it("どの候補も点の印と重ならない", () => {

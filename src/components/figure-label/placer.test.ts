@@ -405,3 +405,34 @@ describe("placedLabel", () => {
     expect(placedLabel("x", null, size)).toBe(NO_PLACEMENT);
   });
 });
+
+describe("createPlacer の rowGap", () => {
+  const placer = createPlacer([]);
+  const left = box(50, 50);
+
+  it("既定では labelSpacing より遠い横のラベルを罰しない", () => {
+    const right = box(60 + LABEL_POLICY.labelSpacing + 1, 50);
+    expect(placer.penalty(right, { placed: [left], bounds })).toBe(0);
+  });
+
+  it("rowGap の範囲の横のラベルを近いと数える", () => {
+    const right = box(66, 50);
+    expect(placer.penalty(right, { placed: [left], bounds, rowGap: 10 })).toBe(LABEL_POLICY.near);
+  });
+
+  it("rowGap より遠ければ罰しない", () => {
+    const right = box(71, 50);
+    expect(placer.penalty(right, { placed: [left], bounds, rowGap: 10 })).toBe(0);
+  });
+
+  it("縦の近さは rowGap で広げない", () => {
+    const below = box(50, 60 + LABEL_POLICY.labelSpacing + 1);
+    expect(placer.penalty(below, { placed: [left], bounds, rowGap: 10 })).toBe(0);
+  });
+
+  it("矩形の障害物との近さには使わない", () => {
+    const withBox = createPlacer([boxObstacle(left, 3)]);
+    const right = box(66, 50);
+    expect(withBox.penalty(right, { placed: [], bounds, rowGap: 10 })).toBe(0);
+  });
+});
