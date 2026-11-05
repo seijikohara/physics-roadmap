@@ -8,22 +8,45 @@ import { Circle, Line, LinePath, Polygon } from "@visx/shape";
 import { renderToString } from "katex";
 import { useId } from "react";
 import {
-  bboxOf,
+  aroundPoint,
+  aroundVector,
+  besideCurve,
+  besideSegment,
+  centeredAt,
+  fixedPosition,
+  insideRegion,
+  linePositions,
+  meanOf,
+  normalLabelOffset,
+  onLine,
+  onLineNear,
+  positionCandidates,
+  type LabelDirSpec,
+  type LineLabelSpec,
+} from "./figure-label/candidates";
+import {
+  arrowHead,
   boxesOverlap,
   clamp,
-  cumulativeLength,
   distanceToSegment,
-  farPartHitsBox,
+  headInside,
   inflate,
   lerpAt,
-  pointAtLength,
-  pointInPolygon,
-  polylineHitsBox,
   segmentHitsBox,
-  turnAngle,
   type Box,
+  type ScreenArrow,
   type XY,
 } from "./figure-label/geometry";
+import { glyphBox, glyphSizeOf, type GlyphSize, type LabelPos } from "./figure-label/label-box";
+import {
+  boxObstacle,
+  groupObstacle,
+  lineObstacle,
+  tracedLine,
+  type LineObstacle,
+} from "./figure-label/obstacles";
+import { NO_PLACEMENT, createPlacer, placeInOrder, type Placement } from "./figure-label/placer";
+import { FIELD_PENALTY_CAP, LABEL_POLICY, OBSTACLE_WEIGHT } from "./figure-label/policy";
 import KatexLabel from "./KatexLabel";
 
 /**
@@ -39,16 +62,17 @@ import KatexLabel from "./KatexLabel";
  * （クライアントディレクティブなし、ハイドレーションなし）。座標は `@visx/scale`、等高線・曲線・
  * 境界は `@visx/shape` の `LinePath`、領域は `Polygon`、軸・線分は `Line`、点は `Circle` で
  * 描く。格子線は `@visx/grid`、クリップは `@visx/clip-path`、軸の矢印は `@visx/marker` を
- * 用いる。軸・目盛り・凡例の寸法と配色は `FunctionGraph` にそろえる。
+ * 用いる。軸・凡例の寸法と配色は `FunctionGraph` にそろえる。目盛り数字だけは軸から 1px 遠い。
  *
  * 等高線は marching squares 法で求める。描画窓を細かい正方の格子に区切り、各セルで等高線が
  * 横切る辺を格子点の値の符号から判定し、辺上の交点を線形補間で求めて線分で結ぶ。線分は交点の
  * キー（どの辺の上か）でつなぎ、折れ線にする。新しい npm 依存を増やさないよう自前で実装する。
  *
- * ラベルは KatexLabel で組版する。点・ベクトル・曲線・等高線のラベルは、候補位置を採点して、
- * 軸・目盛り数字・線・既出ラベルと重ならない位置を選ぶ（`FunctionGraph` と同じ考え方）。
- * 等高線のラベルは線の上に置き、ラベルの下だけ線をマスクで切り抜く。格子線（目盛りに沿った
- * 格子線と極座標の格子）は、すべてのラベルと目盛り数字の下でマスクで切り抜く。
+ * ラベルは KatexLabel で組版する。点・ベクトル・曲線・等高線のラベルは、`figure-label` の配置器が
+ * 候補位置を採点して、軸・目盛り数字・線・既出ラベルと重ならず、線と 4px のすきまが残る位置を
+ * 選ぶ。寸法は KaTeX の組版の木から見積もる。`labelAt` は基準点、`labelDir` は基準点から見た向き、
+ * `labelOffset` はすきまである。等高線のラベルは線の上に置き、ラベルの下だけ線をマスクで切り抜く。
+ * 格子線（目盛りに沿った格子線と極座標の格子）は、すべてのラベルと目盛り数字の下でマスクで切り抜く。
  *
  * ベクトル場（`fields`）は格子点で関数を評価して矢印の群を描く。曲線・媒介変数曲線・領域の境界の
  * `arrows` は、線の向きを矢じりで示す。例えば原点のまわりを回る場と、反時計回りの単位円は次の
@@ -71,9 +95,12 @@ type Tick = number | Readonly<{ value: number; label?: string }>;
 /**
  * 等高線の 1 つの高さ。数値だけ渡すと、ラベルは `labelVar` を左辺にした等式（例: `c=1`）になる。
  * `{ value, label, color }` でラベル（LaTeX）と線の色を個別に指定できる。`label: ""` で
- * その高さだけラベルを省く。
+ * その高さだけラベルを省く。`labelAt`（数学座標）を渡すと、基準点に最も近い線の上の点へラベルを
+ * 固定する。省略時は線の上の空いた位置を自動で選ぶ。
  */
-type ContourLevel = number | Readonly<{ value: number; label?: string; color?: string }>;
+type ContourLevel =
+  | number
+  | Readonly<{ value: number; label?: string; color?: string; labelAt?: XY }>;
 
 /** 1 つの関数の等高線の組。 */
 type ContourSet = Readonly<{
@@ -117,10 +144,20 @@ type RegionStyle = Readonly<{
   /** 領域内に置く LaTeX ラベル（例: "D"）。 */
   label?: string;
   /**
-   * ラベルを置く基準の位置（数学座標）。省略時は、描画窓で切り取った領域の重心とする。基準の
-   * 位置が軸・目盛り数字・線に重なるときは、領域の内側に残る近くの空いた位置へずらす。
+   * ラベルを置く基準点（数学座標）。省略時は、描画窓で切り取った領域の重心とする。向きが "auto"
+   * なら、基準点が軸・目盛り数字・線に重なるときに、領域の内側に残る近くの空いた位置へずらす。
    */
   labelAt?: XY;
+  /**
+   * 基準点から見たラベルの向き。既定 "auto"（空いた位置を選ぶ）。"center" や 8 方位を渡すと、
+   * 罰点によらず位置を固定する。
+   */
+  labelDir?: LabelDirSpec;
+  /**
+   * 向きを固定したときの、基準点と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに
+   * 離すので、基準点から箱の縁までは labelOffset + 1 である。
+   */
+  labelOffset?: number;
 }>;
 
 /**
@@ -217,8 +254,19 @@ type Curve = Readonly<{
   label?: string;
   /** ラベルの置き方。既定 "legend"。 */
   labelPlacement?: LabelPlacement;
-  /** "inline" のとき、ラベルを置く位置の x 座標。省略時は空いた位置を自動で選ぶ。 */
+  /** "inline" のとき、ラベルの基準点の x 座標（線の上の点）。省略時は空いた位置を自動で選ぶ。 */
   labelAt?: number;
+  /**
+   * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto" は線の両側から選ぶ。labelAt が
+   * あれば線の進む向きの右側を優先し、右側の罰点が反対側を LABEL_POLICY.fixedSide より大きく上回るときだけ
+   * 反対側へ移す。"center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
+   */
+  labelDir?: LabelDirSpec;
+  /**
+   * "inline" のとき、線と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、
+   * 線の中心から箱の縁までは labelOffset + 2.25、向きを固定したときは labelOffset + 2 である。
+   */
+  labelOffset?: number;
   /**
    * 向きを示す矢じり（ArrowMarks を参照）。媒介変数は x で、定義域の [始端, 終端] の順に進む
    * 向き（通常は x が増える向き）を指す。数値 n なら定義域（省略時は描画窓の横範囲）を n 等分
@@ -242,8 +290,19 @@ type ParametricCurve = Readonly<{
   label?: string;
   /** ラベルの置き方。既定 "legend"。 */
   labelPlacement?: LabelPlacement;
-  /** "inline" のとき、ラベルを置く位置の媒介変数 t。省略時は空いた位置を自動で選ぶ。 */
+  /** "inline" のとき、ラベルの基準点の媒介変数 t（線の上の点）。省略時は空いた位置を自動で選ぶ。 */
   labelAt?: number;
+  /**
+   * "inline" のとき、線の上の基準点から見たラベルの向き。既定 "auto" は線の両側から選ぶ。labelAt が
+   * あれば線の進む向きの右側を優先し、右側の罰点が反対側を LABEL_POLICY.fixedSide より大きく上回るときだけ
+   * 反対側へ移す。"center" や 8 方位を渡すと向きを固定する。labelAt もあれば、罰点によらず位置を固定する。
+   */
+  labelDir?: LabelDirSpec;
+  /**
+   * "inline" のとき、線と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、
+   * 線の中心から箱の縁までは labelOffset + 2.25、向きを固定したときは labelOffset + 2 である。
+   */
+  labelOffset?: number;
   /**
    * 向きを示す矢じり（ArrowMarks を参照）。t が増える向きを指す。逆向きを示すには tMin と
    * tMax を入れ替えるか、fn の t の符号を反転する。既定は矢じりなし。
@@ -257,8 +316,20 @@ type VectorStyle = Readonly<{
   color?: string;
   /** 矢印に添える LaTeX ラベル（例: "\\nabla f"）。 */
   label?: string;
-  /** ラベルの中心の位置（数学座標）。省略時は、線・他のラベルと重ならない位置を自動で選ぶ。 */
+  /** ラベルの基準点（数学座標）。省略時は、線・他のラベルと重ならない位置を自動で選ぶ。 */
   labelAt?: XY;
+  /**
+   * 基準点から見たラベルの向き。既定は labelAt があれば "center"（基準点をラベルの中心にする）、
+   * 無ければ "auto" である。"auto" は向きを自動で選ぶ。8 方位を渡すと向きを固定する。labelAt が
+   * 無いときの基準点は矢印の中点である。"auto" 以外は罰点によらず位置を固定する。
+   */
+  labelDir?: LabelDirSpec;
+  /**
+   * 線や基準点と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、箱の縁
+   * までは基準点から labelOffset + 1、線の中心から labelOffset + 2.25（向きを固定したときは
+   * labelOffset + 2）である。
+   */
+  labelOffset?: number;
   /** 破線で描くか。既定は実線。 */
   dashed?: boolean;
 }>;
@@ -314,9 +385,9 @@ type VectorField = Readonly<{
   /** 矢印の軸の線の太さ（px）。既定 1.4。 */
   width?: number;
   /**
-   * ラベル・目盛り数字に重なる矢印を描かないか。既定 false（ラベルはハローを敷いて矢印の上に
-   * 描く）。密な場で目盛り数字やラベルが読みにくいときに true にする。省くのは矢印 1 本ごとで、
-   * 矢じりの無い切れ端は残さない。
+   * ラベル・目盛り数字の字形から 4px の範囲に入る矢印を描かないか。既定 false（ラベルはハローを
+   * 敷いて矢印の上に描く）。密な場で目盛り数字やラベルが読みにくいときに true にする。省くのは矢印
+   * 1 本ごとで、矢じりの無い切れ端は残さない。
    */
   avoidLabels?: boolean;
   /** 凡例に載せる LaTeX ラベル（例: "\\mathbf{F}=(-y,x)"）。省略時は凡例に載せない。 */
@@ -336,22 +407,16 @@ type Point = Readonly<{
   /** 点の色。highlight より優先する。 */
   color?: string;
   /**
-   * ラベルを置く向き。省略時は、軸・線・他のラベルと重ならない向きを自動で選ぶ。接点のように
-   * 線が混み合う点で、自動の選択が線に触れるときに指定する。
+   * ラベルを置く向き。既定 "auto" は、軸・線・他のラベルと重ならない向きを自動で選ぶ。接点のように
+   * 線が混み合う点で、自動の選択が線に触れるときに指定する。"center" は点をラベルの中心にする。
    */
-  labelDir?: LabelDir;
+  labelDir?: LabelDirSpec;
+  /**
+   * 点の印の端と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、印の端
+   * から箱の縁までは labelOffset + 1 である。
+   */
+  labelOffset?: number;
 }>;
-
-/** 点のラベルを置く向き。 */
-type LabelDir =
-  | "above"
-  | "below"
-  | "left"
-  | "right"
-  | "above-left"
-  | "above-right"
-  | "below-left"
-  | "below-right";
 
 /** 小長方形の代表点の選び方。関数を渡すと、小長方形の番号 (i, j) から代表点を返す。 */
 type PartitionSample =
@@ -391,8 +456,20 @@ type Segment = Readonly<{
   to: XY;
   /** 線分の中点付近に置く LaTeX ラベル。 */
   label?: string;
-  /** ラベルの中心の位置（数学座標）。省略時は、線分の両側のうち空いた側を自動で選ぶ。 */
+  /** ラベルの基準点（数学座標）。省略時は、線分の両側のうち空いた側を自動で選ぶ。 */
   labelAt?: XY;
+  /**
+   * 基準点から見たラベルの向き。既定は labelAt があれば "center"（基準点をラベルの中心にする）、
+   * 無ければ "auto" である。"auto" は向きを自動で選ぶ。8 方位を渡すと向きを固定する。labelAt が
+   * 無いときの基準点は線分の中点である。"auto" 以外は罰点によらず位置を固定する。
+   */
+  labelDir?: LabelDirSpec;
+  /**
+   * 線や基準点と字形のすきまの目標（px）。既定 4。箱は見積もりの誤差の分だけさらに離すので、箱の縁
+   * までは基準点から labelOffset + 1、線の中心から labelOffset + 2.25（向きを固定したときは
+   * labelOffset + 2）である。
+   */
+  labelOffset?: number;
   /** 破線で描くか。既定 true。 */
   dashed?: boolean;
   /** 線の色。既定は強調色（琥珀色）。 */
@@ -492,6 +569,11 @@ const MAX_AUTO_PLOT_H = 360;
 const SAMPLES = 480;
 const PARAM_SAMPLES = 240;
 
+// 点の印の半径と、白抜きの点の輪郭の線の太さ（px）。分割の代表点の印は小さくする。
+const POINT_R = 4;
+const OPEN_POINT_STROKE = 1.8;
+const SAMPLE_DOT_R = 2.8;
+
 // ベクトルの矢じり。長さ（線方向）と半幅（直交方向）を px で与える。FunctionGraph と同じ。
 const HEAD_LEN = 9;
 const HEAD_HALF = 3.6;
@@ -509,30 +591,6 @@ const FIELD_DOT_R = 1.6;
 const FIELD_MIN_PX = 0.5;
 // 格子の 1 方向あたりの格子点数の上限。間隔の指定を誤ったときに、ビルドが止まらないようにする。
 const FIELD_MAX_STEPS = 200;
-// ラベル配置で、ベクトル場の矢印 1 本と重なるごとの罰点と、1 つの場あたりの罰点の上限。上限を
-// 曲線・等高線の重み（6）より小さくし、場が図全体を覆う場合も、ラベルは線を避けることを優先し、
-// そのうえで重なる矢印の少ない位置を選ぶ。罰点が有限なので、ラベルが置けなくなることはない。
-const FIELD_WEIGHT = 1;
-const FIELD_MAX_PENALTY = 4;
-
-// 領域のラベルを置く候補の、基準点（重心または labelAt）からのずれ（px）。近い順に並べ、同点なら
-// 前の候補を選ぶ。斜めのずれを真横のずれより先に試す。重心が軸の上に来たとき、真横へずらすと
-// ラベルが同じ高さの目盛り数字と軸をはさんで並び、1 続きの式に見えるためである。
-const REGION_LABEL_OFFSETS: readonly (readonly [number, number])[] = [
-  [0, 0],
-  [0, -14],
-  [0, 14],
-  [-20, -14],
-  [20, -14],
-  [-20, 14],
-  [20, 14],
-  [-20, 0],
-  [20, 0],
-  [0, -28],
-  [0, 28],
-  [-36, 0],
-  [36, 0],
-];
 
 // 等高線を求める格子のセルの幅（px）。marching squares 法は、等高線どうしが交わる点（鞍点）が
 // セルの内側や辺の上に来ると、その点の近くで最大 1 セルぶん角を切った折れ線になる。セルを
@@ -543,18 +601,22 @@ const SIMPLIFY_PX = 0.15;
 
 // 等高線のラベル。目盛り数字と同じ大きさにし、線の数が多くても図が文字で埋まらないようにする。
 const CONTOUR_FONT = 11;
-const CONTOUR_LABEL_H = 13;
-// 等高線を切り抜く幅の左右の余白（px）。ラベルの両端と線の切れ目の間にすきまを残す。
-const CONTOUR_GAP_PAD = 2;
+// 等高線を切り抜く矩形の、字形の矩形からの余白（px）。ラベルと線の切れ目の間に 4px のすきまを残す。
+// 斜めの線は矩形の上下の縁で切れるので、4px に線の太さの半分（0.8）と、字の大きさ 11px で字形が
+// 見積もりの上へ出る量（約 0.7）を足す。
+const CONTOUR_GAP_PAD = 5.5;
+// 領域・点・矢印などのラベル、目盛り数字、軸名の字の大きさ（KatexLabel の fontSize）。
+const LABEL_FONT = 12;
+const TICK_FONT = 11;
+const AXIS_NAME_FONT = 13;
+// 目盛り数字の中心と軸の距離（px）。FunctionGraph より 1px 遠い。字形と目盛りの線の端のすきまは、
+// 実測で x 軸の「1」が 5.15px、y 軸の「−1」が 4.5px である。
+const X_TICK_OFFSET = 14;
+const Y_TICK_OFFSET = 15;
 
-// 目盛りに沿った格子線を、ラベルの配置で避ける重み。淡い補助線のため他のどの障害物より軽くし、
-// 空いた位置が無いときは重なりを許す。重なった部分は格子線のマスクで切り抜く。
-const GRID_WEIGHT = 1;
-// 格子線を切り抜く範囲を、ラベルの推定の矩形からさらに広げる量（px）。推定幅と実際の字幅の差と、
-// ハローの広がりを吸収する。
+// 格子線を切り抜く範囲を、字形の矩形からさらに広げる量（px）。格子線の切り抜きの目的は線が字形を
+// 貫かないことである。広げすぎると、字に触れていない格子線まで途切れる。
 const GRID_CUT_PAD = 2;
-// 目盛り数字（フォントサイズ 11）の高さ。格子線を切り抜く矩形の縦幅に使う。
-const TICK_LABEL_H = 13;
 // 格子線を切り抜いた外側に残る線の長さの下限（px）。これより短く残るなら、縁まで切り抜く。
 const GRID_STUB_PX = 12;
 
@@ -589,6 +651,7 @@ export default function ContourPlot({
   const arrow = `cpArrow-${uid}`;
   const clip = `cpClip-${uid}`;
   const mask = `cpMask-${uid}`;
+  const glyphMask = `cpGlyphMask-${uid}`;
   const gridMask = `cpGridMask-${uid}`;
 
   const xr = xMax - xMin;
@@ -663,7 +726,14 @@ export default function ContourPlot({
           : typeof lv === "number" || lv.label === undefined
             ? `${set.labelVar ?? "c"}=${formatNum(value)}`
             : lv.label;
-      return { id: `c${si}-${li}`, lines, color, label: label === "" ? undefined : label };
+      const at = typeof lv === "number" ? undefined : lv.labelAt;
+      return {
+        id: `c${si}-${li}`,
+        lines,
+        color,
+        label: label === "" ? undefined : label,
+        labelAt: at === undefined ? undefined : toScreen(at),
+      };
     });
   });
 
@@ -708,9 +778,21 @@ export default function ContourPlot({
   });
 
   // ---- ベクトル場 ----
-  const fieldData = fields.map((f) =>
-    fieldGeometry(f, { x0: xMin, x1: xMax, y0: yMin, y1: yMax }, toScreen),
-  );
+  // 矢じりの大半が描画窓の外へ出る矢印は描かない。窓で切ると、矢じりの無い切れ端が残って向きを誤読
+  // させる。
+  const plotWindow: Box = {
+    x0: originX,
+    x1: originX + plotW,
+    y0: originY,
+    y1: originY + plotH,
+  };
+  const fieldData = fields.map((f) => {
+    const fd = fieldGeometry(f, { x0: xMin, x1: xMax, y0: yMin, y1: yMax }, toScreen);
+    return {
+      ...fd,
+      arrows: fd.arrows.filter((a) => headInside(a, plotWindow, FIELD_HEAD_LEN, FIELD_HEAD_HALF)),
+    };
+  });
 
   // ---- 曲線・境界の向きの矢じり ----
   // 矢じりは画面座標で向きを求め、横縦の縮尺が異なる図でも線に沿って向くようにする。接線は
@@ -779,75 +861,49 @@ export default function ContourPlot({
     y0: originY + 1,
     y1: originY + plotH - 1,
   };
-  const xl = originX + plotW + 14;
-  const yl = axisX + 8;
-  const boxObstacles: readonly BoxObstacle[] = [
-    ...(axes
-      ? [
-          ...yt.map((t) => {
-            const ty = y(tickValue(t));
-            return { box: { x0: axisX - 24, x1: axisX - 4, y0: ty - 7, y1: ty + 7 }, weight: 8 };
-          }),
-          ...xt.map((t) => {
-            const tx = x(tickValue(t));
-            return { box: { x0: tx - 9, x1: tx + 9, y0: axisY + 6, y1: axisY + 20 }, weight: 8 };
-          }),
-          {
-            box: { x0: axisX - 1.5, x1: axisX + 1.5, y0: originY, y1: originY + plotH },
-            weight: 6,
-          },
-          {
-            box: { x0: originX, x1: originX + plotW, y0: axisY - 1.5, y1: axisY + 1.5 },
-            weight: 6,
-          },
-          // 軸名（x・y）。描く位置は下の軸名の KatexLabel と同じである。
-          { box: { x0: xl - 8, x1: xl + 8, y0: axisY - 19, y1: axisY - 3 }, weight: 8 },
-          { box: { x0: yl, x1: yl + 16, y0: originY - 17, y1: originY - 1 }, weight: 8 },
-        ]
-      : []),
-    ...points.map((p) => {
-      const px = x(p.x);
-      const py = y(p.y);
-      return { box: { x0: px - 5, x1: px + 5, y0: py - 5, y1: py + 5 }, weight: 12 };
-    }),
-    ...(partitionData?.samples ?? []).map((s) => ({
-      box: { x0: s.x - 4, x1: s.x + 4, y0: s.y - 4, y1: s.y + 4 },
-      weight: 8,
-    })),
-  ];
-  const lineObstacles: readonly LineObstacle[] = [
-    ...contourData.flatMap((levels) =>
-      levels.flatMap((lv) => lv.lines.flatMap((l) => lineObstacle(lv.id, l.pts, 6))),
-    ),
-    ...curveSamples.flatMap((s, i) =>
-      visiblePieces(s).flatMap((piece) => lineObstacle(`cv${i}`, piece, 6)),
-    ),
-    ...paramSamples.flatMap((s, i) =>
-      visiblePieces(s).flatMap((piece) => lineObstacle(`pm${i}`, piece, 6)),
-    ),
-    ...regionData.flatMap((r, i) =>
-      (regions[i].boundary ?? "solid") === "none"
-        ? []
-        : r.edges.flatMap((e) => lineObstacle(`rg${i}`, e, 3)),
-    ),
-    ...vectorData.flatMap((v, i) => lineObstacle(`vc${i}`, [v.from, v.to], 6)),
-    ...segments.flatMap((s, i) => lineObstacle(`sg${i}`, [toScreen(s.from), toScreen(s.to)], 3)),
-    ...(partitionData?.lines ?? []).flatMap((l) => lineObstacle("pt", l.pts, l.outer ? 3 : 1)),
-    ...(polar === null
-      ? []
-      : polar.rays.flatMap((ray) => lineObstacle("pl", [polar.center, ray.end], 1))),
-  ];
-  // ベクトル場の矢印は、場ごとにまとめて別に持つ。重なる本数の罰点に場ごとの上限を設けるためで
-  // ある（FIELD_MAX_PENALTY を参照）。
-  const fieldObstacles: readonly (readonly LineObstacle[])[] = fieldData.map((fd, i) =>
-    fd.arrows.map((a) => {
-      const pts = [a.from, a.to];
-      return { id: `fd${i}`, pts, weight: FIELD_WEIGHT, bbox: bboxOf(pts) };
-    }),
-  );
+  // 空ラベルの目盛り（格子線だけを残し数字を省く目盛り）は字形をもたないので、障害物・格子線の
+  // 切り抜き・avoidLabels の判定から外す。外さないと、数字の無い位置で格子線が規則的に途切れて見える。
+  const tickBoxOf = (t: Tick, pos: LabelPos): Box =>
+    glyphBox(pos, glyphSizeOf(tickLabel(t), TICK_FONT));
+  const tickBoxes: readonly Box[] = axes
+    ? [
+        ...xt.flatMap((t) =>
+          tickLabel(t) === ""
+            ? []
+            : [tickBoxOf(t, { x: x(tickValue(t)), y: axisY + X_TICK_OFFSET, align: "center" })],
+        ),
+        ...yt.flatMap((t) =>
+          tickLabel(t) === ""
+            ? []
+            : [tickBoxOf(t, { x: axisX - Y_TICK_OFFSET, y: y(tickValue(t)), align: "center" })],
+        ),
+      ]
+    : [];
+  const W = OBSTACLE_WEIGHT;
+  const axisObstacles = axes
+    ? [
+        boxObstacle({ x0: axisX - 1.5, x1: axisX + 1.5, y0: originY, y1: originY + plotH }, W.axis),
+        boxObstacle({ x0: originX, x1: originX + plotW, y0: axisY - 1.5, y1: axisY + 1.5 }, W.axis),
+        // 軸名（x・y）。描く位置は下の軸名の KatexLabel と同じである。
+        boxObstacle(
+          glyphBox(
+            { x: originX + plotW + 14, y: axisY - 11, align: "center" },
+            glyphSizeOf(xLabel, AXIS_NAME_FONT),
+          ),
+          W.axisName,
+        ),
+        boxObstacle(
+          glyphBox(
+            { x: axisX + 8, y: originY - 9, align: "left" },
+            glyphSizeOf(yLabel, AXIS_NAME_FONT),
+          ),
+          W.axisName,
+        ),
+      ]
+    : [];
   // 目盛りに沿った格子線。格子線が式のラベルを貫くと、「=」が「≠」に、「−」が線と並走して読み
-  // にくくなる。他の線と分けて持ち、等高線のラベルだけが判定から外せるようにする。
-  const gridObstacles: readonly LineObstacle[] = grid
+  // にくくなる。淡い線として持ち、等高線のラベルだけが判定から外せるようにする。
+  const gridLines: readonly (readonly XY[])[] = grid
     ? [
         ...xt.map((t) => {
           const gx = x(tickValue(t));
@@ -863,67 +919,72 @@ export default function ContourPlot({
             { x: originX + plotW, y: gy },
           ];
         }),
-      ].map((pts) => ({ id: "gd", pts, weight: GRID_WEIGHT, bbox: bboxOf(pts) }))
+      ]
     : [];
-  const linesAndGrid = [...lineObstacles, ...gridObstacles];
+  const placer = createPlacer([
+    ...tickBoxes.map((box) => boxObstacle(box, W.tick)),
+    ...axisObstacles,
+    ...points.map((p, i) => {
+      const px = x(p.x);
+      const py = y(p.y);
+      const r = markerReach(p);
+      return boxObstacle({ x0: px - r, x1: px + r, y0: py - r, y1: py + r }, W.point, `pt${i}`);
+    }),
+    ...(partitionData?.samples ?? []).map((s) =>
+      boxObstacle(
+        {
+          x0: s.x - SAMPLE_DOT_R,
+          x1: s.x + SAMPLE_DOT_R,
+          y0: s.y - SAMPLE_DOT_R,
+          y1: s.y + SAMPLE_DOT_R,
+        },
+        W.sampleDot,
+      ),
+    ),
+    ...contourData.flatMap((levels) =>
+      levels.flatMap((lv) => lv.lines.flatMap((l) => lineObstacle(lv.id, l.pts, W.line))),
+    ),
+    ...curveSamples.flatMap((s, i) =>
+      visiblePieces(s).flatMap((piece) => lineObstacle(`cv${i}`, piece, W.line)),
+    ),
+    ...paramSamples.flatMap((s, i) =>
+      visiblePieces(s).flatMap((piece) => lineObstacle(`pm${i}`, piece, W.line)),
+    ),
+    ...regionData.flatMap((r, i) =>
+      (regions[i].boundary ?? "solid") === "none"
+        ? []
+        : r.edges.flatMap((e) => lineObstacle(`rg${i}`, e, W.edge)),
+    ),
+    ...vectorData.flatMap((v, i) => lineObstacle(`vc${i}`, [v.from, v.to], W.line)),
+    ...segments.flatMap((s, i) =>
+      lineObstacle(`sg${i}`, [toScreen(s.from), toScreen(s.to)], W.edge),
+    ),
+    ...(partitionData?.lines ?? []).flatMap((l) =>
+      lineObstacle("pt", l.pts, l.outer ? W.edge : W.thinLine),
+    ),
+    ...(polar === null
+      ? []
+      : polar.rays.flatMap((ray) => lineObstacle("pl", [polar.center, ray.end], W.thinLine))),
+    ...gridLines.flatMap((pts) => lineObstacle("gd", pts, W.grid, true)),
+    // ベクトル場の矢印は場ごとに群にする。重なる本数の罰点に場ごとの上限を設けるためである。
+    ...fieldData.map((fd, i) =>
+      groupObstacle(
+        fd.arrows.flatMap((a): readonly LineObstacle[] =>
+          lineObstacle(`fd${i}`, [a.from, a.to], W.fieldArrow, true),
+        ),
+        FIELD_PENALTY_CAP,
+      ),
+    ),
+  ]);
 
-  // 矩形 b にラベルを置くときの罰点。placed は、それまでに置いたラベルの占有矩形である。
-  const penaltyOf = (
-    b: Box,
-    placed: readonly Box[],
-    exclude: string | undefined,
-    bounds: Box,
-    avoidGrid = true,
-  ): number => {
-    const outside =
-      b.x0 < bounds.x0 || b.x1 > bounds.x1 || b.y0 < bounds.y0 || b.y1 > bounds.y1 ? 1000 : 0;
-    // 目盛り数字・軸名・点の印・既出のラベルとは、重なりに加えて接するほどの近さも軽く罰し、
-    // 隣り合う文字が 1 続きの式に見える（c=4 と目盛り 2 が「c=4 2」に見えるなど）のを避ける。
-    const near = inflate(b, LABEL_SPACING);
-    const byBoxes = boxObstacles.reduce(
-      (p, o) => (boxesOverlap(b, o.box) ? p + o.weight : boxesOverlap(near, o.box) ? p + 2 : p),
-      outside,
-    );
-    const byPlaced = placed.reduce(
-      (p, q) => (boxesOverlap(b, q) ? p + 10 : boxesOverlap(near, q) ? p + 2 : p),
-      byBoxes,
-    );
-    // 線との判定は矩形を少し広げて行い、ラベルの字形と線の間にすきまを残す。
-    const padded = inflate(b, LINE_CLEARANCE);
-    const byLines = (avoidGrid ? linesAndGrid : lineObstacles).reduce(
-      (p, l) =>
-        l.id !== exclude && boxesOverlap(padded, l.bbox) && polylineHitsBox(l.pts, padded)
-          ? p + l.weight
-          : p,
-      byPlaced,
-    );
-    // ベクトル場の矢印。格子線と同じく、等高線のラベル（avoidGrid が false）は避けない。等高線の
-    // ラベルは線の上で置ける位置が限られ、矢印を避けると線の中ほどから外れるためである。重なる
-    // 矢印はラベルのハローで読める。上限に達した場は、残りの矢印を調べない。
-    if (!avoidGrid) return byLines;
-    return fieldObstacles.reduce((p, group) => {
-      const hits = group.reduce(
-        (h, l) =>
-          h < FIELD_MAX_PENALTY && boxesOverlap(padded, l.bbox) && polylineHitsBox(l.pts, padded)
-            ? h + l.weight
-            : h,
-        0,
-      );
-      return p + Math.min(hits, FIELD_MAX_PENALTY);
-    }, byLines);
-  };
-  // 候補から最も罰点の小さい位置を選ぶ。同点なら前方の候補を優先する。
+  // 候補の位置から最も罰点の小さい位置を選ぶ。同点なら前方の候補を優先する。
   const choosePlacement = (
-    cands: readonly LabelPos[],
-    w: number,
+    positions: readonly LabelPos[],
+    size: GlyphSize,
     placed: readonly Box[],
     exclude?: string,
   ): LabelPos | null =>
-    bestOf(cands, (cand, i) => penaltyOf(boxFor(cand, w), placed, exclude, viewBounds) + i * 0.1)
-      .item;
-  // 選んだ位置のラベルと、そのラベルが占める矩形。位置が無ければ何も置かない。
-  const placedLabel = (tex: string, pos: LabelPos | null, w: number): Placement<Label> =>
-    pos === null ? NO_PLACEMENT : { item: { tex, pos }, box: boxFor(pos, w) };
+    placer.place(positionCandidates(positions, size), { placed, bounds: viewBounds, exclude }).item;
 
   // ラベルは、領域・極座標の角・点・小長方形・矢印・補助線分・曲線・媒介変数曲線・等高線の順に
   // 1 つずつ置く。各段の最後の placed を次の段へ渡し、後のラベルが先のラベルを避けるようにする。
@@ -932,154 +993,113 @@ export default function ContourPlot({
   // 中心が領域の内側に残る位置を選ぶ。重心は原点や軸の上に来やすい（原点中心の円板など）ため、
   // 重心に固定すると軸線がラベルを貫く。他のラベルより先に置き、他のラベルがこれを避けるようにする。
   const regionLabels = placeInOrder(regionData, [], (r, i, placed) => {
-    const tex = regions[i].label;
+    const { label: tex, labelDir = "auto", labelOffset } = regions[i];
     if (tex === undefined || r.labelAt === null) return NO_PLACEMENT;
-    const anchor = r.labelAt;
-    const w = estimateTexWidthPrecise(tex, 12);
-    const cands = REGION_LABEL_OFFSETS.map(([dx, dy]): LabelPos => ({
-      x: anchor.x + dx,
-      y: anchor.y + dy,
-      align: "center",
-    }));
-    const best = bestOf(cands, (cand, k) => {
-      const p = penaltyOf(boxFor(cand, w), placed, undefined, plotBounds) + k * 0.1;
-      return pointInPolygon(cand, r.fill) ? p : p + 1000;
-    }).item;
-    return placedLabel(tex, best, w);
+    const size = glyphSizeOf(tex, LABEL_FONT);
+    if (labelDir !== "auto") {
+      return placedLabel(tex, fixedPosition(r.labelAt, labelDir, size, 0, labelOffset), size);
+    }
+    const best = placer.place(insideRegion(r.labelAt, r.fill, size), {
+      placed,
+      bounds: plotBounds,
+    });
+    return placedLabel(tex, best.item, size);
   });
   const polarLabels = placeInOrder(polar?.rays ?? [], regionLabels.placed, (ray) => {
     if (ray.label === undefined) return NO_PLACEMENT;
-    const w = estimateTexWidthPrecise(ray.label, 12);
+    const size = glyphSizeOf(ray.label, LABEL_FONT);
     // 半直線の延長上へ、ラベル矩形が円に触れない距離だけ離す。
-    const off = normalLabelOffset(ray.dir.x, ray.dir.y, w);
-    const pos: LabelPos = {
-      x: ray.end.x + ray.dir.x * off,
-      y: ray.end.y + ray.dir.y * off,
-      align: "center",
-    };
-    return placedLabel(ray.label, pos, w);
+    const off = normalLabelOffset(ray.dir.x, ray.dir.y, size);
+    const pos = centeredAt(ray.end.x + ray.dir.x * off, ray.end.y + ray.dir.y * off, size);
+    return placedLabel(ray.label, pos, size);
   });
 
   // 点のラベル。点の周囲 8 方向の候補から選ぶ（FunctionGraph と同じ候補）。
-  const pointLabels = placeInOrder(points, polarLabels.placed, (p, _, placed) => {
+  const pointLabels = placeInOrder(points, polarLabels.placed, (p, i, placed) => {
     if (p.label === undefined) return NO_PLACEMENT;
-    const px = x(p.x);
-    const py = y(p.y);
-    const cands: Readonly<Record<LabelDir, LabelPos>> = {
-      above: { x: px, y: py - 13, align: "center" },
-      below: { x: px, y: py + 16, align: "center" },
-      "above-right": { x: px + 9, y: py - 12, align: "left" },
-      "below-right": { x: px + 9, y: py + 14, align: "left" },
-      "above-left": { x: px - 9, y: py - 12, align: "right" },
-      "below-left": { x: px - 9, y: py + 14, align: "right" },
-      right: { x: px + 12, y: py + 1, align: "left" },
-      left: { x: px - 12, y: py + 1, align: "right" },
-    };
-    const w = estimateTexWidthPrecise(p.label, 12);
+    const size = glyphSizeOf(p.label, LABEL_FONT);
+    const at = { x: x(p.x), y: y(p.y) };
+    const reach = markerReach(p);
+    const dir = p.labelDir ?? "auto";
     const pos = choosePlacement(
-      p.labelDir === undefined ? Object.values(cands) : [cands[p.labelDir]],
-      w,
+      dir === "auto"
+        ? Object.values(aroundPoint(at, size, reach, p.labelOffset))
+        : [fixedPosition(at, dir, size, reach, p.labelOffset)],
+      size,
       placed,
+      `pt${i}`,
     );
-    return placedLabel(p.label, pos, w);
+    return placedLabel(p.label, pos, size);
   });
 
   // 分割の小長方形のラベル。小長方形の中心を優先し、代表点と重なるときは上下へ逃がす。逃がす量は、
-  // ラベルの半分の高さと代表点の印の半径を足した距離より大きくとる。
+  // ラベルの半分の高さと代表点の印の半径に、すきまを足した距離である。
   const cellLabels = placeInOrder(
     partitionData?.highlights ?? [],
     pointLabels.placed,
     (h, _, placed) => {
       if (h.label === undefined) return NO_PLACEMENT;
-      const w = estimateTexWidthPrecise(h.label, 12);
+      const size = glyphSizeOf(h.label, LABEL_FONT);
+      const shift = (size.bottom - size.top) / 2 + SAMPLE_DOT_R + LABEL_POLICY.lineClearance;
       const pos = choosePlacement(
         [
-          { x: h.cx, y: h.cy, align: "center" },
-          { x: h.cx, y: h.cy - 13, align: "center" },
-          { x: h.cx, y: h.cy + 13, align: "center" },
+          centeredAt(h.cx, h.cy, size),
+          centeredAt(h.cx, h.cy - shift, size),
+          centeredAt(h.cx, h.cy + shift, size),
         ],
-        w,
+        size,
         placed,
       );
-      return placedLabel(h.label, pos, w);
+      return placedLabel(h.label, pos, size);
     },
   );
 
-  // 矢印のラベル。中点から線に直交する両側を優先し、続いて終点の先・終点の斜め先・終点の横、
-  // 始点の手前の順に候補にする。勾配の矢印のように等高線の間を短い矢印が横切る図では、中点の
-  // 横が隣の等高線にかかりやすく、空いている側が矢印ごとに異なるためである。
+  const lineSpec = (spec: LabelSpec): LineLabelSpec => ({
+    at: spec.labelAt === undefined ? undefined : toScreen(spec.labelAt),
+    dir: spec.labelDir,
+    offset: spec.labelOffset,
+  });
+
+  // 矢印のラベル。
   const vectorLabels = placeInOrder(vectors, cellLabels.placed, (v, i, placed) => {
     if (v.label === undefined) return NO_PLACEMENT;
     const { from, to } = vectorData[i];
-    const len = Math.hypot(to.x - from.x, to.y - from.y) || 1;
-    const dir = { x: (to.x - from.x) / len, y: (to.y - from.y) / len };
-    const perp = { x: -dir.y, y: dir.x };
-    const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-    const w = estimateTexWidthPrecise(v.label, 12);
-    const side = normalLabelOffset(perp.x, perp.y, w);
-    const along = normalLabelOffset(dir.x, dir.y, w);
-    const at = (base: XY, a: number, p: number): LabelPos => ({
-      x: base.x + dir.x * a + perp.x * p,
-      y: base.y + dir.y * a + perp.y * p,
-      align: "center",
-    });
-    const diag = Math.SQRT1_2;
+    const size = glyphSizeOf(v.label, LABEL_FONT);
     const pos = choosePlacement(
-      v.labelAt === undefined
-        ? [
-            at(mid, 0, side),
-            at(mid, 0, -side),
-            at(to, along, 0),
-            at(to, along * diag, side * diag),
-            at(to, along * diag, -side * diag),
-            at(to, 0, side),
-            at(to, 0, -side),
-            at(from, -along, 0),
-            at(from, -along * diag, side * diag),
-            at(from, -along * diag, -side * diag),
-          ]
-        : [{ ...toScreen(v.labelAt), align: "center" }],
-      w,
+      linePositions(lineSpec(v), from, to, size, (offset) =>
+        aroundVector(from, to, size, HEAD_HALF, offset),
+      ),
+      size,
       placed,
-      `vc${i}`,
+      // 基準点が線の上でも線を避けられるよう、labelAt があれば自分の線も判定に含める。
+      v.labelAt === undefined ? `vc${i}` : undefined,
     );
-    return placedLabel(v.label, pos, w);
+    return placedLabel(v.label, pos, size);
   });
 
   // 補助線分のラベル。中点から線分に直交する両側を候補にする（FunctionGraph と同じ方式）。
   const segmentLabels = placeInOrder(segments, vectorLabels.placed, (s, i, placed) => {
     if (s.label === undefined) return NO_PLACEMENT;
+    const size = glyphSizeOf(s.label, LABEL_FONT);
     const a = toScreen(s.from);
     const b = toScreen(s.to);
-    const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-    const perp = { x: -(b.y - a.y) / len, y: (b.x - a.x) / len };
-    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    const w = estimateTexWidthPrecise(s.label, 12);
-    const off = normalLabelOffset(perp.x, perp.y, w);
     const pos = choosePlacement(
-      s.labelAt === undefined
-        ? [
-            { x: mid.x + perp.x * off, y: mid.y + perp.y * off, align: "center" },
-            { x: mid.x - perp.x * off, y: mid.y - perp.y * off, align: "center" },
-          ]
-        : [{ ...toScreen(s.labelAt), align: "center" }],
-      w,
+      linePositions(lineSpec(s), a, b, size, (offset) => besideSegment(a, b, size, offset)),
+      size,
       placed,
-      `sg${i}`,
+      s.labelAt === undefined ? `sg${i}` : undefined,
     );
-    return placedLabel(s.label, pos, w);
+    return placedLabel(s.label, pos, size);
   });
 
-  // 曲線のそばに置くラベル。曲線に沿った各位置で、線の両側へ離した候補を採点する。labelAt が
-  // あればその位置の両側だけを候補にする。指定が無ければ、曲線の後半（右寄り）を少し優先し、
-  // 式のラベルが曲線の終わり近くに付く慣習に合わせる。
+  // 曲線のそばに置くラベル。描画窓の中の標本から候補を作る。
   const inlineLabelOf = (
     samples: readonly Sample[],
     tex: string,
-    at: number | undefined,
+    spec: CurveLabelSpec,
     placed: readonly Box[],
   ): Placement<Label> => {
-    const w = estimateTexWidthPrecise(tex, 12);
+    const size = glyphSizeOf(tex, LABEL_FONT);
     const visible = samples.filter(
       (s) =>
         s.ok &&
@@ -1088,108 +1108,57 @@ export default function ContourPlot({
         s.y >= plotBounds.y0 &&
         s.y <= plotBounds.y1,
     );
-    if (visible.length < 3) return NO_PLACEMENT;
-    // 候補にする標本の番号。labelAt があれば媒介変数が最も近い 1 点、無ければ両端を除く 4 点おき。
-    const idxs =
-      at === undefined
-        ? visible.flatMap((_, i) =>
-            i >= 1 && i < visible.length - 1 && (i - 1) % 4 === 0 ? [i] : [],
-          )
-        : [
-            visible.reduce(
-              (k, s, i) => (Math.abs(s.t - at) < Math.abs(visible[k].t - at) ? i : k),
-              0,
-            ),
-          ];
-    const cands = idxs.flatMap((i) => {
-      const a = visible[Math.max(0, i - 2)];
-      const b = visible[Math.min(visible.length - 1, i + 2)];
-      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-      const perp = { x: -(b.y - a.y) / len, y: (b.x - a.x) / len };
-      const off = normalLabelOffset(perp.x, perp.y, w);
-      const pref = at === undefined ? Math.abs(i / (visible.length - 1) - 0.8) * 1.5 : 0;
-      return [1, -1].map((sgn) => {
-        const pos: LabelPos = {
-          x: visible[i].x + sgn * perp.x * off,
-          y: visible[i].y + sgn * perp.y * off,
-          align: "center",
-        };
-        return { pos, pref, sgn };
-      });
-    });
-    const best = bestOf(
-      cands,
-      (c) =>
-        penaltyOf(boxFor(c.pos, w), placed, undefined, viewBounds) +
-        c.pref +
-        (c.sgn === 1 ? 0 : 0.05),
-    ).item;
-    return placedLabel(tex, best === null ? null : best.pos, w);
+    // 自動で位置を選ぶには接線を求める標本が要る。labelAt があれば 2 標本で線の両側が決まり、向きも固定
+    // していれば、見える標本が 1 つでもラベルを置ける。
+    const fixedDir = spec.labelDir !== undefined && spec.labelDir !== "auto";
+    const needed = spec.labelAt === undefined ? 3 : fixedDir ? 1 : 2;
+    if (visible.length < needed) return NO_PLACEMENT;
+    const best = placer.place(
+      besideCurve(visible, size, spec.labelAt, spec.labelDir, spec.labelOffset),
+      { placed, bounds: viewBounds },
+    );
+    return placedLabel(tex, best.item, size);
   };
   const curveLabels = placeInOrder(curves, segmentLabels.placed, (c, i, placed) =>
     c.label !== undefined && c.labelPlacement === "inline"
-      ? inlineLabelOf(curveSamples[i], c.label, c.labelAt, placed)
+      ? inlineLabelOf(curveSamples[i], c.label, c, placed)
       : NO_PLACEMENT,
   );
   const paramLabels = placeInOrder(parametrics, curveLabels.placed, (pc, i, placed) =>
     pc.label !== undefined && pc.labelPlacement === "inline"
-      ? inlineLabelOf(paramSamples[i], pc.label, pc.labelAt, placed)
+      ? inlineLabelOf(paramSamples[i], pc.label, pc, placed)
       : NO_PLACEMENT,
   );
 
-  // 等高線のラベル。線の上の位置を弧長に沿って候補にし、軸・目盛り・他の線・既出ラベルとの
-  // 衝突、線の曲がり具合（急に曲がる位置ではラベルの外へ線がはみ出す）を罰点にして選ぶ。
-  // 開いた線（窓の縁から縁へ渡る線）は中ほどを、閉じた線（円など）は右上を少し優先し、
-  // 同心の等高線のラベルが斜めにそろいやすくする。収まる位置が無い短い線にはラベルを付けない。
+  const pointMarks = points.map((p) => ({ x: x(p.x), y: y(p.y), reach: markerReach(p) }));
+
+  // 等高線のラベル。線の上の位置を弧長に沿って候補にし、軸・目盛り・他の線・既出ラベルとの衝突を
+  // 罰点にして選ぶ。等高線のラベルは格子線とベクトル場を避けない。線の上で置ける位置が限られ、
+  // 避けると線の中ほどから大きく外れるためである。重なった格子線は、下の線と同じくマスクで切り抜き、
+  // 重なる矢印はラベルのハローで読める。
   const contourPlacement = placeInOrder(
     contourData.flat(),
     paramLabels.placed,
     (lv, _, placed): Placement<ContourLabel> => {
       if (lv.label === undefined) return NO_PLACEMENT;
-      const w = estimateTexWidthPrecise(lv.label, CONTOUR_FONT) + 2 * CONTOUR_GAP_PAD;
-      const h = CONTOUR_LABEL_H;
-      const cums = lv.lines.map((l) => cumulativeLength(l.pts));
-      // ラベルが乗る線のうち、ラベルの中心から弧長でこの範囲にある部分は、ラベルが当然重なる
-      // 部分として当たり判定から外す。範囲の外で同じ高さの線が矩形に入れば（交わる 2 本の
-      // 等高線のもう一方など）、他の線と同じく罰点にする。
-      const ownWindow = Math.hypot(w, h) / 2 + 2;
-      const cands = lv.lines.flatMap((line, li) => {
-        const cum = cums[li];
-        const total = cum[cum.length - 1];
-        if (total < w + 8) return [];
-        const centroid = line.closed ? meanOf(line.pts) : null;
-        const margin = line.closed ? 0 : w / 2 + 2;
-        return accumulateSteps(margin, 4, total - margin).map((s) => {
-          const p = pointAtLength(line.pts, cum, s, line.closed);
-          const box: Box = { x0: p.x - w / 2, x1: p.x + w / 2, y0: p.y - h / 2, y1: p.y + h / 2 };
-          return { line, li, cum, total, centroid, s, p, box };
-        });
-      });
-      const best = bestOf(cands, (c, _k, bestP) => {
-        // 等高線のラベルは格子線を避けない。線の上で置ける位置が限られ、格子線を避けると線の
-        // 中ほどから大きく外れるためである。重なった格子線は、下の線と同じくマスクで切り抜く。
-        const pen = penaltyOf(c.box, placed, lv.id, plotBounds, false);
-        // 以下で足す罰点は 0 以上なので、この時点で最良に届かない候補は残りを調べない。
-        if (pen >= bestP) return pen;
-        const padded = inflate(c.box, LINE_CLEARANCE);
-        const ownHit = lv.lines.some((other, oi) =>
-          oi === c.li
-            ? farPartHitsBox(other.pts, c.cum, c.s, ownWindow, c.line.closed, padded)
-            : polylineHitsBox(other.pts, padded),
-        );
-        const pa = pointAtLength(c.line.pts, c.cum, c.s - w / 2, c.line.closed);
-        const pb = pointAtLength(c.line.pts, c.cum, c.s + w / 2, c.line.closed);
-        const turned = (ownHit ? pen + 6 : pen) + turnAngle(pa, c.p, pb) * 3;
-        if (c.centroid === null) return turned + Math.abs(c.s / c.total - 0.5) * 2;
-        const phi = Math.atan2(c.centroid.y - c.p.y, c.p.x - c.centroid.x);
-        return turned + (1 - Math.cos(phi - Math.PI / 4));
-      });
-      if (best.item === null || !(best.score < 1000)) return NO_PLACEMENT;
-      const { p, box } = best.item;
-      return { item: { tex: lv.label, pos: { x: p.x, y: p.y, align: "center" }, box }, box };
+      const lines = lv.lines.map((l) => tracedLine(l.pts, l.closed));
+      const size = glyphSizeOf(lv.label, CONTOUR_FONT);
+      const best = placer.place(
+        lv.labelAt === undefined
+          ? onLine(lines, size, CONTOUR_GAP_PAD, placed, pointMarks)
+          : onLineNear(lines, size, CONTOUR_GAP_PAD, lv.labelAt),
+        { placed, bounds: plotBounds, exclude: lv.id, avoidFaint: false },
+      );
+      if (best.item === null) return NO_PLACEMENT;
+      if (lv.labelAt === undefined && !(best.score < LABEL_POLICY.outside)) return NO_PLACEMENT;
+      // 占有矩形を切り抜きの矩形にする。後の等高線のラベルが切れ目を避け、隣り合う線の切れ目が
+      // つながって線が大きく欠けるのを防ぐ。
+      const { pos, glyph, cut } = best.item;
+      return { item: { tex: lv.label, pos, box: glyph, cut, levelId: lv.id }, box: cut };
     },
   );
   const contourLabels = contourPlacement.items.filter((l): l is ContourLabel => l !== null);
+  const labeledLevels: ReadonlySet<string> = new Set(contourLabels.map((l) => l.levelId));
 
   // ---- 凡例 ----
   const legendItems: readonly LegendEntry[] =
@@ -1238,18 +1207,7 @@ export default function ContourPlot({
   // 格子線（目盛りに沿った格子線と極座標の格子）を切り抜く矩形。すべてのラベルと目盛り数字の下で
   // 補助線を切り、線が字形を貫かないようにする。ハローは字の輪郭から 2〜3px しか覆わず、字の
   // すき間を通る線（「=」の 2 本の間、「−」に沿う線）を隠せないためである。背景色の矩形を重ねる
-  // 方式と違い、領域の塗りを隠さない。等高線のラベルは、等高線を切る矩形と同じ範囲で切る。
-  const tickCut = (cx: number, cy: number, t: Tick): Box => {
-    const w = estimateTexWidthPrecise(tickLabel(t), 11);
-    return inflate(
-      { x0: cx - w / 2, x1: cx + w / 2, y0: cy - TICK_LABEL_H / 2, y1: cy + TICK_LABEL_H / 2 },
-      GRID_CUT_PAD,
-    );
-  };
-  // 空ラベルの目盛り（格子線だけを残し数字を省く目盛り）は字形をもたないので、格子線の切り抜きと
-  // avoidLabels の判定から外す。外さないと、数字の無い位置で格子線が規則的に途切れて見える。
-  const xtLabeled = xt.filter((t) => tickLabel(t) !== "");
-  const ytLabeled = yt.filter((t) => tickLabel(t) !== "");
+  // 方式と違い、領域の塗りを隠さない。
   // 切り抜きとプロット矩形の縁の間に残る格子線が GRID_STUB_PX より短いときは、縁まで切り抜く。
   // ラベルの脇に数 px だけ残った線が、「=1_」のように字の続きに見えるのを防ぐ。
   const plotRight = originX + plotW;
@@ -1263,34 +1221,22 @@ export default function ContourPlot({
   const gridCuts: readonly Box[] =
     grid || polar !== null
       ? [
-          ...contourLabels.map((l) => l.box),
-          ...allLabels.map((l) =>
-            inflate(boxFor(l.pos, estimateTexWidthPrecise(l.tex, 12)), GRID_CUT_PAD),
-          ),
-          ...(axes
-            ? [
-                ...xtLabeled.map((t) => tickCut(x(tickValue(t)), axisY + 13, t)),
-                ...ytLabeled.map((t) => tickCut(axisX - 14, y(tickValue(t)), t)),
-              ]
-            : []),
+          ...contourLabels.map((l) => inflate(l.box, GRID_CUT_PAD)),
+          ...allLabels.map((l) => inflate(l.box, GRID_CUT_PAD)),
+          ...tickBoxes.map((b) => inflate(b, GRID_CUT_PAD)),
         ].map(toEdge)
       : [];
   const gridMaskRef = gridCuts.length > 0 ? `url(#${gridMask})` : undefined;
 
-  // avoidLabels の場では、ラベル・目盛り数字の矩形に触れる矢印と零ベクトルの点を描かない。矢印を
-  // マスクで部分的に切ると、矢じりの無い切れ端が残って向きを誤読させるため、1 本ごと省く。
+  // avoidLabels の場では、ラベル・目盛り数字の字形から線とのすきまの範囲に入る矢印と零ベクトルの点を
+  // 描かない。矢印をマスクで部分的に切ると、矢じりの無い切れ端が残って向きを誤読させるため、1 本ごと
+  // 省く。
   const fieldShown = fieldData.map((fd, i) => {
     if (fields[i].avoidLabels !== true) return fd;
-    const boxes = [
-      ...contourLabels.map((l) => l.box),
-      ...allLabels.map((l) => inflate(boxFor(l.pos, estimateTexWidthPrecise(l.tex, 12)), 1)),
-      ...(axes
-        ? [
-            ...xtLabeled.map((t) => tickCut(x(tickValue(t)), axisY + 13, t)),
-            ...ytLabeled.map((t) => tickCut(axisX - 14, y(tickValue(t)), t)),
-          ]
-        : []),
-    ];
+    const boxes = [...contourLabels, ...allLabels]
+      .map((l) => l.box)
+      .concat(tickBoxes)
+      .map((b) => inflate(b, LABEL_POLICY.lineClearance));
     return {
       arrows: fd.arrows.filter((a) => !boxes.some((b) => segmentHitsBox(a.from, a.to, b))),
       dots: fd.dots.filter(
@@ -1331,19 +1277,49 @@ export default function ContourPlot({
           </Marker>
           {/* 曲線・領域・等高線をプロット矩形でクリップする。 */}
           <RectClipPath id={clip} x={originX} y={originY} width={plotW} height={plotH} />
-          {/* 等高線のラベルの下だけ線を切り抜くマスク。白の部分を描き、黒の矩形の部分を消す。
-              背景色の矩形を上に重ねる方式と違い、領域の塗りの上でも塗りを隠さない。 */}
-          {contourLabels.length > 0 && (
-            <mask id={mask} maskUnits="userSpaceOnUse" x={0} y={0} width={viewW} height={viewH}>
+          {/* 等高線のラベルの下だけ線を切り抜くマスク。レベルごとに作り、同じレベルの線だけに掛ける。
+              全レベルに掛けると、切れ目が隣のレベルの線まで切る。白の部分を描き、黒の矩形の部分を
+              消す。背景色の矩形を上に重ねる方式と違い、領域の塗りの上でも塗りを隠さない。 */}
+          {contourLabels.map((l) => (
+            <mask
+              key={`mk-${l.levelId}`}
+              id={`${mask}-${l.levelId}`}
+              maskUnits="userSpaceOnUse"
+              x={0}
+              y={0}
+              width={viewW}
+              height={viewH}
+            >
               <rect x={0} y={0} width={viewW} height={viewH} fill="#fff" />
-              {contourLabels.map((l, i) => (
+              <rect
+                x={l.cut.x0}
+                y={l.cut.y0}
+                width={l.cut.x1 - l.cut.x0}
+                height={l.cut.y1 - l.cut.y0}
+                rx={3}
+                fill="#000"
+              />
+            </mask>
+          ))}
+          {/* 字形の見積もりの矩形の下だけ全レベルの線を切り抜くマスク。隣のレベルの線が字形を貫かないように
+              する。矩形に余白を足すと、矩形の角が字形の外へ広がり、字形に触れていない隣の線まで途切れる。 */}
+          {contourLabels.length > 0 && (
+            <mask
+              id={glyphMask}
+              maskUnits="userSpaceOnUse"
+              x={0}
+              y={0}
+              width={viewW}
+              height={viewH}
+            >
+              <rect x={0} y={0} width={viewW} height={viewH} fill="#fff" />
+              {contourLabels.map((l) => (
                 <rect
-                  key={`mk-${i}`}
+                  key={`gl-${l.levelId}`}
                   x={l.box.x0}
                   y={l.box.y0}
                   width={l.box.x1 - l.box.x0}
                   height={l.box.y1 - l.box.y0}
-                  rx={3}
                   fill="#000"
                 />
               ))}
@@ -1470,8 +1446,19 @@ export default function ContourPlot({
               markerEnd={`url(#${arrow})`}
             />
             {/* 軸名。位置は FunctionGraph と同じ（y 軸名は軸の右上、x 軸名は目盛り数字の右外）。 */}
-            <KatexLabel tex={xLabel} x={originX + plotW + 14} y={axisY - 11} fontSize={13} />
-            <KatexLabel tex={yLabel} x={axisX + 8} y={originY - 9} fontSize={13} align="left" />
+            <KatexLabel
+              tex={xLabel}
+              x={originX + plotW + 14}
+              y={axisY - 11}
+              fontSize={AXIS_NAME_FONT}
+            />
+            <KatexLabel
+              tex={yLabel}
+              x={axisX + 8}
+              y={originY - 9}
+              fontSize={AXIS_NAME_FONT}
+              align="left"
+            />
             {xt.map((t, i) => (
               <Line
                 key={`tx-${i}`}
@@ -1540,26 +1527,31 @@ export default function ContourPlot({
               />
             ))}
 
-          <g mask={contourLabels.length > 0 ? `url(#${mask})` : undefined}>
+          <g mask={contourLabels.length > 0 ? `url(#${glyphMask})` : undefined}>
             {contourData.map((levels, si) =>
-              levels.map((lv, li) =>
-                lv.lines.map((l, k) => (
-                  <LinePath<XY>
-                    key={`ct-${si}-${li}-${k}`}
-                    data={[...l.pts]}
-                    x={(d) => d.x}
-                    y={(d) => d.y}
-                    fill="none"
-                    strokeWidth={1.6}
-                    strokeDasharray={contours[si].dashed ? "5 4" : undefined}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    // 既定のパレットは CSS の color-mix で作るため、プレゼンテーション属性でなく
-                    // style で渡す。
-                    style={{ stroke: lv.color }}
-                  />
-                )),
-              ),
+              levels.map((lv, li) => (
+                <g
+                  key={`ctg-${si}-${li}`}
+                  mask={labeledLevels.has(lv.id) ? `url(#${mask}-${lv.id})` : undefined}
+                >
+                  {lv.lines.map((l, k) => (
+                    <LinePath<XY>
+                      key={`ct-${si}-${li}-${k}`}
+                      data={[...l.pts]}
+                      x={(d) => d.x}
+                      y={(d) => d.y}
+                      fill="none"
+                      strokeWidth={1.6}
+                      strokeDasharray={contours[si].dashed ? "5 4" : undefined}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      // 既定のパレットは CSS の color-mix で作るため、プレゼンテーション属性でなく
+                      // style で渡す。
+                      style={{ stroke: lv.color }}
+                    />
+                  ))}
+                </g>
+              )),
             )}
           </g>
 
@@ -1675,7 +1667,7 @@ export default function ContourPlot({
 
         {/* 分割の小長方形の代表点。 */}
         {(partitionData?.samples ?? []).map((s, i) => (
-          <Circle key={`ps-${i}`} cx={s.x} cy={s.y} r={2.8} fill="currentColor" />
+          <Circle key={`ps-${i}`} cx={s.x} cy={s.y} r={SAMPLE_DOT_R} fill="currentColor" />
         ))}
 
         {/* 点。白抜きの点は背景色で塗り抜き、その点を含まないことを表す。 */}
@@ -1688,13 +1680,13 @@ export default function ContourPlot({
               key={`pt-${i}`}
               cx={px}
               cy={py}
-              r={4}
+              r={POINT_R}
               fill="var(--sl-color-bg, #fff)"
               stroke={color}
-              strokeWidth={1.8}
+              strokeWidth={OPEN_POINT_STROKE}
             />
           ) : (
-            <Circle key={`pt-${i}`} cx={px} cy={py} r={4} fill={color} />
+            <Circle key={`pt-${i}`} cx={px} cy={py} r={POINT_R} fill={color} />
           );
         })}
 
@@ -1717,7 +1709,7 @@ export default function ContourPlot({
             tex={l.tex}
             x={l.pos.x}
             y={l.pos.y}
-            fontSize={12}
+            fontSize={LABEL_FONT}
             align={l.pos.align}
             className="fig-tick-label"
           />
@@ -1730,8 +1722,8 @@ export default function ContourPlot({
               key={`txn-${i}`}
               tex={tickLabel(t)}
               x={x(tickValue(t))}
-              y={axisY + 13}
-              fontSize={11}
+              y={axisY + X_TICK_OFFSET}
+              fontSize={TICK_FONT}
               className="fig-tick-label"
             />
           ))}
@@ -1740,9 +1732,9 @@ export default function ContourPlot({
             <KatexLabel
               key={`tyn-${i}`}
               tex={tickLabel(t)}
-              x={axisX - 14}
+              x={axisX - Y_TICK_OFFSET}
               y={y(tickValue(t))}
-              fontSize={11}
+              fontSize={TICK_FONT}
               className="fig-tick-label"
             />
           ))}
@@ -2353,20 +2345,9 @@ function clippedCentroid(poly: readonly XY[], win: Box): XY | null {
   return { x: sum.cx / (3 * sum.area), y: sum.cy / (3 * sum.area) };
 }
 
-function meanOf(pts: readonly XY[]): XY {
-  const n = pts.length || 1;
-  return {
-    x: pts.reduce((s, p) => s + p.x, 0) / n,
-    y: pts.reduce((s, p) => s + p.y, 0) / n,
-  };
-}
-
 // ======================================================================
 // ベクトル場と向きの矢じり
 // ======================================================================
-
-/** 画面上の矢印（始点・終点）。 */
-type ScreenArrow = Readonly<{ from: XY; to: XY }>;
 
 /**
  * ベクトル場を格子点（または at の点）で評価し、画面上の矢印と、零ベクトルを示す点にする。
@@ -2455,22 +2436,17 @@ function arrowPaths(
   headLen: number,
   headHalf: number,
 ): Readonly<{ shafts: string; heads: string }> {
-  const parts = arrows.flatMap(({ from, to }) => {
-    const len = Math.hypot(to.x - from.x, to.y - from.y);
-    if (!(len > 0)) return [];
-    const ux = (to.x - from.x) / len;
-    const uy = (to.y - from.y) / len;
-    const hl = Math.min(headLen, len * 0.8);
-    const hh = headHalf * (hl / headLen);
-    const bx = to.x - hl * ux;
-    const by = to.y - hl * uy;
+  const parts = arrows.flatMap((arrow) => {
+    const head = arrowHead(arrow, headLen, headHalf);
+    if (head === null) return [];
+    const { from, to } = arrow;
     return [
       {
-        shaft: `M${round2(from.x)} ${round2(from.y)}L${round2(bx)} ${round2(by)}`,
+        shaft: `M${round2(from.x)} ${round2(from.y)}L${round2(head.base.x)} ${round2(head.base.y)}`,
         head:
           `M${round2(to.x)} ${round2(to.y)}` +
-          `L${round2(bx - hh * uy)} ${round2(by + hh * ux)}` +
-          `L${round2(bx + hh * uy)} ${round2(by - hh * ux)}Z`,
+          `L${round2(head.left.x)} ${round2(head.left.y)}` +
+          `L${round2(head.right.x)} ${round2(head.right.y)}Z`,
       },
     ];
   });
@@ -2585,210 +2561,36 @@ function simplifyPolyline(pts: readonly XY[], eps: number): readonly XY[] {
 // ラベル配置の当たり判定
 // ======================================================================
 
-/** ラベルの配置先（中心・左端・右端の基準点と寄せ方向）。 */
-type LabelPos = Readonly<{ x: number; y: number; align: "center" | "left" | "right" }>;
+/** 矢印・線分のラベルの指定。 */
+type LabelSpec = Readonly<{ labelAt?: XY; labelDir?: LabelDirSpec; labelOffset?: number }>;
 
-/** ラベル配置の障害物となる矩形と、重なったときの罰点。 */
-type BoxObstacle = Readonly<{ box: Box; weight: number }>;
+/** 曲線のそばのラベルの指定。labelAt は線の上の基準点を指す x または媒介変数である。 */
+type CurveLabelSpec = Readonly<{
+  labelAt?: number;
+  labelDir?: LabelDirSpec;
+  labelOffset?: number;
+}>;
 
-/** ラベル配置の障害物となる折れ線。id が同じ線（ラベル自身の線）は判定から外せる。 */
-type LineObstacle = Readonly<{ id: string; pts: readonly XY[]; weight: number; bbox: Box }>;
+/** 置いたラベル（LaTeX・配置先・字形の矩形）。 */
+type Label = Readonly<{ tex: string; pos: LabelPos; box: Box }>;
 
-/** 置いたラベル（LaTeX と配置先）。 */
-type Label = Readonly<{ tex: string; pos: LabelPos }>;
+/** 置いた等高線のラベル。cut は等高線を切り抜く矩形、levelId はラベルが乗るレベルの id である。 */
+type ContourLabel = Label & Readonly<{ cut: Box; levelId: string }>;
 
-/** 置いた等高線のラベル。box は等高線を切り抜く矩形である。 */
-type ContourLabel = Label & Readonly<{ box: Box }>;
+/** 選んだ位置のラベルと占有矩形。位置が無ければ何も置かない。 */
+function placedLabel(tex: string, pos: LabelPos | null, size: GlyphSize): Placement<Label> {
+  if (pos === null) return NO_PLACEMENT;
+  const box = glyphBox(pos, size);
+  return { item: { tex, pos, box }, box };
+}
 
-/** 1 つのラベルを置いた結果。item は置いたもの、box はそれが占める矩形（置かなければ null）。 */
-type Placement<T> = Readonly<{ item: T | null; box: Box | null }>;
-
-/** 何も置かない結果。 */
-const NO_PLACEMENT: Placement<never> = { item: null, box: null };
+/** 点の中心から印の端までの距離（px）。白抜きの点は輪郭の線の太さの半分だけ広い。 */
+function markerReach(p: Point): number {
+  return p.open === true ? POINT_R + OPEN_POINT_STROKE / 2 : POINT_R;
+}
 
 /** 凡例の 1 項目。 */
 type LegendEntry = Readonly<{ label: string; color: string; dashed: boolean }>;
-
-/**
- * sources の順にラベルを 1 つずつ置く。place には、それまでに置いたラベルの占有矩形 placed を
- * 渡し、後のラベルが先のラベルを避けられるようにする。置いた結果（sources と同じ順）と、最後の
- * 占有矩形の列を返す。
- */
-function placeInOrder<S, T>(
-  sources: readonly S[],
-  placed: readonly Box[],
-  place: (source: S, index: number, placed: readonly Box[]) => Placement<T>,
-): Readonly<{ items: readonly (T | null)[]; placed: readonly Box[] }> {
-  return sources.reduce<Readonly<{ items: readonly (T | null)[]; placed: readonly Box[] }>>(
-    (acc, source, i) => {
-      const r = place(source, i, acc.placed);
-      return {
-        items: [...acc.items, r.item],
-        placed: r.box === null ? acc.placed : [...acc.placed, r.box],
-      };
-    },
-    { items: [], placed },
-  );
-}
-
-/**
- * 候補のうち、罰点 score が最も小さいものとその罰点を返す。同点なら前方の候補を選ぶ。score には
- * それまでの最小の罰点を渡し、届かないと分かった候補の計算を打ち切れるようにする（打ち切るときは
- * その最小以上の値を返す）。候補が無いか、どの罰点も Infinity より小さくなければ item は null になる。
- */
-function bestOf<T>(
-  cands: readonly T[],
-  score: (cand: T, index: number, bestScore: number) => number,
-): Readonly<{ item: T | null; score: number }> {
-  return cands.reduce<Readonly<{ item: T | null; score: number }>>(
-    (best, cand, i) => {
-      const p = score(cand, i, best.score);
-      return p < best.score ? { item: cand, score: p } : best;
-    },
-    { item: null, score: Infinity },
-  );
-}
-
-/** 2 点以上ある折れ線を、ラベル配置の障害物にする（1 点以下なら障害物にしない）。 */
-function lineObstacle(id: string, pts: readonly XY[], weight: number): readonly LineObstacle[] {
-  return pts.length >= 2 ? [{ id, pts, weight, bbox: bboxOf(pts) }] : [];
-}
-
-// 以下のラベル幅の見積もりと配置の補助関数は、FunctionGraph.tsx の同名の関数と同じ内容である。
-// FunctionGraph の関数はモジュール内に閉じており、共有のモジュールへ移すには FunctionGraph を
-// 変更する必要がある。既存の章の描画を変えないため、ここに複製して持つ。
-// ただし、ここにあった矩形の拡大（inflate）と重なりの判定（boxesOverlap）は、figure-label/geometry.ts
-// へ移した。FunctionGraph は boxesOverlap と同じ内容の関数を、まだ自前で持つ。
-// FunctionGraph は当たり判定の矩形に、より広めの見積もり（コマンド名の綴りも字数に数える）を
-// 使う。線や点の印を障害物に数えないため、矩形を広く取ってそれらから離すためである。本図は線と
-// 点の印を障害物に数えるため、すべてのラベルで実幅に近い estimateTexWidthPrecise を使う。広めの
-// 見積もりでは \nabla f が実幅の 3 倍になり、等高線の間に置ける位置が見つからなくなる。
-
-/** ラベルの想定文字高（viewBox 単位）。フォントサイズ 12 の約 1.25 倍。当たり判定の縦幅に使う。 */
-const LABEL_H = 15;
-
-/** 線分・ベクトルとラベル矩形の間に空けるすきま（viewBox 単位）。 */
-const SEG_LABEL_GAP = 5.5;
-
-/** 字形を持たず、引数の中身だけが幅を持つ組版コマンド（\mathrm{A} は A の幅になる）。 */
-const LAYOUT_ONLY_COMMANDS: ReadonlySet<string> = new Set([
-  "mathrm",
-  "mathit",
-  "mathbf",
-  "mathsf",
-  "mathcal",
-  "mathbb",
-  "text",
-  "operatorname",
-  "boldsymbol",
-  "vec",
-  "overline",
-  "overrightarrow",
-  "hat",
-  "bar",
-  "tilde",
-  "dot",
-  "left",
-  "right",
-  "displaystyle",
-  "textstyle",
-  "frac",
-  "dfrac",
-  "tfrac",
-]);
-
-/** コマンド名の綴りがそのまま立体で描かれる演算子名（\sin は sin の 3 字）。 */
-const OPERATOR_NAMES: ReadonlySet<string> = new Set([
-  "sin",
-  "cos",
-  "tan",
-  "cot",
-  "sec",
-  "csc",
-  "log",
-  "ln",
-  "exp",
-  "lim",
-  "max",
-  "min",
-  "sup",
-  "inf",
-  "det",
-  "arg",
-]);
-
-/** 前後に広い空きが入る関係記号のコマンド名。 */
-const RELATION_COMMANDS: ReadonlySet<string> = new Set([
-  "le",
-  "ge",
-  "leq",
-  "geq",
-  "neq",
-  "ne",
-  "approx",
-  "to",
-  "equiv",
-]);
-
-/** 前後に空きが入る二項演算子のコマンド名。 */
-const BINARY_COMMANDS: ReadonlySet<string> = new Set(["times", "cdot", "pm", "mp", "div"]);
-
-/**
- * LaTeX 文字列の表示幅を、estimateTexWidth より実幅に近く見積もる（安全側に広めに取る点は同じ）。
- * ラベルを線から離す距離と、等高線を切り抜く幅に使う。
- */
-function estimateTexWidthPrecise(tex: string, fontSize: number): number {
-  // 字を先頭から順に数える。afterOperand は直前が被演算子（文字・数字・閉じ括弧など）か。
-  const { units } = [...tex.matchAll(/\\([a-zA-Z]+)|\\[^a-zA-Z]|[^{}^_$\s]/g)].reduce<
-    Readonly<{ units: number; afterOperand: boolean }>
-  >(
-    (st, m) => {
-      const name = m[1];
-      if (name !== undefined) {
-        if (LAYOUT_ONLY_COMMANDS.has(name)) return st;
-        if (RELATION_COMMANDS.has(name) || BINARY_COMMANDS.has(name)) {
-          return { units: st.units + 2, afterOperand: false };
-        }
-        return {
-          units: st.units + (OPERATOR_NAMES.has(name) ? name.length : 1),
-          afterOperand: true,
-        };
-      }
-      const ch = m[0];
-      if (ch.startsWith("\\")) {
-        return "{}|".includes(ch[1]) ? { units: st.units + 1, afterOperand: ch[1] !== "{" } : st;
-      }
-      if (ch === "=" || ch === "<" || ch === ">")
-        return { units: st.units + 2, afterOperand: false };
-      if (ch === "+" || ch === "-") {
-        return { units: st.units + (st.afterOperand ? 2 : 1), afterOperand: false };
-      }
-      return { units: st.units + 1, afterOperand: !"([,".includes(ch) };
-    },
-    { units: 0, afterOperand: false },
-  );
-  return Math.max(units * fontSize * 0.72, 24);
-}
-
-/**
- * 線分・ベクトルの中点から法線方向へ、ラベル中心を離す距離を求める。中央寄せのラベル矩形
- * （幅 w・高さ LABEL_H）を単位法線 (perpX, perpY) へ射影した半幅に、すきまを足す。
- */
-function normalLabelOffset(perpX: number, perpY: number, w: number): number {
-  return (Math.abs(perpX) * w) / 2 + (Math.abs(perpY) * LABEL_H) / 2 + SEG_LABEL_GAP;
-}
-
-/** 配置先と推定文字幅から、ラベルが占める矩形を求める。 */
-function boxFor(pos: LabelPos, w: number): Box {
-  const x0 = pos.align === "left" ? pos.x : pos.align === "right" ? pos.x - w : pos.x - w / 2;
-  return { x0, x1: x0 + w, y0: pos.y - LABEL_H / 2, y1: pos.y + LABEL_H / 2 };
-}
-
-/** 線とラベルの間に残すすきま（px）。線との当たり判定で、ラベルの矩形をこの幅だけ広げる。 */
-const LINE_CLEARANCE = 1.5;
-
-/** ラベルどうしの間に残したいすきま（px）。これより近いと軽い罰点を与える。 */
-const LABEL_SPACING = 4;
 
 // ======================================================================
 // 数値の補助
@@ -2837,16 +2639,4 @@ function upTo(n: number): readonly number[] {
 /** 整数 lo から hi まで（両端を含む）の列。先頭は lo そのものにし、-0 を +0 に変えない。 */
 function intRange(lo: number, hi: number): readonly number[] {
   return Array.from({ length: Math.max(0, hi - lo + 1) }, (_, k) => (k === 0 ? lo : lo + k));
-}
-
-/**
- * start から step ずつ足していき、end 以下の値を順に返す。start + k * step と掛け算で求めると
- * 浮動小数の丸めが変わるため、直前の値に足して求める。値を作り直さずに積むよう、この関数の中に
- * 閉じた可変の配列を使う。
- */
-function accumulateSteps(start: number, step: number, end: number): readonly number[] {
-  if (!(start <= end)) return [];
-  const out = [start];
-  while (out[out.length - 1] + step <= end) out.push(out[out.length - 1] + step);
-  return out;
 }

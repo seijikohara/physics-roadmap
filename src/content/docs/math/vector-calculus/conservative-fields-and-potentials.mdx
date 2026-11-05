@@ -1338,7 +1338,7 @@ $$
     xTicks={quietTicksCons}
     yTicks={quietTicksCons}
     contours={[{ fn: (x, y) => x * y, levels: [{ value: -2, label: "" }, -1, { value: -0.5, label: "" }, { value: 0.5, label: "" }, 1, { value: 2, label: "" }], legendLabel: "xy=c" }]}
-    fields={[{ fn: (x, y) => ({ x: y, y: x }), step: 0.5, hide: (x, y) => Math.abs(x + 1.5) < 0.01 && Math.abs(y - 1) < 0.01, pivot: "center", opacity: 0.9, avoidLabels: true }]}
+    fields={[{ fn: (x, y) => ({ x: y, y: x }), step: 0.5, pivot: "center", opacity: 0.9, avoidLabels: true }]}
     ariaLabel="スカラー場 xy の等高線（値 −2・−1・−1/2・1/2・1・2）を青の濃淡の曲線で描き、場 (y,x) の値を青緑の矢印で重ねた図。値が正の等高線は x と y が同符号の範囲に、値が負の等高線は異符号の範囲にある。矢印は等高線と直角に交わる。x>0・y>0 の範囲の矢印は右上を、x<0・y<0 の範囲の矢印は左下を向く。x<0・y>0 の範囲の矢印は右下を、x>0・y<0 の範囲の矢印は左上を向く。原点では矢印を描かず、原点から離れるほど矢印は長い。値を添えたラベルの近くの格子点の矢印は省く。"
   />
   <figcaption>

@@ -442,7 +442,7 @@ export async function newThemedContext(
 }
 
 /**
- * ページを開き、Web フォントの読み込みを待って、テーマを確かめる。
+ * ページを開き、本文の details を開いて、Web フォントの読み込みを待ち、テーマを確かめる。
  *
  * KaTeX と本文のフォントが読み込まれる前に撮ると、字形や計測した範囲が変わる。
  */
@@ -462,7 +462,15 @@ export async function openPage(context: BrowserContext, url: string, theme: Them
     await page.close();
     throw new Error(`ページを開けない: ${url}（HTTP ${response?.status() ?? "応答なし"}）`);
   }
+  // 演習の解答の図は閉じた details の中にある。閉じたままでは checkVisibility が偽になって線が測定から
+  // 外れ、スクリーンショットもタイムアウトする。本文の details を開き、開いた中のフォントも待つ。
   await page.evaluate(async () => {
+    for (const details of document.querySelectorAll(".sl-markdown-content details")) {
+      details.setAttribute("open", "");
+    }
+    await new Promise((resolve) => {
+      requestAnimationFrame(resolve);
+    });
     await document.fonts.ready;
   });
   const actual = await page.evaluate(() => document.documentElement.dataset.theme);

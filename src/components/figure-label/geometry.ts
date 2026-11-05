@@ -1,8 +1,8 @@
 // 図のラベル配置で使う平面の幾何の判定（点・矩形・線分・折れ線・多角形）。
 //
 // DOM にもフォントにも頼らない純粋な関数だけを置き、ビルド時の部品・図のスクリプト・単体テストから
-// 同じ判定を使う。関数の中身は ContourPlot から移したもので、浮動小数の演算の順序を変えていない。
-// 演算の順序を変えると丸めが変わり、ラベルの位置と SVG の出力がずれるためである。
+// 同じ判定を使う。浮動小数の演算の順序を変えると丸めが変わり、ラベルの位置と SVG の出力がずれることが
+// ある。式を変えるときは図の差分を確かめる。
 
 /** 平面上の点。数学座標と画面座標のどちらにも使う。 */
 export type XY = Readonly<{ x: number; y: number }>;
@@ -30,31 +30,71 @@ export function pointInPolygon(p: XY, poly: readonly XY[]): boolean {
   }, false);
 }
 
-/** 折れ線が矩形と交わるか（いずれかの線分が矩形に入るか）。 */
-export function polylineHitsBox(pts: readonly XY[], b: Box): boolean {
-  return pts.some((p, k) => k > 0 && segmentHitsBox(pts[k - 1], p, b));
+/** 線分 pq が範囲 reach の外にあるか。距離の計算の前に座標の比較で線分を絞るために使う。 */
+function segmentOutside(p: XY, q: XY, reach: Box): boolean {
+  return (
+    Math.max(p.x, q.x) < reach.x0 ||
+    Math.min(p.x, q.x) > reach.x1 ||
+    Math.max(p.y, q.y) < reach.y0 ||
+    Math.min(p.y, q.y) > reach.y1
+  );
 }
 
 /**
- * 折れ線のうち、弧長 s から window より離れた部分が矩形と交わるか。ラベルが乗る位置の近くを
- * 除いて、同じ線の別の部分（急に折り返す線など）がラベルに重なるかを調べる。
+ * 折れ線と矩形の距離。交わるときは 0 である。外接矩形を limit だけ広げた範囲の外にある線分は調べない。
+ * 範囲の中に線分が無ければ Infinity を返す。等高線のラベルは候補が多いので、距離の計算の前に座標の比較で
+ * 線分を絞り、頂点の多い線でも速く保つ。
  */
-export function farPartHitsBox(
+export function polylineBoxDistance(pts: readonly XY[], box: Box, limit: number): number {
+  const reach = inflate(box, limit);
+  return pts.reduce((best, p, k) => {
+    if (k === 0 || best === 0 || segmentOutside(p, pts[k - 1], reach)) return best;
+    return Math.min(best, segmentBoxDistance(pts[k - 1], p, box));
+  }, Infinity);
+}
+
+/** 弧長の区間の列から、区間 [lo, hi] を除いた残りの区間の列を返す。 */
+function withoutInterval(
+  pieces: readonly (readonly [number, number])[],
+  lo: number,
+  hi: number,
+): readonly (readonly [number, number])[] {
+  return pieces.flatMap(([a, b]): readonly (readonly [number, number])[] => {
+    if (hi <= a || lo >= b) return [[a, b]];
+    return [...(a < lo ? ([[a, lo]] as const) : []), ...(hi < b ? ([[hi, b]] as const) : [])];
+  });
+}
+
+/**
+ * 折れ線のうち、弧長 s から window より離れた部分と矩形の距離。ラベルが乗る位置の近くを除いて、同じ線の
+ * 別の部分（急に折り返す線など）がラベルにどれだけ近いかを調べる。間引いた折れ線は 1 本の線分が長い
+ * ので、線分を丸ごと内外に分けず、線分を弧長の窓で切って窓の外の部分だけを測る。閉じた線では窓が始点を
+ * またぐので、一周ずらした窓も除く。
+ */
+export function farPartBoxDistance(
   pts: readonly XY[],
   cum: readonly number[],
   s: number,
   window: number,
   closed: boolean,
-  b: Box,
-): boolean {
+  box: Box,
+  limit: number,
+): number {
   const total = cum[cum.length - 1];
-  return pts.some((p, k) => {
-    if (k === 0) return false;
-    const mid = (cum[k - 1] + cum[k]) / 2;
-    const along = Math.abs(mid - s);
-    const dist = closed ? Math.min(along, total - along) : along;
-    return dist > window && segmentHitsBox(pts[k - 1], p, b);
-  });
+  const centers = closed ? [s - total, s, s + total] : [s];
+  const reach = inflate(box, limit);
+  return pts.reduce((best, p, k) => {
+    if (k === 0 || best === 0 || segmentOutside(p, pts[k - 1], reach)) return best;
+    const q = pts[k - 1];
+    const a = cum[k - 1];
+    const b = cum[k];
+    const far = centers.reduce<readonly (readonly [number, number])[]>(
+      (rest, c) => withoutInterval(rest, c - window, c + window),
+      b > a ? [[a, b]] : [],
+    );
+    const at = (t: number): XY => lerpAt(q, p, (t - a) / (b - a));
+    return far.reduce((d, [u, v]) => Math.min(d, segmentBoxDistance(at(u), at(v), box)), best);
+  }, Infinity);
 }
 
 /** 線分が矩形と交わるか（Liang–Barsky 法で、線分を矩形で切り取れるかを調べる）。 */
@@ -102,6 +142,57 @@ export function distanceToSegment(p: XY, a: XY, b: XY): number {
   return Math.hypot(p.x - (a.x + dx * t), p.y - (a.y + dy * t));
 }
 
+/** 点 p と矩形の距離。点が矩形の内側なら 0 である。 */
+export function distanceToBox(p: XY, box: Box): number {
+  return Math.hypot(
+    Math.max(box.x0 - p.x, 0, p.x - box.x1),
+    Math.max(box.y0 - p.y, 0, p.y - box.y1),
+  );
+}
+
+/**
+ * 線分と矩形の距離。交わるときは 0 である。線分と矩形はどちらも凸なので、離れているときに最も近い組は、
+ * 矩形の 4 隅から線分までと、線分の 2 端から矩形までのどれかである。矩形を四方へ広げて交差を調べる方式と
+ * 違い、線の傾きで値が変わらない。広げる方式は斜めの線に対して角が距離の √2 倍まで伸びる。
+ */
+export function segmentBoxDistance(a: XY, b: XY, box: Box): number {
+  if (segmentHitsBox(a, b, box)) return 0;
+  const corners: readonly XY[] = [
+    { x: box.x0, y: box.y0 },
+    { x: box.x1, y: box.y0 },
+    { x: box.x0, y: box.y1 },
+    { x: box.x1, y: box.y1 },
+  ];
+  return corners.reduce(
+    (d, c) => Math.min(d, distanceToSegment(c, a, b)),
+    Math.min(distanceToBox(a, box), distanceToBox(b, box)),
+  );
+}
+
+/**
+ * 折れ線の上で点 p に最も近い点と、点 p からの距離と、始点からの弧長。同点なら始点に近い側の点を返す。
+ */
+export function nearestOnPolyline(
+  pts: readonly XY[],
+  p: XY,
+): Readonly<{ point: XY; distance: number; arc: number }> {
+  const first = { point: pts[0], distance: Math.hypot(p.x - pts[0].x, p.y - pts[0].y), arc: 0 };
+  const cum = cumulativeLength(pts);
+  return pts.reduce((best, b, k) => {
+    if (k === 0) return best;
+    const a = pts[k - 1];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 === 0 ? 0 : clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / len2, 0, 1);
+    const point = lerpAt(a, b, t);
+    const distance = Math.hypot(p.x - point.x, p.y - point.y);
+    return distance < best.distance
+      ? { point, distance, arc: cum[k - 1] + (cum[k] - cum[k - 1]) * t }
+      : best;
+  }, first);
+}
+
 /** 折れ線の各頂点までの累積の長さ。 */
 export function cumulativeLength(pts: readonly XY[]): readonly number[] {
   // 直前の累積に辺の長さを足す（局所の可変バッファ）。頂点は数千になりうるため、配列を作り直さずに
@@ -143,9 +234,57 @@ export function turnAngle(a: XY, p: XY, b: XY): number {
   return d > Math.PI ? 2 * Math.PI - d : d;
 }
 
+/** 画面上の矢印（始点・終点）。 */
+export type ScreenArrow = Readonly<{ from: XY; to: XY }>;
+
+/**
+ * 矢じりの根元の中央と両端の点。矢じりの長さは矢印の 8 割を超えないように縮め、短い矢印でも形を保つ。
+ * 長さ 0 の矢印には null を返す。
+ */
+export function arrowHead(
+  { from, to }: ScreenArrow,
+  headLen: number,
+  headHalf: number,
+): Readonly<{ base: XY; left: XY; right: XY }> | null {
+  const len = Math.hypot(to.x - from.x, to.y - from.y);
+  if (!(len > 0)) return null;
+  const ux = (to.x - from.x) / len;
+  const uy = (to.y - from.y) / len;
+  const hl = Math.min(headLen, len * 0.8);
+  const hh = headHalf * (hl / headLen);
+  const bx = to.x - hl * ux;
+  const by = to.y - hl * uy;
+  return {
+    base: { x: bx, y: by },
+    left: { x: bx - hh * uy, y: by + hh * ux },
+    right: { x: bx + hh * uy, y: by - hh * ux },
+  };
+}
+
+/**
+ * 矢印の矢じりが、向きの読める程度に窓の中に残るか。矢じりの中ほどが窓の中にあれば残るとみなす。
+ * 先端だけが窓から出る矢印まで省くと、窓の縁の矢印の並びが歯抜けになるためである。
+ */
+export function headInside(
+  arrow: ScreenArrow,
+  win: Box,
+  headLen: number,
+  headHalf: number,
+): boolean {
+  const head = arrowHead(arrow, headLen, headHalf);
+  if (head === null) return true;
+  const mid = lerpAt(head.base, arrow.to, 0.5);
+  return mid.x >= win.x0 && mid.x <= win.x1 && mid.y >= win.y0 && mid.y <= win.y1;
+}
+
 /** 矩形を四方へ d だけ広げる。 */
 export function inflate(b: Box, d: number): Box {
   return { x0: b.x0 - d, x1: b.x1 + d, y0: b.y0 - d, y1: b.y1 + d };
+}
+
+/** 2 つの矩形のすきま。重なるときは 0 である。 */
+export function boxGap(a: Box, b: Box): number {
+  return Math.hypot(Math.max(a.x0 - b.x1, b.x0 - a.x1, 0), Math.max(a.y0 - b.y1, b.y0 - a.y1, 0));
 }
 
 /** 2 つの矩形が重なるか。 */

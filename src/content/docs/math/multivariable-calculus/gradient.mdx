@@ -709,7 +709,7 @@ $f$ は多項式だから全微分可能であり、$\nabla f(x,y)=(2x,\ 4y)$ �
     xTicks={[]}
     yTicks={[]}
     width={400}
-    contours={[{ fn: (x, y) => x * x + 2 * y * y, levels: [1, 3] }]}
+    contours={[{ fn: (x, y) => x * x + 2 * y * y, levels: [{ value: 1, labelAt: { x: 0.5, y: 0.61 } }, 3] }]}
     segments={[
       { from: { x: 1.626, y: 0.687 }, to: { x: 0.374, y: 1.313 }, dashed: false, color: "#16a34a" },
       { from: { x: -1.9427, y: 0.0702 }, to: { x: -1.0573, y: 1.1546 }, dashed: false, color: "#16a34a" },
@@ -883,9 +883,9 @@ $\nabla f(a,b)=\vec{0}$ の点では、等高線の接線を勾配から定め�
       {
         fn: (x, y) => x * x - y * y,
         levels: [
-          { value: -1, color: "var(--contour-lo)" },
-          { value: 0, color: "var(--sl-color-gray-3, #475569)" },
-          { value: 1, color: "#f97316" },
+          { value: -1, color: "var(--contour-lo)", labelAt: { x: 0.81, y: 1.31 } },
+          { value: 0, color: "var(--sl-color-gray-3, #475569)", labelAt: { x: -1.07, y: -1.04 } },
+          { value: 1, color: "#f97316", labelAt: { x: 1.38, y: -0.94 } },
         ],
       },
     ]}
