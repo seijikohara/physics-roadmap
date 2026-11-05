@@ -120,6 +120,8 @@
   - ラベルは改行を`\n`、数式を`$...$`で表す（例: `"判別式 $D = b^2 - 4ac$\nを計算する"`）。数式部分は KaTeX で組版し、日本語の地の文は本文と同じシステムフォントで描く。数式でない語を`\text{}`で囲まない。
   - JSX の文字列リテラルでは LaTeX のバックスラッシュを 2 重にする（`\gt`は`"\\gt"`、`\mathbb{R}`は`"\\mathbb{R}"`）。不等号は`\lt`・`\gt`で書く。
   - 形状は`shape: "diamond"`で菱形（判断）、既定は矩形。エッジは`dashed: true`で破線。サブグラフは`clusters`（入れ子可）で表す。方向は`direction: "TB" | "LR"`。
+  - ラベルの寸法は`figure-label/measure.ts`で見積もる。寸法が変わると dagre の配置全体が動くので、ラベルの文言を変えた図は目で確かめる。
+  - 図の幅が本文の列より広いと縮小して表示され、字も小さくなる。方向を変える、ラベルを`\n`で折り返す、などで幅を抑える。
 - 2D 図（関数グラフ・幾何・ベクトル・ベン図・数直線）は、対応する各コンポーネント（`FunctionGraph`・`UnitCircle`・`Triangle`・`NumberLine`・`VennDiagram`・`AreaModel`）で描く。
   - 図中ラベルの数式は`KatexLabel`が SVG の foreignObject に KaTeX を埋め込む。根号などの伸縮グリフは foreignObject 内で高さ 0 に潰れるため、`src/styles/global.css`で各図の`.katex svg`に`height: 100%`を与えて復元している。新たな伸縮グリフを使うときは、ビルドして実機で確認する。
   - 図中の日本語は本文と同じシステムフォントにそろえる（`global.css`で KaTeX の`.cjk_fallback`を本文フォントへ上書き済み）。各図は表示倍率 1.0（`max-width`＝viewBox 幅）で描き、フォントサイズを図をまたいでそろえる。
