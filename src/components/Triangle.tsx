@@ -122,10 +122,12 @@ const PAD = 36;
 // 配置の範囲。viewBox の縁から 2px 内側に収める。
 const VIEW_BOUNDS: Box = { x0: 2, x1: VIEW_W - 2, y0: 2, y1: VIEW_H - 2 };
 
-// 頂点・足の点の半径（px）と、角の弧の半径（px）。
+// 頂点・足の点の半径（px）、角の弧の半径（px）、頂点と足の直角の印の辺の長さ（px）。
 const VERTEX_R = 3.2;
 const FOOT_R = 3;
 const ARC_R = 20;
+const RIGHT_MARK = 12;
+const FOOT_MARK = 11;
 
 // 頂点の名前・辺・高さの字の大きさと、角のラベルの字の大きさ（KatexLabel の fontSize）。
 const NAME_FONT = 13;
@@ -183,21 +185,30 @@ export default function Triangle({
   };
 
   // ---- ラベルの配置 ----
-  // 辺・補助線・垂線・弧・頂点を障害物に積み、頂点 → 足 → 辺 → 高さ → 角の順にラベルを置く。動ける範囲の
-  // 狭いラベルを先に置く。
+  // 辺・補助線・垂線・弧・直角の印・頂点を障害物に積み、頂点 → 足 → 辺 → 高さ → 角の順にラベルを置く。図形の
+  // 外に置くラベルを先に置き、内側の角のラベルが残りを使う。
   const W = OBSTACLE_WEIGHT;
   const screenOf = (q: Pt): XY => ({ x: sx(q.x), y: sy(q.y) });
-  const outwardFrom = (q: XY): XY => {
-    const dx = q.x - centroid.x;
-    const dy = q.y - centroid.y;
-    const len = Math.hypot(dx, dy) || 1;
-    return { x: dx / len, y: dy / len };
-  };
-  const anglesWithLabel = angles.flatMap((a) => (a.right === true ? [] : [a]));
-  const arcLines = anglesWithLabel.flatMap((a) => {
+  const outwardFrom = (q: XY): XY => unitVec(centroid, q);
+  const angleMarks = angles.flatMap((a) => {
+    if (a.right === true) {
+      const others = otherVertices(P, a.at);
+      return lineObstacle(
+        `ang${a.at}`,
+        rightMark(P[a.at], others[0], others[1], RIGHT_MARK),
+        W.thinLine,
+      );
+    }
     const { start, end, mid } = arcOf(P, a.at);
-    return lineObstacle(`arc${a.at}`, [start, mid, end], W.thinLine);
+    return lineObstacle(`ang${a.at}`, [start, mid, end], W.thinLine);
   });
+  const footMarks = perpendiculars.flatMap((pp, i) =>
+    lineObstacle(
+      `fm${i}`,
+      rightMark(screenOf(pp.foot), screenOf(pp.from), screenOf(pp.toward), FOOT_MARK),
+      W.thinLine,
+    ),
+  );
   const placer = createPlacer([
     ...P.map((q, i) => boxObstacle(pointBox(q, VERTEX_R), W.point, `v${i}`)),
     ...perpendiculars.map((pp, i) =>
@@ -208,7 +219,8 @@ export default function Triangle({
     ...perpendiculars.flatMap((pp, i) =>
       lineObstacle(`pp${i}`, [screenOf(pp.from), screenOf(pp.foot)], W.edge),
     ),
-    ...arcLines,
+    ...angleMarks,
+    ...footMarks,
   ]);
   const place = (
     tex: string,
@@ -276,11 +288,12 @@ export default function Triangle({
       NAME_FONT,
       (size) => {
         const spec = { at: undefined, dir: e.labelDir, offset: e.labelOffset };
+        const mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
         return lineLabelCandidates(spec, p1, p2, size, (offset) =>
           preferringDirection(
             besideSegmentCandidates(p1, p2, size, offset, EDGE_FRACTIONS),
-            { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 },
-            outwardFrom({ x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 }),
+            mid,
+            outwardFrom(mid),
             OUTWARD_WEIGHT,
           ),
         );
@@ -338,19 +351,12 @@ export default function Triangle({
 
       {/* 角の印。 */}
       {angles.map((a, i) => {
-        const v = P[a.at];
-        const others = [0, 1, 2].filter((k) => k !== a.at).map((k) => P[k]);
-        const u1 = unitVec(v, others[0]);
-        const u2 = unitVec(v, others[1]);
         if (a.right) {
-          const d = 12;
-          const c1 = { x: v.x + u1.x * d, y: v.y + u1.y * d };
-          const c2 = { x: v.x + u2.x * d, y: v.y + u2.y * d };
-          const c3 = { x: c1.x + u2.x * d, y: c1.y + u2.y * d };
+          const others = otherVertices(P, a.at);
           return (
             <polyline
               key={`ang-${i}`}
-              points={`${c1.x},${c1.y} ${c3.x},${c3.y} ${c2.x},${c2.y}`}
+              points={markPoints(rightMark(P[a.at], others[0], others[1], RIGHT_MARK))}
               fill="none"
               stroke={MARK}
               strokeWidth={1.3}
@@ -388,12 +394,6 @@ export default function Triangle({
       {perpendiculars.map((pp, i) => {
         const f = { x: sx(pp.from.x), y: sy(pp.from.y) };
         const h = { x: sx(pp.foot.x), y: sy(pp.foot.y) };
-        const u1 = unitVec(h, f);
-        const u2 = unitVec(h, { x: sx(pp.toward.x), y: sy(pp.toward.y) });
-        const d = 11;
-        const c1 = { x: h.x + u1.x * d, y: h.y + u1.y * d };
-        const c2 = { x: h.x + u2.x * d, y: h.y + u2.y * d };
-        const c3 = { x: c1.x + u2.x * d, y: c1.y + u2.y * d };
         return (
           <g key={`perp-${i}`}>
             <Line
@@ -404,7 +404,7 @@ export default function Triangle({
               strokeDasharray="4 3"
             />
             <polyline
-              points={`${c1.x},${c1.y} ${c3.x},${c3.y} ${c2.x},${c2.y}`}
+              points={markPoints(rightMark(h, f, screenOf(pp.toward), FOOT_MARK))}
               fill="none"
               stroke={MARK}
               strokeWidth={1.3}
@@ -448,6 +448,25 @@ function wrapBelowPi(diff: number): number {
   return diff > Math.PI ? wrapBelowPi(diff - 2 * Math.PI) : diff;
 }
 
+/** 頂点 at のほかの 2 頂点。 */
+function otherVertices(P: readonly XY[], at: number): readonly XY[] {
+  return [0, 1, 2].filter((k) => k !== at).map((k) => P[k]);
+}
+
+/** 頂点 v の直角の印の折れ線。a・b は直角をはさむ辺の上の点、d は印の辺の長さである。 */
+function rightMark(v: XY, a: XY, b: XY, d: number): readonly XY[] {
+  const u1 = unitVec(v, a);
+  const u2 = unitVec(v, b);
+  const c1 = { x: v.x + u1.x * d, y: v.y + u1.y * d };
+  const c2 = { x: v.x + u2.x * d, y: v.y + u2.y * d };
+  return [c1, { x: c1.x + u2.x * d, y: c1.y + u2.y * d }, c2];
+}
+
+/** 折れ線を polyline の points 属性にする。 */
+function markPoints(pts: readonly XY[]): string {
+  return pts.map((q) => `${q.x},${q.y}`).join(" ");
+}
+
 /** 点の印の占める矩形。 */
 function pointBox(q: XY, r: number): Box {
   return { x0: q.x - r, x1: q.x + r, y0: q.y - r, y1: q.y + r };
@@ -466,7 +485,7 @@ function arcOf(
   at: number,
 ): Readonly<{ start: XY; mid: XY; end: XY; sweepFlag: 0 | 1; bisector: XY }> {
   const v = P[at];
-  const others = [0, 1, 2].filter((k) => k !== at).map((k) => P[k]);
+  const others = otherVertices(P, at);
   const u1 = unitVec(v, others[0]);
   const u2 = unitVec(v, others[1]);
   const a1 = Math.atan2(u1.y, u1.x);

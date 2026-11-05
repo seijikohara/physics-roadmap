@@ -196,8 +196,9 @@ export default function NumberLine({
 }
 
 /**
- * 目盛り数字の行の基準点の y。行の中でいちばん高い字形も、目盛りの線の下端からすきまの目標だけ離す。基線を
- * そろえるので、ラベルごとには決めない。
+ * 目盛り数字の行の基準点の y。行の中でいちばん高い字形も、目盛りの線の下端から少なくともすきまの目標だけ
+ * 離す。数字だけの行の位置を動かさないよう、既定の高さを下限にする。基線をそろえるので、ラベルごとには
+ * 決めない。
  */
 function tickRowY(labels: readonly string[]): number {
   const ys = labels.map(
@@ -206,7 +207,7 @@ function tickRowY(labels: readonly string[]): number {
   return ys.reduce((a, b) => Math.max(a, b), AXIS_Y + TICK_LEN + 12);
 }
 
-/** 点のラベルの行の基準点の y。行の中でいちばん低い字形も、点の印からすきまの目標だけ離す。 */
+/** 点のラベルの行の基準点の y。行の中でいちばん低い字形も、点の印から少なくともすきまの目標だけ離す。 */
 function pointRowY(labels: readonly string[]): number {
   const ys = labels.map(
     (tex) => aroundPoint({ x: 0, y: AXIS_Y }, glyphSizeOf(tex, POINT_FONT), ENDPOINT_REACH).above.y,

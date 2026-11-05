@@ -73,13 +73,13 @@ const VIEW_BOUNDS: Box = { x0: 2, x1: VIEW - 2, y0: 2, y1: VIEW - 2 };
 const CIRCLE_SAMPLES = 96;
 const ARC_SAMPLES = 16;
 
-// 射影のラベルを線分に沿って試す位置（中心から足までの割合）。前の位置ほど優先する。
+// 射影のラベルを線分に沿って試す位置（線分の端からの割合）。線分の中点に近いほど好む。
 const PROJECTION_FRACTIONS: readonly number[] = [0.6, 0.45, 0.75, 0.3, 0.9];
 
 // 角のラベルを試す、中心からの距離（弧の半径に対する倍率）。前の距離ほど優先する。
 const ANGLE_RADII: readonly number[] = [1.7, 2, 2.3, 2.7];
 
-// 角のラベルを試す向き。二等分線からのずれを、角の半分に対する割合で表す。前の向きほど優先する。
+// 角のラベルを試す向き。二等分線からのずれを、角の半分に対する割合で表す。同じ罰点なら前の向きを選ぶ。
 const ANGLE_SPREADS: readonly number[] = [0, 0.45, -0.45];
 
 // 先端のラベルを円の外向きへ寄せる罰点の係数。
@@ -138,9 +138,11 @@ export default function UnitCircle({
     const a = (theta * i) / ARC_SAMPLES;
     return { x: cx + ar * Math.cos(a), y: cy - ar * Math.sin(a) };
   });
+  const xName: XY = { x: VIEW - PAD + 12, y: cy + 12 };
+  const yName: XY = { x: cx - 12, y: PAD - 12 };
   const axisNameBoxes: readonly Box[] = [
-    glyphBox({ x: VIEW - PAD + 12, y: cy + 12, align: "center" }, glyphSizeOf("x", LABEL_FONT)),
-    glyphBox({ x: cx - 12, y: PAD - 12, align: "center" }, glyphSizeOf("y", LABEL_FONT)),
+    glyphBox({ ...xName, align: "center" }, glyphSizeOf("x", LABEL_FONT)),
+    glyphBox({ ...yName, align: "center" }, glyphSizeOf("y", LABEL_FONT)),
   ];
   const placer = createPlacer([
     boxObstacle(
@@ -215,9 +217,14 @@ export default function UnitCircle({
   // 右側になる向きに両端を渡す。
   const beside = (tex: string, foot: XY, towardFoot: boolean, placed: readonly Box[]) => {
     const [a, b] = towardFoot ? [origin, foot] : [foot, origin];
+    const length = Math.hypot(b.x - a.x, b.y - a.y);
     return place(
       tex,
-      (size) => besideSegmentCandidates(a, b, size, undefined, PROJECTION_FRACTIONS),
+      (size) =>
+        // 角が軸の上にあると射影が点に潰れるので、足のまわりから選ぶ。
+        length < size.width
+          ? widelyAroundPoint(foot, size, 0)
+          : besideSegmentCandidates(a, b, size, undefined, PROJECTION_FRACTIONS),
       placed,
     );
   };
@@ -295,8 +302,8 @@ export default function UnitCircle({
         markerStart={`url(#${arrow})`}
         markerEnd={`url(#${arrow})`}
       />
-      <KatexLabel tex="x" x={VIEW - PAD + 12} y={cy + 12} fontSize={12} />
-      <KatexLabel tex="y" x={cx - 12} y={PAD - 12} fontSize={12} />
+      <KatexLabel tex="x" x={xName.x} y={xName.y} fontSize={LABEL_FONT} />
+      <KatexLabel tex="y" x={yName.x} y={yName.y} fontSize={LABEL_FONT} />
 
       {/* 単位円。 */}
       <Circle cx={cx} cy={cy} r={r} fill="none" stroke={CIRCLE} strokeWidth={1.4} />
@@ -341,7 +348,7 @@ export default function UnitCircle({
       )}
 
       {/* 先端の点とラベル。 */}
-      <Circle cx={tipX} cy={tipY} r={3.6} fill={RADIUS} />
+      <Circle cx={tipX} cy={tipY} r={POINT_R} fill={RADIUS} />
       {labelNode(pointPlaced.item)}
     </svg>
   );

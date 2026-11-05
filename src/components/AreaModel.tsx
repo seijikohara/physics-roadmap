@@ -106,8 +106,8 @@ export default function AreaModel({
 
   const cellOf = (col: number, row: number) => cells.find((c) => c.col === col && c.row === row);
 
-  // 列のラベルの行の高さ。行の中でいちばん低い字形も、枠からすきまの目標だけ離す。基線をそろえるので、ラベル
-  // ごとには決めない。
+  // 列のラベルの行の高さ。行の中でいちばん低い字形も、枠から少なくともすきまの目標だけ離す。基線をそろえる
+  // ので、ラベルごとには決めない。
   const columnY = columns
     .map((c) => aroundPoint({ x: 0, y: originY }, glyphSizeOf(c.label, EDGE_FONT), 0).above.y)
     .reduce((a, b) => Math.min(a, b), originY - 12);

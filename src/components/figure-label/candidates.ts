@@ -122,7 +122,7 @@ export function alongBisector(
     return {
       box: glyphBox(pos, size),
       value: pos,
-      score: (penalty) => penalty + i * LABEL_POLICY.slideCost,
+      score: (penalty) => penalty + i * LABEL_POLICY.bisectorStep,
     };
   });
 }
@@ -195,7 +195,8 @@ export function preferringDirection(
     const dx = (c.box.x0 + c.box.x1) / 2 - p.x;
     const dy = (c.box.y0 + c.box.y1) / 2 - p.y;
     const len = Math.hypot(dx, dy) || 1;
-    const extra = (1 - (dx * u.x + dy * u.y) / len) * weight;
+    // 丸めで 1 をわずかに超えても、足す罰点を 0 以上に保つ。
+    const extra = Math.max(0, 1 - (dx * u.x + dy * u.y) / len) * weight;
     return { ...c, score: (penalty) => (c.score?.(penalty) ?? penalty) + extra };
   });
 }

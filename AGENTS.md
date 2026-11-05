@@ -133,7 +133,7 @@
 - `FunctionGraph`のラベルも配置器が置く。ラベルは補助線分・ベクトル・点・補助線（漸近線）の順に置き、後のラベルが先のラベルを避けるので、配置は要素の順序に依存する。次の指定で位置を調整する。
   - 点・補助線分・ベクトル・補助線は`labelAt`・`labelDir`・`labelOffset`を受ける。意味は`ContourPlot`の矢印・線分と同じで、`labelAt`があるときの`labelDir`の既定は`"center"`である。
   - 点のラベルは、自動で置くと点のまわりの 3 重の輪から位置を選ぶので、点から離れることがある。点の近くに固定するときは`labelDir`を渡す。
-- `UnitCircle`・`Triangle`のラベルも配置器が置く。`Triangle`の頂点と辺は`labelDir`・`labelOffset`を受ける。`NumberLine`・`AreaModel`は位置が決まっているので配置器を使わず、字形の寸法からすきま 4px を取る。
+- `UnitCircle`のラベルは先端の座標・余弦・角・正弦の順に、`Triangle`のラベルは頂点・足・辺・高さ・角の順に、配置器が置く。`Triangle`の頂点と辺は`labelDir`・`labelOffset`を受ける。`NumberLine`・`AreaModel`は位置が決まっているので配置器を使わず、字形の寸法から少なくとも 4px のすきまを取る。行のラベルは基線をそろえる。
 - `ContourPlot`の曲線の`labelPlacement`は、線のそばに置く`"inline"`と凡例に載せる`"legend"`を選ぶ指定である。
 - `SurfacePlot`・`SpaceVectorDiagram`のラベルも配置器が置く。ラベルは曲面・平面・領域・曲線・線分・点の順（`SpaceVectorDiagram`は平行四辺形・ベクトル・点の順）に置き、後のラベルが先のラベルを避ける。次の指定で位置を調整する。
   - `labelDir`は基準点から見た画面の上の向きである。空間の向きではない。`labelOffset`の意味は 2 次元の図と同じである。

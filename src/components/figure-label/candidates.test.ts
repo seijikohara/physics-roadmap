@@ -1323,6 +1323,6 @@ describe("alongBisector", () => {
     expect((first.box.y0 + first.box.y1) / 2).toBeCloseTo(0);
     expect((second.box.x0 + second.box.x1) / 2).toBeCloseTo(20);
     expect(first.score?.(1)).toBe(1);
-    expect(second.score?.(1)).toBeCloseTo(1 + LABEL_POLICY.slideCost);
+    expect(second.score?.(1)).toBeCloseTo(1 + LABEL_POLICY.bisectorStep);
   });
 });
