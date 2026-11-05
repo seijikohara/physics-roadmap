@@ -19,7 +19,14 @@ import {
   type LabelDirSpec,
   type LineLabelSpec,
 } from "./figure-label/candidates";
-import { bboxOf, visiblePieces, type Box, type LineSample, type XY } from "./figure-label/geometry";
+import {
+  bboxOf,
+  boxesOverlap,
+  visiblePieces,
+  type Box,
+  type LineSample,
+  type XY,
+} from "./figure-label/geometry";
 import { glyphBox, glyphSizeOf, type GlyphSize, type LabelPos } from "./figure-label/label-box";
 import { boxObstacle, lineObstacle } from "./figure-label/obstacles";
 import {
@@ -377,7 +384,8 @@ export default function FunctionGraph({
       ? []
       : [tickBoxOf(t, { x: axisX - Y_TICK_OFFSET, y: y(tickValue(t)), align: "center" })],
   );
-  // 目盛り数字の行と列の帯。ラベルが入ると、数字に重ならなくても目盛りの 1 つに見える。
+  // 目盛り数字の行と列の帯。点や補助線のラベルが入ると、数字に重ならなくても目盛りの 1 つに見える。
+  // 線分と矢印のラベルは線に添うので目盛りに見えにくく、帯を避けると線の中ほどから外れる。
   const tickBands: readonly Box[] = [
     ...(xTickBoxes.length === 0
       ? []
@@ -406,21 +414,15 @@ export default function FunctionGraph({
       },
       W.axis,
     ),
-    // 軸名（x・y）。描く位置は下の軸名の KatexLabel と同じである。
-    boxObstacle(
-      glyphBox(
-        { x: originX + plotW + 14, y: axisY - 11, align: "center" },
-        glyphSizeOf(xLabel, AXIS_NAME_FONT),
-      ),
-      W.axisName,
+  ];
+  // 軸名（x・y）。描く位置は下の軸名の KatexLabel と同じである。既出のラベルとして扱い、同じ行に並ぶ
+  // ラベルが「Z₀ Re」のように 1 続きに読まれるのを避ける。
+  const axisNameBoxes: readonly Box[] = [
+    glyphBox(
+      { x: originX + plotW + 14, y: axisY - 11, align: "center" },
+      glyphSizeOf(xLabel, AXIS_NAME_FONT),
     ),
-    boxObstacle(
-      glyphBox(
-        { x: axisX + 8, y: originY - 9, align: "left" },
-        glyphSizeOf(yLabel, AXIS_NAME_FONT),
-      ),
-      W.axisName,
-    ),
+    glyphBox({ x: axisX + 8, y: originY - 9, align: "left" }, glyphSizeOf(yLabel, AXIS_NAME_FONT)),
   ];
   const tickMarks: readonly (readonly XY[])[] = [
     ...xt.map((t) => [
@@ -463,7 +465,6 @@ export default function FunctionGraph({
 
   const placer = createPlacer([
     ...[...xTickBoxes, ...yTickBoxes].map((box) => boxObstacle(box, W.tick)),
-    ...tickBands.map((box) => boxObstacle(box, W.tickBand)),
     ...axisObstacles,
     ...points.map((p, i) => {
       const px = x(p.x);
@@ -496,6 +497,15 @@ export default function FunctionGraph({
     ...gridLines.flatMap((pts) => lineObstacle("gd", pts, W.grid, true)),
   ]);
 
+  // 目盛り数字の帯に入る候補に罰点を足す。
+  const avoidTickBands = (
+    candidates: readonly Candidate<LabelPos>[],
+  ): readonly Candidate<LabelPos>[] =>
+    candidates.map((c) => {
+      const extra = tickBands.filter((b) => boxesOverlap(c.box, b)).length * W.tickBand;
+      return { ...c, score: (penalty) => (c.score?.(penalty) ?? penalty) + extra };
+    });
+
   // 候補から最も罰点の小さい位置を選ぶ。同点なら前方の候補を優先する。
   const choosePlacement = (
     candidates: readonly Candidate<LabelPos>[],
@@ -526,7 +536,7 @@ export default function FunctionGraph({
 
   // ラベルは、補助線分・ベクトル・点・補助線の順に 1 つずつ置く。動ける範囲の狭いラベルを先に置く。
   // 各段の最後の placed を次の段へ渡し、後のラベルが先のラベルを避けるようにする。
-  const segmentLabels = placeInOrder(segments, [], (s, i, placed) => {
+  const segmentLabels = placeInOrder(segments, axisNameBoxes, (s, i, placed) => {
     if (s.label === undefined) return NO_PLACEMENT;
     const size = glyphSizeOf(s.label, LABEL_FONT);
     const a = toScreen(s.from);
@@ -567,7 +577,9 @@ export default function FunctionGraph({
       ? widelyAroundPoint(at, size, reach, p.labelOffset)
       : positionCandidates(pointPositions(at, size, reach, p.labelDir, p.labelOffset), size);
     const pos = choosePlacement(
-      p.labelAt === undefined ? pointCandidates : lineCandidates(p, at, at, size, () => []),
+      p.labelAt === undefined
+        ? avoidTickBands(pointCandidates)
+        : lineCandidates(p, at, at, size, () => []),
       placed,
       `pt${i}`,
     );
@@ -581,7 +593,9 @@ export default function FunctionGraph({
     const fractions = a.x === undefined ? H_LINE_FRACTIONS : V_LINE_FRACTIONS;
     const pos = choosePlacement(
       lineCandidates(a, ends[0], ends[1], size, (offset) =>
-        positionCandidates(besideSegment(ends[0], ends[1], size, offset, fractions), size),
+        avoidTickBands(
+          positionCandidates(besideSegment(ends[0], ends[1], size, offset, fractions), size),
+        ),
       ),
       placed,
       a.labelAt === undefined ? `as${i}` : undefined,

@@ -141,7 +141,13 @@ $$
       },
     ]}
     segments={[
-      { from: { x: 1.361, y: 1.782 }, to: { x: -2.236, y: 0 }, label: "r_1", dashed: true },
+      {
+        from: { x: 1.361, y: 1.782 },
+        to: { x: -2.236, y: 0 },
+        label: "r_1",
+        dashed: true,
+        labelAt: { x: -0.5, y: 0.6 },
+      },
       { from: { x: 1.361, y: 1.782 }, to: { x: 2.236, y: 0 }, label: "r_2", dashed: true },
     ]}
     points={[
@@ -159,7 +165,7 @@ $$
         highlight: true,
         labelAt: { x: 1.6, y: -0.82 },
       },
-      { x: 1.361, y: 1.782, label: "\\mathrm{P}" },
+      { x: 1.361, y: 1.782, label: "\\mathrm{P}", labelDir: "above-right" },
       { x: 3, y: 0, label: "(a,0)" },
       { x: 0, y: 2, label: "(0,b)" },
     ]}

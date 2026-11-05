@@ -57,7 +57,13 @@ import FunctionGraph from "../../../../components/FunctionGraph";
     equalScale={true}
     vectors={[
       { from: { x: 0, y: 0 }, to: { x: 5, y: 1 }, label: "\\vec{a}" },
-      { from: { x: 0, y: 0 }, to: { x: 2, y: 4 }, label: "\\vec{b}", color: "#f59e0b" },
+      {
+        from: { x: 0, y: 0 },
+        to: { x: 2, y: 4 },
+        label: "\\vec{b}",
+        color: "#f59e0b",
+        labelAt: { x: 0.75, y: 2.2 },
+      },
     ]}
     points={[{ x: 1.3, y: 1.0, label: "\\theta" }]}
     ariaLabel="原点を共通の始点とする 2 つのベクトル。青の a が右へ、橙の b が右上へ伸びる。2 つの間の角 θ を頂点付近に示す。"

@@ -79,8 +79,8 @@ $$
     curves={[{ fn: (x) => x * x * x, label: "y=x^3", labelX: 1.7 }]}
     points={[
       { x: -1, y: -1, label: "(-1,-1)" },
-      { x: 1, y: 1, label: "(1,1)" },
-      { x: 0, y: 0, label: "(0,0)", highlight: true },
+      { x: 1, y: 1, label: "(1,1)", labelDir: "right" },
+      { x: 0, y: 0, label: "(0,0)", highlight: true, labelDir: "above-right" },
     ]}
     ariaLabel="三次関数 y=x^3 のグラフ。原点 (0,0) を通り、左下から右上へ単調に増加する曲線。原点付近では水平に寝て、原点から離れると急に立ち上がる。点 (−1,−1) と (1,1) が原点を中心に向かい合う位置に並ぶ。"
   />
@@ -212,7 +212,7 @@ $$
       { x: -1, y: -1, label: "(-1,-1)" },
     ]}
     asymptotes={[
-      { x: 0, label: "x=0" },
+      { x: 0, label: "x=0", labelAt: { x: 0, y: -1.5 }, labelDir: "right" },
       { y: 0, label: "y=0" },
     ]}
     ariaLabel="有理関数 y=1/x のグラフ。右上と左下に分かれた 2 本の枝を持つ双曲線。x が 0 に近づくと曲線は縦線 x=0 にどこまでも近づき、x の絶対値が大きいと曲線は横線 y=0 にどこまでも近づく。"
@@ -326,7 +326,7 @@ $m = n$ で水平漸近線が $0$ でない値になる例を図に示す。例�
     yMax={7}
     curves={[{ fn: (x) => (x + 1) / (x - 3), label: "y=(x+1)/(x-3)", labelX: 7 }]}
     points={[
-      { x: 0, y: -1 / 3, label: "(0,-1/3)", labelAt: { x: 1.55, y: 0.5 } },
+      { x: 0, y: -1 / 3, label: "(0,-1/3)", labelAt: { x: 1.55, y: 0.55 } },
       { x: -1, y: 0, label: "(-1,0)" },
     ]}
     asymptotes={[
