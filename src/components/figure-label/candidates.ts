@@ -161,6 +161,9 @@ export function withPenalty(
   return cands.map((c) => ({ ...c, score: (penalty) => (c.score?.(penalty) ?? penalty) + extra }));
 }
 
+/** 同じ位置とみなす、2 つの印の距離の上限（px）。投影の丸めの差を吸収する。 */
+const SAME_MARK = 0.01;
+
 /**
  * 自分の印より他の印に近い候補に weight の罰点を足す。ラベルが別の点や線の端のものに読まれるのを防ぐ。
  * 自分の印と同じ位置にある印は数えない。
@@ -171,9 +174,10 @@ export function preferringOwnMark(
   others: readonly XY[],
   weight: number,
 ): readonly Candidate<LabelPos>[] {
+  const rivals = others.filter((o) => Math.hypot(o.x - own.x, o.y - own.y) > SAME_MARK);
   return cands.map((c) => {
     const mine = distanceToBox(own, c.box);
-    if (!others.some((o) => distanceToBox(o, c.box) < mine)) return c;
+    if (!rivals.some((o) => distanceToBox(o, c.box) < mine)) return c;
     return { ...c, score: (penalty) => (c.score?.(penalty) ?? penalty) + weight };
   });
 }
@@ -292,6 +296,24 @@ export function lineLabelCandidates(
     linePositions(spec, a, b, size, () => []),
     size,
   );
+}
+
+/**
+ * 点のラベルの候補。基準点 at があれば linePositions と同じく at を基準にする。向きの指定があれば点から
+ * その向きの 1 か所を返す。どちらも無ければ auto の候補を使う。
+ */
+export function pointLabelCandidates(
+  spec: LineLabelSpec,
+  p: XY,
+  size: GlyphSize,
+  reach: number,
+  auto: () => readonly Candidate<LabelPos>[],
+): readonly Candidate<LabelPos>[] {
+  if (spec.at !== undefined) return lineLabelCandidates(spec, p, p, size, () => []);
+  if (spec.dir !== undefined && spec.dir !== "auto") {
+    return positionCandidates(pointPositions(p, size, reach, spec.dir, spec.offset), size);
+  }
+  return auto();
 }
 
 /**
@@ -455,6 +477,11 @@ export function insideRegion(
 /** 曲線の上の標本。t は媒介変数である。 */
 export type CurvePoint = XY & Readonly<{ t: number }>;
 
+/** 媒介変数が at に最も近い標本の添字。標本が無ければ 0 を返す。 */
+export function nearestCurvePoint(visible: readonly CurvePoint[], at: number): number {
+  return visible.reduce((k, s, i) => (Math.abs(s.t - at) < Math.abs(visible[k].t - at) ? i : k), 0);
+}
+
 /**
  * 曲線のそばの候補。曲線に沿った各位置で、線の両側へ離した位置を並べる。at があれば媒介変数 at に
  * 最も近い標本の両側だけを候補にする。指定が無ければ両端を除く 4 点おきの標本を使い、曲線の後半
@@ -468,17 +495,13 @@ export function besideCurve(
   dir: LabelDirSpec = "auto",
   offset = DEFAULT_LABEL_OFFSET,
 ): readonly Candidate<LabelPos>[] {
+  if (visible.length === 0) return [];
   const idxs =
     at === undefined
       ? visible.flatMap((_, i) =>
           i >= 1 && i < visible.length - 1 && (i - 1) % 4 === 0 ? [i] : [],
         )
-      : [
-          visible.reduce(
-            (k, s, i) => (Math.abs(s.t - at) < Math.abs(visible[k].t - at) ? i : k),
-            0,
-          ),
-        ];
+      : [nearestCurvePoint(visible, at)];
   return idxs.flatMap((i) => {
     const a = visible[Math.max(0, i - 2)];
     const b = visible[Math.min(visible.length - 1, i + 2)];

@@ -13,8 +13,10 @@ import {
   insideRegion,
   lineLabelCandidates,
   linePositions,
+  nearestCurvePoint,
   onLine,
   onLineNear,
+  pointLabelCandidates,
   pointPositions,
   positionsAround,
   preferringOwnMark,
@@ -1135,6 +1137,11 @@ describe("anchoredCandidates", () => {
     expect(cands[0].value).toEqual({ x: 50, y: 50, align: "center" });
   });
 
+  it("向きを自動で選ぶときも、すきまを 8 方向へ渡す", () => {
+    const [, above] = anchoredCandidates(anchor, size, "auto", 7);
+    expect(above.value).toEqual(aroundPoint(anchor, size, 0, 7).above);
+  });
+
   it("向きを指定すると 1 か所に固定する", () => {
     const [only, ...rest] = anchoredCandidates(anchor, size, "right", 7);
     expect(rest).toEqual([]);
@@ -1166,6 +1173,19 @@ describe("lineLabelCandidates", () => {
     const spec = { at: { x: 30, y: 40 }, dir: undefined, offset: undefined };
     const cands = lineLabelCandidates(spec, a, b, size, offsetEcho);
     expect(cands.map((c) => c.value)).toEqual([{ x: 30, y: 40, align: "center" }]);
+  });
+
+  it("基準点と向きの指定には、すきまを渡す", () => {
+    const spec = { at: { x: 30, y: 40 }, dir: "above" as const, offset: 7 };
+    const [only] = lineLabelCandidates(spec, a, b, size, offsetEcho);
+    expect(only.value).toEqual(fixedPosition({ x: 30, y: 40 }, "above", size, 0, 7));
+  });
+
+  it("基準点と auto は、基準点のまわりから選ぶ", () => {
+    const spec = { at: { x: 30, y: 40 }, dir: "auto" as const, offset: undefined };
+    const cands = lineLabelCandidates(spec, a, b, size, offsetEcho);
+    expect(cands).toHaveLength(9);
+    expect(cands[0].value).toEqual({ x: 30, y: 40, align: "center" });
   });
 
   it("向きだけの指定は線の中点から測る", () => {
@@ -1210,8 +1230,8 @@ describe("preferringOwnMark", () => {
     expect(cand).toBe(near);
   });
 
-  it("自分の印と同じ位置の印は数えない", () => {
-    const [cand] = preferringOwnMark([near], own, [own], 12);
+  it("自分の印と同じ位置の印は、丸めの差があっても数えない", () => {
+    const [cand] = preferringOwnMark([near], own, [{ x: 1e-13, y: 0 }], 12);
     expect(cand).toBe(near);
   });
 
@@ -1219,5 +1239,50 @@ describe("preferringOwnMark", () => {
     const scored = { ...near, score: (penalty: number) => penalty + 2 };
     const [cand] = preferringOwnMark([scored], own, [{ x: 25, y: 5 }], 12);
     expect(cand.score?.(1)).toBe(15);
+  });
+});
+
+describe("pointLabelCandidates", () => {
+  const p = { x: 50, y: 50 };
+  const autoCandidates = (): readonly Candidate<LabelPos>[] => offsetEcho(undefined);
+
+  it("指定が無ければ auto の候補を使う", () => {
+    const spec = { at: undefined, dir: undefined, offset: undefined };
+    expect(pointLabelCandidates(spec, p, size, 4, autoCandidates)[0].value.x).toBe(-1);
+    const autoDir = { at: undefined, dir: "auto" as const, offset: undefined };
+    expect(pointLabelCandidates(autoDir, p, size, 4, autoCandidates)[0].value.x).toBe(-1);
+  });
+
+  it("基準点があれば基準点を中心にする", () => {
+    const spec = { at: { x: 10, y: 20 }, dir: undefined, offset: undefined };
+    const [only] = pointLabelCandidates(spec, p, size, 4, autoCandidates);
+    expect(only.value).toEqual({ x: 10, y: 20, align: "center" });
+  });
+
+  it("向きだけの指定は、印の端から測る", () => {
+    const spec = { at: undefined, dir: "right" as const, offset: 7 };
+    const [only] = pointLabelCandidates(spec, p, size, 4, autoCandidates);
+    expect(only.value).toEqual(aroundPoint(p, size, 4, 7).right);
+  });
+});
+
+describe("besideCurve の空の標本", () => {
+  it("標本が無ければ候補を返さない", () => {
+    expect(besideCurve([], size, 0.5)).toEqual([]);
+    expect(besideCurve([], size, undefined)).toEqual([]);
+  });
+});
+
+describe("nearestCurvePoint", () => {
+  const samples = [
+    { x: 0, y: 0, t: 0 },
+    { x: 1, y: 0, t: 1 },
+    { x: 2, y: 0, t: 2 },
+  ];
+
+  it("媒介変数が最も近い標本の添字を返す", () => {
+    expect(nearestCurvePoint(samples, 1.2)).toBe(1);
+    expect(nearestCurvePoint(samples, 5)).toBe(2);
+    expect(nearestCurvePoint(samples, -1)).toBe(0);
   });
 });

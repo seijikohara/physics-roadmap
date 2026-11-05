@@ -578,6 +578,48 @@ describe("chainEdges", () => {
     ).toHaveLength(1);
   });
 
+  it("x が同じでも y が違えば別の点とみなす", () => {
+    expect(
+      chainEdges([
+        [a, b],
+        [
+          { x: 1, y: 5 },
+          { x: 2, y: 5 },
+        ],
+      ]),
+    ).toHaveLength(2);
+  });
+
+  it("0.02 離れた点は別の点とみなす", () => {
+    expect(
+      chainEdges([
+        [a, b],
+        [{ x: 1.02, y: 0 }, c],
+      ]),
+    ).toHaveLength(2);
+  });
+
+  it("同じ辺が重ねて現れても 1 本に数える", () => {
+    expect(
+      chainEdges([
+        [a, b],
+        [b, a],
+        [b, c],
+      ]),
+    ).toEqual([[c, b, a]]);
+  });
+
+  it("枝分かれする点でも、どの辺も 1 回だけ現れる", () => {
+    const up = { x: 1, y: 1 };
+    const lines = chainEdges([
+      [a, b],
+      [b, c],
+      [b, up],
+    ]);
+    const segments = lines.reduce((n, line) => n + line.length - 1, 0);
+    expect(segments).toBe(3);
+  });
+
   it("辺が無ければ空を返す", () => {
     expect(chainEdges([])).toEqual([]);
   });

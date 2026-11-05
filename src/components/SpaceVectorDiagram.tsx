@@ -3,8 +3,8 @@ import {
   anchoredCandidates,
   besideVectorCandidates,
   lineLabelCandidates,
-  pointPositions,
-  positionCandidates,
+  pointLabelCandidates,
+  preferringOwnMark,
   widelyAroundPoint,
   type LabelDirSpec,
 } from "./figure-label/candidates";
@@ -22,8 +22,8 @@ import {
 import { LABEL_POLICY, OBSTACLE_WEIGHT } from "./figure-label/policy";
 import type { ReactNode } from "react";
 import KatexLabel from "./KatexLabel";
-import { DEFAULT_VIEW, fitView, makeProjector, projectedBounds } from "./projection3d";
-import type { ScreenPoint, Vec3 } from "./projection3d";
+import { DEFAULT_VIEW, fitView, makeProjector, projectedBounds, toXY } from "./projection3d";
+import type { Vec3 } from "./projection3d";
 
 /**
  * インライン SVG として描く、ビルド時生成の静的な空間ベクトルの軸測図。
@@ -54,8 +54,8 @@ import type { ScreenPoint, Vec3 } from "./projection3d";
  * 中央付近に置く。
  */
 
-/** ラベルの位置の指定。意味は SurfacePlot の同じ名前の指定と同じである。 */
-type LabelPlacementProps = Readonly<{
+/** ラベルの位置の指定。意味は SurfacePlot の点・線分の同じ名前の指定と同じである。 */
+type LabelProps = Readonly<{
   /** ラベルの基準点（空間の点）。 */
   labelAt?: Vec3;
   /** 基準点から見たラベルの画面の上の向き。 */
@@ -65,7 +65,7 @@ type LabelPlacementProps = Readonly<{
 }>;
 
 /** 空間ベクトル（有向線分）。始点 from から終点 to へ矢じり付きで描く。 */
-type SpaceVec = LabelPlacementProps &
+type SpaceVec = LabelProps &
   Readonly<{
     from: Vec3;
     to: Vec3;
@@ -78,7 +78,7 @@ type SpaceVec = LabelPlacementProps &
   }>;
 
 /** 空間内の 1 点。塗りつぶしの小丸で描く。 */
-type SpacePoint = LabelPlacementProps &
+type SpacePoint = LabelProps &
   Readonly<{
     x: number;
     y: number;
@@ -90,7 +90,7 @@ type SpacePoint = LabelPlacementProps &
   }>;
 
 /** 起点 o から 2 ベクトル a, b が張る平行四辺形。外積の面積の図示に使う。半透明で塗る。 */
-type Parallelogram = LabelPlacementProps &
+type Parallelogram = LabelProps &
   Readonly<{
     o: Vec3;
     a: Vec3;
@@ -255,7 +255,6 @@ export default function SpaceVectorDiagram({
       base,
       left: { sx: base.sx - hh * sin, sy: base.sy + hh * cos },
       right: { sx: base.sx + hh * sin, sy: base.sy - hh * cos },
-      len,
     };
   });
 
@@ -331,20 +330,25 @@ export default function SpaceVectorDiagram({
   };
 
   // ラベルは、平行四辺形・ベクトル・点の順に 1 つずつ置く。後のラベルが先のラベルを避ける。
-  const paraPlaced = placeInOrder(
-    parallelogram?.label !== undefined && para ? [parallelogram] : [],
-    axisNameBoxes,
-    (pg, _, placed) => {
-      const center = para
-        ? { x: (para.p0.sx + para.p2.sx) / 2, y: (para.p0.sy + para.p2.sy) / 2 }
-        : { x: 0, y: 0 };
-      const anchor = pg.labelAt === undefined ? center : screenOf(pg.labelAt);
-      return place(
-        pg.label ?? "",
-        (size) => anchoredCandidates(anchor, size, pg.labelDir, pg.labelOffset),
-        placed,
-      );
-    },
+  const paraLabels: readonly Readonly<{ tex: string; anchor: XY }>[] =
+    parallelogram?.label !== undefined && para
+      ? [
+          {
+            tex: parallelogram.label,
+            anchor:
+              parallelogram.labelAt === undefined
+                ? { x: (para.p0.sx + para.p2.sx) / 2, y: (para.p0.sy + para.p2.sy) / 2 }
+                : screenOf(parallelogram.labelAt),
+          },
+        ]
+      : [];
+  const paraPlaced = placeInOrder(paraLabels, axisNameBoxes, ({ tex, anchor }, _, placed) =>
+    place(
+      tex,
+      (size) =>
+        anchoredCandidates(anchor, size, parallelogram?.labelDir, parallelogram?.labelOffset),
+      placed,
+    ),
   );
   const vectorPlaced = placeInOrder(vectors, paraPlaced.placed, (v, i, placed) => {
     if (v.label === undefined) return NO_PLACEMENT;
@@ -376,15 +380,24 @@ export default function SpaceVectorDiagram({
     return place(
       pt.label,
       (size) => {
-        if (pt.labelAt !== undefined) {
-          const spec = { at: screenOf(pt.labelAt), dir: pt.labelDir, offset: pt.labelOffset };
-          return lineLabelCandidates(spec, at, at, size, () => []);
-        }
-        if (pt.labelDir !== undefined && pt.labelDir !== "auto") {
-          const fixed = pointPositions(at, size, POINT_R, pt.labelDir, pt.labelOffset);
-          return positionCandidates(fixed, size);
-        }
-        return widelyAroundPoint(at, size, POINT_R, pt.labelOffset);
+        const spec = {
+          at: pt.labelAt === undefined ? undefined : screenOf(pt.labelAt),
+          dir: pt.labelDir,
+          offset: pt.labelOffset,
+        };
+        // 点のラベルが読み違えられる相手の印。他の点と、ベクトルの両端である。
+        const rivals = [
+          ...points.flatMap((q, k) => (k === i ? [] : [screenOf(q)])),
+          ...vectorDraws.flatMap((v) => [toXY(v.fromP), toXY(v.toP)]),
+        ];
+        return pointLabelCandidates(spec, at, size, POINT_R, () =>
+          preferringOwnMark(
+            widelyAroundPoint(at, size, POINT_R, pt.labelOffset),
+            at,
+            rivals,
+            W.point,
+          ),
+        );
       },
       placed,
       // 基準点が点の上でも印を避けられるよう、labelAt があれば自分の印も判定に含める。
@@ -563,11 +576,6 @@ export default function SpaceVectorDiagram({
 /** ベクトルの成分ごとの和を返す。 */
 function add(p: Vec3, q: Vec3): Vec3 {
   return { x: p.x + q.x, y: p.y + q.y, z: p.z + q.z };
-}
-
-/** 画面の点を配置器の座標にする。 */
-function toXY(q: ScreenPoint): XY {
-  return { x: q.sx, y: q.sy };
 }
 
 /** 落とし込み線の 1 本。 */

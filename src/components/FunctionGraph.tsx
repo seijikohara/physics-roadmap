@@ -14,7 +14,7 @@ import {
   besideSegmentCandidates,
   besideVectorCandidates,
   lineLabelCandidates,
-  pointPositions,
+  pointLabelCandidates,
   positionCandidates,
   widelyAroundPoint,
   type LabelDirSpec,
@@ -576,19 +576,15 @@ export default function FunctionGraph({
     const size = glyphSizeOf(p.label, LABEL_FONT);
     const at = toScreen(p);
     const reach = markerReach(p);
-    const candidates = (): readonly Candidate<LabelPos>[] => {
-      if (p.labelAt !== undefined) return lineCandidates(p, at, at, size, () => []);
-      if (p.labelDir !== undefined && p.labelDir !== "auto") {
-        return positionCandidates(pointPositions(at, size, reach, p.labelDir, p.labelOffset), size);
-      }
-      return avoidingBands(
-        widelyAroundPoint(at, size, reach, p.labelOffset),
-        tickBands,
-        W.tickBand,
-      );
+    const spec = {
+      at: p.labelAt === undefined ? undefined : toScreen(p.labelAt),
+      dir: p.labelDir,
+      offset: p.labelOffset,
     };
     const pos = choosePlacement(
-      candidates(),
+      pointLabelCandidates(spec, at, size, reach, () =>
+        avoidingBands(widelyAroundPoint(at, size, reach, p.labelOffset), tickBands, W.tickBand),
+      ),
       placed,
       // 基準点が点の上でも印を避けられるよう、labelAt があれば自分の印も判定に含める。
       p.labelAt === undefined ? `pt${i}` : undefined,

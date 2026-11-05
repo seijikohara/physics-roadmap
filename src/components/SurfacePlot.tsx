@@ -9,7 +9,8 @@ import {
   centeredAt,
   insideRegion,
   lineLabelCandidates,
-  pointPositions,
+  nearestCurvePoint,
+  pointLabelCandidates,
   positionCandidates,
   preferringOwnMark,
   widelyAroundPoint,
@@ -19,7 +20,12 @@ import {
 } from "./figure-label/candidates";
 import { chainEdges, type Box, type XY } from "./figure-label/geometry";
 import { glyphBox, glyphSizeOf, type GlyphSize, type LabelPos } from "./figure-label/label-box";
-import { boxObstacle, groupObstacle, lineObstacle } from "./figure-label/obstacles";
+import {
+  boxObstacle,
+  groupObstacle,
+  lineObstacle,
+  type LineObstacle,
+} from "./figure-label/obstacles";
 import { createPlacer, placedLabel, placeInOrder, type Candidate } from "./figure-label/placer";
 import { FIELD_PENALTY_CAP, LABEL_POLICY, OBSTACLE_WEIGHT } from "./figure-label/policy";
 import KatexLabel from "./KatexLabel";
@@ -31,6 +37,7 @@ import {
   makeProjector,
   minMax,
   projectedBounds,
+  toXY,
   viewBasis,
 } from "./projection3d";
 import type { ScreenPoint, Vec3, ViewBasis } from "./projection3d";
@@ -517,13 +524,13 @@ const TICK_LABEL_GAP = 9;
 // 線分・矢印のラベルを線に沿って試す位置（線の長さに対する割合）。前の位置ほど優先する。
 const SEGMENT_FRACTIONS: readonly number[] = [0.5, 0.35, 0.65, 0.2, 0.8];
 
-// 面のラベルが基準点のまわりから離れるときの罰点。線に近い罰点より軽い値を足すと動きやすいので、線に近い
-// 罰点（1.5）に遠い輪の罰点（1.5）を足した値が、面の縁に触れる罰点（3）より小さくなる範囲で重くする。
+// 面のラベルが基準点のまわりから離れるときの罰点。遠い輪の罰点（1.5）に足す。合わせた 2.5 は、軸に近い
+// だけの罰点（1.5）より重く、面の縁に触れる罰点（3）より軽い。縁に触れるときだけ基準点から動く。
 const SHAPE_RING_PENALTY = 1;
 
 // 網目の線は面の上のどこにでもあるので、触れる本数の罰点を打ち切る。面のラベルが線を避けられなくならない
-// よう、縁取りの線の重みより軽くする。
-const MESH_PENALTY_CAP = 4;
+// よう、縁取りの線の重み（3）より軽くする。
+const MESH_PENALTY_CAP = 2.5;
 
 // 面の上の点や基準点のラベルが網目に触れる罰点の上限。遠い輪の罰点（1.5）より軽くする。
 const SURFACE_MESH_PENALTY_CAP = 1;
@@ -654,7 +661,7 @@ export default function SurfacePlot({
       : [];
 
   const curvePts = curves.map((c) => {
-    const n = Math.max(2, c.samples ?? 160);
+    const n = curveSampleCount(c);
     // 添字 i ≤ n の範囲だけを作る。n + 1 のままだと、整数の直前の n で丸められて範囲の外の添字ができる。
     return Array.from({ length: Math.floor(n) + 1 }, (_, i): Vec3 => {
       const t = c.t[0] + ((c.t[1] - c.t[0]) * i) / n;
@@ -836,13 +843,14 @@ export default function SurfacePlot({
       ),
     );
 
-  // 線の可視の区間を障害物にする。面に隠れて淡く描く区間は、見える度合いのぶんだけ軽い。
-  const runObstacles = (id: string, runs: readonly Run[], weight: number) =>
-    runs.flatMap((run) => lineObstacle(id, run.pts.map(toXY), weight * run.level));
+  // 描く点の添字。hidden が "hide" で面に隠れた点は、印もラベルも描かない。
+  const shownPoints: readonly number[] = points.flatMap((p, i) =>
+    pointLevel(pointPts[i], p.hidden ?? "fade") > 0 ? [i] : [],
+  );
 
   // 空間曲線の標本（画面座標と媒介変数）。曲線のラベルの候補に使う。
   const curveSamples: readonly (readonly CurvePoint[])[] = curves.map((c, i) => {
-    const n = Math.max(2, c.samples ?? 160);
+    const n = curveSampleCount(c);
     return curvePts[i].flatMap((p, k) =>
       isFiniteVec(p) ? [{ ...screenOf(p), t: c.t[0] + ((c.t[1] - c.t[0]) * k) / n }] : [],
     );
@@ -850,8 +858,8 @@ export default function SurfacePlot({
 
   const obstacles = [
     ...tickItems.map((t) => boxObstacle(t.box, W.tick)),
-    ...pointPts.map((p, i) => {
-      const { x, y } = screenOf(p);
+    ...shownPoints.map((i) => {
+      const { x, y } = screenOf(pointPts[i]);
       const r = markerReach(points[i]);
       return boxObstacle({ x0: x - r, x1: x + r, y0: y - r, y1: y + r }, W.point, `pt${i}`);
     }),
@@ -876,7 +884,7 @@ export default function SurfacePlot({
     ),
     ...dropLines.flatMap((d) => runObstacles("dp", visibleRuns([d.from, d.to], "fade"), W.edge)),
     ...chainEdges(faceEdges("outline")).flatMap((pts) => lineObstacle("ol", pts, W.edge)),
-    ...gridLines.flatMap((g) => lineObstacle("gd", [screenOf(g.a), screenOf(g.b)], W.grid, true)),
+    ...gridLines.flatMap((g) => runObstacles("gd", visibleRuns([g.a, g.b], "hide"), W.grid, true)),
     ...fieldDraws.map((fd) =>
       groupObstacle(
         fd.arrows.flatMap((a) =>
@@ -939,9 +947,10 @@ export default function SurfacePlot({
     face: Face,
     size: GlyphSize,
   ): readonly Candidate<LabelPos>[] => {
-    const at = r.labelAt;
-    const z = face.pts[0]?.z ?? 0;
-    const anchor = at === undefined ? screenOf(centroid(face.pts)) : screenOf({ ...at, z });
+    const anchor =
+      r.labelAt === undefined
+        ? screenOf(centroid(face.pts))
+        : screenOf({ ...r.labelAt, z: face.pts[0].z });
     if (r.labelDir !== undefined && r.labelDir !== "auto") {
       return anchoredCandidates(anchor, size, r.labelDir, r.labelOffset);
     }
@@ -960,9 +969,12 @@ export default function SurfacePlot({
     const dir = c.labelDir ?? "auto";
     const beside = besideCurve(samples, size, at, dir, c.labelOffset);
     if (dir !== "auto" || samples.length === 0) return beside;
-    const on = samples.reduce((m, s) => (Math.abs(s.t - at) < Math.abs(m.t - at) ? s : m));
+    const on = samples[nearestCurvePoint(samples, at)];
     const around = aroundPoint(on, size, LABEL_POLICY.lineHalfWidth, c.labelOffset);
-    return [...beside, ...positionCandidates(Object.values(around), size)];
+    return [
+      ...beside,
+      ...withPenalty(positionCandidates(Object.values(around), size), LABEL_POLICY.fixedSide),
+    ];
   };
 
   const segmentCandidates = (
@@ -986,7 +998,7 @@ export default function SurfacePlot({
 
   // 点のラベルが読み違えられる相手の印。他の点と、線分の両端である。
   const marksOtherThan = (i: number): readonly XY[] => [
-    ...pointPts.flatMap((q, k) => (k === i ? [] : [screenOf(q)])),
+    ...shownPoints.flatMap((k) => (k === i ? [] : [screenOf(pointPts[k])])),
     ...segPts.flatMap((s) => [screenOf(s.from), screenOf(s.to)]),
   ];
 
@@ -997,18 +1009,18 @@ export default function SurfacePlot({
   ): readonly Candidate<LabelPos>[] => {
     const at = screenOf(pointPts[i]);
     const reach = markerReach(p);
-    if (p.labelAt !== undefined) {
-      const spec = { at: screenOf(toView(p.labelAt)), dir: p.labelDir, offset: p.labelOffset };
-      return lineLabelCandidates(spec, at, at, size, () => []);
-    }
-    if (p.labelDir !== undefined && p.labelDir !== "auto") {
-      return positionCandidates(pointPositions(at, size, reach, p.labelDir, p.labelOffset), size);
-    }
-    return preferringOwnMark(
-      widelyAroundPoint(at, size, reach, p.labelOffset),
-      at,
-      marksOtherThan(i),
-      W.point,
+    const spec = {
+      at: p.labelAt === undefined ? undefined : screenOf(toView(p.labelAt)),
+      dir: p.labelDir,
+      offset: p.labelOffset,
+    };
+    return pointLabelCandidates(spec, at, size, reach, () =>
+      preferringOwnMark(
+        widelyAroundPoint(at, size, reach, p.labelOffset),
+        at,
+        marksOtherThan(i),
+        W.point,
+      ),
     );
   };
 
@@ -1068,8 +1080,9 @@ export default function SurfacePlot({
             },
           ],
     ),
-    ...points.flatMap((p, i): readonly LabelRequest[] =>
-      p.label === undefined
+    ...shownPoints.flatMap((i): readonly LabelRequest[] => {
+      const p = points[i];
+      return p.label === undefined
         ? []
         : [
             {
@@ -1080,8 +1093,8 @@ export default function SurfacePlot({
               exclude: p.labelAt === undefined ? `pt${i}` : undefined,
               onSurface: true,
             },
-          ],
-    ),
+          ];
+    }),
   ];
   const placedLabels = placeInOrder(labelRequests, axisNameBoxes, (req, _, placed) => {
     const size = glyphSizeOf(req.tex, LABEL_FONT);
@@ -2449,9 +2462,22 @@ function unitOf(d: ScreenPoint): ScreenPoint {
   return { sx: d.sx / len, sy: d.sy / len };
 }
 
-/** 画面の点を配置器の座標にする。 */
-function toXY(p: ScreenPoint): XY {
-  return { x: p.sx, y: p.sy };
+/**
+ * 線の可視の区間を障害物にする。面に隠れて淡く描く区間は、見える度合いのぶんだけ軽い。描かない区間は
+ * 障害物にしない。
+ */
+function runObstacles(
+  id: string,
+  runs: readonly Run[],
+  weight: number,
+  faint = false,
+): readonly LineObstacle[] {
+  return runs.flatMap((run) => lineObstacle(id, run.pts.map(toXY), weight * run.level, faint));
+}
+
+/** 曲線を分ける小区間の数。 */
+function curveSampleCount(c: SpaceCurve): number {
+  return Math.max(2, c.samples ?? 160);
 }
 
 /** 点の中心から印の端までの距離（px）。 */
@@ -2465,7 +2491,7 @@ type LabelRequest = Readonly<{
   tex: string;
   candidates: (size: GlyphSize) => readonly Candidate<LabelPos>[];
   exclude?: string;
-  /** 面の上に置くラベルか。面の上のどこにでもある網目を避けない。 */
+  /** 面の上に置くラベルか。面の上のどこにでもある網目を軽くしか避けない。 */
   onSurface?: boolean;
 }>;
 

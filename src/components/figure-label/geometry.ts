@@ -318,30 +318,42 @@ export function inflate(b: Box, d: number): Box {
 /** 端点の同一視に使う、0.01 の格子の上の点の名前。 */
 const pointKey = (p: XY): string => `${Math.round(p.x * 100)},${Math.round(p.y * 100)}`;
 
+/** 両端の組を、向きによらず同じ名前にする。 */
+function edgeKey(a: XY, b: XY): string {
+  const [p, q] = [pointKey(a), pointKey(b)].toSorted();
+  return `${p}|${q}`;
+}
+
 /**
  * 向きのそろわない線分の列を、端点を共有する線分どうしでつないだ折れ線の列にする。多角形の網の縁のように
- * 細かい辺に分かれた線を、1 本の線として扱うために使う。端点は 0.01 の格子で同じ点とみなす。
+ * 細かい辺に分かれた線を、1 本の線として扱うために使う。端点は 0.01 の格子で同じ点とみなし、同じ辺が
+ * 重ねて現れても 1 本に数える。枝分かれする点では、辺の並びの順に先へ進む。
  */
 export function chainEdges(edges: readonly (readonly [XY, XY])[]): readonly (readonly XY[])[] {
-  // 端点から辺を引く索引と使用済みの印。辺の数に比例する回数で作り直すと遅いので、局所の可変の表で持つ。
+  const unique = [...new Map(edges.map((e) => [edgeKey(e[0], e[1]), e])).values()];
+  // 端点から辺を引く索引・使用済みの印・伸ばしている途中の線は、辺の数に比例する回数だけ更新する。
+  // 作り直すと辺の数の 2 乗の時間がかかるので、関数の中に閉じた可変の表と配列で持つ。
   const touching = new Map<string, number[]>();
-  for (const [i, [a, b]] of edges.entries()) {
-    for (const k of [pointKey(a), pointKey(b)]) touching.set(k, [...(touching.get(k) ?? []), i]);
+  for (const [i, [a, b]] of unique.entries()) {
+    for (const k of [pointKey(a), pointKey(b)]) {
+      const list = touching.get(k);
+      if (list === undefined) touching.set(k, [i]);
+      else list.push(i);
+    }
   }
   const used = new Set<number>();
   const extend = (from: XY): readonly XY[] => {
-    const tail: XY[] = [];
-    let at = from;
+    const line: XY[] = [from];
     for (;;) {
+      const at = line[line.length - 1];
       const next = (touching.get(pointKey(at)) ?? []).find((i) => !used.has(i));
-      if (next === undefined) return tail;
+      if (next === undefined) return line.slice(1);
       used.add(next);
-      const [a, b] = edges[next];
-      at = pointKey(a) === pointKey(at) ? b : a;
-      tail.push(at);
+      const [a, b] = unique[next];
+      line.push(pointKey(a) === pointKey(at) ? b : a);
     }
   };
-  return edges.flatMap(([a, b], i) => {
+  return unique.flatMap(([a, b], i) => {
     if (used.has(i)) return [];
     used.add(i);
     const forward = extend(b);
