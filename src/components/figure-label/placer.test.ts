@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Box } from "./geometry";
+import { glyphBox, type GlyphSize, type LabelPos } from "./label-box";
 import {
   boxObstacle,
   groupObstacle,
@@ -14,6 +15,7 @@ import {
   createPlacer,
   lineReach,
   placeInOrder,
+  placedLabel,
   type Candidate,
 } from "./placer";
 import { FIELD_PENALTY_CAP, LABEL_POLICY } from "./policy";
@@ -384,5 +386,22 @@ describe("placeInOrder", () => {
     expect(result.items).toEqual(["a", null, "b"]);
     expect(result.placed).toEqual([b1, b2]);
     expect(seen).toEqual([0, 1, 1]);
+  });
+});
+
+describe("placedLabel", () => {
+  const size: GlyphSize = { width: 20, top: -6, bottom: 4 };
+
+  it("位置があれば字形の矩形をラベルと占有矩形の両方に持たせる", () => {
+    const pos: LabelPos = { x: 10, y: 20, align: "left" };
+    const glyph = glyphBox(pos, size);
+    expect(placedLabel("x", pos, size)).toEqual({
+      item: { tex: "x", pos, box: glyph },
+      box: glyph,
+    });
+  });
+
+  it("位置が無ければ何も置かない", () => {
+    expect(placedLabel("x", null, size)).toBe(NO_PLACEMENT);
   });
 });

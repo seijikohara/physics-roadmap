@@ -124,6 +124,10 @@ const VIEW_W = 320;
 const VIEW_H = 280;
 const PAD = 28;
 
+// 目盛り数字の中心と軸の距離（px）。FunctionGraph と同じである。
+const X_TICK_OFFSET = 14;
+const Y_TICK_OFFSET = 15;
+
 // 曲線と領域の標本数。
 const SAMPLES = 480;
 
@@ -516,7 +520,7 @@ export default function RiemannSumGraph({
             key={`txn-${i}`}
             tex={tickLabel(t)}
             x={x(tickValue(t)) + tickDx(t)}
-            y={tickAbove(t) ? axisY - 13 : axisY + 13}
+            y={tickAbove(t) ? axisY - X_TICK_OFFSET : axisY + X_TICK_OFFSET}
             fontSize={11}
             className="fig-tick-label"
           />
@@ -525,7 +529,7 @@ export default function RiemannSumGraph({
           <KatexLabel
             key={`tyn-${i}`}
             tex={tickLabel(t)}
-            x={axisX - 14}
+            x={axisX - Y_TICK_OFFSET}
             y={y(tickValue(t))}
             fontSize={11}
             className="fig-tick-label"

@@ -11,6 +11,11 @@ export const LABEL_POLICY = {
   near: 2,
   // ラベルどうしの間に残したいすきま（px）。隣り合う文字が 1 続きの式に見えるのを防ぐ。
   labelSpacing: 4,
+  // 点のラベルの箱を点のまわりでずらす刻み（px）と、輪が 1 つ遠くなるごとに足すすきま（px）と罰点。遠い輪の
+  // 罰点は、線や数字に近い罰点より軽くし、すきまの取れる遠い位置を選べるようにする。
+  slideStep: 4,
+  farRing: 6,
+  farRingPenalty: 1,
   // 線の縁とラベルの間に残すすきま（px）。点の印とラベルの間のすきまも同じ値にする。
   lineClearance: 4,
   // 線の太さの半分の上限（px）。当たり判定は線の中心で行うので、線の縁からのすきまに直すために足す。
@@ -55,6 +60,8 @@ export const OBSTACLE_WEIGHT = {
   axisName: 8,
   sampleDot: 8,
   axis: 6,
+  // 図の主役の曲線。ラベルが横切ると曲線とラベルの両方が読みにくいので、点の印と同じ重みにする。
+  curve: 12,
   line: 6,
   edge: 3,
   thinLine: 1,

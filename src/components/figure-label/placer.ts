@@ -10,6 +10,7 @@ import {
   type LineObstacle,
   type Obstacle,
 } from "./obstacles";
+import { glyphBox, type GlyphSize, type LabelPos } from "./label-box";
 import { LABEL_POLICY } from "./policy";
 
 /**
@@ -140,6 +141,16 @@ export type Placement<T> = Readonly<{ item: T | null; box: Box | null }>;
 
 /** 何も置かない結果。 */
 export const NO_PLACEMENT: Placement<never> = { item: null, box: null };
+
+/** 置いたラベル（LaTeX・配置先・字形の矩形）。 */
+export type Label = Readonly<{ tex: string; pos: LabelPos; box: Box }>;
+
+/** 選んだ位置のラベルと占有矩形。位置が無ければ何も置かない。 */
+export function placedLabel(tex: string, pos: LabelPos | null, size: GlyphSize): Placement<Label> {
+  if (pos === null) return NO_PLACEMENT;
+  const box = glyphBox(pos, size);
+  return { item: { tex, pos, box }, box };
+}
 
 /**
  * sources の順にラベルを 1 つずつ置く。place には、先に置いたラベルの占有矩形 placed を

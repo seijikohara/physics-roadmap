@@ -93,6 +93,80 @@ export function fixedPosition(
     : aroundPoint(p, size, reach, offset)[dir];
 }
 
+/** 点のラベルの候補の位置。dir が "auto" なら 8 方向を返し、それ以外はその向きの 1 か所を返す。 */
+export function pointPositions(
+  p: XY,
+  size: GlyphSize,
+  reach: number,
+  dir: LabelDirSpec = "auto",
+  offset = DEFAULT_LABEL_OFFSET,
+): readonly LabelPos[] {
+  return dir === "auto"
+    ? Object.values(aroundPoint(p, size, reach, offset))
+    : [fixedPosition(p, dir, size, reach, offset)];
+}
+
+/** 箱をずらす量を、小さい順に正負の組で並べる。limit はずらす量の上限である。 */
+function slideOffsets(limit: number): readonly number[] {
+  const count = Math.ceil(limit / LABEL_POLICY.slideStep);
+  return Array.from({ length: count }, (_, i) =>
+    Math.min((i + 1) * LABEL_POLICY.slideStep, limit),
+  ).flatMap((s) => [s, -s]);
+}
+
+/**
+ * 点の真横・真上・真下の位置を、箱の辺に沿ってずらした位置。箱は点から reach + offset + glyphSlack の
+ * 正方形の外に接する。extra は点が箱の辺の範囲から外へ出てよい量である。
+ */
+function slidAroundPoint(
+  p: XY,
+  size: GlyphSize,
+  reach: number,
+  offset: number,
+  extra: number,
+): readonly LabelPos[] {
+  const r = reach + offset + LABEL_POLICY.glyphSlack;
+  const halfW = size.width / 2;
+  const halfH = (size.bottom - size.top) / 2;
+  return [
+    ...slideOffsets(halfH + extra).flatMap((s) => [
+      centeredAt(p.x + r + halfW, p.y + s, size),
+      centeredAt(p.x - r - halfW, p.y + s, size),
+    ]),
+    ...slideOffsets(halfW + extra).flatMap((s) => [
+      centeredAt(p.x + s, p.y - r - halfH, size),
+      centeredAt(p.x + s, p.y + r + halfH, size),
+    ]),
+  ];
+}
+
+/**
+ * 点のまわりを広く調べる候補。曲線が点を通る図では、aroundPoint の 8 方向がどれも線や数字にかかることが
+ * 多い。8 方向に続けて箱を辺に沿ってずらした位置を試し、同じ並びを farRing ずつ遠い 2 つの輪でも試す。
+ * 遠い輪の候補には軽い罰点を与え、同じくらい良い位置なら点に近いほうを選ぶ。遠い輪では、箱を点の斜めの
+ * 先までずらし、目盛り数字の列の向こう側にも置けるようにする。
+ */
+export function widelyAroundPoint(
+  p: XY,
+  size: GlyphSize,
+  reach: number,
+  offset = DEFAULT_LABEL_OFFSET,
+): readonly Candidate<LabelPos>[] {
+  return [0, 1, 2].flatMap((k) => {
+    const extra = k * LABEL_POLICY.farRing;
+    const gap = offset + extra;
+    const positions = [
+      ...Object.values(aroundPoint(p, size, reach, gap)),
+      ...slidAroundPoint(p, size, reach, gap, extra),
+    ];
+    return positions.map((pos): Candidate<LabelPos> => ({
+      box: glyphBox(pos, size),
+      value: pos,
+      score: (penalty) => penalty + k * LABEL_POLICY.farRingPenalty,
+    }));
+  });
+}
+
 /** 基準点のまわりの位置。基準点を最初に試し、続いて 8 方向を試す。 */
 export function positionsAround(
   p: XY,
@@ -152,21 +226,27 @@ export function normalLabelOffset(
   return (Math.abs(perpX) * size.width) / 2 + (Math.abs(perpY) * h) / 2 + offset + LINE_SIDE_EXTRA;
 }
 
-/** 線分の中点から直交する両側の位置。 */
+/**
+ * 線分のそばの位置。fractions は a から測った線分の上の割合で、前の割合ほど優先する。各割合で、線分に
+ * 直交する両側を返す。a から b へ進む向きの右側（画面の座標では b − a を 90° 右へ回した向き）が先である。
+ */
 export function besideSegment(
   a: XY,
   b: XY,
   size: GlyphSize,
   offset = DEFAULT_LABEL_OFFSET,
+  fractions: readonly number[] = [0.5],
 ): readonly LabelPos[] {
   const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
   const perp = { x: -(b.y - a.y) / len, y: (b.x - a.x) / len };
-  const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   const off = normalLabelOffset(perp.x, perp.y, size, offset);
-  return [
-    centeredAt(mid.x + perp.x * off, mid.y + perp.y * off, size),
-    centeredAt(mid.x - perp.x * off, mid.y - perp.y * off, size),
-  ];
+  return fractions.flatMap((f) => {
+    const on = { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
+    return [
+      centeredAt(on.x + perp.x * off, on.y + perp.y * off, size),
+      centeredAt(on.x - perp.x * off, on.y - perp.y * off, size),
+    ];
+  });
 }
 
 /**

@@ -19,6 +19,7 @@ import {
   segmentBoxDistance,
   segmentHitsBox,
   turnAngle,
+  visiblePieces,
   type Box,
   type ScreenArrow,
   type XY,
@@ -453,5 +454,37 @@ describe("headInside", () => {
 
   it("長さ 0 の矢印は残す", () => {
     expect(headInside({ from: { x: 50, y: 50 }, to: { x: 50, y: 50 } }, win, 6, 2.4)).toBe(true);
+  });
+});
+
+function sample(x: number, ok: boolean) {
+  return { x, y: x * 2, ok };
+}
+
+describe("visiblePieces", () => {
+  it("描く範囲の中の連続した部分ごとに折れ線を返す", () => {
+    const samples = [
+      sample(0, false),
+      sample(1, true),
+      sample(2, true),
+      sample(3, false),
+      sample(4, true),
+    ];
+    expect(visiblePieces(samples)).toEqual([
+      [
+        { x: 1, y: 2 },
+        { x: 2, y: 4 },
+      ],
+      [{ x: 4, y: 8 }],
+    ]);
+  });
+
+  it("全部が範囲の中なら 1 本にまとめる", () => {
+    expect(visiblePieces([sample(0, true), sample(1, true)])).toHaveLength(1);
+  });
+
+  it("範囲の中の標本が無ければ空を返す", () => {
+    expect(visiblePieces([sample(0, false)])).toEqual([]);
+    expect(visiblePieces([])).toEqual([]);
   });
 });
