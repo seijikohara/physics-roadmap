@@ -1,0 +1,1529 @@
+{
+  "aliases": [
+    {
+      "term": "極限値",
+      "forms": ["極限"],
+      "reason": "数列の極限と関数の極限の章は、太字の極限値で定義し、以後は極限とも書く。"
+    },
+    {
+      "term": "2 変数関数",
+      "forms": ["2 変数の関数"],
+      "reason": "章の本文は「2 変数の関数」とも書く。助詞の有無だけの表記の揺れである。"
+    },
+    {
+      "term": "多変数関数",
+      "forms": ["多変数の関数"],
+      "reason": "章の本文は「多変数の関数」とも書く。助詞の有無だけの表記の揺れである。"
+    }
+  ],
+  "exceptions": [
+    {
+      "term": "円の内側",
+      "kind": "上流の説明",
+      "reason": "多変数関数と定義域の章が「円の内側という語を距離で定める」と定義する。",
+      "chapters": [
+        "math/multivariable-calculus/limits-and-continuity",
+        "math/multivariable-calculus/partial-derivatives"
+      ]
+    },
+    {
+      "term": "単調",
+      "kind": "上流の説明",
+      "reason": "上流の章が単調性を説明する。",
+      "chapters": ["math/functions/logarithmic-functions"]
+    },
+    {
+      "term": "単調に増加する",
+      "kind": "上流の説明",
+      "reason": "上流の二次関数の章が単調を定義する。",
+      "chapters": ["math/functions/irrational-functions"]
+    },
+    {
+      "term": "曲線の接線",
+      "kind": "上流の説明",
+      "reason": "上流の章が接線を定める。",
+      "chapters": [
+        "math/calculus/basic-differentiation-rules",
+        "math/multivariable-calculus/partial-derivatives"
+      ]
+    },
+    {
+      "term": "積の指数法則",
+      "kind": "上流の説明",
+      "reason": "上流の指数法則の章が「積の法則」の名前で導く。",
+      "chapters": ["math/complex-numbers/de-moivres-theorem"]
+    },
+    {
+      "term": "積の規則",
+      "kind": "上流の説明",
+      "reason": "上流の勾配ベクトルの章が導く。",
+      "chapters": ["math/vector-calculus/vector-identities"]
+    },
+    {
+      "term": "複号",
+      "kind": "上流の説明",
+      "reason": "上流の数列の極限の章が説明する。",
+      "chapters": ["math/calculus/function-limits"]
+    },
+    {
+      "term": "距離に反比例して回る場",
+      "kind": "上流の説明",
+      "reason": "スカラー場とベクトル場の章が例として定める。太字の見出し語の形なので定義語に数えない。",
+      "chapters": [
+        "math/vector-calculus/divergence",
+        "math/vector-calculus/curl",
+        "math/vector-calculus/line-integrals",
+        "math/vector-calculus/surface-integrals-and-flux"
+      ]
+    },
+    {
+      "term": "ベクトル",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "一次不等式",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "三角関数",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "不等号",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "両辺",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "係数",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "共通部分",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "右辺",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "向き",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "和集合",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "因数",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "左辺",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "微分",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "条件",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "積分",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "空集合",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "補集合",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "複素数",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "要素",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "証明の方法",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "部分集合",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "集合",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "集合と要素",
+      "kind": "出発点の章",
+      "reason": "前提の章は、前提に含まれない知識と後続の学習を案内し、自己診断の問題で素朴な語を使う。",
+      "chapters": ["prerequisites/knowledge"]
+    },
+    {
+      "term": "なす角",
+      "kind": "前提水準の語",
+      "reason": "2 本の線が作る角の素朴な言い方である。",
+      "chapters": [
+        "math/functions/addition-theorems",
+        "math/functions/composition-of-trigonometric-functions"
+      ]
+    },
+    {
+      "term": "不等号",
+      "kind": "前提水準の語",
+      "reason": "記号は前提とする知識に含まれる。",
+      "chapters": [
+        "math/algebra/real-number-system",
+        "math/algebra/square-roots-and-absolute-value"
+      ]
+    },
+    {
+      "term": "両辺",
+      "kind": "前提水準の語",
+      "reason": "等式の両側で、前提とする知識に含まれる。",
+      "chapters": [
+        "math/set/propositions-and-conditions",
+        "math/set/necessary-and-sufficient-conditions",
+        "math/set/methods-of-proof",
+        "math/set/mathematical-induction",
+        "math/algebra/real-number-system",
+        "math/algebra/square-roots-and-absolute-value",
+        "math/algebra/laws-of-exponents",
+        "math/algebra/radicals-and-rational-exponents",
+        "math/algebra/identities",
+        "math/algebra/permutations-combinations-binomial-theorem",
+        "math/functions/function-and-graph",
+        "math/functions/composite-and-inverse-functions",
+        "math/functions/linear-functions",
+        "math/functions/exponential-functions",
+        "math/functions/logarithmic-functions",
+        "math/functions/trigonometric-ratios",
+        "math/functions/extension-of-trigonometric-ratios",
+        "math/functions/addition-theorems",
+        "math/functions/composition-of-trigonometric-functions",
+        "math/functions/law-of-sines-and-cosines",
+        "math/vectors/plane-vectors-and-components",
+        "math/vectors/vector-operations",
+        "math/vectors/dot-product",
+        "math/vectors/space-vectors",
+        "math/vectors/cross-product",
+        "math/coordinate-geometry/lines-and-coordinate-geometry",
+        "math/sequences-and-series/arithmetic-sequences",
+        "math/sequences-and-series/geometric-sequences",
+        "math/sequences-and-series/summation-notation",
+        "math/sequences-and-series/recurrence-relations",
+        "math/sequences-and-series/limits-of-sequences"
+      ]
+    },
+    {
+      "term": "余り",
+      "kind": "前提水準の語",
+      "reason": "割り算の余りで、前提とする知識の水準である。",
+      "chapters": [
+        "math/algebra/real-number-system",
+        "math/calculus/higher-derivatives-and-monotonicity",
+        "math/calculus/taylor-series"
+      ]
+    },
+    {
+      "term": "係数",
+      "kind": "前提水準の語",
+      "reason": "文字式の用語で、前提とする知識の水準である。",
+      "chapters": [
+        "math/functions/logarithmic-functions",
+        "math/functions/extension-of-trigonometric-ratios",
+        "math/functions/addition-theorems",
+        "math/functions/composition-of-trigonometric-functions",
+        "math/coordinate-geometry/lines-and-coordinate-geometry"
+      ]
+    },
+    {
+      "term": "共通因数",
+      "kind": "前提水準の語",
+      "reason": "式の展開と因数分解は前提とする知識に含まれる。",
+      "chapters": ["math/set/mathematical-induction"]
+    },
+    {
+      "term": "円錐",
+      "kind": "前提水準の語",
+      "reason": "立体の名前で、脚注の語源の説明に使う。",
+      "chapters": ["math/coordinate-geometry/conic-sections"]
+    },
+    {
+      "term": "右辺",
+      "kind": "前提水準の語",
+      "reason": "等式の右側の式で、前提とする知識に含まれる。",
+      "chapters": [
+        "math/set/sets-and-elements",
+        "math/set/necessary-and-sufficient-conditions",
+        "math/set/methods-of-proof",
+        "math/set/mathematical-induction",
+        "math/algebra/real-number-system",
+        "math/algebra/square-roots-and-absolute-value",
+        "math/algebra/radicals-and-rational-exponents",
+        "math/algebra/factorization",
+        "math/functions/function-and-graph",
+        "math/functions/logarithmic-functions",
+        "math/functions/law-of-sines-and-cosines",
+        "math/vectors/plane-vectors-and-components",
+        "math/vectors/vector-operations",
+        "math/vectors/dot-product",
+        "math/vectors/cross-product",
+        "math/coordinate-geometry/lines-and-coordinate-geometry",
+        "math/sequences-and-series/arithmetic-sequences",
+        "math/sequences-and-series/geometric-sequences"
+      ]
+    },
+    {
+      "term": "因数",
+      "kind": "前提水準の語",
+      "reason": "式の展開と因数分解は前提とする知識に含まれる。",
+      "chapters": ["math/algebra/square-roots-and-absolute-value", "math/algebra/laws-of-exponents"]
+    },
+    {
+      "term": "変数",
+      "kind": "前提水準の語",
+      "reason": "文字式の文字の意味で使う。",
+      "chapters": [
+        "math/set/propositions-and-conditions",
+        "math/set/necessary-and-sufficient-conditions",
+        "math/set/mathematical-induction",
+        "math/algebra/identities"
+      ]
+    },
+    {
+      "term": "多項式",
+      "kind": "前提水準の語",
+      "reason": "文字式の用語で、前提とする知識の水準である。",
+      "chapters": ["math/vectors/cross-product"]
+    },
+    {
+      "term": "定数",
+      "kind": "前提水準の語",
+      "reason": "決まった数の意味で、前提とする知識の水準である。",
+      "chapters": [
+        "math/algebra/identities",
+        "math/functions/function-and-graph",
+        "math/functions/linear-functions",
+        "math/functions/exponential-functions",
+        "math/functions/logarithmic-functions",
+        "math/functions/composition-of-trigonometric-functions",
+        "math/vectors/vector-operations",
+        "math/vectors/dot-product",
+        "math/vectors/space-vectors",
+        "math/coordinate-geometry/lines-and-coordinate-geometry"
+      ]
+    },
+    {
+      "term": "定数項",
+      "kind": "前提水準の語",
+      "reason": "文字式の用語で、前提とする知識の水準である。",
+      "chapters": ["math/functions/composite-and-inverse-functions"]
+    },
+    {
+      "term": "左辺",
+      "kind": "前提水準の語",
+      "reason": "等式の左側の式で、前提とする知識に含まれる。",
+      "chapters": [
+        "math/set/sets-and-elements",
+        "math/set/necessary-and-sufficient-conditions",
+        "math/set/methods-of-proof",
+        "math/set/mathematical-induction",
+        "math/algebra/real-number-system",
+        "math/algebra/square-roots-and-absolute-value",
+        "math/algebra/laws-of-exponents",
+        "math/algebra/radicals-and-rational-exponents",
+        "math/algebra/factorization",
+        "math/functions/logarithmic-functions",
+        "math/functions/trigonometric-ratios",
+        "math/functions/addition-theorems",
+        "math/functions/composition-of-trigonometric-functions",
+        "math/vectors/vector-operations",
+        "math/vectors/dot-product",
+        "math/coordinate-geometry/lines-and-coordinate-geometry",
+        "math/sequences-and-series/arithmetic-sequences",
+        "math/sequences-and-series/geometric-sequences"
+      ]
+    },
+    {
+      "term": "平行",
+      "kind": "前提水準の語",
+      "reason": "前提とする知識の図形の語である。",
+      "chapters": [
+        "math/vectors/plane-vectors-and-components",
+        "math/vectors/vector-operations",
+        "math/complex-numbers/complex-plane-and-absolute-value"
+      ]
+    },
+    {
+      "term": "最大値",
+      "kind": "前提水準の語",
+      "reason": "最も大きい値という素朴な意味で使う。",
+      "chapters": [
+        "math/functions/function-and-graph",
+        "math/functions/trigonometric-functions-and-unit-circle"
+      ]
+    },
+    {
+      "term": "最小値",
+      "kind": "前提水準の語",
+      "reason": "最も小さい値という素朴な意味で使う。",
+      "chapters": ["math/functions/function-and-graph"]
+    },
+    {
+      "term": "次数",
+      "kind": "前提水準の語",
+      "reason": "文字式の用語で、前提とする知識の水準である。",
+      "chapters": ["math/functions/linear-functions"]
+    },
+    {
+      "term": "球面",
+      "kind": "前提水準の語",
+      "reason": "球は前提とする知識に含まれる。",
+      "chapters": [
+        "math/coordinate-geometry/circles-and-loci",
+        "math/calculus/basic-differentiation-rules"
+      ]
+    },
+    {
+      "term": "移項",
+      "kind": "前提水準の語",
+      "reason": "一次方程式を解く操作で、前提とする知識に含まれる。",
+      "chapters": [
+        "math/coordinate-geometry/lines-and-coordinate-geometry",
+        "math/sequences-and-series/recurrence-relations"
+      ]
+    },
+    {
+      "term": "等式",
+      "kind": "前提水準の語",
+      "reason": "等号で結ばれた式で、前提とする知識に含まれる。",
+      "chapters": [
+        "math/set/mathematical-induction",
+        "math/algebra/square-roots-and-absolute-value",
+        "math/algebra/laws-of-exponents",
+        "math/functions/exponential-functions",
+        "math/functions/trigonometric-ratios",
+        "math/functions/addition-theorems",
+        "math/vectors/plane-vectors-and-components",
+        "math/vectors/space-vectors",
+        "math/vectors/cross-product"
+      ]
+    },
+    {
+      "term": "自然数",
+      "kind": "前提水準の語",
+      "reason": "正の整数の呼び名で、前提とする知識の水準である。",
+      "chapters": [
+        "math/set/sets-and-elements",
+        "math/set/necessary-and-sufficient-conditions",
+        "math/set/methods-of-proof"
+      ]
+    },
+    {
+      "term": "解く",
+      "kind": "前提水準の語",
+      "reason": "方程式を解くことは前提とする知識に含まれる。",
+      "chapters": [
+        "math/functions/function-and-graph",
+        "math/functions/composite-and-inverse-functions",
+        "math/functions/linear-functions",
+        "math/functions/trigonometric-ratios",
+        "math/functions/addition-theorems",
+        "math/functions/composition-of-trigonometric-functions",
+        "math/functions/law-of-sines-and-cosines",
+        "math/vectors/plane-vectors-and-components",
+        "math/vectors/dot-product",
+        "math/vectors/space-vectors",
+        "math/vectors/cross-product",
+        "math/coordinate-geometry/lines-and-coordinate-geometry"
+      ]
+    },
+    {
+      "term": "逆数",
+      "kind": "前提水準の語",
+      "reason": "分数の計算は前提とする知識に含まれる。",
+      "chapters": ["math/complex-numbers/polar-form"]
+    },
+    {
+      "term": "連立方程式",
+      "kind": "前提水準の語",
+      "reason": "連立一次方程式は前提とする知識に含まれる。",
+      "chapters": ["math/algebra/identities"]
+    },
+    {
+      "term": "回転",
+      "kind": "多義語",
+      "reason": "図形を回す操作の意味で使う。ベクトル場の回転とは別のものである。",
+      "chapters": [
+        "math/functions/function-and-graph",
+        "math/functions/polynomial-and-rational-functions",
+        "math/functions/extension-of-trigonometric-ratios",
+        "math/vectors/cross-product",
+        "physics/classical-mechanics/position-velocity-and-acceleration"
+      ]
+    },
+    {
+      "term": "循環",
+      "kind": "多義語",
+      "reason": "循環小数や議論の循環の意味で使う。ベクトル場の循環とは別のものである。",
+      "chapters": [
+        "math/algebra/real-number-system",
+        "math/vectors/cross-product",
+        "math/sequences-and-series/infinite-series",
+        "math/calculus/product-and-quotient-rules"
+      ]
+    },
+    {
+      "term": "次元",
+      "kind": "多義語",
+      "reason": "空間の広がりの数の意味で使う。物理量の次元とは別のものである。",
+      "chapters": [
+        "math/vectors/space-vectors",
+        "math/vectors/cross-product",
+        "math/vector-calculus/stokes-and-divergence-theorems"
+      ]
+    },
+    {
+      "term": "積の規則",
+      "kind": "多義語",
+      "reason": "章ごとに別の積の規則を指す。極形式の積の規則とは別のものである。",
+      "chapters": [
+        "math/algebra/polynomial-expansion",
+        "math/complex-numbers/definition-and-arithmetic",
+        "physics/classical-mechanics/quantities-units-and-dimensions"
+      ]
+    },
+    {
+      "term": "連続",
+      "kind": "多義語",
+      "reason": "「連続する整数」「連続的に動かす」の日常の意味で使う。関数の連続とは別のものである。",
+      "chapters": [
+        "math/algebra/permutations-combinations-binomial-theorem",
+        "math/functions/function-and-graph",
+        "math/functions/quadratic-functions",
+        "math/functions/quadratic-inequalities-and-absolute-value",
+        "math/functions/exponential-functions",
+        "math/coordinate-geometry/conic-sections",
+        "math/calculus/function-limits"
+      ]
+    },
+    {
+      "term": "1 対 1",
+      "kind": "日常語",
+      "reason": "対応の日常の言い方で使う。",
+      "chapters": [
+        "math/algebra/permutations-combinations-binomial-theorem",
+        "math/complex-numbers/complex-plane-and-absolute-value"
+      ]
+    },
+    {
+      "term": "上向き",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/functions/polynomial-and-rational-functions",
+        "math/vectors/space-vectors",
+        "math/multivariable-calculus/directional-derivatives",
+        "math/vector-calculus/curl",
+        "math/vector-calculus/line-integrals",
+        "physics/classical-mechanics/position-velocity-and-acceleration",
+        "physics/classical-mechanics/uniform-acceleration-and-projectile-motion"
+      ]
+    },
+    {
+      "term": "上端",
+      "kind": "日常語",
+      "reason": "図の枠や糸の端の日常の意味で使う。",
+      "chapters": [
+        "math/sequences-and-series/limits-of-sequences",
+        "math/calculus/product-and-quotient-rules",
+        "physics/classical-mechanics/quantities-units-and-dimensions"
+      ]
+    },
+    {
+      "term": "下向き",
+      "kind": "日常語",
+      "reason": "図の説明で日常の意味で使う。",
+      "chapters": ["math/functions/polynomial-and-rational-functions"]
+    },
+    {
+      "term": "中心",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/set/methods-of-proof",
+        "math/algebra/factorization",
+        "math/algebra/linear-inequalities",
+        "math/algebra/quadratic-equations",
+        "math/functions/function-and-graph",
+        "math/functions/quadratic-functions",
+        "math/functions/polynomial-and-rational-functions",
+        "math/functions/extension-of-trigonometric-ratios",
+        "math/functions/trigonometric-functions-and-unit-circle",
+        "math/functions/law-of-sines-and-cosines",
+        "math/complex-numbers/complex-plane-and-absolute-value",
+        "math/complex-numbers/polar-form",
+        "math/complex-numbers/de-moivres-theorem",
+        "math/sequences-and-series/limits-of-sequences",
+        "math/calculus/euler-number-and-key-limits"
+      ]
+    },
+    {
+      "term": "中心",
+      "kind": "日常語",
+      "reason": "振り子の真下の位置の日常の意味で使う。",
+      "chapters": ["physics/classical-mechanics/quantities-units-and-dimensions"]
+    },
+    {
+      "term": "丸める",
+      "kind": "日常語",
+      "reason": "数値を丸める日常の言い方である。",
+      "chapters": ["math/calculus/linear-approximation", "math/calculus/taylor-series"]
+    },
+    {
+      "term": "余り",
+      "kind": "日常語",
+      "reason": "残りの部分の日常の意味で使う。",
+      "chapters": ["math/sequences-and-series/infinite-series"]
+    },
+    {
+      "term": "値の範囲",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。",
+      "chapters": [
+        "math/algebra/linear-inequalities",
+        "math/functions/function-and-graph",
+        "math/functions/quadratic-inequalities-and-absolute-value",
+        "math/complex-numbers/polar-form"
+      ]
+    },
+    {
+      "term": "側面",
+      "kind": "日常語",
+      "reason": "立体の側の面の日常の意味で使う。",
+      "chapters": ["math/calculus/higher-derivatives-and-monotonicity"]
+    },
+    {
+      "term": "内側",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/set/sets-and-elements",
+        "math/set/necessary-and-sufficient-conditions",
+        "math/set/methods-of-proof",
+        "math/algebra/real-number-system",
+        "math/algebra/radicals-and-rational-exponents",
+        "math/functions/quadratic-functions",
+        "math/coordinate-geometry/conic-sections",
+        "math/sequences-and-series/limits-of-sequences",
+        "math/calculus/euler-number-and-key-limits",
+        "math/calculus/continuity-of-functions",
+        "math/calculus/basic-differentiation-rules"
+      ]
+    },
+    {
+      "term": "円の内側",
+      "kind": "日常語",
+      "reason": "ベン図の円の内側の日常の意味で使う。",
+      "chapters": ["math/set/sets-and-elements"]
+    },
+    {
+      "term": "円の内側",
+      "kind": "日常語",
+      "reason": "円の内側の日常の意味で使う。",
+      "chapters": ["math/coordinate-geometry/circles-and-loci"]
+    },
+    {
+      "term": "分割",
+      "kind": "日常語",
+      "reason": "分ける操作の日常の意味で使う。リーマン和の分割ではない。",
+      "chapters": [
+        "math/set/sets-and-elements",
+        "math/sequences-and-series/infinite-series",
+        "math/calculus/euler-number-and-key-limits"
+      ]
+    },
+    {
+      "term": "反例",
+      "kind": "日常語",
+      "reason": "「成り立たない例」の日常の意味で使う。",
+      "chapters": ["math/set/sets-and-elements"]
+    },
+    {
+      "term": "反転",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/set/propositions-and-conditions",
+        "math/algebra/square-roots-and-absolute-value",
+        "math/algebra/permutations-combinations-binomial-theorem",
+        "math/functions/trigonometric-functions-and-unit-circle",
+        "math/vectors/vector-operations"
+      ]
+    },
+    {
+      "term": "反転する",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/functions/trigonometric-functions-and-unit-circle",
+        "math/vectors/vector-operations"
+      ]
+    },
+    {
+      "term": "同じ向き",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/algebra/linear-inequalities",
+        "math/functions/function-and-graph",
+        "math/vectors/plane-vectors-and-components",
+        "math/vectors/vector-operations",
+        "math/vectors/dot-product",
+        "math/vectors/cross-product",
+        "math/complex-numbers/de-moivres-theorem",
+        "math/calculus/concavity-and-curve-sketching",
+        "math/multivariable-calculus/graphs-and-level-curves",
+        "math/multivariable-calculus/directional-derivatives",
+        "math/multivariable-calculus/lagrange-multipliers",
+        "math/vector-calculus/scalar-and-vector-fields",
+        "math/vector-calculus/divergence",
+        "math/vector-calculus/curl",
+        "math/vector-calculus/line-integrals",
+        "math/vector-calculus/greens-theorem",
+        "physics/classical-mechanics/position-velocity-and-acceleration",
+        "physics/classical-mechanics/uniform-acceleration-and-projectile-motion"
+      ]
+    },
+    {
+      "term": "向き",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/set/necessary-and-sufficient-conditions",
+        "math/algebra/real-number-system",
+        "math/algebra/square-roots-and-absolute-value",
+        "math/algebra/identities",
+        "math/algebra/linear-inequalities",
+        "math/algebra/quadratic-equations",
+        "math/algebra/discriminant",
+        "physics/classical-mechanics/quantities-units-and-dimensions"
+      ]
+    },
+    {
+      "term": "否定",
+      "kind": "日常語",
+      "reason": "「否定形」「否定できる」の日常の意味で使う。論理の否定を定義する章より前に現れる。",
+      "chapters": ["math/set/sets-and-elements"]
+    },
+    {
+      "term": "基準点",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。ポテンシャルの基準点ではない。",
+      "chapters": [
+        "math/algebra/real-number-system",
+        "math/coordinate-geometry/lines-and-coordinate-geometry",
+        "math/calculus/euler-number-and-key-limits"
+      ]
+    },
+    {
+      "term": "境界",
+      "kind": "日常語",
+      "reason": "図形の境目の日常の意味で使う。",
+      "chapters": ["math/calculus/euler-number-and-key-limits"]
+    },
+    {
+      "term": "外側",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/set/sets-and-elements",
+        "math/set/necessary-and-sufficient-conditions",
+        "math/set/methods-of-proof",
+        "math/algebra/real-number-system",
+        "math/algebra/linear-inequalities",
+        "math/functions/quadratic-inequalities-and-absolute-value",
+        "math/functions/law-of-sines-and-cosines",
+        "math/coordinate-geometry/conic-sections",
+        "math/calculus/euler-number-and-key-limits"
+      ]
+    },
+    {
+      "term": "外向き",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。",
+      "chapters": ["math/multivariable-calculus/multivariable-chain-rule"]
+    },
+    {
+      "term": "大きさ",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/set/necessary-and-sufficient-conditions",
+        "math/algebra/linear-equations-and-systems",
+        "math/functions/linear-functions",
+        "math/functions/exponential-functions",
+        "math/functions/trigonometric-ratios",
+        "math/functions/extension-of-trigonometric-ratios",
+        "math/functions/addition-theorems",
+        "math/functions/law-of-sines-and-cosines",
+        "math/sequences-and-series/arithmetic-sequences",
+        "math/sequences-and-series/recurrence-relations",
+        "math/sequences-and-series/limits-of-sequences",
+        "math/calculus/function-limits",
+        "math/calculus/euler-number-and-key-limits",
+        "physics/classical-mechanics/quantities-units-and-dimensions"
+      ]
+    },
+    {
+      "term": "始点",
+      "kind": "日常語",
+      "reason": "矢印の始まりの日常の意味で使う。",
+      "chapters": ["physics/classical-mechanics/quantities-units-and-dimensions"]
+    },
+    {
+      "term": "平均",
+      "kind": "日常語",
+      "reason": "算術平均の日常の意味で使う。",
+      "chapters": [
+        "math/coordinate-geometry/circles-and-loci",
+        "math/sequences-and-series/arithmetic-sequences",
+        "math/calculus/derivative-definition",
+        "math/calculus/concavity-and-curve-sketching",
+        "math/multivariable-calculus/multivariable-functions-and-domains",
+        "math/multivariable-calculus/partial-derivatives",
+        "math/multivariable-calculus/directional-derivatives",
+        "math/multivariable-calculus/extrema-of-multivariable-functions",
+        "math/multivariable-calculus/lagrange-multipliers",
+        "math/vector-calculus/divergence",
+        "math/vector-calculus/curl",
+        "physics/classical-mechanics/position-velocity-and-acceleration"
+      ]
+    },
+    {
+      "term": "平行移動",
+      "kind": "日常語",
+      "reason": "図形をずらす日常の意味で使う。",
+      "chapters": [
+        "math/vectors/plane-vectors-and-components",
+        "math/complex-numbers/complex-plane-and-absolute-value"
+      ]
+    },
+    {
+      "term": "成分",
+      "kind": "日常語",
+      "reason": "「もとの 2 成分」の日常の意味で使う。三角関数の和の 2 つの部分を指す。",
+      "chapters": ["math/functions/composition-of-trigonometric-functions"]
+    },
+    {
+      "term": "折れ線",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。",
+      "chapters": [
+        "math/multivariable-calculus/graphs-and-level-curves",
+        "math/multivariable-calculus/partial-derivatives"
+      ]
+    },
+    {
+      "term": "持ち上げ",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。",
+      "chapters": [
+        "math/multivariable-calculus/graphs-and-level-curves",
+        "math/vector-calculus/conservative-fields-and-potentials"
+      ]
+    },
+    {
+      "term": "振れ幅",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。",
+      "chapters": [
+        "math/sequences-and-series/geometric-sequences",
+        "math/calculus/integrals-of-elementary-functions"
+      ]
+    },
+    {
+      "term": "曲線",
+      "kind": "日常語",
+      "reason": "曲がった線の日常の意味で使う。",
+      "chapters": [
+        "math/functions/function-and-graph",
+        "math/functions/quadratic-functions",
+        "math/functions/polynomial-and-rational-functions",
+        "math/functions/exponential-functions",
+        "math/sequences-and-series/geometric-sequences",
+        "math/sequences-and-series/limits-of-sequences",
+        "math/sequences-and-series/infinite-series",
+        "math/calculus/function-limits"
+      ]
+    },
+    {
+      "term": "条件",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。命題の章の用語と矛盾しない。",
+      "chapters": [
+        "math/set/sets-and-elements",
+        "math/algebra/factorization",
+        "math/algebra/identities",
+        "math/algebra/linear-equations-and-systems"
+      ]
+    },
+    {
+      "term": "正の向き",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/algebra/real-number-system",
+        "math/functions/function-and-graph",
+        "math/functions/extension-of-trigonometric-ratios",
+        "math/vectors/space-vectors",
+        "math/vectors/cross-product",
+        "math/complex-numbers/polar-form",
+        "math/calculus/integration-by-substitution",
+        "math/calculus/integrals-of-elementary-functions",
+        "math/multivariable-calculus/directional-derivatives",
+        "math/multivariable-calculus/change-of-variables-and-jacobians",
+        "math/vector-calculus/curl",
+        "physics/classical-mechanics/position-velocity-and-acceleration",
+        "physics/classical-mechanics/uniform-acceleration-and-projectile-motion"
+      ]
+    },
+    {
+      "term": "比較",
+      "kind": "日常語",
+      "reason": "比べる操作の日常の意味で使う。定理の名前の「比較」とは別のものである。",
+      "chapters": [
+        "math/algebra/square-roots-and-absolute-value",
+        "math/algebra/quadratic-equations",
+        "math/functions/polynomial-and-rational-functions",
+        "math/coordinate-geometry/lines-and-coordinate-geometry",
+        "math/coordinate-geometry/circles-and-loci"
+      ]
+    },
+    {
+      "term": "水平",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/functions/linear-functions",
+        "math/functions/polynomial-and-rational-functions",
+        "math/calculus/function-limits",
+        "math/calculus/derivative-definition",
+        "math/calculus/basic-differentiation-rules",
+        "math/calculus/product-and-quotient-rules",
+        "math/calculus/chain-rule",
+        "math/calculus/derivatives-of-elementary-functions",
+        "math/calculus/higher-derivatives-and-monotonicity",
+        "math/calculus/concavity-and-curve-sketching",
+        "math/calculus/integrals-of-elementary-functions",
+        "math/multivariable-calculus/graphs-and-level-curves",
+        "math/multivariable-calculus/partial-derivatives",
+        "math/multivariable-calculus/total-differential-and-tangent-planes",
+        "math/multivariable-calculus/multivariable-chain-rule",
+        "math/multivariable-calculus/directional-derivatives",
+        "math/multivariable-calculus/extrema-of-multivariable-functions",
+        "math/multivariable-calculus/triple-integrals",
+        "math/multivariable-calculus/change-of-variables-and-jacobians",
+        "math/vector-calculus/scalar-and-vector-fields",
+        "math/vector-calculus/curl",
+        "math/vector-calculus/line-integrals",
+        "math/vector-calculus/surface-integrals-and-flux",
+        "math/vector-calculus/stokes-and-divergence-theorems"
+      ]
+    },
+    {
+      "term": "添字",
+      "kind": "日常語",
+      "reason": "文字の右下の小さな印を指す日常の言い方である。",
+      "chapters": ["math/vectors/cross-product"]
+    },
+    {
+      "term": "真の値",
+      "kind": "日常語",
+      "reason": "近似値に対する本当の値の日常の意味で使う。",
+      "chapters": ["math/calculus/linear-approximation", "math/calculus/taylor-series"]
+    },
+    {
+      "term": "真の値",
+      "kind": "日常語",
+      "reason": "測定値に対する本当の値の日常の意味で使う。",
+      "chapters": ["math/multivariable-calculus/total-differential-and-tangent-planes"]
+    },
+    {
+      "term": "第 1 項",
+      "kind": "日常語",
+      "reason": "式の最初の項を指す日常の言い方である。",
+      "chapters": [
+        "math/functions/quadratic-inequalities-and-absolute-value",
+        "math/functions/trigonometric-ratios"
+      ]
+    },
+    {
+      "term": "経路",
+      "kind": "日常語",
+      "reason": "道すじの日常の意味で使う。",
+      "chapters": [
+        "math/vectors/vector-operations",
+        "math/coordinate-geometry/circles-and-loci",
+        "math/coordinate-geometry/conic-sections"
+      ]
+    },
+    {
+      "term": "見積もり",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/algebra/square-roots-and-absolute-value",
+        "math/calculus/product-and-quotient-rules"
+      ]
+    },
+    {
+      "term": "評価",
+      "kind": "日常語",
+      "reason": "大きさを見積もる意味で使う。定積分の評価の用語の外でも一般的な言い方である。",
+      "chapters": [
+        "math/calculus/chain-rule",
+        "math/calculus/derivatives-of-elementary-functions",
+        "math/calculus/higher-derivatives-and-monotonicity",
+        "math/calculus/linear-approximation",
+        "math/calculus/taylor-series",
+        "math/multivariable-calculus/limits-and-continuity",
+        "math/multivariable-calculus/higher-order-partial-derivatives",
+        "math/multivariable-calculus/total-differential-and-tangent-planes",
+        "math/multivariable-calculus/multivariable-chain-rule",
+        "math/multivariable-calculus/lagrange-multipliers",
+        "math/vector-calculus/divergence",
+        "math/vector-calculus/vector-identities"
+      ]
+    },
+    {
+      "term": "誤差",
+      "kind": "日常語",
+      "reason": "近い値とのずれの日常の意味で使う。一次近似の誤差の用語とは別のものである。",
+      "chapters": [
+        "math/sequences-and-series/limits-of-sequences",
+        "math/calculus/function-limits",
+        "math/calculus/euler-number-and-key-limits",
+        "math/calculus/derivative-definition",
+        "math/calculus/product-and-quotient-rules",
+        "math/calculus/chain-rule",
+        "math/calculus/derivatives-of-elementary-functions",
+        "math/calculus/partial-fractions-and-rational-integrals",
+        "math/calculus/higher-derivatives-and-monotonicity",
+        "math/calculus/concavity-and-curve-sketching",
+        "math/calculus/definite-integrals-and-riemann-sums",
+        "math/calculus/fundamental-theorem-of-calculus",
+        "math/calculus/integrals-of-elementary-functions",
+        "physics/classical-mechanics/position-velocity-and-acceleration",
+        "physics/classical-mechanics/uniform-acceleration-and-projectile-motion"
+      ]
+    },
+    {
+      "term": "負の向き",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/functions/function-and-graph",
+        "math/functions/extension-of-trigonometric-ratios",
+        "math/vectors/space-vectors",
+        "math/vector-calculus/curl",
+        "physics/classical-mechanics/position-velocity-and-acceleration",
+        "physics/classical-mechanics/uniform-acceleration-and-projectile-motion"
+      ]
+    },
+    {
+      "term": "距離",
+      "kind": "日常語",
+      "reason": "「同じ距離だけ動く」の日常の意味で使う。",
+      "chapters": ["math/functions/function-and-graph"]
+    },
+    {
+      "term": "軌跡",
+      "kind": "日常語",
+      "reason": "脚注で「軌道」の日常の意味で使う。",
+      "chapters": ["math/functions/quadratic-functions"]
+    },
+    {
+      "term": "逆向き",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/set/necessary-and-sufficient-conditions",
+        "math/algebra/radicals-and-rational-exponents",
+        "math/algebra/factorization",
+        "math/algebra/linear-inequalities",
+        "math/algebra/quadratic-equations",
+        "math/algebra/permutations-combinations-binomial-theorem",
+        "math/functions/composite-and-inverse-functions",
+        "math/functions/irrational-functions",
+        "math/functions/exponential-functions",
+        "math/functions/addition-theorems",
+        "math/functions/composition-of-trigonometric-functions",
+        "math/vectors/dot-product",
+        "math/vectors/cross-product",
+        "math/complex-numbers/polar-form"
+      ]
+    },
+    {
+      "term": "間隔",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。等高線の間隔とは別のものである。",
+      "chapters": [
+        "math/functions/logarithmic-functions",
+        "math/functions/trigonometric-functions-and-unit-circle",
+        "math/complex-numbers/de-moivres-theorem",
+        "math/sequences-and-series/arithmetic-sequences",
+        "math/calculus/definite-integrals-and-riemann-sums",
+        "math/calculus/integration-by-substitution",
+        "physics/classical-mechanics/position-velocity-and-acceleration",
+        "physics/classical-mechanics/uniform-acceleration-and-projectile-motion"
+      ]
+    },
+    {
+      "term": "項数",
+      "kind": "日常語",
+      "reason": "「項の数」の平易な言い方である。",
+      "chapters": ["math/complex-numbers/de-moivres-theorem"]
+    },
+    {
+      "term": "高さ",
+      "kind": "日常語",
+      "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
+      "chapters": [
+        "math/functions/function-and-graph",
+        "math/functions/linear-functions",
+        "math/functions/quadratic-functions",
+        "math/functions/trigonometric-functions-and-unit-circle",
+        "math/functions/composition-of-trigonometric-functions",
+        "math/sequences-and-series/arithmetic-sequences",
+        "math/sequences-and-series/infinite-series",
+        "math/calculus/function-limits",
+        "math/calculus/euler-number-and-key-limits",
+        "math/calculus/continuity-of-functions",
+        "physics/classical-mechanics/quantities-units-and-dimensions"
+      ]
+    },
+    {
+      "term": "初期位置",
+      "kind": "物理の場面",
+      "reason": "章の表で「時刻 0 での位置」と説明する物理の場面である。",
+      "chapters": ["math/functions/linear-functions"]
+    },
+    {
+      "term": "加速度",
+      "kind": "物理の場面",
+      "reason": "物理の場面を挙げる文で、素朴な意味で使う。前提とする知識の理科の範囲で読める。",
+      "chapters": ["math/vectors/plane-vectors-and-components"]
+    },
+    {
+      "term": "変位",
+      "kind": "物理の場面",
+      "reason": "物理の場面を挙げる文で、素朴な意味で使う。前提とする知識の理科の範囲で読める。",
+      "chapters": ["math/vectors/plane-vectors-and-components"]
+    },
+    {
+      "term": "時刻",
+      "kind": "物理の場面",
+      "reason": "物理の場面を挙げる文で、素朴な意味で使う。前提とする知識の理科の範囲で読める。",
+      "chapters": [
+        "math/functions/function-and-graph",
+        "math/functions/linear-functions",
+        "math/functions/quadratic-functions",
+        "math/functions/composition-of-trigonometric-functions",
+        "math/multivariable-calculus/multivariable-chain-rule"
+      ]
+    },
+    {
+      "term": "物理量",
+      "kind": "物理の場面",
+      "reason": "物理の場面を挙げる文で、素朴な意味で使う。前提とする知識の理科の範囲で読める。",
+      "chapters": [
+        "math/algebra/real-number-system",
+        "math/functions/function-and-graph",
+        "math/vectors/plane-vectors-and-components",
+        "math/vectors/vector-operations",
+        "math/vectors/dot-product",
+        "math/vectors/space-vectors"
+      ]
+    },
+    {
+      "term": "軌道",
+      "kind": "物理の場面",
+      "reason": "物理の場面を挙げる文で、素朴な意味で使う。前提とする知識の理科の範囲で読める。",
+      "chapters": [
+        "math/functions/quadratic-functions",
+        "math/coordinate-geometry/lines-and-coordinate-geometry"
+      ]
+    },
+    {
+      "term": "速さ",
+      "kind": "物理の場面",
+      "reason": "物理の場面を挙げる文で、素朴な意味で使う。前提とする知識の理科の範囲で読める。",
+      "chapters": [
+        "math/functions/linear-functions",
+        "math/functions/exponential-functions",
+        "math/vectors/space-vectors",
+        "math/vector-calculus/scalar-and-vector-fields",
+        "math/vector-calculus/divergence",
+        "math/vector-calculus/curl"
+      ]
+    },
+    {
+      "term": "速度",
+      "kind": "物理の場面",
+      "reason": "物理の場面を挙げる文で、素朴な意味で使う。前提とする知識の理科の範囲で読める。",
+      "chapters": ["math/vectors/plane-vectors-and-components"]
+    },
+    {
+      "term": "重ね合わせ",
+      "kind": "物理の場面",
+      "reason": "物理の場面を挙げる文で、素朴な意味で使う。前提とする知識の理科の範囲で読める。",
+      "chapters": ["math/functions/composition-of-trigonometric-functions"]
+    },
+    {
+      "term": "1 階の偏導関数",
+      "kind": "章内の説明",
+      "reason": "章の中で 1 階偏導関数を定義する。助詞の有無だけが違う。",
+      "chapters": ["math/multivariable-calculus/higher-order-partial-derivatives"]
+    },
+    {
+      "term": "上端",
+      "kind": "章内の説明",
+      "reason": "章の表で記号の各部の名前として説明する。",
+      "chapters": ["math/sequences-and-series/summation-notation"]
+    },
+    {
+      "term": "下端",
+      "kind": "章内の説明",
+      "reason": "章の表で記号の各部の名前として説明する。",
+      "chapters": ["math/sequences-and-series/summation-notation"]
+    },
+    {
+      "term": "円の内側",
+      "kind": "章内の説明",
+      "reason": "章の中で「円の内側という語を距離で定める」と定義する。",
+      "chapters": ["math/multivariable-calculus/multivariable-functions-and-domains"]
+    },
+    {
+      "term": "円環",
+      "kind": "章内の説明",
+      "reason": "章の中で円環を定める。",
+      "chapters": ["math/vector-calculus/greens-theorem"]
+    },
+    {
+      "term": "単調",
+      "kind": "章内の説明",
+      "reason": "章の中で「単調性が 1 対 1 を保証する」の節を置く。",
+      "chapters": ["math/functions/composite-and-inverse-functions"]
+    },
+    {
+      "term": "単調に増加する",
+      "kind": "章内の説明",
+      "reason": "章の中で「単調に増加するという」と定義する。",
+      "chapters": ["math/functions/polynomial-and-rational-functions"]
+    },
+    {
+      "term": "単調増加",
+      "kind": "章内の説明",
+      "reason": "章の中で「単調に増加する」を定義する。",
+      "chapters": ["math/functions/polynomial-and-rational-functions"]
+    },
+    {
+      "term": "単調性",
+      "kind": "章内の説明",
+      "reason": "二次関数の章は単調を定義する。単調性は同じ語の名詞形である。",
+      "chapters": ["math/functions/quadratic-functions"]
+    },
+    {
+      "term": "外向きの単位法線ベクトル",
+      "kind": "章内の説明",
+      "reason": "章の中で「外向きの単位法線ベクトルと呼ぶ」と定義する。",
+      "chapters": ["math/vector-calculus/surface-integrals-and-flux"]
+    },
+    {
+      "term": "定数関数",
+      "kind": "章内の説明",
+      "reason": "「値が変化しない」と説明を添えて使う。",
+      "chapters": ["math/functions/exponential-functions"]
+    },
+    {
+      "term": "曲線の接線",
+      "kind": "章内の説明",
+      "reason": "章の中で「曲線の接線として定義する」と定める。",
+      "chapters": ["math/calculus/derivative-definition"]
+    },
+    {
+      "term": "有界",
+      "kind": "章内の説明",
+      "reason": "章の中で「上に有界」を定義する。",
+      "chapters": ["math/calculus/euler-number-and-key-limits"]
+    },
+    {
+      "term": "横切って外へ出ていく量",
+      "kind": "章内の説明",
+      "reason": "章の中で定義する。定義の見出しは「境界を」から始まる。",
+      "chapters": ["math/vector-calculus/greens-theorem"]
+    },
+    {
+      "term": "添字",
+      "kind": "章内の説明",
+      "reason": "章の中で「添字は項の番号を表す」と説明する。",
+      "chapters": ["math/functions/polynomial-and-rational-functions"]
+    },
+    {
+      "term": "無限大",
+      "kind": "章内の説明",
+      "reason": "章の中で記号の読み方と意味を説明する。",
+      "chapters": ["math/functions/trigonometric-functions-and-unit-circle"]
+    },
+    {
+      "term": "相対誤差",
+      "kind": "章内の説明",
+      "reason": "章の中で太字の見出し語の形で定義する。",
+      "chapters": ["math/calculus/linear-approximation"]
+    },
+    {
+      "term": "積の法則",
+      "kind": "章内の説明",
+      "reason": "章の中で平方根の積の法則を導く。場合の数の積の法則とは別のものである。",
+      "chapters": ["math/algebra/square-roots-and-absolute-value"]
+    },
+    {
+      "term": "積の規則",
+      "kind": "章内の説明",
+      "reason": "章の中で勾配の積の規則を導く。",
+      "chapters": ["math/multivariable-calculus/gradient"]
+    },
+    {
+      "term": "行列式",
+      "kind": "章内の説明",
+      "reason": "脚注で式の名前を紹介するだけで、本文の論理に使わない。",
+      "chapters": ["math/coordinate-geometry/lines-and-coordinate-geometry"]
+    },
+    {
+      "term": "複号",
+      "kind": "章内の説明",
+      "reason": "章の中で記号の読み方と使い方を説明する。",
+      "chapters": [
+        "math/sequences-and-series/summation-notation",
+        "math/sequences-and-series/limits-of-sequences"
+      ]
+    },
+    {
+      "term": "象限",
+      "kind": "章内の説明",
+      "reason": "括弧の中で範囲を説明する。",
+      "chapters": ["math/functions/irrational-functions"]
+    },
+    {
+      "term": "距離に反比例して回る場",
+      "kind": "章内の説明",
+      "reason": "章の中で例として定める。太字の見出し語の形なので定義語に数えない。",
+      "chapters": ["math/vector-calculus/scalar-and-vector-fields"]
+    },
+    {
+      "term": "速度",
+      "kind": "章内の説明",
+      "reason": "章の表で傾きとの対応を説明する物理の場面である。",
+      "chapters": ["math/functions/linear-functions"]
+    },
+    {
+      "term": "閉区間",
+      "kind": "章内の説明",
+      "reason": "括弧の中で範囲を説明する。",
+      "chapters": ["math/functions/composition-of-trigonometric-functions"]
+    },
+    {
+      "term": "陰関数の存在",
+      "kind": "章内の説明",
+      "reason": "章の中で陰関数の微分を扱い、存在を仮定と明記する。",
+      "chapters": ["math/multivariable-calculus/multivariable-chain-rule"]
+    },
+    {
+      "term": "グラフの概形",
+      "kind": "複合語",
+      "reason": "グラフと概形を組み合わせた平易な句である。",
+      "chapters": ["math/calculus/higher-derivatives-and-monotonicity"]
+    },
+    {
+      "term": "中点での値",
+      "kind": "複合語",
+      "reason": "中点と値を組み合わせた平易な句である。",
+      "chapters": ["math/vector-calculus/divergence", "math/vector-calculus/greens-theorem"]
+    },
+    {
+      "term": "内部の点",
+      "kind": "複合語",
+      "reason": "区間の内側の点を言う平易な句である。",
+      "chapters": ["math/calculus/continuity-of-functions", "math/calculus/derivative-definition"]
+    },
+    {
+      "term": "単位法線ベクトル",
+      "kind": "複合語",
+      "reason": "単位ベクトルと法線ベクトルは上流の語であり、組み合わせただけである。",
+      "chapters": ["math/coordinate-geometry/lines-and-coordinate-geometry"]
+    },
+    {
+      "term": "囲まれた領域",
+      "kind": "複合語",
+      "reason": "領域を説明する平易な句である。",
+      "chapters": ["math/multivariable-calculus/double-integrals"]
+    },
+    {
+      "term": "実数の組",
+      "kind": "複合語",
+      "reason": "実数と組は上流の語であり、組み合わせただけである。",
+      "chapters": ["math/complex-numbers/complex-plane-and-absolute-value"]
+    },
+    {
+      "term": "張る平行四辺形",
+      "kind": "複合語",
+      "reason": "2 つのベクトルが作る平行四辺形を言う平易な句である。",
+      "chapters": ["math/vectors/cross-product"]
+    },
+    {
+      "term": "標高の例",
+      "kind": "複合語",
+      "reason": "章の中の例を指す句である。",
+      "chapters": ["math/multivariable-calculus/partial-derivatives"]
+    },
+    {
+      "term": "点の偏角",
+      "kind": "複合語",
+      "reason": "点と偏角は上流の語であり、組み合わせただけである。",
+      "chapters": ["math/complex-numbers/polar-form"]
+    },
+    {
+      "term": "点を含まない開区間",
+      "kind": "複合語",
+      "reason": "上流の語の組み合わせである。",
+      "chapters": ["math/calculus/fundamental-theorem-of-calculus"]
+    },
+    {
+      "term": "積分の順序",
+      "kind": "複合語",
+      "reason": "「微分と積分の順序」の一部を拾う。操作の順序の話で、累次積分の順序ではない。",
+      "chapters": [
+        "math/calculus/indefinite-integrals",
+        "math/calculus/fundamental-theorem-of-calculus"
+      ]
+    },
+    {
+      "term": "絶対値を含む不等式",
+      "kind": "複合語",
+      "reason": "上流の絶対値と不等式の組み合わせである。",
+      "chapters": ["math/algebra/linear-inequalities"]
+    },
+    {
+      "term": "長方形の内側",
+      "kind": "複合語",
+      "reason": "図形の内側を言う平易な句である。",
+      "chapters": [
+        "math/set/sets-and-elements",
+        "math/calculus/definite-integrals-and-riemann-sums"
+      ]
+    },
+    {
+      "term": "上の面",
+      "kind": "語の切れ目",
+      "reason": "「上の面積」「上の面積分」の一部を拾う。",
+      "chapters": [
+        "math/calculus/definite-integrals-and-riemann-sums",
+        "math/calculus/fundamental-theorem-of-calculus",
+        "math/vector-calculus/surface-integrals-and-flux"
+      ]
+    },
+    {
+      "term": "仕事",
+      "kind": "語の切れ目",
+      "reason": "「仕事率」の一部を拾う。章の中で単位とともに説明する。",
+      "chapters": ["physics/classical-mechanics/quantities-units-and-dimensions"]
+    },
+    {
+      "term": "対数",
+      "kind": "語の切れ目",
+      "reason": "「自然対数の底」の名前の一部を拾う。章の中で定数 e の名前として説明する。",
+      "chapters": ["math/calculus/euler-number-and-key-limits"]
+    },
+    {
+      "term": "接する",
+      "kind": "語の切れ目",
+      "reason": "「内接する」の一部を拾う。",
+      "chapters": ["math/complex-numbers/de-moivres-theorem"]
+    },
+    {
+      "term": "点での連続",
+      "kind": "語の切れ目",
+      "reason": "「各点での連続性」の一部を拾う。章の中で連続性を定義する。",
+      "chapters": ["math/calculus/derivatives-of-elementary-functions"]
+    },
+    {
+      "term": "調和",
+      "kind": "語の切れ目",
+      "reason": "「調和級数」の一部を拾う。調和関数の調和とは関係しない。",
+      "chapters": ["math/sequences-and-series/infinite-series"]
+    },
+    {
+      "term": "面積分",
+      "kind": "語の切れ目",
+      "reason": "「面積」と「分割」の並びを誤って拾う。",
+      "chapters": ["math/algebra/polynomial-expansion"]
+    }
+  ]
+}
