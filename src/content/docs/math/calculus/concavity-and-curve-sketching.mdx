@@ -226,7 +226,7 @@ import FunctionGraph from "../../../../components/FunctionGraph";
 
 <figure>
   <FlowChart
-    direction="TB"
+    direction="LR"
     ariaLabel="本章の定理の関係図。導関数の符号と増減の定理から、第 2 次導関数の符号による凹凸の判定と、変曲点の判定を導く。広義単調増加ならば導関数が 0 以上という定理から、下に凸ならば f'' が 0 以上であることを導く。平均値の定理から、割線との位置関係と接線との位置関係を導く。凹凸の判定と 2 つの位置関係から不等式への応用を導き、不等式から増え方の比較を導く。接線との位置関係から、変曲点で接線を横切ることを導く。極値の必要条件から、変曲点で f'' が 0 になることを導く。"
     nodes={[
       { id: "sign", label: "導関数の符号\nと増減", tone: "done" },
@@ -241,7 +241,7 @@ import FunctionGraph from "../../../../components/FunctionGraph";
       { id: "growth", label: "増え方の比較" },
       { id: "cross", label: "変曲点で\n接線を横切る" },
       { id: "nec", label: "変曲点で\n$f''(a)=0$" },
-      { id: "test", label: "$f''$ の符号変化\nによる変曲点の判定", tone: "goal" },
+      { id: "test", label: "$f''$ の符号変化\nによる\n変曲点の判定", tone: "goal" },
     ]}
     edges={[
       { from: "sign", to: "judge" },

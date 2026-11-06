@@ -263,24 +263,24 @@ $$
 
 <figure>
   <FlowChart
-    direction="TB"
+    direction="LR"
     ariaLabel="本章の結果の関係図。方向微分の定義から、1 変数の微分係数との関係を導く。1 変数の微分係数との関係と偏微分係数から、座標軸の向きの方向微分を導く。1 変数の微分係数との関係から、向きを表すベクトルの実数倍と、断面の接線の傾きを導く。1 変数の微分係数との関係と連鎖律の内積表示から、勾配による公式を導く。断面の接線の傾きと勾配による公式から、断面の接線が接平面に含まれることを導く。勾配による公式と、内積の定義・直交条件から、方向微分の最大と最小を導く。最大と最小と垂直なベクトルの補題から、方向微分が 0 になる向きを求める。最大と最小から、等高線の間隔との関係を読み、3 変数関数の方向微分へ広げる。"
     nodes={[
       { id: "pd", label: "偏微分係数\n$f_x$・$f_y$", tone: "done" },
-      { id: "def", label: "方向微分（定義）\n$D_{\\vec{u}}f(a,b)$" },
+      { id: "def", label: "方向微分\n（定義）\n$D_{\\vec{u}}f(a,b)$" },
       { id: "chain", label: "連鎖律の\n内積表示", tone: "done" },
       { id: "axis", label: "座標軸の向きの\n方向微分" },
-      { id: "one", label: "1 変数の微分係数\nとの関係" },
+      { id: "one", label: "1 変数の\n微分係数\nとの関係" },
       { id: "scale", label: "ベクトルの\n実数倍" },
-      { id: "sec", label: "断面の接線の傾き" },
+      { id: "sec", label: "断面の接線\nの傾き" },
       { id: "formula", label: "勾配による公式\n$D_{\\vec{u}}f=\\nabla f\\cdot\\vec{u}$", tone: "goal" },
-      { id: "tp", label: "断面の接線と\n接平面" },
+      { id: "tp", label: "断面の\n接線と\n接平面" },
       { id: "ip", label: "内積の定義と\n直交条件", tone: "done" },
-      { id: "lem", label: "垂直な\nベクトル（補題）", tone: "done" },
+      { id: "lem", label: "垂直な\nベクトル\n（補題）", tone: "done" },
       { id: "max", label: "最大と最小\n$\\lvert\\nabla f\\rvert\\cos\\theta$", tone: "goal" },
-      { id: "zero", label: "値 $0$ の向き\n（等高線の接線）" },
-      { id: "gap", label: "等高線の間隔" },
-      { id: "three", label: "3 変数関数の\n方向微分" },
+      { id: "zero", label: "値 $0$ の向き\n（等高線の\n接線）" },
+      { id: "gap", label: "等高線の\n間隔" },
+      { id: "three", label: "3 変数\n関数の\n方向微分" },
     ]}
     edges={[
       { from: "pd", to: "axis" },

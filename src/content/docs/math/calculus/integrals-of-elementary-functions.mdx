@@ -123,22 +123,22 @@ import RiemannSumGraph from "../../../../components/RiemannSumGraph";
 
 <figure>
   <FlowChart
-    direction="TB"
+    direction="LR"
     ariaLabel="本章の公式の関係図。指数・三角関数の導関数と逆数の不定積分から、基本の不定積分を導く。加法定理から半角の公式と積和の公式を導き、基本の不定積分と合わせて三角関数の積の積分を求める。三角関数の積の積分から、整数倍の角の積の定積分を求める。三角関数の積の積分と定積分の置換から、円の面積を求める。基本の不定積分に置換積分法を組み合わせて合成関数を含む形の積分を、部分積分法を組み合わせて積の積分を求める。部分積分法から正弦の累乗の定積分の漸化式を導く。"
     nodes={[
       { id: "add", label: "加法定理" },
       { id: "p2s", label: "半角の公式・\n積和の公式" },
-      { id: "deriv", label: "指数・三角関数の\n導関数" },
-      { id: "recip", label: "逆数の不定積分" },
-      { id: "basic", label: "基本の不定積分\n$\\int e^x\\,dx$・$\\int\\sin x\\,dx$ など", tone: "goal" },
-      { id: "trig", label: "三角関数の積の積分", tone: "goal" },
+      { id: "deriv", label: "指数・\n三角関数の\n導関数" },
+      { id: "recip", label: "逆数の\n不定積分" },
+      { id: "basic", label: "基本の不定積分\n$\\int e^x\\,dx$・\n$\\int\\sin x\\,dx$ など", tone: "goal" },
+      { id: "trig", label: "三角関数の\n積の積分", tone: "goal" },
       { id: "dsub", label: "定積分の置換" },
       { id: "orth", label: "整数倍の角の\n積の定積分" },
-      { id: "circle", label: "円の面積 $\\pi r^2$", tone: "goal" },
+      { id: "circle", label: "円の面積\n$\\pi r^2$", tone: "goal" },
       { id: "sub", label: "置換積分法" },
-      { id: "comp", label: "合成関数を含む形\n$\\int\\tan x\\,dx$ など" },
+      { id: "comp", label: "合成関数を\n含む形\n$\\int\\tan x\\,dx$ など" },
       { id: "parts", label: "部分積分法" },
-      { id: "prod", label: "積の積分\n$\\int e^x\\sin x\\,dx$ など" },
+      { id: "prod", label: "積の積分\n$\\int e^x\\sin x\\,dx$\nなど" },
       { id: "rec", label: "正弦の累乗の\n定積分の漸化式" },
     ]}
     edges={[

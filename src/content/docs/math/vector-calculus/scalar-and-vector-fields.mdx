@@ -110,17 +110,17 @@ export const quietTicks4 = [-4, -3, -2, -1, 1, 2, 3, 4].map((v) => ({ value: v, 
 
 <figure>
   <FlowChart
-    direction="TB"
+    direction="LR"
     ariaLabel="本章の概念の関係図。位置ベクトルを使って、スカラー場とベクトル場を書く。ベクトル場から、成分（スカラー場）、大きさと内積（スカラー場）、和・定数倍・スカラー場との積・外積（ベクトル場）を作る。スカラー場から勾配場（ベクトル場）を作る。勾配場から、等高線・等位面との直交と、勾配の向きに値が増えることを導く。勾配場でない例 (−y,x) へ破線の矢印を引く。"
     nodes={[
-      { id: "pos", label: "位置ベクトル\n$\\vec{r}=(x,y)$・$(x,y,z)$" },
+      { id: "pos", label: "位置ベクトル\n$\\vec{r}=(x,y)$・\n$(x,y,z)$" },
       { id: "sf", label: "スカラー場\n$f(\\vec{r})$" },
       { id: "vf", label: "ベクトル場\n$\\vec{F}(\\vec{r})$" },
       { id: "comp", label: "成分 $P$・$Q$・$R$\n（スカラー場）" },
       { id: "mag", label: "大きさ・内積\n（スカラー場）" },
-      { id: "ops", label: "和・定数倍・$f\\vec{F}$・外積\n（ベクトル場）" },
+      { id: "ops", label: "和・定数倍・\n$f\\vec{F}$・外積\n（ベクトル場）" },
       { id: "grad", label: "勾配場 $\\nabla f$\n（ベクトル場）", tone: "goal" },
-      { id: "orth", label: "等高線・等位面と直交\n勾配の向きに値が増える", tone: "goal" },
+      { id: "orth", label: "等高線・\n等位面と直交\n勾配の向きに\n値が増える", tone: "goal" },
       { id: "notg", label: "勾配場でない例\n$(-y,x)$", tone: "goal" },
     ]}
     edges={[

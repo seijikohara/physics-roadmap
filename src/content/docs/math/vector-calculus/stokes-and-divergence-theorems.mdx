@@ -212,14 +212,14 @@ $$
 
 <figure>
   <FlowChart
-    direction="TB"
+    direction="LR"
     ariaLabel="本章の概念の関係図。グリーンの定理（回転の形）と、曲面の境界と向きのそろった境界と、面積分とフラックスから、ストークスの定理を導く。ストークスの定理から、境界が同じ曲面・閉じた曲面の結果と、回転を循環の密度として読む結果を導く。微分積分学の基本定理と、縦線立体の上の面・下の面・側面と、面積分とフラックスから、発散定理を導く。発散定理から、2 つの球面にはさまれた立体の結果と、発散を湧き出しの密度として読む結果を導く。ストークスの定理と発散定理は、4 つの定理の対応にまとまる。"
     nodes={[
       { id: "green", label: "グリーンの定理\n（回転の形）", tone: "done" },
       { id: "bnd", label: "曲面の境界と\n向きのそろった境界" },
       { id: "flux", label: "面積分とフラックス", tone: "done" },
-      { id: "ftc", label: "微分積分学の基本定理", tone: "done" },
-      { id: "solid", label: "縦線立体の\n上の面・下の面・側面" },
+      { id: "ftc", label: "微分積分学の\n基本定理", tone: "done" },
+      { id: "solid", label: "縦線立体の\n上の面・下の面・\n側面" },
       { id: "stokes", label: "ストークスの定理\n$\\iint_S(\\nabla\\times\\vec{F})\\cdot d\\vec{S}=\\oint_C\\vec{F}\\cdot d\\vec{r}$", tone: "goal" },
       { id: "div", label: "発散定理\n$\\iiint_V\\nabla\\cdot\\vec{F}\\,dV=\\oiint_S\\vec{F}\\cdot d\\vec{S}$", tone: "goal" },
       { id: "scons", label: "境界が同じ曲面・\n閉じた曲面" },
