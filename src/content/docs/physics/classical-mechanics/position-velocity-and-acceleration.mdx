@@ -1,0 +1,906 @@
+---
+title: 位置・速度・加速度
+description: 直交座標と位置ベクトルで物体の位置を時刻の関数として表し、変位を定める。スカラーとベクトルを区別し、平均の速度の極限として瞬間の速度を、速度の導関数として加速度を定義する。最後に等速円運動を微分で調べ、向心加速度 a = -ω²r を導く。
+sidebar:
+  order: 2
+---
+
+import ContourPlot from "../../../../components/ContourPlot";
+import FunctionGraph from "../../../../components/FunctionGraph";
+import SpaceVectorDiagram from "../../../../components/SpaceVectorDiagram";
+
+## 前提
+
+本章の前提は次の 3 つの章である。
+
+- [物理量・単位・次元](../quantities-units-and-dimensions/)
+- [空間ベクトルと成分](../../../math/vectors/space-vectors/)
+- [微分係数と導関数の定義](../../../math/calculus/derivative-definition/)
+
+## 学習目標
+
+本章を読むと、次のことができるようになる。
+
+- 直交座標と位置ベクトル $\vec{r}(t)$ で、物体の位置を時刻の関数として表す。
+- 変位ベクトルを求め、変位と道のりを区別する。
+- スカラーとベクトルを区別し、量の種類で式を確かめる。
+- 平均の速度と瞬間の速度 $\vec{v} = d\vec{r}/dt$ を求める。
+- 加速度 $\vec{a} = d\vec{v}/dt$ を求める。
+- 等速円運動の速度と加速度を微分で導き、向心加速度 $\vec{a} = -\omega^2\vec{r}$ の向きと大きさを読む。
+
+## 位置の表し方
+
+本章は、物体が「いつ」「どこに」あるかを数式で表し、動きを調べる量を定義する。物体の大きさと回転は考えず、物体の位置を 1 つの点で代表させる。
+
+> **数値の扱い（約束）.** 本文の例の数値は、誤差の無い値として扱う。例題と演習の測定値は、有効数字の規則に従う。
+
+### 直交座標
+
+[空間ベクトルと成分](../../../math/vectors/space-vectors/)の空間座標を、物体の位置を測る基準に使う。次の手順で基準を定める。
+
+1. 基準の点を 1 つ選び、原点 $\mathrm{O}$ とする。
+2. $\mathrm{O}$ で互いに直交する 3 本の軸を、右手系で取る。
+3. 各軸の目盛りを $\mathrm{m}$ で刻む。
+
+互いに直交する軸で定める座標を**直交座標**と呼ぶ。物理の座標は長さの物理量であり、値は数値と単位の積である。例えば $x = 2\ \mathrm{m}$ と書く。
+
+原点と軸の向きは、問題に応じて自由に選べる。選び方を変えると座標の値は変わるが、物体の動きは変わらない。
+
+### 位置ベクトル
+
+点 $\mathrm{P}$ の座標を $(x, y, z)$ とする。原点 $\mathrm{O}$ を始点、$\mathrm{P}$ を終点とするベクトルを、点 $\mathrm{P}$ の**位置ベクトル**と呼ぶ。位置ベクトルを $\vec{r}$ で表し、「ベクトル アール」と読む。
+
+$$
+\vec{r} = \overrightarrow{\mathrm{OP}} = (x, y, z)
+$$
+
+位置ベクトルの成分は点の座標に等しい。大きさ $\lvert \vec{r} \rvert = \sqrt{x^2 + y^2 + z^2}$ は、原点から点 $\mathrm{P}$ までの距離である。
+
+次の図は、$\vec{r} = (2, 3, 3)\ \mathrm{m}$ の位置ベクトルを示す。$(2, 3, 3)\ \mathrm{m}$ は、3 つの成分の単位がすべて $\mathrm{m}$ であることを表す便宜的な書き方である。ベクトルの単位と次元は、成分の単位と次元を指す。
+
+<figure>
+  <SpaceVectorDiagram
+    axisMax={4}
+    vectors={[{ from: { x: 0, y: 0, z: 0 }, to: { x: 2, y: 3, z: 3 }, label: "\\vec{r}", color: "#3b82f6" }]}
+    points={[
+      { x: 0, y: 0, z: 0, label: "\\mathrm{O}" },
+      { x: 2, y: 3, z: 3, label: "\\mathrm{P}", highlight: true },
+    ]}
+    ariaLabel="右手系の 3 本の軸と、原点 O から点 P へ伸びる青の位置ベクトル r。破線は、点 P から床へ下ろした線と、床の上の x・y の成分を示す。"
+  />
+  <figcaption>
+    位置ベクトル $\vec{r} = \overrightarrow{\mathrm{OP}}$。破線は成分の分解を示す。床の格子の間隔は $1\ \mathrm{m}$ である。
+  </figcaption>
+</figure>
+
+### 時刻の関数としての位置
+
+時計の読みを**時刻**と呼び、$t$ と書く。時刻 $0$ の瞬間をいつに取るかは約束である。2 つの時刻の差が、[物理量・単位・次元](../quantities-units-and-dimensions/)の時間である。
+
+物体が動くと、位置ベクトルは時刻によって変わる。時刻 $t$ の位置ベクトルを $\vec{r}(t)$ と書く。成分で書くと、$\vec{r}(t)$ は時刻の関数 3 つの組である。
+
+$$
+\vec{r}(t) = (x(t), y(t), z(t))
+$$
+
+$x(t)$ は、$x$ 座標を時刻 $t$ の関数として見た値を表す。$x$ と $t$ の積ではない。文字 $x$ を座標の値にも関数の名前にも使う書き方は、物理で広く使う便宜的な書き方である。
+
+時刻を動かすと、$\vec{r}(t)$ の終点は空間に線を描く。本章は線を物体の道すじと呼ぶ。
+
+## 変位
+
+### 変位ベクトル
+
+時刻 $t_1$ の物体の位置を点 $\mathrm{P_1}$、時刻 $t_2$ の位置を点 $\mathrm{P_2}$ とする。$\mathrm{P_1}$ を始点、$\mathrm{P_2}$ を終点とするベクトルを、$t_1$ から $t_2$ までの**変位ベクトル**または**変位**と呼ぶ。[ベクトルの差](../../../math/vectors/vector-operations/)の図形的意味により、変位は位置ベクトルの差である。
+
+$$
+\Delta\vec{r} = \overrightarrow{\mathrm{P_1P_2}} = \vec{r}(t_2) - \vec{r}(t_1)
+$$
+
+記号 $\Delta$ は「デルタ」と読むギリシャ文字の大文字である。[一次関数](../../../math/functions/linear-functions/)の変化量の記号と同じく、後の値から前の値を引いた量を表す。成分で書くと次の形になる。
+
+$$
+\Delta\vec{r} = (\Delta x, \Delta y, \Delta z) = (x(t_2) - x(t_1),\ y(t_2) - y(t_1),\ z(t_2) - z(t_1))
+$$
+
+<figure>
+  <ContourPlot
+    xMin={-0.6}
+    xMax={5.2}
+    yMin={-0.6}
+    yMax={3.4}
+    xTicks={[]}
+    yTicks={[]}
+    grid={false}
+    width={440}
+    parametrics={[
+      {
+        fn: (u) => ({ x: 0.8 + 3.6 * u, y: 1.6 + 1.2 * Math.sin(Math.PI * u) }),
+        color: "#6b7280",
+        tMin: 0.1,
+        tMax: 0.85,
+        arrows: [0.45],
+        label: "道すじ",
+        labelPlacement: "inline",
+        labelAt: 0.55,
+        labelDir: "above",
+        labelOffset: 6,
+      },
+    ]}
+    vectors={[
+      { from: { x: 0, y: 0 }, to: { x: 1.16, y: 1.9708 }, label: "\\vec{r}(t_1)", color: "#3b82f6" },
+      { from: { x: 0, y: 0 }, to: { x: 3.86, y: 2.1448 }, label: "\\vec{r}(t_2)", color: "#3b82f6" },
+      { from: { x: 1.16, y: 1.9708 }, to: { x: 3.86, y: 2.1448 }, label: "\\Delta\\vec{r}", color: "#ec4899" },
+    ]}
+    points={[
+      { x: 0, y: 0, label: "\\mathrm{O}" },
+      { x: 1.16, y: 1.9708, label: "\\mathrm{P_1}", highlight: true },
+      { x: 3.86, y: 2.1448, label: "\\mathrm{P_2}", highlight: true },
+    ]}
+    ariaLabel="xy 平面の図。原点 O から点 P1 へ青の矢印 r(t1)、点 P2 へ青の矢印 r(t2) が伸びる。P1 から P2 へ桃色の矢印の変位が伸びる。曲がった灰色の線が物体の道すじで、変位の矢印より上にふくらむ。"
+  />
+  <figcaption>
+    位置ベクトル（青）と変位（桃）。$\vec{r}(t_1) + \Delta\vec{r} = \vec{r}(t_2)$ の三角形ができる。曲線は $t_1$ から $t_2$ までの道すじで、変位の矢印とは別の線である。
+  </figcaption>
+</figure>
+
+変位には次の 2 つの性質がある。
+
+- **途中の道すじに依らない.** 変位は 2 つの時刻の位置だけで決まる。どこを通って $\mathrm{P_2}$ に着いても、変位は同じである。
+- **原点の選び方に依らない.** 原点を位置ベクトル $\vec{c}$ の点へ移すと、どの点の位置ベクトルも $\vec{r} - \vec{c}$ に変わる。差を取ると $\vec{c}$ が消えるので、変位は変わらない。
+
+### 道のり
+
+物体が動いた道すじの長さを**道のり**と呼ぶ。変位と異なり、道のりは途中の通り方で変わる。
+
+一般に、変位の大きさは道のり以下である。2 点を結ぶ線のうち最も短い線が線分であることを、本章の事実として認める。等号は、物体が同じ向きへまっすぐ進むときに成り立つ。
+
+## スカラーとベクトルの区別
+
+[平面ベクトルの定義と成分表示](../../../math/vectors/plane-vectors-and-components/)の章のスカラー量とベクトル量を、以下では短く**スカラー**・**ベクトル**と呼ぶ。記号の上では、ベクトルに矢印を付け、スカラーには付けない。
+
+### 足し方の違い
+
+2 種類の量は足し方が異なる。スカラーは数として足す。ベクトルは成分ごとに足す。
+
+東へ $3\ \mathrm{m}$ 進み、続けて北へ $4\ \mathrm{m}$ 進む例で比べる。$x$ 軸を東向き、$y$ 軸を北向き、$z$ 軸を上向きに取る。
+
+| 量     | 1 回目                  | 2 回目                  | 全体                    |
+| ------ | ----------------------- | ----------------------- | ----------------------- |
+| 道のり | $3\ \mathrm{m}$         | $4\ \mathrm{m}$         | $7\ \mathrm{m}$         |
+| 変位   | $(3, 0, 0)\ \mathrm{m}$ | $(0, 4, 0)\ \mathrm{m}$ | $(3, 4, 0)\ \mathrm{m}$ |
+
+全体の変位の大きさは $\sqrt{3^2 + 4^2}\ \mathrm{m} = 5\ \mathrm{m}$ であり、道のりの $7\ \mathrm{m}$ と異なる。
+
+### 量の種類の一致
+
+ベクトルの相等と和は、ベクトルどうしについて定めた。ベクトルとスカラーを等号や和で結ぶ式には意味が無い。
+
+> **量の種類の一致（約束）.** 物理量を結ぶ等式では、両辺は同じ種類の量である。和と差では、各項も同じ種類の量である。
+
+量の種類は演算で次のように決まる。
+
+- ベクトルのスカラー倍はベクトルである。
+- ベクトルの大きさはスカラーである。
+- 2 つのベクトルの内積はスカラーである。
+
+量の種類の一致は、[次元の一致](../quantities-units-and-dimensions/)とは別の検査である。例えば $\Delta\vec{r} = 5\ \mathrm{m}$ の両辺の次元は等しいが、左辺はベクトル、右辺はスカラーなので、式は誤りである。正しくは $\lvert \Delta\vec{r} \rvert = 5\ \mathrm{m}$ と書く。
+
+ベクトルの成分の値は、軸の選び方で変わる。ベクトルの大きさは長さで決まるので、軸の選び方に依らない。
+
+## 速度
+
+### 平均の速度
+
+時刻 $t$ から $t + \Delta t$ までの変位を $\Delta\vec{r}$ とする。$\Delta t$ は時刻の差で、$\Delta t \neq 0$ とする。$\neq$ は「等しくない」と読む。変位を $\Delta t$ で割った量を**平均の速度**と呼ぶ。
+
+$$
+\vec{v}_{\mathrm{av}} = \frac{\Delta\vec{r}}{\Delta t} = \frac{\vec{r}(t + \Delta t) - \vec{r}(t)}{\Delta t}
+$$
+
+添字の $\mathrm{av}$ は平均を表す英語 average の略で、本章の便宜的な書き方である。ベクトルをスカラーで割る計算は、$1/\Delta t$ 倍のスカラー倍を表す。
+
+平均の速度の単位は $\mathrm{m/s}$ で、成分の次元は $\mathsf{L}\mathsf{T}^{-1}$ である。$\Delta t > 0$ のとき、平均の速度の向きは変位の向きと同じである。
+
+### 直線の上の瞬間の速度
+
+$x$ 軸の上を動く物体を考える。位置は $x(t)$ だけで決まる。例として $x(t) = bt^3$ を取る。定数 $b = 1\ \mathrm{m/s^3}$ の単位により、$bt^3$ の単位は $\mathrm{m}$ になる。
+
+時刻 $t = 1\ \mathrm{s}$ を始まりとして、平均の速度の $x$ 成分を計算する。$\Delta t$ を小さくすると、値は次のように変わる。
+
+| $\Delta t$          | 平均の速度の $x$ 成分    |
+| ------------------- | ------------------------ |
+| $1\ \mathrm{s}$     | $7\ \mathrm{m/s}$        |
+| $0.1\ \mathrm{s}$   | $3.31\ \mathrm{m/s}$     |
+| $0.01\ \mathrm{s}$  | $3.0301\ \mathrm{m/s}$   |
+| $0.001\ \mathrm{s}$ | $3.003001\ \mathrm{m/s}$ |
+
+値は $3\ \mathrm{m/s}$ に近づく。$\Delta t \to 0$ の極限は、$x(t)$ の[微分係数](../../../math/calculus/derivative-definition/)である。
+
+$$
+v_x(t) = \lim_{\Delta t \to 0} \frac{x(t + \Delta t) - x(t)}{\Delta t} = \frac{dx}{dt}
+$$
+
+$v_x(t)$ を、時刻 $t$ の**瞬間の速度**の $x$ 成分と呼ぶ。$x(t) = bt^3$ なら $v_x(t) = 3bt^2$ で、$t = 1\ \mathrm{s}$ の値は表の極限 $3\ \mathrm{m/s}$ に一致する。
+
+横軸に $t$、縦軸に $x$ を取ったグラフで読むと、平均の速度の $x$ 成分は割線の傾きであり、瞬間の速度の $x$ 成分は接線の傾きである。
+
+<figure>
+  <FunctionGraph
+    xMin={0}
+    xMax={2.4}
+    yMin={-1}
+    yMax={10}
+    xTicks={[1, 2]}
+    yTicks={[2, 4, 6, 8]}
+    xLabel="t/\mathrm{s}"
+    yLabel="x/\mathrm{m}"
+    curves={[{ fn: (t) => t * t * t, label: "x = bt^3" }]}
+    segments={[
+      { from: { x: 1, y: 1 }, to: { x: 2, y: 8 }, label: "割線（傾き 7）", labelAt: { x: 1.465, y: 7.41 } },
+      { from: { x: 0.4, y: -0.8 }, to: { x: 2.2, y: 4.6 }, label: "接線（傾き 3）", labelAt: { x: 1.55, y: 0.65 }, dashed: true },
+    ]}
+    points={[
+      { x: 1, y: 1, label: "\\mathrm{A}", highlight: true },
+      { x: 2, y: 8, label: "\\mathrm{B}" },
+    ]}
+    ariaLabel="横軸が時刻、縦軸が位置のグラフ。曲線 x = bt の 3 乗の上に、時刻 1 秒の点 A と時刻 2 秒の点 B がある。A と B を結ぶ実線の割線の傾きは 7 である。A を通る破線の接線の傾きは 3 である。"
+  />
+  <figcaption>
+    割線の傾きは $\Delta t = 1\ \mathrm{s}$ の平均の速度の $x$ 成分 $7\ \mathrm{m/s}$ を表す。接線の傾きは瞬間の速度の $x$ 成分 $3\ \mathrm{m/s}$ を表す。軸の $t/\mathrm{s}$ と $x/\mathrm{m}$ は、物理量を単位で割った数値を示す。
+  </figcaption>
+</figure>
+
+$v_x$ の符号は向きを表す。ある時間の区間で $v_x > 0$ なら、[平均値の定理](../../../math/calculus/derivative-definition/)により、区間の 2 時刻 $t_1 < t_2$ の間のある時刻 $c$ で $x(t_2) - x(t_1) = v_x(c)(t_2 - t_1) > 0$ となる。物体は $x$ 軸の正の向きへ動く。$v_x < 0$ の区間では負の向きへ動く。
+
+導関数の単位は差分商から決まる。差分商の分子の単位は $\mathrm{m}$、分母の単位は $\mathrm{s}$ である。極限を取っても単位は変わらないので、$dx/dt$ の単位は $\mathrm{m/s}$ である。
+
+### 空間の瞬間の速度
+
+空間の運動でも、平均の速度の極限を取る。極限の意味を、ベクトルについて定める。
+
+> **ベクトルの微分（定義）.** ベクトル $\vec{w}(t) = (w_1(t), w_2(t), w_3(t))$ の各成分が微分可能であるとする。差分商のベクトルの極限を、成分ごとの極限のベクトルと定める。
+>
+> $$
+> \frac{d\vec{w}}{dt} = \lim_{\Delta t \to 0} \frac{\vec{w}(t + \Delta t) - \vec{w}(t)}{\Delta t} = \left(\frac{dw_1}{dt}, \frac{dw_2}{dt}, \frac{dw_3}{dt}\right)
+> $$
+
+差とスカラー倍は成分ごとに計算するので、差分商のベクトルの各成分は、各成分の差分商である。定義は、成分の差分商の極限を並べたものである。$d\vec{w}/dt$ は「ディー ダブリュー ディー ティー」と読み、$dy/dx$ と同じく分数の形をした 1 つの記号である。
+
+時刻 $t$ の**瞬間の速度**を、平均の速度の $\Delta t \to 0$ の極限で定める。瞬間の速度は位置ベクトルの微分である。
+
+$$
+\vec{v}(t) = \frac{d\vec{r}}{dt} = \left(\frac{dx}{dt}, \frac{dy}{dt}, \frac{dz}{dt}\right)
+$$
+
+本章は、$x(t)$・$y(t)$・$z(t)$ が微分可能な運動を扱う[^smooth]。以下、**速度**は瞬間の速度を指す。速度の成分を $\vec{v} = (v_x, v_y, v_z)$ と書く。
+
+例として次の運動を取る。定数は $u = 3\ \mathrm{m/s}$、$b = 1\ \mathrm{m/s^3}$ である。
+
+$$
+\vec{r}(t) = (ut,\ ut - bt^3,\ 0), \qquad \vec{v}(t) = (u,\ u - 3bt^2,\ 0)
+$$
+
+時刻 $0$ の速度は $(3, 3, 0)\ \mathrm{m/s}$ である。次の図は、$\Delta t$ を小さくすると平均の速度の矢印が速度の矢印へ近づく様子を示す。
+
+<figure>
+  <ContourPlot
+    xMin={-0.4}
+    xMax={5.6}
+    yMin={-0.4}
+    yMax={3.6}
+    width={480}
+    parametrics={[{ fn: (t) => ({ x: 3 * t, y: 3 * t - t * t * t }), tMin: 0, tMax: 1.72, arrows: [0.55], label: "道すじ", labelPlacement: "inline", labelAt: 1.35, labelDir: "above-right" }]}
+    segments={[
+      { from: { x: 3, y: 0.44 }, to: { x: 4.8, y: 0.704 }, color: "#6b7280" },
+      { from: { x: 3, y: 1.56 }, to: { x: 3.6, y: 1.872 }, color: "#6b7280" },
+    ]}
+    vectors={[
+      { from: { x: 0, y: 0 }, to: { x: 3, y: 0.44 }, color: "#ec4899", label: "\\Delta t = 1.6\\ \\mathrm{s}", labelAt: { x: 3.05, y: 0.2 }, labelDir: "right" },
+      { from: { x: 0, y: 0 }, to: { x: 3, y: 1.56 }, color: "#ec4899", label: "\\Delta t = 1.2\\ \\mathrm{s}", labelAt: { x: 3.05, y: 1.25 }, labelDir: "right" },
+      { from: { x: 0, y: 0 }, to: { x: 3, y: 2.36 }, color: "#ec4899", label: "\\Delta t = 0.8\\ \\mathrm{s}", labelAt: { x: 3.05, y: 2.36 }, labelDir: "right" },
+      { from: { x: 0, y: 0 }, to: { x: 3, y: 3 }, color: "#f59e0b", label: "\\vec{v}(0)", labelAt: { x: 3.05, y: 3 }, labelDir: "right" },
+    ]}
+    points={[
+      { x: 0, y: 0, label: "\\mathrm{P}", labelDir: "below-right" },
+      { x: 4.8, y: 0.704 },
+      { x: 3.6, y: 1.872 },
+      { x: 2.4, y: 1.888 },
+    ]}
+    ariaLabel="xy 平面の図。青の曲線が物体の道すじで、点 P から始まる。P から伸びる桃色の 3 本の矢印は、時間差 1.6 秒、1.2 秒、0.8 秒の平均の速度を表す。橙の矢印は時刻 0 の速度 (3, 3) を表す。時間差が小さいほど桃色の矢印は橙の矢印へ近づく。曲線の上の 3 つの点は、各時間差の後の物体の位置である。"
+  />
+  <figcaption>
+    時刻 $0$ の位置 $\mathrm{P}$（原点）から出る桃の矢印は平均の速度、橙の矢印は時刻 $0$ の速度である。軸の目盛りの単位は $\mathrm{m}$ である。矢印の長さは、$1\ \mathrm{m/s}$ を目盛りの $1$ に当てて描いた。曲線の上の点は $\Delta t$ の後の位置で、灰色の破線は矢印の延長である。
+  </figcaption>
+</figure>
+
+平均の速度は速度に近づく。$\vec{v}(t) \neq \vec{0}$ のとき、$\Delta t > 0$ の変位の向きは速度の向きへ近づく。同じ条件で、$\vec{r}(t)$ の終点を通り $\vec{v}(t)$ に平行な直線を、道すじの**接線**と定める[^tangent]。速度は道すじの接線の向きを向く。
+
+### 速さ
+
+速度の大きさを**速さ**と呼び、$v$ と書く。矢印の無い $v$ はスカラーである。
+
+$$
+v = \lvert \vec{v} \rvert = \sqrt{v_x^2 + v_y^2 + v_z^2}
+$$
+
+[物理量・単位・次元](../quantities-units-and-dimensions/)は、速さを「移動した距離を、かかった時間で割った量」と素朴に説明した。素朴な説明は、区間全体をならした量を指す。本章は、道のりを時間で割った量を**平均の速さ**と呼ぶ。速さは $\lvert \vec{v} \rvert$ で定義する。平均の速さと平均の速度の大きさは、次の点で異なる。
+
+- $\Delta t > 0$ のとき、平均の速度の大きさは平均の速さ以下である。
+- 物体が 1 周して元の点へ戻ると、平均の速度は $\vec{0}$ で、平均の速さは正である。
+
+## 加速度
+
+### 平均の加速度と瞬間の加速度
+
+加速度の定義は、速度の定義と同じ組み立てである。違いは、位置ベクトルの代わりに速度を時刻で調べる点である。時刻 $t$ から $t + \Delta t$ までの速度の変化を $\Delta\vec{v} = \vec{v}(t + \Delta t) - \vec{v}(t)$ とする。
+
+$$
+\vec{a}_{\mathrm{av}} = \frac{\Delta\vec{v}}{\Delta t}, \qquad
+\vec{a}(t) = \lim_{\Delta t \to 0} \frac{\Delta\vec{v}}{\Delta t} = \frac{d\vec{v}}{dt} = \left(\frac{dv_x}{dt}, \frac{dv_y}{dt}, \frac{dv_z}{dt}\right)
+$$
+
+$\vec{a}_{\mathrm{av}}$ を**平均の加速度**、$\vec{a}(t)$ を**瞬間の加速度**と呼ぶ。本章は、$v_x(t)$・$v_y(t)$・$v_z(t)$ も微分可能な運動を扱う。呼び方と成分の書き方は速度と同じで、**加速度**は瞬間の加速度を指し、成分を $(a_x, a_y, a_z)$ と書く。
+
+速度の例を続ける。
+
+$$
+\vec{a}(t) = \frac{d}{dt}(u,\ u - 3bt^2,\ 0) = (0,\ -6bt,\ 0)
+$$
+
+速度の $x$ 成分は一定なので、$a_x = 0$ である。時刻 $t = 1\ \mathrm{s}$ の加速度は $(0, -6, 0)\ \mathrm{m/s^2}$ である。
+
+### 素朴な説明との違い
+
+[物理量・単位・次元](../quantities-units-and-dimensions/)は、加速度を「速さの変化を、かかった時間で割った量」と素朴に説明した。本章の定義は、速さでなく速度の変化を使う。速度はベクトルなので、大きさが変わるときにも、向きが変わるときにも変化する。
+
+| 運動                         | 素朴な説明の値 | 本章の定義の値 |
+| ---------------------------- | -------------- | -------------- |
+| 一定の向きに速さを変えて進む | $0$ でない     | $0$ でない     |
+| 一定の速さで向きを変えて進む | $0$            | $0$ でない     |
+
+表の 1 行目で $x$ 軸の正の向きへ進むとき、$v_x = v$ である。素朴な説明の値は平均の加速度の $x$ 成分に一致し、$\Delta t \to 0$ の極限が $a_x$ である。
+
+### 運動を表す量の一覧
+
+ここまでに定めた量の種類・単位・次元を、次の表にまとめる。
+
+| 量           | 記号            | 種類     | 単位             | 次元                        |
+| ------------ | --------------- | -------- | ---------------- | --------------------------- |
+| 時間         | $\Delta t$      | スカラー | $\mathrm{s}$     | $\mathsf{T}$                |
+| 道のり       | なし            | スカラー | $\mathrm{m}$     | $\mathsf{L}$                |
+| 速さ         | $v$             | スカラー | $\mathrm{m/s}$   | $\mathsf{L}\mathsf{T}^{-1}$ |
+| 位置ベクトル | $\vec{r}$       | ベクトル | $\mathrm{m}$     | $\mathsf{L}$                |
+| 変位         | $\Delta\vec{r}$ | ベクトル | $\mathrm{m}$     | $\mathsf{L}$                |
+| 速度         | $\vec{v}$       | ベクトル | $\mathrm{m/s}$   | $\mathsf{L}\mathsf{T}^{-1}$ |
+| 加速度       | $\vec{a}$       | ベクトル | $\mathrm{m/s^2}$ | $\mathsf{L}\mathsf{T}^{-2}$ |
+
+## 等速円運動
+
+速さが一定でも加速度が $\vec{0}$ でない運動の代表例として、円の上の運動を調べる。
+
+### 運動の定義と角速度
+
+物体の位置を次の手順で表す。
+
+1. 半径 $R$ の円を $xy$ 平面に置き、円の中心を原点に取る。$R$ は正の定数である。
+2. 物体の位置を点 $\mathrm{P}$ とする。
+3. $x$ 軸の正の向きから $\overrightarrow{\mathrm{OP}}$ まで、$z$ 軸の正の側から見て反時計回りに測った角を $\theta$ とする。$\theta$ は「シータ」と読むギリシャ文字である。
+4. 角は[弧度法](../../../math/functions/extension-of-trigonometric-ratios/)の一般角で測り、1 周を超えても $2\pi$ で戻さずに続けて数える。
+
+円の上で、角が時刻の一次関数で増える運動を**等速円運動**と呼ぶ。どの長さの時間を取っても、等しい時間に増える角は等しい。時刻 $0$ に物体が $x$ 軸の正の部分を通るように軸を取ると、角は次の形になる。
+
+$$
+\theta(t) = \omega t
+$$
+
+定数 $\omega$ を**角速度**と呼ぶ。$\omega$ は「オメガ」と読むギリシャ文字である。角が増えるので $\omega > 0$ である。物体は反時計回りに回る。
+
+角速度の単位は $\mathrm{rad/s}$ である。$\mathrm{rad}$ はラジアンの記号である。弧度法の角は単位のない数なので、$\mathrm{rad/s}$ は $\mathrm{s^{-1}}$ に等しい[^rad]。次元は $[\omega] = \mathsf{T}^{-1}$ である。
+
+1 周にかかる時間を**周期**と呼び、$P$ と書く[^period]。斜体の $P$ は量で、立体の点 $\mathrm{P}$ とは別である。1 周で角は $2\pi$ 増えるので、$\omega P = 2\pi$ である。
+
+$$
+P = \frac{2\pi}{\omega}
+$$
+
+### 位置と速度
+
+$\overrightarrow{\mathrm{OP}}$ は長さ $R$ のベクトルで、$x$ 軸の正の向きから角 $\omega t$ の向きを向く。[単位円](../../../math/functions/trigonometric-functions-and-unit-circle/)の上の点の座標 $(\cos\theta, \sin\theta)$ を $R$ 倍すると、位置ベクトルは次の形になる。
+
+$$
+\vec{r}(t) = (R\cos\omega t,\ R\sin\omega t,\ 0)
+$$
+
+$\cos\omega t$ は $\cos(\omega t)$ を表す。$\omega t$ は単位のない数である。
+
+[三角関数の導関数の公式](../../../math/calculus/derivatives-of-elementary-functions/)は、角を弧度法で測るときの式である。連鎖律と組み合わせた公式で内側の関数を $g(t) = \omega t$ とすると、次の 2 式を得る。
+
+$$
+\frac{d}{dt}\cos\omega t = -\omega\sin\omega t, \qquad \frac{d}{dt}\sin\omega t = \omega\cos\omega t
+$$
+
+$\vec{r}(t)$ を成分ごとに微分する。
+
+$$
+\vec{v}(t) = (-R\omega\sin\omega t,\ R\omega\cos\omega t,\ 0)
+$$
+
+速度の大きさと向きを調べる。
+
+**大きさ.** $\sin^2\omega t + \cos^2\omega t = 1$ を使う。
+
+$$
+v = \sqrt{R^2\omega^2\sin^2\omega t + R^2\omega^2\cos^2\omega t} = R\omega
+$$
+
+速さは時刻に依らず一定である。名前の「等速」は、速さが一定であることを指す。
+
+**向き.** 位置ベクトルとの内積を計算する。
+
+$$
+\vec{r} \cdot \vec{v} = -R^2\omega\cos\omega t\sin\omega t + R^2\omega\sin\omega t\cos\omega t = 0
+$$
+
+$\vec{r}$ と $\vec{v}$ はどちらも零ベクトルでないので、[直交条件](../../../math/vectors/space-vectors/)により 2 つは直交する。速度は半径に垂直である。
+
+### 向心加速度
+
+$\vec{v}(t)$ をもう一度成分ごとに微分する。
+
+$$
+\vec{a}(t) = (-R\omega^2\cos\omega t,\ -R\omega^2\sin\omega t,\ 0) = -\omega^2(R\cos\omega t,\ R\sin\omega t,\ 0)
+$$
+
+右辺の括弧の中は $\vec{r}(t)$ である。次の結果を得る。
+
+> **等速円運動の加速度.** 円の中心を原点とする。角速度 $\omega$ の等速円運動の加速度は、位置ベクトル $\vec{r}$ で次のように表せる。
+>
+> $$
+> \vec{a} = -\omega^2\vec{r}
+> $$
+
+結果を 4 つの点から読む。
+
+- **向き.** $-\vec{r}$ は点 $\mathrm{P}$ から中心 $\mathrm{O}$ へ向かう向きである。加速度は常に円の中心を向く。中心を向く加速度を**向心加速度**と呼ぶ。
+- **大きさ.** $\lvert \vec{a} \rvert = \omega^2 R > 0$ である。$v = R\omega$ を使うと $\lvert \vec{a} \rvert = v^2/R$ とも書ける。
+- **次元.** $[\omega^2 R] = \mathsf{T}^{-2}\mathsf{L}$ である。$[v^2/R] = \mathsf{L}^2\mathsf{T}^{-2} \cdot \mathsf{L}^{-1}$ も同じ次元で、加速度の次元に一致する。
+- **原点の条件.** 式は原点を円の中心に取ったときの形である。
+
+<figure>
+  <ContourPlot
+    xMin={-3.4}
+    xMax={3.4}
+    yMin={-3.2}
+    yMax={3.2}
+    xTicks={[]}
+    yTicks={[]}
+    grid={false}
+    width={440}
+    parametrics={[
+      { fn: (t) => ({ x: 2 * Math.cos(t), y: 2 * Math.sin(t) }), tMin: 0, tMax: 2 * Math.PI, arrows: [2.4], color: "#6b7280" },
+      {
+        fn: (t) => ({ x: 0.6 * Math.cos(t), y: 0.6 * Math.sin(t) }),
+        tMin: 0,
+        tMax: Math.PI / 6,
+        color: "#6b7280",
+        label: "\\omega t",
+        labelPlacement: "inline",
+        labelAt: 0.3,
+        labelDir: "right",
+        labelOffset: 6,
+      },
+    ]}
+    vectors={[
+      { from: { x: 0, y: 0 }, to: { x: 1.7321, y: 1 }, color: "#3b82f6", label: "\\vec{r}", labelAt: { x: 0.45, y: 0.5 } },
+      { from: { x: 1.7321, y: 1 }, to: { x: 1.0821, y: 2.1258 }, color: "#f59e0b", label: "\\vec{v}" },
+      { from: { x: 1.777, y: 0.922 }, to: { x: 0.911, y: 0.422 }, color: "#ef4444", label: "\\vec{a}", labelAt: { x: 1.4, y: 0.42 } },
+      { from: { x: -1.9319, y: 0.5176 }, to: { x: -2.2683, y: -0.7381 }, color: "#f59e0b" },
+      { from: { x: -1.9319, y: 0.5176 }, to: { x: -0.966, y: 0.2588 }, color: "#ef4444" },
+      { from: { x: 0.5176, y: -1.9319 }, to: { x: 1.7733, y: -1.5954 }, color: "#f59e0b" },
+      { from: { x: 0.5176, y: -1.9319 }, to: { x: 0.2588, y: -0.966 }, color: "#ef4444" },
+    ]}
+    points={[
+      { x: 0, y: 0, label: "\\mathrm{O}", labelDir: "below-left" },
+      { x: 1.7321, y: 1, label: "\\mathrm{P}", labelDir: "right", highlight: true },
+      { x: -1.9319, y: 0.5176 },
+      { x: 0.5176, y: -1.9319 },
+    ]}
+    ariaLabel="xy 平面の図。原点 O を中心とする円の上を物体が反時計回りに回る。点 P には、O から P への青の位置ベクトル r、円の接線の向きの橙の速度 v、P から O へ向かう赤の加速度 a がある。円の上の別の 2 点にも、接線の向きの橙の矢印と中心へ向かう赤の矢印がある。"
+  />
+  <figcaption>
+    等速円運動の位置ベクトル（青）・速度（橙）・加速度（赤）。速度は円の接線の向き、加速度は中心の向きを向く。3 つの点で、同じ色の矢印の長さは等しい。点 $\mathrm{P}$ の赤の矢印は、青の矢印との重なりを避けて少しずらした。
+  </figcaption>
+</figure>
+
+### 速度の向きの変化で見る
+
+向心加速度の向きを、2 つの時刻の速度の図で確かめる。速さは一定なので、始点をそろえると速度の矢印の先端は半径 $v$ の円の上を動く。2 つの先端を結ぶ矢印が、速度の変化 $\Delta\vec{v}$ である。
+
+<figure>
+  <ContourPlot
+    xMin={-5.2}
+    xMax={5.2}
+    yMin={-2.1}
+    yMax={2.8}
+    axes={false}
+    grid={false}
+    xTicks={[]}
+    yTicks={[]}
+    width={632}
+    parametrics={[
+      { fn: (t) => ({ x: -2.6 + 1.8 * Math.cos(t), y: 1.8 * Math.sin(t) }), tMin: 0, tMax: 2 * Math.PI },
+      { fn: (t) => ({ x: 2.6 + 1.6 * Math.cos(t), y: 1.6 * Math.sin(t) }), tMin: 0, tMax: 2 * Math.PI, color: "#f59e0b", dashed: true },
+    ]}
+    vectors={[
+      { from: { x: -0.937, y: 0.6888 }, delta: { x: -0.6123, y: 1.4782 }, color: "#f59e0b", label: "\\vec{v}(t)" },
+      { from: { x: -1.9112, y: 1.663 }, delta: { x: -1.4782, y: 0.6123 }, color: "#f59e0b", label: "\\vec{v}(t + \\Delta t)" },
+      { from: { x: -1.3272, y: 1.2728 }, delta: { x: -0.8659, y: -0.8659 }, color: "#ef4444", label: "\\Delta\\vec{v}", labelAt: { x: -2.1, y: 1.1 }, labelDir: "center" },
+      { from: { x: 2.6, y: 0 }, delta: { x: -0.6123, y: 1.4782 }, color: "#f59e0b", label: "\\vec{v}(t)" },
+      { from: { x: 2.6, y: 0 }, delta: { x: -1.4782, y: 0.6123 }, color: "#f59e0b", label: "\\vec{v}(t + \\Delta t)" },
+      { from: { x: 1.9877, y: 1.4782 }, to: { x: 1.1218, y: 0.6123 }, color: "#ef4444", label: "\\Delta\\vec{v}", labelAt: { x: 1.3, y: 1.3 }, labelDir: "left" },
+    ]}
+    points={[
+      { x: -2.6, y: 0, label: "\\mathrm{O}", labelDir: "below" },
+      { x: -0.937, y: 0.6888 },
+      { x: -1.9112, y: 1.663 },
+      { x: 2.6, y: 0 },
+    ]}
+    ariaLabel="2 つの円が左右に並ぶ。左の円は物体の通る円で、2 つの点に橙の速度の矢印がある。2 点の中間の点から、赤の速度の変化の矢印が中心 O へ向かう。右の破線の円は速度の矢印の先端が通る円で、中心から橙の 2 本の速度の矢印が伸び、赤の矢印が 2 つの先端を結ぶ。"
+  />
+  <figcaption>
+    左は物体の通る円で、右は速度の矢印の始点をそろえた円である。右の $\Delta\vec{v}$（赤）を、左では 2 つの点の中間へ平行移動して描いた。中間の点で $\Delta\vec{v}$ は中心を向く。
+  </figcaption>
+</figure>
+
+$\Delta t \to 0$ で 2 つの点は重なり、$\Delta\vec{v}$ の向きは時刻 $t$ の点から見た中心の向きへ近づく。$\vec{a}$ は $\Delta\vec{v}/\Delta t$ の極限なので、加速度も中心を向く。
+
+## 例題
+
+### 例題 1
+
+物体の位置の測定値は次の 2 つである。
+
+- 時刻 $0$ の位置: $(1.0, 2.0, 0.0)\ \mathrm{m}$
+- 時刻 $2.0\ \mathrm{s}$ の位置: $(4.0, 6.0, 12.0)\ \mathrm{m}$
+
+変位と平均の速度を、大きさとともに求めよ。
+
+**解法.** 変位は位置ベクトルの差である。
+
+$$
+\Delta\vec{r} = (4.0 - 1.0,\ 6.0 - 2.0,\ 12.0 - 0.0)\ \mathrm{m} = (3.0, 4.0, 12.0)\ \mathrm{m}
+$$
+
+$$
+\lvert \Delta\vec{r} \rvert = \sqrt{3.0^2 + 4.0^2 + 12.0^2}\ \mathrm{m} = \sqrt{169}\ \mathrm{m} = 13\ \mathrm{m}
+$$
+
+平均の速度は変位の $1/(2.0\ \mathrm{s})$ 倍である。
+
+$$
+\vec{v}_{\mathrm{av}} = \frac{(3.0, 4.0, 12.0)\ \mathrm{m}}{2.0\ \mathrm{s}} = (1.5, 2.0, 6.0)\ \mathrm{m/s}
+$$
+
+大きさは $\lvert \vec{v}_{\mathrm{av}} \rvert = 13\ \mathrm{m}/(2.0\ \mathrm{s}) = 6.5\ \mathrm{m/s}$ である。
+
+### 例題 2
+
+$x$ 軸の上の物体の位置が $x(t) = ut - bt^3$ で表される。定数は $u = 12\ \mathrm{m/s}$、$b = 1.0\ \mathrm{m/s^3}$ である。$t \ge 0$ の範囲で次を求めよ。
+
+1. 速度の $x$ 成分 $v_x(t)$ と、加速度の $x$ 成分 $a_x(t)$
+2. 物体の動く向きが変わる時刻と位置
+3. 向きが変わる時刻の加速度の $x$ 成分
+
+**解法.** (1) 順に微分する。
+
+$$
+v_x(t) = u - 3bt^2, \qquad a_x(t) = -6bt
+$$
+
+(2) $v_x$ の符号が変わる時刻で、動く向きが変わる。$v_x = 0$ を解く。
+
+$$
+t = \sqrt{\frac{u}{3b}} = \sqrt{\frac{12\ \mathrm{m/s}}{3.0\ \mathrm{m/s^3}}} = 2.0\ \mathrm{s}
+$$
+
+$t < 2.0\ \mathrm{s}$ で $v_x > 0$、$t > 2.0\ \mathrm{s}$ で $v_x < 0$ である。位置は次の値である。
+
+$$
+x = (12\ \mathrm{m/s})(2.0\ \mathrm{s}) - (1.0\ \mathrm{m/s^3})(2.0\ \mathrm{s})^3 = 24\ \mathrm{m} - 8.0\ \mathrm{m} = 16\ \mathrm{m}
+$$
+
+(3) $a_x = -6(1.0\ \mathrm{m/s^3})(2.0\ \mathrm{s}) = -12\ \mathrm{m/s^2}$ である。速度が $\vec{0}$ の瞬間にも、加速度は $\vec{0}$ でない。
+
+### 例題 3
+
+自動車が半径 $50\ \mathrm{m}$ の円の道を、速さ $36\ \mathrm{km/h}$ で等速円運動する。数値はどちらも有効数字 2 桁とする。速さを $\mathrm{m/s}$ で表し、角速度 $\omega$・周期 $P$・加速度の大きさを求めよ。さらに、加速度の大きさが重力加速度 $g \approx 9.8\ \mathrm{m/s^2}$ の何倍かを求めよ。
+
+**解法.** 速さを換算する。
+
+$$
+v = 36 \times \frac{10^3\ \mathrm{m}}{3600\ \mathrm{s}} = 1.0 \times 10^1\ \mathrm{m/s}
+$$
+
+$v = R\omega$ と $P = 2\pi/\omega$ を使う。
+
+$$
+\omega = \frac{v}{R} = 0.20\ \mathrm{rad/s}, \qquad P = \frac{2\pi}{\omega} = 31\ \mathrm{s}
+$$
+
+加速度の大きさは $v^2/R$ である。
+
+$$
+\lvert \vec{a} \rvert = \frac{(1.0 \times 10^1\ \mathrm{m/s})^2}{50\ \mathrm{m}} = 2.0\ \mathrm{m/s^2}
+$$
+
+$g$ との比は $2.0/9.8 \approx 0.20$ である。加速度の大きさは $g$ の約 $0.20$ 倍である。
+
+## 演習問題
+
+問題ごとに解答を畳んである。「解答を表示」を開くと確認できる。
+
+### 問題 1
+
+物体の位置ベクトルの値は次の 2 つである。
+
+- 時刻 $t_1$ の値: $(2, -1, 3)\ \mathrm{m}$
+- 時刻 $t_2$ の値: $(5, 3, 3)\ \mathrm{m}$
+
+次の問いに答えよ。
+
+1. 変位と変位の大きさを求めよ。
+2. 原点を点 $(1, 1, 1)\ \mathrm{m}$ へ移す。軸の向きは変えない。新しい原点から見た 2 つの位置ベクトルを求め、変位が変わらないことを確かめよ。
+
+<details>
+<summary>解答を表示</summary>
+
+1. 成分ごとの差を取ると、$\Delta\vec{r} = (3, 4, 0)\ \mathrm{m}$ である。大きさは $\sqrt{3^2 + 4^2}\ \mathrm{m} = 5\ \mathrm{m}$ である。
+2. 新しい位置ベクトルは $\vec{r} - (1, 1, 1)\ \mathrm{m}$ である。時刻 $t_1$ の値は $(1, -2, 2)\ \mathrm{m}$ である。時刻 $t_2$ の値は $(4, 2, 2)\ \mathrm{m}$ である。差は $(3, 4, 0)\ \mathrm{m}$ で、変位は変わらない。
+
+</details>
+
+### 問題 2
+
+物体が半径 $R$ の円周の上を、速さ $v$ の等速円運動で半周する。道のり、変位の大きさ、平均の速さ、平均の速度の大きさを求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+道のりは半円周なので $\pi R$ である。変位は円の直径を結ぶので、大きさは $2R$ である。角速度は $\omega = v/R$ なので、角 $\pi$ だけ回る時間は $\pi/\omega = \pi R/v$ である。
+
+平均の速さは $\pi R/(\pi R/v) = v$ である。平均の速度の大きさは次の値である。
+
+$$
+\frac{2R}{\pi R/v} = \frac{2v}{\pi}
+$$
+
+$2/\pi < 1$ なので、平均の速度の大きさは平均の速さより小さい。
+
+</details>
+
+### 問題 3
+
+次の式の量の種類と次元を調べ、誤りの式を選べ。誤りの理由も述べよ。
+
+1. $\vec{v} = \lvert \vec{r} \rvert / t$
+2. $\vec{r}(t_2) = \vec{r}(t_1) + (t_2 - t_1)\vec{v}_{\mathrm{av}}$
+3. $v = \vec{v} \cdot \vec{a}$
+4. $\vec{a} = -\omega^2 R$
+
+<details>
+<summary>解答を表示</summary>
+
+1. 誤りである。左辺はベクトル、右辺はスカラーである。
+2. 正しい。各項はベクトルで、次元は $\mathsf{L}$ である。平均の速度の定義を変形した式である。
+3. 誤りである。両辺はスカラーで種類は一致する。左辺の次元は $\mathsf{L}\mathsf{T}^{-1}$、右辺の次元は $\mathsf{L}^2\mathsf{T}^{-3}$ で、次元が異なる。
+4. 誤りである。次元は一致するが、左辺はベクトル、右辺はスカラーである。
+
+</details>
+
+### 問題 4
+
+$x$ 軸の上の物体の位置が $x(t) = l(1 - e^{-t/\tau})$ で表される。$l$ は長さの次元を持つ正の定数である。$\tau$ は「タウ」と読むギリシャ文字で、時間の次元を持つ正の定数である。$v_x(t)$ と $a_x(t)$ を求め、$a_x = -v_x/\tau$ を示せ。
+
+<details>
+<summary>解答を表示</summary>
+
+内側の関数を $g(t) = -t/\tau$ として微分する。
+
+$$
+v_x(t) = -le^{-t/\tau} \cdot \left(-\frac{1}{\tau}\right) = \frac{l}{\tau}e^{-t/\tau}
+$$
+
+もう一度微分する。
+
+$$
+a_x(t) = \frac{l}{\tau}e^{-t/\tau} \cdot \left(-\frac{1}{\tau}\right) = -\frac{l}{\tau^2}e^{-t/\tau} = -\frac{v_x(t)}{\tau}
+$$
+
+</details>
+
+### 問題 5
+
+$x$ 軸の上の運動について、次を示せ。
+
+1. $\dfrac{d}{dt}(v_x^2) = 2v_xa_x$
+2. $v_x \neq 0$ の時刻で、速さ $v$ について、$v_x$ と $a_x$ の符号が同じなら $dv/dt$ は正であり、符号が異なるなら負である。
+
+さらに、例題 2 の運動を $t = 1.0\ \mathrm{s}$ と $t = 3.0\ \mathrm{s}$ で判定せよ。
+
+<details>
+<summary>解答を表示</summary>
+
+1. 内側の関数を $v_x(t)$ として連鎖律を使うと、$\dfrac{d}{dt}(v_x^2) = 2v_x \cdot \dfrac{dv_x}{dt} = 2v_xa_x$ である。
+2. $x$ 軸の上の速さは $v = \lvert v_x \rvert = \sqrt{v_x^2}$ である。$v_x \neq 0$ で連鎖律を使う。
+
+   $$
+   \frac{dv}{dt} = \frac{1}{2\sqrt{v_x^2}} \cdot 2v_xa_x = \frac{v_xa_x}{\lvert v_x \rvert}
+   $$
+
+   $\lvert v_x \rvert > 0$ なので、$dv/dt$ の符号は積 $v_xa_x$ の符号に等しい。
+
+例題 2 の運動では $v_x = u - 3bt^2$、$a_x = -6bt$ である。
+
+- $t = 1.0\ \mathrm{s}$ では $v_x = 9\ \mathrm{m/s}$、$a_x = -6.0\ \mathrm{m/s^2}$ である。符号が異なるので、$dv/dt$ は負である。
+- $t = 3.0\ \mathrm{s}$ では $v_x = -15\ \mathrm{m/s}$、$a_x = -18\ \mathrm{m/s^2}$ である。符号が同じなので、$dv/dt$ は正である。
+
+$a_x$ が負の時刻に、$dv/dt$ が正のことがある。
+
+</details>
+
+### 問題 6
+
+物体の位置ベクトルが $\vec{r}(t) = (R\cos\omega t,\ R\sin\omega t,\ ut)$ で表される。$R$・$\omega$・$u$ は正の定数である。$\vec{v}(t)$、$v$、$\vec{a}(t)$、$\lvert \vec{a} \rvert$ を求めよ。さらに $\vec{v} \cdot \vec{a} = 0$ を示せ。
+
+<details>
+<summary>解答を表示</summary>
+
+成分ごとに微分する。
+
+$$
+\vec{v}(t) = (-R\omega\sin\omega t,\ R\omega\cos\omega t,\ u), \qquad
+\vec{a}(t) = (-R\omega^2\cos\omega t,\ -R\omega^2\sin\omega t,\ 0)
+$$
+
+大きさは次の値である。
+
+$$
+v = \sqrt{R^2\omega^2 + u^2}, \qquad \lvert \vec{a} \rvert = R\omega^2
+$$
+
+内積を計算する。
+
+$$
+\vec{v} \cdot \vec{a} = R^2\omega^3\sin\omega t\cos\omega t - R^2\omega^3\cos\omega t\sin\omega t + 0 = 0
+$$
+
+速さは一定で、加速度は速度に垂直である。
+
+</details>
+
+### 問題 7
+
+角速度 $\omega$、速さ $v$ の等速円運動を、速度の差分商で調べる。時刻 $0$ から $\Delta t$ までの平均の加速度の大きさを求めよ。$0 < \omega\Delta t < 2\pi$ とする。さらに、$\Delta t \to 0$ の極限が $v\omega$ であることを示せ。
+
+<details>
+<summary>解答を表示</summary>
+
+$\phi = \omega\Delta t$ と置く。$\phi$ は「ファイ」と読むギリシャ文字である。2 つの時刻の速度は次の値である。
+
+$$
+\vec{v}(0) = (0,\ v,\ 0), \qquad \vec{v}(\Delta t) = (-v\sin\phi,\ v\cos\phi,\ 0)
+$$
+
+差の大きさを求める。
+
+$$
+\lvert \Delta\vec{v} \rvert^2 = v^2\sin^2\phi + v^2(\cos\phi - 1)^2 = 2v^2(1 - \cos\phi) = 4v^2\sin^2\frac{\phi}{2}
+$$
+
+最後の等号は半角の公式である。$0 < \phi/2 < \pi$ で $\sin(\phi/2) > 0$ なので、$\lvert \Delta\vec{v} \rvert = 2v\sin(\phi/2)$ である。
+
+$$
+\lvert \vec{a}_{\mathrm{av}} \rvert = \frac{2v\sin(\omega\Delta t/2)}{\Delta t} = v\omega \cdot \frac{\sin(\omega\Delta t/2)}{\omega\Delta t/2}
+$$
+
+$\lim_{x \to 0} (\sin x)/x = 1$ により、$\Delta t \to 0$ の極限は $v\omega$ である。
+
+</details>
+
+### 問題 8
+
+物体の位置ベクトルが $\vec{r}(t) = (R\cos\omega t,\ -R\sin\omega t,\ 0)$ で表される。$R$ と $\omega$ は正の定数である。物体の回る向きを答えよ。さらに、速さが $R\omega$ であることと、$\vec{a} = -\omega^2\vec{r}$ が成り立つことを示せ。
+
+<details>
+<summary>解答を表示</summary>
+
+$t$ が増えると、$t = 0$ の点 $(R, 0, 0)$ から $y$ 座標が負の側へ動く。物体は $z$ 軸の正の側から見て時計回りに回る。
+
+$$
+\vec{v}(t) = (-R\omega\sin\omega t,\ -R\omega\cos\omega t,\ 0)
+$$
+
+大きさは $R\omega\sqrt{\sin^2\omega t + \cos^2\omega t} = R\omega$ である。
+
+$$
+\vec{a}(t) = (-R\omega^2\cos\omega t,\ R\omega^2\sin\omega t,\ 0) = -\omega^2\vec{r}(t)
+$$
+
+回る向きに依らず、加速度は円の中心を向く。
+
+</details>
+
+### 問題 9
+
+地球の赤道の上の点は、地球の中心のまわりを半径 $6.4 \times 10^6\ \mathrm{m}$、周期 $8.6 \times 10^4\ \mathrm{s}$ で等速円運動すると見なせる。角速度 $\omega$、速さ $v$、加速度の大きさを、有効数字 2 桁で求めよ。さらに、加速度の大きさが $g \approx 9.8\ \mathrm{m/s^2}$ の何倍かを求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+途中の計算では 1 桁多く残す。
+
+$$
+\omega = \frac{2\pi}{P} = \frac{2\pi}{8.6 \times 10^4\ \mathrm{s}} \approx 7.31 \times 10^{-5}\ \mathrm{rad/s}
+$$
+
+結果は $\omega \approx 7.3 \times 10^{-5}\ \mathrm{rad/s}$ である。
+
+$$
+v = R\omega \approx 4.7 \times 10^2\ \mathrm{m/s}, \qquad \lvert \vec{a} \rvert = R\omega^2 \approx 3.4 \times 10^{-2}\ \mathrm{m/s^2}
+$$
+
+$g$ との比は約 $3.5 \times 10^{-3}$ である。
+
+</details>
+
+### 問題 10
+
+等速円運動の加速度の大きさ $a$ が、速さ $v$ と半径 $R$ だけで決まると仮定する。[次元解析](../quantities-units-and-dimensions/)の手順で積の形 $a = Cv^mR^n$ の指数 $m$・$n$ を求めよ。無次元の定数 $C$ の値を、微分の結果と比べて求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+両辺の次元を比べる。
+
+$$
+\mathsf{L}\mathsf{T}^{-2} = (\mathsf{L}\mathsf{T}^{-1})^m\mathsf{L}^n = \mathsf{L}^{m + n}\mathsf{T}^{-m}
+$$
+
+指数を比べると $m + n = 1$、$-m = -2$ である。$m = 2$、$n = -1$ を得る。
+
+$$
+a = C\frac{v^2}{R}
+$$
+
+次元からは $C$ が決まらない。微分の結果 $\lvert \vec{a} \rvert = v^2/R$ と比べると、$C = 1$ である。
+
+</details>
+
+## まとめ
+
+本章は、物体の位置から速度と加速度を定め、等速円運動へ適用した。要点を振り返る。
+
+- 物体の位置は、直交座標の位置ベクトル $\vec{r}(t) = (x(t), y(t), z(t))$ で表す。位置ベクトルは原点の選び方に依る。
+- 変位は位置ベクトルの差である。変位は道すじにも原点の選び方にも依らず、大きさは道のり以下である。
+- スカラーは数として足し、ベクトルは成分ごとに足す。物理量を結ぶ等式の両辺は同じ種類の量である。
+- 速度 $\vec{v} = d\vec{r}/dt$ は、平均の速度の極限である。ベクトルの微分は成分ごとに定める。速さは速度の大きさである。
+- 加速度 $\vec{a} = d\vec{v}/dt$ は、速度の大きさの変化と向きの変化の両方を含む。
+- 等速円運動では、速度は半径に垂直である。円の中心を原点とすると、加速度は $\vec{a} = -\omega^2\vec{r}$ で中心を向き、大きさは $\omega^2 R = v^2/R$ である。
+
+## 参考文献
+
+本章の内容をさらに学ぶための一次資料を挙げる。
+
+- 国際度量衡局、_The International System of Units (SI)_, 9th edition, 2019 (V4.01, June 2026). ラジアンの定義と単位の書き方を定める公式の文書である。
+- Galileo Galilei, _Discorsi e dimostrazioni matematiche intorno a due nuove scienze_, 1638. 等速の運動と加速する運動を定義から論じた古典である。
+- Christiaan Huygens, _Horologium Oscillatorium_, 1673. 円運動の $v^2/R$ に当たる関係を結果として示した著作である。
+- E. B. Wilson, _Vector Analysis_, Charles Scribner's Sons, 1901. ギブズの講義に基づく教科書で、ベクトルの微分を運動に応用した。
+
+[^smooth]: 壁で跳ね返る物体の運動を「向きが一瞬で変わる」と理想化すると、跳ね返る時刻で $x(t)$ は微分可能でない。微分可能という条件は、運動の式が表す範囲を限る条件である。
+
+[^tangent]: $\mathrm{m}$ と $\mathrm{s}$ を単位とする数値で書く。$\vec{r}(t) = (t, f(t), 0)$ で表される物体は $y = f(x)$ のグラフの上を動く。速度は $\vec{v} = (1, f'(t), 0)$ である。接線の傾きは $f'(t)$ となり、[微分係数と導関数の定義](../../../math/calculus/derivative-definition/)の接線と一致する。
+
+[^rad]: SI は平面角を単位 $1$ の量として扱う。$\mathrm{rad/s}$ と書くのは、量が角の時刻による導関数であることを示すためである。
+
+[^period]: 多くの教科書は周期を $T$ と書く。本書の物理の章は、次元の記号 $\mathsf{T}$ と紛れないよう、[物理量・単位・次元](../quantities-units-and-dimensions/)と同じ $P$ を使う。
