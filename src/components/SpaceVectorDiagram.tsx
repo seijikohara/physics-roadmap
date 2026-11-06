@@ -150,6 +150,10 @@ const VIEW_BOUNDS: Box = { x0: 2, x1: VIEW_W - 2, y0: 2, y1: VIEW_H - 2 };
 // 座標が 0 とみなせる許容値（落とし込み線の退化を判定する）。
 const EPS = 1e-6;
 
+// 置いたラベルを描く。
+const labelNode = (l: Label | null | undefined): ReactNode =>
+  l && <KatexLabel tex={l.tex} x={l.pos.x} y={l.pos.y} fontSize={LABEL_FONT} align={l.pos.align} />;
+
 export default function SpaceVectorDiagram({
   vectors = [],
   points = [],
@@ -404,12 +408,6 @@ export default function SpaceVectorDiagram({
       pt.labelAt === undefined ? `pt${i}` : undefined,
     );
   });
-
-  // 置いたラベルを描く。
-  const labelNode = (l: Label | null | undefined): ReactNode =>
-    l && (
-      <KatexLabel tex={l.tex} x={l.pos.x} y={l.pos.y} fontSize={LABEL_FONT} align={l.pos.align} />
-    );
 
   return (
     <svg

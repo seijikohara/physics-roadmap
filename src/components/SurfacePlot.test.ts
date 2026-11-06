@@ -11,6 +11,11 @@ const render = (props: Partial<Props>): string =>
 /** 描いたラベルの数。軸名 3 つを含む。 */
 const labelCount = (html: string): number => html.match(/<foreignObject/g)?.length ?? 0;
 
+const segment = (labelDir: "above" | "below"): string =>
+  render({
+    segments: [{ from: { x: 0, y: 0, z: 0 }, to: { x: 2, y: 0, z: 0 }, label: "s", labelDir }],
+  });
+
 /** 原点のまわりの正方形の、不透明な水平面。 */
 const OPAQUE_FLOOR: Props["planes"] = [
   {
@@ -58,10 +63,6 @@ describe("SurfacePlot のラベル", () => {
   });
 
   it("線分の向きを固定すると線分の中点の上に置く", () => {
-    const segment = (labelDir: "above" | "below"): string =>
-      render({
-        segments: [{ from: { x: 0, y: 0, z: 0 }, to: { x: 2, y: 0, z: 0 }, label: "s", labelDir }],
-      });
     expect(segment("above")).not.toBe(segment("below"));
   });
 });

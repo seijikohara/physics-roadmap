@@ -104,33 +104,36 @@ describe("Triangle のラベル", () => {
     expect(labelCount(html)).toBe(0);
   });
 
+  const fixedVertex = (labelDir: "left" | "right"): string =>
+    triangle({
+      vertices: [{ x: 0, y: 0, label: "A", labelDir }, vertices[1], vertices[2]],
+    });
+
   it("頂点の labelDir で向きを固定する", () => {
-    const fixed = (labelDir: "left" | "right"): string =>
-      triangle({
-        vertices: [{ x: 0, y: 0, label: "A", labelDir }, vertices[1], vertices[2]],
-      });
-    expect(labelFrames(fixed("left"))[0]).not.toBe(labelFrames(fixed("right"))[0]);
+    expect(labelFrames(fixedVertex("left"))[0]).not.toBe(labelFrames(fixedVertex("right"))[0]);
   });
+
+  const fixedEdge = (labelDir: "above" | "below"): string =>
+    triangle({ edges: [{ from: 0, to: 1, label: "c", labelDir }] });
 
   it("辺の labelDir で向きを固定する", () => {
-    const fixed = (labelDir: "above" | "below"): string =>
-      triangle({ edges: [{ from: 0, to: 1, label: "c", labelDir }] });
-    expect(labelFrames(fixed("above"))).not.toEqual(labelFrames(fixed("below")));
+    expect(labelFrames(fixedEdge("above"))).not.toEqual(labelFrames(fixedEdge("below")));
   });
 
+  const leftOf = (labelOffset: number): number =>
+    Number(
+      labelFrames(
+        triangle({
+          vertices: [
+            { x: 0, y: 0, label: "A", labelDir: "left", labelOffset },
+            vertices[1],
+            vertices[2],
+          ],
+        }),
+      )[0]?.split(",")[0],
+    );
+
   it("頂点の labelOffset で点から離す", () => {
-    const leftOf = (labelOffset: number): number =>
-      Number(
-        labelFrames(
-          triangle({
-            vertices: [
-              { x: 0, y: 0, label: "A", labelDir: "left", labelOffset },
-              vertices[1],
-              vertices[2],
-            ],
-          }),
-        )[0]?.split(",")[0],
-      );
     expect(leftOf(14)).toBeCloseTo(leftOf(4) - 10);
   });
 

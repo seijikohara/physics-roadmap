@@ -212,13 +212,14 @@ describe("besideSegment", () => {
   });
 });
 
+const midX = (pos: LabelPos) => {
+  const box = glyphBox(pos, size);
+  return (box.x0 + box.x1) / 2;
+};
+
 describe("besideSegment の割合", () => {
   const a = { x: 0, y: 0 };
   const b = { x: 100, y: 0 };
-  const midX = (pos: LabelPos) => {
-    const box = glyphBox(pos, size);
-    return (box.x0 + box.x1) / 2;
-  };
 
   it("既定は中点の両側の 2 か所である", () => {
     const xs = besideSegment(a, b, size).map(midX);
@@ -414,6 +415,8 @@ describe("widelyAroundPoint", () => {
 
   const ringOf = (k: number, from = cands) =>
     from.filter((c) => preference(c) === k * LABEL_POLICY.farRingPenalty);
+  const offsetY = (b: Box) => (b.y0 + b.y1) / 2 - p.y;
+  const offsetX = (b: Box) => (b.x0 + b.x1) / 2 - p.x;
 
   it.each([
     [0, [4, 5], [4, 8, 10]],
@@ -424,8 +427,6 @@ describe("widelyAroundPoint", () => {
     const slid = ringOf(k)
       .slice(8)
       .map((c) => c.box);
-    const offsetY = (b: Box) => (b.y0 + b.y1) / 2 - p.y;
-    const offsetX = (b: Box) => (b.x0 + b.x1) / 2 - p.x;
     expect(rounded(slid.filter((b) => same(b.x0, p.x + r)).map(offsetY))).toEqual(signed(vertical));
     expect(rounded(slid.filter((b) => same(b.x1, p.x - r)).map(offsetY))).toEqual(signed(vertical));
     expect(rounded(slid.filter((b) => same(b.y1, p.y - r)).map(offsetX))).toEqual(
@@ -597,15 +598,19 @@ function auto(offset?: number): readonly LabelPos[] {
   return [{ x: offset ?? -1, y: 0, align: "center" }];
 }
 
-describe("onLine の採点", () => {
-  // 候補の中心の x が cx に最も近い候補の罰点。
-  const scoreNear = (line: TracedLine, cx: number) => {
-    const near = onLine([line], size, 5).reduce((m, c) =>
-      Math.abs(centerX(c.box) - cx) < Math.abs(centerX(m.box) - cx) ? c : m,
-    );
-    return near.score?.(0) ?? 0;
-  };
+// 候補の中心の x が cx に最も近い候補の罰点。
+const scoreNear = (line: TracedLine, cx: number) => {
+  const near = onLine([line], size, 5).reduce((m, c) =>
+    Math.abs(centerX(c.box) - cx) < Math.abs(centerX(m.box) - cx) ? c : m,
+  );
+  return near.score?.(0) ?? 0;
+};
 
+// 箱は線の上下へ 5px 広がる。
+// 行きの部分の候補の中心は 17 から 4px おきに並ぶ。x = 249 は行きの部分の候補にちょうど重なる。
+const hairpinScoreAt = (offset: number) => scoreNear(hairpinAt(offset), 249);
+
+describe("onLine の採点", () => {
   it("折り返す線の離れた部分が重なる候補に、自分の線の罰点を与える", () => {
     // 右端で折り返し、x = 200 まで 4px 下を戻る線。戻る部分の上の候補だけが重なる。
     const hairpin = tracedLine(
@@ -649,27 +654,24 @@ describe("onLine の採点", () => {
   });
 
   describe("戻る部分までの距離による段階的な罰点", () => {
-    // 箱は線の上下へ 5px 広がる。
-    // 行きの部分の候補の中心は 17 から 4px おきに並ぶ。x = 249 は行きの部分の候補にちょうど重なる。
-    const scoreAt = (offset: number) => scoreNear(hairpinAt(offset), 249);
-    const baseline = scoreAt(30);
+    const baseline = hairpinScoreAt(30);
 
     it("戻る部分に触れる候補に罰点の全部を与える", () => {
-      expect(scoreAt(6) - baseline).toBeCloseTo(LABEL_POLICY.ownLine, 0);
+      expect(hairpinScoreAt(6) - baseline).toBeCloseTo(LABEL_POLICY.ownLine, 0);
     });
 
     it("すきまが足りない候補に罰点の一部を与える", () => {
       const partial = LABEL_POLICY.ownLine * LABEL_POLICY.nearLine;
-      expect(scoreAt(9) - baseline).toBeCloseTo(partial, 0);
+      expect(hairpinScoreAt(9) - baseline).toBeCloseTo(partial, 0);
     });
 
     it("すきまの帯の外縁の近くまで数える", () => {
       const partial = LABEL_POLICY.ownLine * LABEL_POLICY.nearLine;
-      expect(scoreAt(5 + lineReach - 0.25) - baseline).toBeCloseTo(partial, 0);
+      expect(hairpinScoreAt(5 + lineReach - 0.25) - baseline).toBeCloseTo(partial, 0);
     });
 
     it("すきまの帯の外の候補には罰点を与えない", () => {
-      expect(scoreAt(5 + lineReach + 1) - baseline).toBeCloseTo(0, 0);
+      expect(hairpinScoreAt(5 + lineReach + 1) - baseline).toBeCloseTo(0, 0);
     });
   });
 
@@ -1244,9 +1246,10 @@ describe("preferringOwnMark", () => {
   });
 });
 
+const autoCandidates = (): readonly Candidate<LabelPos>[] => offsetEcho(undefined);
+
 describe("pointLabelCandidates", () => {
   const p = { x: 50, y: 50 };
-  const autoCandidates = (): readonly Candidate<LabelPos>[] => offsetEcho(undefined);
 
   it("指定が無ければ auto の候補を使う", () => {
     const spec = { at: undefined, dir: undefined, offset: undefined };

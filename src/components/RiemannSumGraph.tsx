@@ -133,6 +133,13 @@ const SAMPLES = 480;
 
 type Sample2 = Readonly<{ xv: number; yv: number }>;
 
+// 区間 [from, to] を標本化する。領域の多角形と曲線の両方で使う。
+const sampleRange = (f: (v: number) => number, lo: number, hi: number): readonly Sample2[] =>
+  Array.from({ length: SAMPLES + 1 }, (_, i) => {
+    const xv = lo + ((hi - lo) * i) / SAMPLES;
+    return { xv, yv: f(xv) };
+  });
+
 export default function RiemannSumGraph({
   xMin,
   xMax,
@@ -197,13 +204,6 @@ export default function RiemannSumGraph({
     const h = fn(xs);
     return { lo, hi, xs, h };
   });
-
-  // 区間 [from, to] を標本化する。領域の多角形と曲線の両方で使う。
-  const sampleRange = (f: (v: number) => number, lo: number, hi: number): readonly Sample2[] =>
-    Array.from({ length: SAMPLES + 1 }, (_, i) => {
-      const xv = lo + ((hi - lo) * i) / SAMPLES;
-      return { xv, yv: f(xv) };
-    });
 
   // 曲線と x 軸の間の領域を、正の部分と負の部分に分けた多角形にする。値を 0 で切り詰めると、
   // 正の部分の多角形は x 軸より上だけ、負の部分は下だけを覆い、符号ごとに色を分けられる。
