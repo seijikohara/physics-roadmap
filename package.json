@@ -17,7 +17,7 @@
     "test": "vitest run",
     "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run roadmap:check && pnpm run lint:text",
     "roadmap:check": "tsx scripts/roadmap/check.ts",
-    "roadmap:index": "tsx scripts/roadmap/index.ts",
+    "roadmap:index": "tsx scripts/roadmap/index.ts && oxfmt --write docs/roadmap/upstream-index.json",
     "roadmap:paths": "tsx scripts/roadmap/paths.ts",
     "roadmap:inventory": "tsx scripts/roadmap/inventory.ts",
     "figures:shot": "tsx scripts/figures/shot.ts",
