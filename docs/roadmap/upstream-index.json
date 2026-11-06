@@ -3416,5 +3416,21 @@
       "math/vector-calculus/surface-integrals-and-flux",
       "math/vector-calculus/greens-theorem"
     ]
+  },
+  "physics/classical-mechanics/quantities-units-and-dimensions": {
+    "rows": ["P-CM-01"],
+    "upstream": [
+      "prerequisites/knowledge",
+      "math/set/sets-and-elements",
+      "math/set/propositions-and-conditions",
+      "math/set/necessary-and-sufficient-conditions",
+      "math/set/methods-of-proof",
+      "math/algebra/real-number-system",
+      "math/algebra/square-roots-and-absolute-value",
+      "math/algebra/laws-of-exponents",
+      "math/algebra/radicals-and-rational-exponents",
+      "math/algebra/polynomial-expansion",
+      "math/algebra/linear-equations-and-systems"
+    ]
   }
 }

@@ -92,6 +92,15 @@ export default defineConfig({
             },
           ],
         },
+        {
+          label: "物理",
+          items: [
+            {
+              label: "古典力学",
+              items: [{ autogenerate: { directory: "physics/classical-mechanics" } }],
+            },
+          ],
+        },
       ],
     }),
   ],
