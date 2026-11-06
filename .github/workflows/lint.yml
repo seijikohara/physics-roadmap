@@ -39,6 +39,10 @@ jobs:
       - name: Unit tests (vitest)
         run: pnpm run test
 
+      # 設計書の前提の列と、章のリンクの整合を確かめる。
+      - name: Check the roadmap (dependencies and links)
+        run: pnpm run roadmap:check
+
       - name: Proofread Markdown/MDX (textlint)
         run: pnpm run lint:text
 
