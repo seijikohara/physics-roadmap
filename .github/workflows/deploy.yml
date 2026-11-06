@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout your repository using git
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       # withastro/action は .nvmrc を読まず、node-version を省くとアクション既定の Node.js でビルドする。
       # lint.yml と同じく .nvmrc を唯一の正とし、.nvmrc の更新をデプロイのビルドにも反映する。
       # .nvmrc が空のときは、意図しない Node.js でビルドしないよう失敗させる。
@@ -27,7 +27,7 @@ jobs:
           test -n "$version"
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Install, build, and upload your site
-        uses: withastro/action@v6
+        uses: withastro/action@a8b97df764791eb61fbf3338ef713b0e61ae05c5 # v6
         with:
           node-version: ${{ steps.node.outputs.version }}
 
@@ -40,4 +40,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
