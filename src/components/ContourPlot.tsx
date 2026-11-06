@@ -628,6 +628,9 @@ const GRID_CUT_PAD = 2;
 // 格子線を切り抜いた外側に残る線の長さの下限（px）。これより短く残るなら、縁まで切り抜く。
 const GRID_STUB_PX = 12;
 
+const tickBoxOf = (t: Tick, pos: LabelPos): Box =>
+  glyphBox(pos, glyphSizeOf(tickLabel(t), TICK_FONT));
+
 export default function ContourPlot({
   xMin,
   xMax,
@@ -871,8 +874,6 @@ export default function ContourPlot({
   };
   // 空ラベルの目盛り（格子線だけを残し数字を省く目盛り）は字形をもたないので、障害物・格子線の
   // 切り抜き・avoidLabels の判定から外す。外さないと、数字の無い位置で格子線が規則的に途切れて見える。
-  const tickBoxOf = (t: Tick, pos: LabelPos): Box =>
-    glyphBox(pos, glyphSizeOf(tickLabel(t), TICK_FONT));
   const tickBoxes: readonly Box[] = axes
     ? [
         ...xt.flatMap((t) =>

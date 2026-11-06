@@ -250,6 +250,13 @@ const SEGMENT_FRACTIONS: readonly number[] = [0.5, 0.35, 0.65, 0.2, 0.8];
 const V_LINE_FRACTIONS: readonly number[] = [0.88, 0.76, 0.64, 0.52, 0.4, 0.28, 0.12];
 const H_LINE_FRACTIONS: readonly number[] = [0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.9, 0.1];
 
+const tickBoxOf = (t: Tick, pos: LabelPos): Box =>
+  glyphBox(pos, glyphSizeOf(tickLabel(t), TICK_FONT));
+
+// 置いたラベルを描く。ラベルの無い要素では何も描かない。
+const labelNode = (l: Label | null): ReactNode =>
+  l && <KatexLabel tex={l.tex} x={l.pos.x} y={l.pos.y} fontSize={LABEL_FONT} align={l.pos.align} />;
+
 export default function FunctionGraph({
   xMin,
   xMax,
@@ -378,8 +385,6 @@ export default function FunctionGraph({
     );
 
   // 空ラベルの目盛り（格子線だけを残し数字を省く目盛り）は字形をもたないので、障害物から外す。
-  const tickBoxOf = (t: Tick, pos: LabelPos): Box =>
-    glyphBox(pos, glyphSizeOf(tickLabel(t), TICK_FONT));
   const xTickBoxes: readonly Box[] = xt.flatMap((t) =>
     tickLabel(t) === ""
       ? []
@@ -608,12 +613,6 @@ export default function FunctionGraph({
     );
     return placedLabel(a.label, pos, size);
   });
-
-  // 置いたラベルを描く。ラベルの無い要素では何も描かない。
-  const labelNode = (l: Label | null): ReactNode =>
-    l && (
-      <KatexLabel tex={l.tex} x={l.pos.x} y={l.pos.y} fontSize={LABEL_FONT} align={l.pos.align} />
-    );
 
   return (
     <div className="function-graph-figure">

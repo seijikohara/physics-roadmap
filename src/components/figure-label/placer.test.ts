@@ -72,39 +72,41 @@ describe("createPlacer の penalty", () => {
     expect(placer.penalty(target, { placed: [], bounds })).toBe(6);
   });
 
+  const below = (dy: number) =>
+    createPlacer(
+      lineObstacle(
+        "b",
+        [
+          { x: 40, y: target.y1 + dy },
+          { x: 70, y: target.y1 + dy },
+        ],
+        6,
+      ),
+    ).penalty(target, { placed: [], bounds });
+
   it("線に触れないがすきまが足りない位置に、線の重みの一部を与える", () => {
-    const below = (dy: number) =>
-      createPlacer(
-        lineObstacle(
-          "b",
-          [
-            { x: 40, y: target.y1 + dy },
-            { x: 70, y: target.y1 + dy },
-          ],
-          6,
-        ),
-      ).penalty(target, { placed: [], bounds });
     expect(below(LABEL_POLICY.lineTouch / 2)).toBe(6);
     expect(below(lineReach - 1)).toBe(6 * LABEL_POLICY.nearLine);
     expect(below(lineReach + 1)).toBe(0);
   });
 
+  // 45 度の線が矩形の隅から d だけ離れて通る。すきまの帯の外なら、矩形を広げた角の内側を通っても
+  // 数えない。
+  const diagonal = (d: number) => {
+    const off = d * Math.SQRT2;
+    return createPlacer(
+      lineObstacle(
+        "d",
+        [
+          { x: target.x1 + off + 40, y: target.y1 - 40 },
+          { x: target.x1 + off - 40, y: target.y1 + 40 },
+        ],
+        6,
+      ),
+    ).penalty(target, { placed: [], bounds });
+  };
+
   it("線の傾きによらず、矩形からの距離で判定する", () => {
-    // 45 度の線が矩形の隅から d だけ離れて通る。すきまの帯の外なら、矩形を広げた角の内側を通っても
-    // 数えない。
-    const diagonal = (d: number) => {
-      const off = d * Math.SQRT2;
-      return createPlacer(
-        lineObstacle(
-          "d",
-          [
-            { x: target.x1 + off + 40, y: target.y1 - 40 },
-            { x: target.x1 + off - 40, y: target.y1 + 40 },
-          ],
-          6,
-        ),
-      ).penalty(target, { placed: [], bounds });
-    };
     expect(diagonal(lineReach + 0.5)).toBe(0);
     expect(diagonal(lineReach - 0.5)).toBe(6 * LABEL_POLICY.nearLine);
     expect(diagonal(LABEL_POLICY.lineTouch - 0.5)).toBe(6);
