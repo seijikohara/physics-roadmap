@@ -11,6 +11,7 @@ export const DESIGN_DOC = path.join(ROOT, "docs/roadmap-design.md");
 export const INDEX_DIR = path.join(ROOT, "docs/roadmap");
 export const UPSTREAM_INDEX = path.join(INDEX_DIR, "upstream-index.json");
 export const PREREQUISITE_INVENTORY = path.join(INDEX_DIR, "prerequisite-inventory.json");
+export const TERM_EXCEPTIONS = path.join(INDEX_DIR, "term-exceptions.json");
 const CONTENT_DIR = path.join(ROOT, "src/content/docs");
 
 export const loadRows = (): readonly Row[] => parseDesignDoc(readFileSync(DESIGN_DOC, "utf8"));

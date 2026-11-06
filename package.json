@@ -20,6 +20,7 @@
     "roadmap:index": "tsx scripts/roadmap/index.ts && oxfmt --write docs/roadmap/upstream-index.json",
     "roadmap:paths": "tsx scripts/roadmap/paths.ts",
     "roadmap:inventory": "tsx scripts/roadmap/inventory.ts",
+    "roadmap:terms": "tsx scripts/roadmap/terms.ts",
     "figures:shot": "tsx scripts/figures/shot.ts",
     "figures:lint": "tsx scripts/figures/lint.ts",
     "figures:diff": "tsx scripts/figures/diff.ts",
