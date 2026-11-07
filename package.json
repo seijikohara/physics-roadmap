@@ -68,5 +68,5 @@
     "typescript": "^7.0.0",
     "vitest": "^5.1.0"
   },
-  "packageManager": "pnpm@11.28.10"
+  "packageManager": "pnpm@12.17.0"
 }
