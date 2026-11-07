@@ -61,7 +61,7 @@ export const quietTicks4 = [-4, -3, -2, -1, 1, 2, 3, 4].map((v) => ({ value: v, 
 - [微分の基本公式](../../calculus/basic-differentiation-rules/)：和・定数倍の微分
 - [積・商の微分法](../../calculus/product-and-quotient-rules/)：商の微分
 - [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$(\sin t)'=\cos t$・$(\cos t)'=-\sin t$、自然対数の記号 $\ln$
-- [高次導関数と関数の増減](../../calculus/higher-derivatives-and-monotonicity/)：極限の符号（補題）
+- [関数の極限](../../calculus/function-limits/)：極限の符号（補題）
 - [不定積分の定義](../../calculus/indefinite-integrals/)：導関数が 0 の関数は定数関数である（系の拡張）、記法 $(-\infty,\infty)$
 - [三角比の拡張](../../functions/extension-of-trigonometric-ratios/)：動径と角、単位円の上の点 $(\cos\theta,\sin\theta)$
 - [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：弧度法、$\cos\dfrac{\pi}{2}=0$・$\sin\dfrac{\pi}{2}=1$・$\cos2\pi=1$・$\sin2\pi=0$ などの値
@@ -1058,7 +1058,7 @@ $f$ は多項式だから $C^1$ 級であり、すべての点で全微分可能
    等号は自分自身との内積による。不等号は、$\nabla f(a,b)\neq\vec{0}$ だから大きさが正であることによる。
 
 3. **差分商の符号.** 微分係数の定義より、$z'(0)$ は差分商 $\dfrac{z(t)-z(0)}{t}$ の $t\to0$ の極限である。正の数 $\delta$ を、次の 2 つを満たすように選ぶ。
-   - **補題の範囲.** [高次導関数と関数の増減](../../calculus/higher-derivatives-and-monotonicity/)の章の極限の符号の補題より、$0<\lvert t\rvert<\delta$ を満たすすべての $t$ で差分商は正である。
+   - **補題の範囲.** [関数の極限](../../calculus/function-limits/)の章の極限の符号の補題より、$0<\lvert t\rvert<\delta$ を満たすすべての $t$ で差分商は正である。
    - **定義される範囲.** 開区間 $(-\delta,\delta)$ は $J$ に含まれる。
 
    補題が与える正の数と、$J$ に収まる正の数のうち、小さいほうを $\delta$ とすればよい。差分商の符号から、次を得る。

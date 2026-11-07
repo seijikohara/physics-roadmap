@@ -57,13 +57,15 @@ import SurfacePlot from "../../../../components/SurfacePlot";
 - [微分係数と導関数の定義](../../calculus/derivative-definition/)：
   - 微分係数（定義）の前提となる開区間、微分可能ならば連続（定理）、平均値の定理
   - 記法 $\dfrac{d}{dx}f(x)$（$f(x)$ を $x$ で微分する操作）、「逆数の関数」の節の $\left(\dfrac1x\right)'=-\dfrac{1}{x^2}$（$x\neq0$）
-  - 「微分係数のもう 1 つの形」の節の文字の取り替え（$\displaystyle\lim_{x\to a}g(x)$ と $\displaystyle\lim_{h\to0}g(a+h)$ は同時に存在し、同じ値になること）
-- [関数の極限](../../calculus/function-limits/)：誤差の言葉による収束の定義、左右の極限が一致するときに限り両側極限が存在すること
+- [関数の極限](../../calculus/function-limits/)：
+  - 誤差の言葉による収束の定義、左右の極限が一致するときに限り両側極限が存在すること
+  - 「極限を取る文字」の節の文字の取り替え（$\displaystyle\lim_{x\to a}g(x)$ と $\displaystyle\lim_{h\to0}g(a+h)$ は同時に存在し、同じ値になること）
 - [関数の連続性](../../calculus/continuity-of-functions/)：閉区間 $[a,b]$ と、閉区間で連続であることの定義（端点では片側から連続）
+- [自然対数の底 e と重要な極限](../../calculus/euler-number-and-key-limits/)：自然数と実数の大小（承認事項）
 - [微分の基本公式](../../calculus/basic-differentiation-rules/)：定数倍・和・差の微分、自然数乗の微分
 - [積・商の微分法](../../calculus/product-and-quotient-rules/)：積の微分（定理）、商の微分（定理）
 - [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律（定理）
-- [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$e^x$・$\ln x$・$\sin x$・$\cos x$ の導関数、「実数乗の微分」の節の $(x^\alpha)'=\alpha x^{\alpha-1}$（$x>0$）、自然対数の記号 $\ln$、自然数と実数の大小（承認事項）
+- [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$e^x$・$\ln x$・$\sin x$・$\cos x$ の導関数、「実数乗の微分」の節の $(x^\alpha)'=\alpha x^{\alpha-1}$（$x>0$）、自然対数の記号 $\ln$
 - [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：単位円による $\sin x$・$\cos x$ の定義（$-1\le\sin x\le1$）、周期性（$\sin x$・$\cos x$ の周期は $2\pi$）
 - [平面ベクトルの定義と成分表示](../../vectors/plane-vectors-and-components/)：有向線分の記号 $\overrightarrow{\mathrm{AB}}$（「ベクトル A B」と読む）と、成分は終点の座標から始点の座標を引いた差であること
 - [空間ベクトルと成分](../../vectors/space-vectors/)：空間ベクトルの成分表示、成分ごとの演算（和・差・スカラー倍）、内積の定義と成分公式、直交条件と記号 $\perp$（垂直）
@@ -272,7 +274,7 @@ $\varepsilon=0.01$ と選べば、十分近い点では、誤差の大きさは�
 
 定義は、動かす量 $h$・$k$ で書いた。点の座標 $x=a+h$・$y=b+k$ で書き直すこともできる。
 
-[微分係数と導関数の定義](../../calculus/derivative-definition/)の章の「微分係数のもう 1 つの形」の節では、1 変数の極限で文字を取り替えた。$\displaystyle\lim_{x\to a}g(x)$ と $\displaystyle\lim_{h\to0}g(a+h)$ は同時に存在し、同じ値になる。2 変数でも同じことが成り立つ。
+[関数の極限](../../calculus/function-limits/)の章の「極限を取る文字」の節では、1 変数の極限で文字を取り替えた。$\displaystyle\lim_{x\to a}g(x)$ と $\displaystyle\lim_{h\to0}g(a+h)$ は同時に存在し、同じ値になる。2 変数でも同じことが成り立つ。
 
 2 変数関数 $G$ を考える。$G$ は「ジー」と読み、取り替えの議論のために置いた便宜的な名前である。点 $(h,k)$ の関数 $G(a+h,b+k)$ と、もとの関数 $G(x,y)$ を比べる。
 
@@ -742,7 +744,7 @@ $g$ は「ジー」と読む、本例の便宜的な名前である。2 変数�
 
 3. **原点で連続でない.** 手順 1 と全微分可能ならば偏微分可能であるという定理より、$f_x(0,0)=A=0$ である。[証明の方法](../../set/methods-of-proof/)の章の背理法で示す。$f_x$ が原点で連続であったと仮定する。
    - 誤差を $\dfrac12$ に選ぶと、ある正の数 $r$ があり、原点との距離が $r$ より小さい点で $\lvert f_x(x,y)-0\rvert<\dfrac12$ となる。
-   - 指数・対数・三角関数の微分の章の「自然数と実数の大小（承認事項）」の 1 つ目より、$n>\dfrac{1}{2\pi r}$ を満たす自然数 $n$ がある。$n$ は「エヌ」と読む便宜的な文字である。すると $\dfrac{1}{2n\pi}<r$ だから、点 $\left(\dfrac{1}{2n\pi},\:0\right)$ と原点の距離は $r$ より小さい。
+   - 自然対数の底 e と重要な極限の章の「自然数と実数の大小（承認事項）」の 1 つ目より、$n>\dfrac{1}{2\pi r}$ を満たす自然数 $n$ がある。$n$ は「エヌ」と読む便宜的な文字である。すると $\dfrac{1}{2n\pi}<r$ だから、点 $\left(\dfrac{1}{2n\pi},\:0\right)$ と原点の距離は $r$ より小さい。
    - 周期性より $\sin2n\pi=\sin0=0$、$\cos2n\pi=\cos0=1$ である。点での値は $f_x=0-1=-1$ であり、$\lvert-1\rvert=1$ は $\dfrac12$ より小さくない。矛盾する。
 
    よって $f_x$ は原点で連続でない。原点を含むどの集合 $U$ でも、$f$ は $C^1$ 級でない。
