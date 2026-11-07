@@ -52,14 +52,14 @@
 - `pnpm run lint:text:fix`: textlint で自動修正できる箇所を修正する。
 - `pnpm run typecheck`: `astro sync`で Astro の型宣言を生成してから、TypeScript の型を`tsc --noEmit`で検査する。
 - `pnpm run test`: Vitest で単体テスト（`src/**/*.test.ts`・`scripts/**/*.test.ts`）を実行する。
-- `pnpm run check`: format:check・lint・typecheck・test・roadmap:check・lint:text をまとめて実行する。
+- `pnpm run check`: format:check・lint・typecheck・test・roadmap:check・roadmap:terms・lint:text をまとめて実行する。
 - `pnpm run roadmap:check`: 設計書の前提の列と章のリンクの整合を検査する。
 - `pnpm run roadmap:index`: 章ごとの推移的な上流の一覧`docs/roadmap/upstream-index.json`を作り直す。設計書の行を変えたら実行する。
 - `pnpm run roadmap:paths -- <ID>...`: 行が推移的に必要とする行の数を、カテゴリごとに出す。
 - `pnpm run roadmap:terms -- <章>...`: 章の本文が上流の外の語を使っていないかを調べ、本章で初出の LaTeX の命令を一覧にする。
   - `--all`で全章を集計する。`--file <パス> --as <章>`で、リポジトリの外の写しをその章として調べる。
   - 誤検出は`docs/roadmap/term-exceptions.json`に理由つきで置く。語の別の書き方も同じファイルの`aliases`に置く。
-  - 結果は検証者への入力である。説明できない組が残るので、`roadmap:check`と CI には載せていない。
+  - 章ごとの結果は検証者への入力である。`--all`は説明できない語が 1 件でもあると失敗する。`pnpm run check`と CI で実行する。
 - `pnpm run figures:shot -- <ページ>...`: 章の図を 1 枚ずつ PNG に撮る（出力先は`.figures/shots`）。`figure`の外の図も撮る。
 - `pnpm run figures:lint -- <ページ>...`: 図のラベルと線・点・他のラベルの重なりと近接を一覧にする（`--all`で全ページ）。
 - `pnpm run figures:diff -- --base <基準の dist>`: 2 つのビルド結果を比べ、変わった図の前後を左右に並べた PNG を書き出す。

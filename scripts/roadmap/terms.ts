@@ -103,7 +103,10 @@ function main(): void {
   if (values.all) {
     const reports = targets.map((target) => reportOf(target));
     printSummary(reports, context.table.size);
-    const problems = policyProblems(reports, context, policy);
+    const unexplained = reports.flatMap((report) =>
+      report.outside.map(({ term }) => `説明できない語: ${report.chapter} の ${term}`),
+    );
+    const problems = [...unexplained, ...policyProblems(reports, context, policy)];
     for (const problem of problems) console.error(problem);
     if (problems.length > 0) process.exitCode = 1;
     return;
