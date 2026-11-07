@@ -72,14 +72,17 @@ export const rotInv = (x, y) => {
 - [平方根と絶対値](../../algebra/square-roots-and-absolute-value/)：絶対値 $\lvert x\rvert$
 - [総和記号](../../sequences-and-series/summation-notation/)：総和記号 $\displaystyle\sum_{k=1}^{n}a_k$
 - [関数の極限](../../calculus/function-limits/)：極限の記号 $\displaystyle\lim_{h\to0}$ と、矢印 $\to$（近づく）の書き方
-- [関数の連続性](../../calculus/continuity-of-functions/)：開区間 $(a,b)$・閉区間 $[a,b]$ の記法
-- [微分係数と導関数の定義](../../calculus/derivative-definition/)：微分可能、微分係数を差分商の極限で定めること、平方根の関数の連続性（補題）、「逆数の関数」の節の $\left(\dfrac1x\right)'=-\dfrac{1}{x^2}$
+- [関数の連続性](../../calculus/continuity-of-functions/)：
+  - 開区間 $(a,b)$・閉区間 $[a,b]$ の記法、開区間の性質（補題）
+  - 端点が無限の開区間の記法 $(0,\infty)$・$(-\infty,\infty)$
+- [微分係数と導関数の定義](../../calculus/derivative-definition/)：
+  - 微分可能、微分係数を差分商の極限で定めること、導関数が 0 の関数は定数関数である（系）
+  - 平方根の関数の連続性（補題）、「逆数の関数」の節の $\left(\dfrac1x\right)'=-\dfrac{1}{x^2}$
 - [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律（定理）
 - [微分の基本公式](../../calculus/basic-differentiation-rules/)：和・定数倍の微分、$x^n$ の微分
 - [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$(e^x)'=e^x$・$(\sin x)'=\cos x$・$(\cos x)'=-\sin x$・$(\ln x)'=\dfrac1x$、実数乗の微分（定理）
 - [定積分とリーマン和](../../calculus/definite-integrals-and-riemann-sums/)：定積分の線形性（定理）、下端と上端の約束（定義）
-- [不定積分の定義](../../calculus/indefinite-integrals/)：開区間の性質（補題）、導関数が 0 の関数は定数関数である（系の拡張）、端点が無限の開区間の記法 $(0,\infty)$・$(-\infty,\infty)$、累乗の不定積分（定理）
-- [指数・対数・三角関数の積分](../../calculus/integrals-of-elementary-functions/)：指数関数の不定積分、正弦・余弦の不定積分
+- [不定積分の定義](../../calculus/indefinite-integrals/)：累乗の不定積分（定理）、指数関数の不定積分、正弦・余弦の不定積分
 - [微分積分学の基本定理](../../calculus/fundamental-theorem-of-calculus/)：
   - 開区間で連続な関数の定積分（補題）、微分積分学の基本定理 1・2
   - 導関数の定積分（系）、連続関数の原始関数の存在（系）、差を表す角括弧の記号
@@ -812,7 +815,7 @@ $C_3$ の値を補う。
 - **記号.** $I_1\times I_2$ は「アイ・イチ・クロス・アイ・ニ」と読む。[重積分（二重積分）](../../multivariable-calculus/double-integrals/)の章の長方形 $[a,b]\times[c,d]$ と同じ書き方であり、閉区間を開区間に替えたものである。
 - **例.** $\mathbb{R}^2=(-\infty,\infty)\times(-\infty,\infty)$ である。右半平面 $\{(x,y)\mid x>0\}$ は $(0,\infty)\times(-\infty,\infty)$ である。$\mathbb{R}^3$ も開いた直方体である。
 - **開集合である.** 点 $(x_0,y_0)$ について、$x_0$ から $I_1$ の有限な端点までの距離と、$y_0$ から $I_2$ の有限な端点までの距離を考える。距離のうち最小のものを $\rho$ とする。端点がすべて無限なら $\rho=1$ とする。多変数関数の極限と連続性の章の座標の差と距離の定理より、半径 $\rho$ の円の内側の点 $(x,y)$ は $\lvert x-x_0\rvert<\rho$・$\lvert y-y_0\rvert<\rho$ を満たす。よって、点は $I_1\times I_2$ に属する。
-- **つながっている.** 2 点 $(a,b)$・$(x,y)$ を、横の線分と縦の線分の折れ線で結べる。不定積分の定義の章の開区間の性質の補題より、線分の点はどれも $I_1\times I_2$ に属する。2 点の $x$ 座標または $y$ 座標が等しいときは、線分 1 本で結ぶ。
+- **つながっている.** 2 点 $(a,b)$・$(x,y)$ を、横の線分と縦の線分の折れ線で結べる。関数の連続性の章の開区間の性質の補題より、線分の点はどれも $I_1\times I_2$ に属する。2 点の $x$ 座標または $y$ 座標が等しいときは、線分 1 本で結ぶ。
 - **空間でも同じ.** 開いた直方体も、球の内側と 3 つの座標の差を使って同じように開集合と分かる。座標軸に平行な 3 本の線分の折れ線で 2 点を結べるから、つながった開集合である。
 
 ### L 字形の 2 つの経路
@@ -1174,7 +1177,7 @@ $\arctan\dfrac yx$ は $x=0$ の点で定義されない。$y$ 軸と交わる�
 
 手順の理由を補う。
 
-- **手順 2 で $\varphi=\Phi+h(y)$ と書ける理由.** ポテンシャル $\varphi$ について、$y$ を固定すると、$x$ の関数 $\varphi-\Phi$ の導関数は $P-P=0$ である。$x$ の動く範囲は開区間 $I_1$ だから、不定積分の定義の章の系の拡張より、$\varphi-\Phi$ は $x$ によらない。$x$ によらない値を $h(y)$ と書く。
+- **手順 2 で $\varphi=\Phi+h(y)$ と書ける理由.** ポテンシャル $\varphi$ について、$y$ を固定すると、$x$ の関数 $\varphi-\Phi$ の導関数は $P-P=0$ である。$x$ の動く範囲は開区間 $I_1$ だから、微分係数と導関数の定義の章の導関数が 0 の関数は定数関数である（系）より、$\varphi-\Phi$ は $x$ によらない。$x$ によらない値を $h(y)$ と書く。
 - **手順 3 で右辺が $y$ だけの式になる理由.** $\varphi$ と $\Phi$ は $y$ について偏微分可能だから、$h(y)=\varphi-\Phi$ も微分可能であり、$h'(y)=\varphi_y-\Phi_y=Q-\Phi_y$ である。左辺は $x$ によらない。
 - **開いた長方形を前提とする理由.** $x$ の動く範囲が開区間にならない定義域では、手順 2 の推論が使えない。
 

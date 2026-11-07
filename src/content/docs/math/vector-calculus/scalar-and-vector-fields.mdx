@@ -58,11 +58,12 @@ export const quietTicks4 = [-4, -3, -2, -1, 1, 2, 3, 4].map((v) => ({ value: v, 
 - [微分係数と導関数の定義](../../calculus/derivative-definition/)：
   - 微分可能、微分係数を差分商の極限で定めること
   - 平方根の関数の連続性（補題）、「逆数の関数」の節の $\left(\dfrac1x\right)'=-\dfrac{1}{x^2}$
+  - 導関数が 0 の関数は定数関数である（系）
 - [微分の基本公式](../../calculus/basic-differentiation-rules/)：和・定数倍の微分
 - [積・商の微分法](../../calculus/product-and-quotient-rules/)：商の微分
 - [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$(\sin t)'=\cos t$・$(\cos t)'=-\sin t$、自然対数の記号 $\ln$
 - [関数の極限](../../calculus/function-limits/)：極限の符号（補題）
-- [不定積分の定義](../../calculus/indefinite-integrals/)：導関数が 0 の関数は定数関数である（系の拡張）、記法 $(-\infty,\infty)$
+- [関数の連続性](../../calculus/continuity-of-functions/)：端点が無限の開区間の記法 $(-\infty,\infty)$
 - [三角比の拡張](../../functions/extension-of-trigonometric-ratios/)：動径と角、単位円の上の点 $(\cos\theta,\sin\theta)$
 - [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：弧度法、$\cos\dfrac{\pi}{2}=0$・$\sin\dfrac{\pi}{2}=1$・$\cos2\pi=1$・$\sin2\pi=0$ などの値
 - [加法定理](../../functions/addition-theorems/)：加法定理、相互関係 $\cos^2\theta+\sin^2\theta=1$
@@ -1098,7 +1099,7 @@ $f(1,1)=0$ だから、$t>0$ で値は増え、$t<0$ で値は減る。$t=0$ で
    g'(x)=f_x(x,y)+y=-y+y=0
    $$
 
-2. **定数であることを使う.** $g$ は開区間 $(-\infty,\infty)$ で微分可能であり、導関数はつねに $0$ である。[不定積分の定義](../../calculus/indefinite-integrals/)の章の「導関数が 0 の関数は定数関数である（系の拡張）」より、$g$ は定数関数であり、$g(x)=g(0)=f(0,y)$ である。$h(y)=f(0,y)$ とおくと、すべての点で次が成り立つ。
+2. **定数であることを使う.** $g$ は開区間 $(-\infty,\infty)$ で微分可能であり、導関数はつねに $0$ である。[微分係数と導関数の定義](../../calculus/derivative-definition/)の章の「導関数が 0 の関数は定数関数である（系）」より、$g$ は定数関数であり、$g(x)=g(0)=f(0,y)$ である。$h(y)=f(0,y)$ とおくと、すべての点で次が成り立つ。
 
    $$
    f(x,y)=-xy+h(y)
@@ -1402,7 +1403,7 @@ $$
 
 背理法で示す。$\mathbb{R}^2$ のすべての点で偏微分可能であり、すべての点で $f_x=y$・$f_y=0$ を満たすスカラー場 $f$ があると仮定する。
 
-1. $y$ を固定し、$g(x)=f(x,y)-xy$ とおく。$g'(x)=f_x(x,y)-y=0$ だから、系の拡張より $g$ は定数関数である。$h(y)=f(0,y)$ とおくと、$f(x,y)=xy+h(y)$ である。
+1. $y$ を固定し、$g(x)=f(x,y)-xy$ とおく。$g'(x)=f_x(x,y)-y=0$ だから、導関数が 0 の関数の系より $g$ は定数関数である。$h(y)=f(0,y)$ とおくと、$f(x,y)=xy+h(y)$ である。
 2. $h'(y)=f_y(0,y)=0$ である。
 3. $x$ を固定して $y$ について微分すると、$f_y(x,y)=x+h'(y)=x$ である。仮定 $f_y=0$ より、すべての $x$ で $x=0$ となる。$x=1$ で矛盾する。
 
@@ -1430,7 +1431,7 @@ $\vec{F}=(-y,x)$ が $\mathbb{R}^2$ 上の勾配場でないことを、次の�
 
    最後の等号は、相互関係 $\cos^2t+\sin^2t=1$ による。
 
-3. $u(t)=g(t)-t$ とおくと、$u'(t)=0$ である。$u$ は「ユー」と読む、本問だけの便宜的な名前である。系の拡張より $u$ は定数関数であり、$g(2\pi)-2\pi=g(0)$、すなわち $g(2\pi)=g(0)+2\pi$ である。一方、$\cos2\pi=1$・$\sin2\pi=0$ だから、$g(2\pi)=f(1,0)=g(0)$ である。2 つを合わせると $2\pi=0$ となり、矛盾する。よって、$(-y,x)$ は $\mathbb{R}^2$ 上の勾配場でない。
+3. $u(t)=g(t)-t$ とおくと、$u'(t)=0$ である。$u$ は「ユー」と読む、本問だけの便宜的な名前である。導関数が 0 の関数の系より $u$ は定数関数であり、$g(2\pi)-2\pi=g(0)$、すなわち $g(2\pi)=g(0)+2\pi$ である。一方、$\cos2\pi=1$・$\sin2\pi=0$ だから、$g(2\pi)=f(1,0)=g(0)$ である。2 つを合わせると $2\pi=0$ となり、矛盾する。よって、$(-y,x)$ は $\mathbb{R}^2$ 上の勾配場でない。
 
 </details>
 

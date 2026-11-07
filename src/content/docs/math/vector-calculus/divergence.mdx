@@ -77,12 +77,12 @@ export const spacePoints = [1, 2].flatMap((r) => [
 - [平面ベクトルの内積](../../vectors/dot-product/)：内積の定義、内積の成分公式、自分自身との内積
 - [空間ベクトルと成分](../../vectors/space-vectors/)：成分表示、内積の成分公式
 - [関数の極限](../../calculus/function-limits/)：収束の定義（誤差の言葉）、右極限と記号 $h\to0^+$
-- [微分係数と導関数の定義](../../calculus/derivative-definition/)：微分可能、差分商
+- [微分係数と導関数の定義](../../calculus/derivative-definition/)：微分可能、差分商、導関数が 0 の関数は定数関数である（系）
 - [微分の基本公式](../../calculus/basic-differentiation-rules/)：和・定数倍の微分、整数乗の微分 $(x^n)'=nx^{n-1}$（$x\neq0$）
 - [積・商の微分法](../../calculus/product-and-quotient-rules/)：積の微分、商の微分
 - [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律
 - [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$(e^x)'=e^x$・$(\sin x)'=\cos x$・$(\cos x)'=-\sin x$
-- [不定積分の定義](../../calculus/indefinite-integrals/)：導関数が 0 の関数は定数関数である（系の拡張）、開区間の記法 $(0,\infty)$
+- [関数の連続性](../../calculus/continuity-of-functions/)：開区間の記法 $(0,\infty)$
 - [平方根と絶対値](../../algebra/square-roots-and-absolute-value/)：絶対値 $\lvert x\rvert$ の定義、「絶対値と平方根の積・商」の節の $\lvert ab\rvert=\lvert a\rvert\:\lvert b\rvert$、三角不等式
 - [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：単位円（原点を中心とする半径 $1$ の円）
 - [集合と要素](../../set/sets-and-elements/)：集合
@@ -1070,7 +1070,7 @@ $\lvert\vec{r}\rvert\ge0$ だから、距離の条件と 2 乗の条件は、多
   u'(t)=2t\,g(t)+t^2g'(t)=t\bigl(2g(t)+t\,g'(t)\bigr)=0
   $$
 
-  [不定積分の定義](../../calculus/indefinite-integrals/)の章の「導関数が 0 の関数は定数関数である（系の拡張）」を、開区間 $(0,\infty)$ で使う。$u$ は定数関数であり、定数を $c$ とおくと $t^2g(t)=c$ である。両辺を $t^2>0$ で割ると、$g(t)=\dfrac{c}{t^2}$ を得る。
+  [微分係数と導関数の定義](../../calculus/derivative-definition/)の章の「導関数が 0 の関数は定数関数である（系）」を、開区間 $(0,\infty)$ で使う。$u$ は定数関数であり、定数を $c$ とおくと $t^2g(t)=c$ である。両辺を $t^2>0$ で割ると、$g(t)=\dfrac{c}{t^2}$ を得る。
 
 - **2 ならば 1.** $g(t)=ct^{-2}$ とする。整数乗の微分より $g'(t)=-2ct^{-3}$ である。$2g(t)+t\:g'(t)=2ct^{-2}-2ct^{-2}=0$ である。原点と異なる点で $t=\lvert\vec{r}\rvert$ とおくと、発散の公式より発散は $0$ である。
 
@@ -1443,7 +1443,7 @@ $e^{-\lvert\vec{r}\rvert^2}>0$ だから、符号は $1-\lvert\vec{r}\rvert^2$ �
   u'(t)=3t^2g(t)+t^3g'(t)=t^2\bigl(3g(t)+t\,g'(t)\bigr)=3t^2
   $$
 
-  $v(t)=u(t)-t^3$ とおく。$v$ は「ブイ」と読む、本問の便宜的な名前である。$v'(t)=3t^2-3t^2=0$ だから、系の拡張より $v$ は $(0,\infty)$ で定数関数である。定数を $c$ とおくと $t^3g(t)=t^3+c$、すなわち $g(t)=1+\dfrac{c}{t^3}$ である。
+  $v(t)=u(t)-t^3$ とおく。$v$ は「ブイ」と読む、本問の便宜的な名前である。$v'(t)=3t^2-3t^2=0$ だから、導関数が 0 の関数の系より $v$ は $(0,\infty)$ で定数関数である。定数を $c$ とおくと $t^3g(t)=t^3+c$、すなわち $g(t)=1+\dfrac{c}{t^3}$ である。
 
 - **十分性.** $g(t)=1+ct^{-3}$ なら、$3g(t)+t\:g'(t)=3+3ct^{-3}-3ct^{-3}=3$ である。
 
