@@ -51,19 +51,21 @@ export const phiQ = (u) => (Math.PI / 4) * (u * u + u);
 - [積・商の微分法](../../calculus/product-and-quotient-rules/)：積の微分（定理）
 - [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律（定理）
 - [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$(\sin t)'=\cos t$・$(\cos t)'=-\sin t$・$(e^t)'=e^t$
-- [関数の連続性](../../calculus/continuity-of-functions/)：開区間 $(a,b)$・閉区間 $[a,b]$ の記法、狭義単調（定義）、連続性と四則演算（定理）、中間値の定理（承認事項）、最大値・最小値の定理（承認事項）
+- [関数の連続性](../../calculus/continuity-of-functions/)：
+  - 開区間 $(a,b)$・閉区間 $[a,b]$ の記法、端点が無限の開区間の記法 $(-\infty,\infty)$、狭義単調（定義）
+  - 連続性と四則演算（定理）、合成関数の連続性（補題）、中間値の定理（承認事項）、最大値・最小値の定理（承認事項）
 - [高次導関数と関数の増減](../../calculus/higher-derivatives-and-monotonicity/)：導関数の符号と増減（定理）
 - [定積分とリーマン和](../../calculus/definite-integrals-and-riemann-sums/)：
   - 分割・小区間の幅 $\Delta t_k$・最大幅・代表点・リーマン和・定積分（定義）
   - 連続関数は積分可能である（承認事項）、定数関数の定積分
   - 定積分の線形性（定理）、区間についての加法性（定理）、下端と上端の約束（定義）、最大値・最小値による評価（定理）
-- [不定積分の定義](../../calculus/indefinite-integrals/)：端点が無限の開区間の記法 $(-\infty,\infty)$、$\displaystyle\int x^n\:dx=\frac{x^{n+1}}{n+1}+C$
+- [不定積分の定義](../../calculus/indefinite-integrals/)：$\displaystyle\int x^n\:dx=\frac{x^{n+1}}{n+1}+C$、指数関数の不定積分、正弦・余弦の不定積分
 - [微分積分学の基本定理](../../calculus/fundamental-theorem-of-calculus/)：
   - 積分の平均値の定理、区間における平均値（定義）
   - 開区間で連続な関数の定積分（補題）、上端を変数とする定積分（定義）
   - 微分積分学の基本定理 1・2、差を表す角括弧の記号
-- [指数・対数・三角関数の積分](../../calculus/integrals-of-elementary-functions/)：指数関数の不定積分、正弦・余弦の不定積分、正弦・余弦の 2 乗の不定積分（定理）
-- [置換積分法](../../calculus/integration-by-substitution/)：合成関数の連続性（補題）、定積分の置換（定理）、逆向きの置換（定理）と置き換えの関数の文字 $\varphi$、書き換えの規則 $du=g'(x)\:dx$
+- [三角関数の積分](../../calculus/integrals-of-elementary-functions/)：正弦・余弦の 2 乗の不定積分（定理）
+- [置換積分法](../../calculus/integration-by-substitution/)：定積分の置換（定理）、逆向きの置換（定理）と置き換えの関数の文字 $\varphi$、書き換えの規則 $du=g'(x)\:dx$
 - [三角比の拡張](../../functions/extension-of-trigonometric-ratios/)：弧度法、弧の長さ $\ell=r\theta$、単位円の上の点 $(\cos\theta,\sin\theta)$
 - [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：$\cos$・$\sin$ の代表的な値、周期性と偶奇性
 - [加法定理](../../functions/addition-theorems/)：複号 $\pm$ の記法、相互関係 $\cos^2\theta+\sin^2\theta=1$、余弦の加法定理、半角の公式
@@ -417,7 +419,7 @@ $-C$ の表示 $\vec{r}(a+b-t)$ について、次の 3 点を確かめる。
    \frac{d}{dt}\,\vec{r}(a+b-t)=-\vec{r}\,'(a+b-t)
    $$
 
-   右辺の成分は、[置換積分法](../../calculus/integration-by-substitution/)の章の合成関数の連続性の補題より $I_1$ で連続である。$\vec{r}\:'(a+b-t)\neq\vec{0}$ だから、右辺は零ベクトルでない。$-C$ も滑らかな曲線である。
+   右辺の成分は、[関数の連続性](../../calculus/continuity-of-functions/)の章の合成関数の連続性の補題より $I_1$ で連続である。$\vec{r}\:'(a+b-t)\neq\vec{0}$ だから、右辺は零ベクトルでない。$-C$ も滑らかな曲線である。
 
 接ベクトルは、各点で $C$ の接ベクトルの逆ベクトルになる。進む向きが反転することと一致する。
 
@@ -524,7 +526,7 @@ $$
 
 1. **$g$ の連続性.** $x'(t)$・$y'(t)$ は $I$ で連続だから、[関数の連続性](../../calculus/continuity-of-functions/)の章の連続性と四則演算の定理より、$g$ は $I$ で連続である。
 2. **$g$ は正.** 滑らかな曲線の条件 2 より、$x'(t)$・$y'(t)$ の少なくとも一方は $0$ でない。よって $g(t)>0$ である。
-3. **平方根との合成.** $\lvert\vec{r}\:'(t)\rvert=\sqrt{g(t)}$ である。[微分係数と導関数の定義](../../calculus/derivative-definition/)の章の平方根の関数の連続性の補題より、$\sqrt{\ }$ は開区間 $(0,\infty)$ の各点で連続である。[置換積分法](../../calculus/integration-by-substitution/)の章の合成関数の連続性の補題を、内側の関数 $g$・外側の関数 $\sqrt{\ }$ として使う。$\sqrt{g(t)}$ は $I$ で連続である。
+3. **平方根との合成.** $\lvert\vec{r}\:'(t)\rvert=\sqrt{g(t)}$ である。[微分係数と導関数の定義](../../calculus/derivative-definition/)の章の平方根の関数の連続性の補題より、$\sqrt{\ }$ は開区間 $(0,\infty)$ の各点で連続である。[関数の連続性](../../calculus/continuity-of-functions/)の章の合成関数の連続性の補題を、内側の関数 $g$・外側の関数 $\sqrt{\ }$ として使う。$\sqrt{g(t)}$ は $I$ で連続である。
 
 空間の曲線では、$g(t)$ に $z'(t)^2$ が加わるだけである。証明を終わる。
 

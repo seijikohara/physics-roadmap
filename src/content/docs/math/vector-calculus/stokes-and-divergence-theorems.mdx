@@ -128,8 +128,8 @@ export const solidSideN = { x: Math.cos(-Math.PI / 4), y: Math.sin(-Math.PI / 4)
 - [定積分とリーマン和](../../calculus/definite-integrals-and-riemann-sums/)：下端と上端の約束（定義）
 - [積・商の微分法](../../calculus/product-and-quotient-rules/)：積の微分（定理）
 - [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：指数関数 $e^x$ と、$e^x$ が微分可能で導関数が連続であること
-- [不定積分の定義](../../calculus/indefinite-integrals/)：原始関数と、累乗の不定積分
-- [指数・対数・三角関数の積分](../../calculus/integrals-of-elementary-functions/)：正弦・余弦の不定積分（定理）、正弦・余弦の 2 乗の不定積分（定理）
+- [不定積分の定義](../../calculus/indefinite-integrals/)：原始関数と、累乗の不定積分、正弦・余弦の不定積分（定理）
+- [三角関数の積分](../../calculus/integrals-of-elementary-functions/)：正弦・余弦の 2 乗の不定積分（定理）
 - [加法定理](../../functions/addition-theorems/)：相互関係 $\cos^2\theta+\sin^2\theta=1$
 - [平方根と絶対値](../../algebra/square-roots-and-absolute-value/)：絶対値 $\lvert x\rvert$（「$x$ の絶対値」）
 - [集合と要素](../../set/sets-and-elements/)：記号 $\in$（に属する）・$\subset$（部分集合）
@@ -1753,7 +1753,7 @@ $$
 
 $\cos\theta$・$\sin\theta$ の項は、$\theta$ の積分で $0$ になる。$1$ の項は、単位円板の面積 $\pi$ である。
 
-**右辺.** 向きのそろった境界は $(\cos t,\ \sin t,\ 0)$（$0\le t\le2\pi$）である。場の値は $(0,\ \cos t,\ \sin t)$ である。接ベクトル $(-\sin t,\ \cos t,\ 0)$ との内積は $\cos^2t$ である。[指数・対数・三角関数の積分](../../calculus/integrals-of-elementary-functions/)の章の正弦・余弦の 2 乗の不定積分より、次を得る。
+**右辺.** 向きのそろった境界は $(\cos t,\ \sin t,\ 0)$（$0\le t\le2\pi$）である。場の値は $(0,\ \cos t,\ \sin t)$ である。接ベクトル $(-\sin t,\ \cos t,\ 0)$ との内積は $\cos^2t$ である。[三角関数の積分](../../calculus/integrals-of-elementary-functions/)の章の正弦・余弦の 2 乗の不定積分より、次を得る。
 
 $$
 \oint_C\vec{F}\cdot d\vec{r}=\int_0^{2\pi}\cos^2t\,dt=\Bigl[\frac t2+\frac{\sin2t}{4}\Bigr]_0^{2\pi}=\pi

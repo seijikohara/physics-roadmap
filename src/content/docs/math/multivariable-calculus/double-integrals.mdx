@@ -45,9 +45,9 @@ import SurfacePlot from "../../../../components/SurfacePlot";
   - 区間における平均値（定義）と、値の平均から平均値を導く考え方
   - 積分の平均値の定理
   - 2 曲線の間の図形の面積（定義）
-- [不定積分の定義](../../calculus/indefinite-integrals/)：原始関数（定義）、累乗の不定積分（定理）
-- [指数・対数・三角関数の積分](../../calculus/integrals-of-elementary-functions/)：
-  - 指数関数の不定積分（定理）、正弦・余弦の不定積分（定理）、一次式を代入した指数関数・三角関数（系）
+- [不定積分の定義](../../calculus/indefinite-integrals/)：原始関数（定義）、累乗の不定積分（定理）、指数関数の不定積分（定理）、正弦・余弦の不定積分（定理）
+- [置換積分法](../../calculus/integration-by-substitution/)：一次式を代入した指数関数・三角関数（系）
+- [三角関数の積分](../../calculus/integrals-of-elementary-functions/)：
   - 平方の大小（補題）と、平方根についての使い方
   - 半円の関数の連続性（補題）
   - 円の面積（定理）と、証明の次の 2 つの手順
@@ -1337,7 +1337,7 @@ $$
 例を挙げる。
 
 - **長方形.** $[a,b]\times[c,d]$ は、$g_1(x)=c$・$g_2(x)=d$ とした縦線領域である。$h_1(y)=a$・$h_2(y)=b$ とした横線領域でもある。
-- **円板.** 原点を中心とする半径 $r$ の円板 $\{(x,y)\mid x^2+y^2\le r^2\}$ は、縦線領域である。$-r\le x\le r$ で $g_1(x)=-\sqrt{r^2-x^2}$・$g_2(x)=\sqrt{r^2-x^2}$ とすればよい。[指数・対数・三角関数の積分](../../calculus/integrals-of-elementary-functions/)の章の円の面積（定理）の証明の手順 1 で確かめたことである。$g_1$・$g_2$ の連続性は、半円の関数の連続性（補題）による。
+- **円板.** 原点を中心とする半径 $r$ の円板 $\{(x,y)\mid x^2+y^2\le r^2\}$ は、縦線領域である。$-r\le x\le r$ で $g_1(x)=-\sqrt{r^2-x^2}$・$g_2(x)=\sqrt{r^2-x^2}$ とすればよい。[三角関数の積分](../../calculus/integrals-of-elementary-functions/)の章の円の面積（定理）の証明の手順 1 で確かめたことである。$g_1$・$g_2$ の連続性は、半円の関数の連続性（補題）による。
 
 縦線領域 $D$ は、ある長方形に含まれる。次の手順で確かめる。
 
@@ -1873,7 +1873,7 @@ $D_1$ と $D_2$ は、縦の線分 $x=p$ または曲線 $y=\varphi(x)$ を共�
 
 - **長方形.** 定数関数の二重積分より、$\displaystyle\iint_R 1\,dA=(b-a)(d-c)$ である。
 - **2 曲線の間の図形.** $D$ が縦線領域のとき、累次積分の内側は $\displaystyle\int_{g_1(x)}^{g_2(x)}1\,dy=g_2(x)-g_1(x)$ である。よって $\displaystyle\iint_D 1\,dA=\int_a^b\{g_2(x)-g_1(x)\}\,dx$ である。右辺は、[微分積分学の基本定理](../../calculus/fundamental-theorem-of-calculus/)の章の 2 曲線の間の図形の面積（定義）に一致する。
-- **円板.** 半径 $r$ の円板では、$g_2(x)-g_1(x)=2\sqrt{r^2-x^2}$ である。[指数・対数・三角関数の積分](../../calculus/integrals-of-elementary-functions/)の章の円の面積（定理）より、面積は $\pi r^2$ である。
+- **円板.** 半径 $r$ の円板では、$g_2(x)-g_1(x)=2\sqrt{r^2-x^2}$ である。[三角関数の積分](../../calculus/integrals-of-elementary-functions/)の章の円の面積（定理）より、面積は $\pi r^2$ である。
 
 例 4 の領域 $D$ の面積は、$\displaystyle\int_0^1(x-x^2)\,dx=\frac12-\frac13=\frac16$ である。
 
@@ -2304,7 +2304,7 @@ $n\to\infty$ の極限は $\dfrac14$ である。変数を分けた関数の二�
    \int_0^{\pi/2}y\cos(xy)\,dx=\bigl[\sin(xy)\bigr]_{x=0}^{x=\pi/2}=\sin\frac{\pi y}{2}
    $$
 
-   一次式を代入した三角関数（系）より、$\sin\dfrac{\pi y}{2}$ の原始関数は $-\dfrac2\pi\cos\dfrac{\pi y}{2}$ である。
+   一次式を代入した指数関数・三角関数（系）より、$\sin\dfrac{\pi y}{2}$ の原始関数は $-\dfrac2\pi\cos\dfrac{\pi y}{2}$ である。
 
    $$
    \int_0^1\sin\frac{\pi y}{2}\,dy=\left[-\frac2\pi\cos\frac{\pi y}{2}\right]_0^1=-\frac2\pi\cdot0+\frac2\pi\cdot1=\frac2\pi

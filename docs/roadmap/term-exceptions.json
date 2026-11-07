@@ -1424,19 +1424,10 @@
       "chapters": ["math/complex-numbers/polar-form"]
     },
     {
-      "term": "点を含まない開区間",
-      "kind": "複合語",
-      "reason": "上流の語の組み合わせである。",
-      "chapters": ["math/calculus/fundamental-theorem-of-calculus"]
-    },
-    {
       "term": "積分の順序",
       "kind": "複合語",
       "reason": "「微分と積分の順序」の一部を拾う。操作の順序の話で、累次積分の順序ではない。",
-      "chapters": [
-        "math/calculus/indefinite-integrals",
-        "math/calculus/fundamental-theorem-of-calculus"
-      ]
+      "chapters": ["math/calculus/indefinite-integrals"]
     },
     {
       "term": "絶対値を含む不等式",
