@@ -43,6 +43,10 @@ jobs:
       - name: Check the roadmap (dependencies and links)
         run: pnpm run roadmap:check
 
+      # 章の本文が上流の外の語を使っていないかを確かめる。
+      - name: Check the terms against the upstream chapters
+        run: pnpm run roadmap:terms --all
+
       - name: Proofread Markdown/MDX (textlint)
         run: pnpm run lint:text
 
