@@ -274,11 +274,7 @@
       "term": "余り",
       "kind": "前提水準の語",
       "reason": "割り算の余りで、前提とする知識の水準である。",
-      "chapters": [
-        "math/algebra/real-number-system",
-        "math/calculus/higher-derivatives-and-monotonicity",
-        "math/calculus/taylor-series"
-      ]
+      "chapters": ["math/algebra/real-number-system", "math/calculus/taylor-series"]
     },
     {
       "term": "係数",
@@ -525,8 +521,7 @@
       "chapters": [
         "math/algebra/real-number-system",
         "math/vectors/cross-product",
-        "math/sequences-and-series/infinite-series",
-        "math/calculus/product-and-quotient-rules"
+        "math/sequences-and-series/infinite-series"
       ]
     },
     {
@@ -592,7 +587,6 @@
       "reason": "図の枠や糸の端の日常の意味で使う。",
       "chapters": [
         "math/sequences-and-series/limits-of-sequences",
-        "math/calculus/product-and-quotient-rules",
         "physics/classical-mechanics/quantities-units-and-dimensions"
       ]
     },
@@ -844,7 +838,6 @@
         "math/coordinate-geometry/circles-and-loci",
         "math/sequences-and-series/arithmetic-sequences",
         "math/calculus/derivative-definition",
-        "math/calculus/concavity-and-curve-sketching",
         "math/multivariable-calculus/multivariable-functions-and-domains",
         "math/multivariable-calculus/partial-derivatives",
         "math/multivariable-calculus/directional-derivatives",
@@ -964,7 +957,6 @@
         "math/functions/polynomial-and-rational-functions",
         "math/calculus/function-limits",
         "math/calculus/derivative-definition",
-        "math/calculus/basic-differentiation-rules",
         "math/calculus/product-and-quotient-rules",
         "math/calculus/chain-rule",
         "math/calculus/derivatives-of-elementary-functions",
@@ -1037,8 +1029,6 @@
       "kind": "日常語",
       "reason": "大きさを見積もる意味で使う。定積分の評価の用語の外でも一般的な言い方である。",
       "chapters": [
-        "math/calculus/chain-rule",
-        "math/calculus/derivatives-of-elementary-functions",
         "math/calculus/higher-derivatives-and-monotonicity",
         "math/calculus/linear-approximation",
         "math/calculus/taylor-series",
@@ -1060,11 +1050,8 @@
         "math/calculus/function-limits",
         "math/calculus/euler-number-and-key-limits",
         "math/calculus/derivative-definition",
-        "math/calculus/product-and-quotient-rules",
-        "math/calculus/chain-rule",
         "math/calculus/derivatives-of-elementary-functions",
         "math/calculus/partial-fractions-and-rational-integrals",
-        "math/calculus/higher-derivatives-and-monotonicity",
         "math/calculus/concavity-and-curve-sketching",
         "math/calculus/definite-integrals-and-riemann-sums",
         "math/calculus/fundamental-theorem-of-calculus",
@@ -1401,12 +1388,6 @@
       "chapters": ["math/calculus/higher-derivatives-and-monotonicity"]
     },
     {
-      "term": "中点での値",
-      "kind": "複合語",
-      "reason": "中点と値を組み合わせた平易な句である。",
-      "chapters": ["math/vector-calculus/divergence", "math/vector-calculus/greens-theorem"]
-    },
-    {
       "term": "単位法線ベクトル",
       "kind": "複合語",
       "reason": "単位ベクトルと法線ベクトルは上流の語であり、組み合わせただけである。",
@@ -1501,12 +1482,6 @@
       "chapters": ["math/complex-numbers/de-moivres-theorem"]
     },
     {
-      "term": "点での連続",
-      "kind": "語の切れ目",
-      "reason": "「各点での連続性」の一部を拾う。章の中で連続性を定義する。",
-      "chapters": ["math/calculus/derivatives-of-elementary-functions"]
-    },
-    {
       "term": "調和",
       "kind": "語の切れ目",
       "reason": "「調和級数」の一部を拾う。調和関数の調和とは関係しない。",
@@ -1523,8 +1498,6 @@
       "kind": "日常語",
       "reason": "向きが逆であるという日常の意味で使う。線積分の章の定義は曲線の向きに限る。",
       "chapters": [
-        "math/calculus/derivative-definition",
-        "math/calculus/derivatives-of-elementary-functions",
         "math/calculus/higher-derivatives-and-monotonicity",
         "math/calculus/concavity-and-curve-sketching",
         "math/multivariable-calculus/graphs-and-level-curves",
