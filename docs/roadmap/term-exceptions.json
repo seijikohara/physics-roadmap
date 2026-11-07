@@ -673,7 +673,6 @@
         "math/coordinate-geometry/conic-sections",
         "math/sequences-and-series/limits-of-sequences",
         "math/calculus/euler-number-and-key-limits",
-        "math/calculus/continuity-of-functions",
         "math/calculus/basic-differentiation-rules"
       ]
     },
@@ -1408,12 +1407,6 @@
       "chapters": ["math/vector-calculus/divergence", "math/vector-calculus/greens-theorem"]
     },
     {
-      "term": "内部の点",
-      "kind": "複合語",
-      "reason": "区間の内側の点を言う平易な句である。",
-      "chapters": ["math/calculus/continuity-of-functions", "math/calculus/derivative-definition"]
-    },
-    {
       "term": "単位法線ベクトル",
       "kind": "複合語",
       "reason": "単位ベクトルと法線ベクトルは上流の語であり、組み合わせただけである。",
@@ -1524,6 +1517,23 @@
       "kind": "語の切れ目",
       "reason": "「面積」と「分割」の並びを誤って拾う。",
       "chapters": ["math/algebra/polynomial-expansion"]
+    },
+    {
+      "term": "逆向き",
+      "kind": "日常語",
+      "reason": "向きが逆であるという日常の意味で使う。線積分の章の定義は曲線の向きに限る。",
+      "chapters": [
+        "math/calculus/derivative-definition",
+        "math/calculus/derivatives-of-elementary-functions",
+        "math/calculus/higher-derivatives-and-monotonicity",
+        "math/calculus/concavity-and-curve-sketching",
+        "math/multivariable-calculus/graphs-and-level-curves",
+        "math/multivariable-calculus/partial-derivatives",
+        "math/multivariable-calculus/total-differential-and-tangent-planes",
+        "math/multivariable-calculus/gradient",
+        "math/multivariable-calculus/directional-derivatives",
+        "math/multivariable-calculus/lagrange-multipliers"
+      ]
     }
   ]
 }
