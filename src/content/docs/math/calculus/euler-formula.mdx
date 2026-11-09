@@ -1,0 +1,510 @@
+---
+title: オイラーの公式
+description: 複素数の列と級数の収束を実部と虚部の収束で定め、e^x の級数を手本に e^{iθ} を級数で定義する。虚数単位の累乗の周期性で級数を実部と虚部に分け、余弦と正弦のマクローリン級数と比べて、オイラーの公式 e^{iθ}=cos θ+i sin θ を導く。部分和が近づく様子、単位円上の点 e^{iθ}、e^{iπ}+1=0、極形式 z=re^{iθ}、積の指数法則とド・モアブルの定理との整合を扱う。
+sidebar:
+  order: 14
+---
+
+import FlowChart from "../../../../components/FlowChart";
+import FunctionGraph from "../../../../components/FunctionGraph";
+
+## 前提
+
+本章の前提は次の章である。
+
+- [テイラーの定理とテイラー展開](../taylor-series/)
+- [ド・モアブルの定理](../../complex-numbers/de-moivres-theorem/)
+
+## 学習目標
+
+本章を読むと、次の概念と数式を使えるようになる。
+
+- 複素数の列と級数の収束の定義、$e^{i\theta}$ の級数による定義、オイラーの公式 $e^{i\theta}=\cos\theta+i\sin\theta$
+- 帰結 $e^{i\pi}+1=0$、極形式 $z=re^{i\theta}$、$e^{i\alpha}e^{i\beta}=e^{i(\alpha+\beta)}$、$(e^{i\theta})^n=e^{in\theta}$
+
+## 実数の指数から虚数の指数へ
+
+[テイラーの定理とテイラー展開](../taylor-series/)の章では、$e^x$・$\sin x$・$\cos x$ が、すべての実数で無限級数の和に一致することを示した。本章では、$e^x$ の級数を手本にして、虚数 $i\theta$ を指数とする $e^{i\theta}$ を定める。級数を比べて、オイラーの公式 $e^{i\theta}=\cos\theta+i\sin\theta$ を導く。
+
+### 本章の結果の関係
+
+本章で示す結果と、上流の章の結果との関係を図 1 に示す。
+
+<figure>
+  <FlowChart
+    direction="TB"
+    ariaLabel="本章の結果の関係図。無限級数から複素数の級数の収束を定め、e^{iθ} を定義する。e^x・sin x・cos x の展開と e^{iθ} の定義からオイラーの公式を導き、極形式とド・モアブルの定理と合わせて帰結を得る。"
+    nodes={[
+      { id: "series", label: "無限級数", tone: "done" },
+      { id: "expand", label: "$e^x$、$\\sin x$、\n$\\cos x$ の展開", tone: "done" },
+      { id: "cconv", label: "複素数の級数の\n収束（定義）" },
+      { id: "def", label: "$e^{i\\theta}$ の定義" },
+      { id: "euler", label: "オイラーの公式", tone: "goal" },
+      { id: "polar", label: "極形式と\nド・モアブルの定理", tone: "done" },
+      { id: "cons", label: "$e^{i\\pi}+1=0$ と\n指数法則との整合", tone: "goal" },
+    ]}
+    edges={[
+      { from: "series", to: "cconv" },
+      { from: "cconv", to: "def" },
+      { from: "def", to: "euler" },
+      { from: "expand", to: "euler" },
+      { from: "euler", to: "cons" },
+      { from: "polar", to: "cons" },
+    ]}
+  />
+  <figcaption>
+    <em>
+      図 1. 本章の結果の関係。矢印は「矢印の元の結果を使って、矢印の先の結果を導く」ことを表す。青の箱は上流の章の結果、灰色の箱は本章の途中の結果、黄色の箱は本章の主な到達点である。
+    </em>
+  </figcaption>
+</figure>
+
+## 複素数の級数と虚数の指数
+
+### 複素数の列と級数の収束
+
+$e^x$ の級数は、足し算・掛け算と、自然数 $n!$ による割り算だけでできている。複素数でも四則演算はできるから、$x$ に複素数を代入した式は書ける。残る問題は、無限個の複素数の和の意味である。複素数の列の収束を、実部と虚部の収束で定める。
+
+> **複素数の列の収束（定義）.** 複素数の列 $z_0,z_1,z_2,\ldots$ を、実数 $a_n$・$b_n$ を使って $z_n=a_n+b_ni$ と書く。複素数 $w=p+qi$（$p$・$q$ は実数）について、次の 2 つがともに成り立つとき、列 $\{z_n\}$ は $w$ に**収束する**という。
+>
+> - 実部の数列 $\{a_n\}$ が $p$ に収束する。
+> - 虚部の数列 $\{b_n\}$ が $q$ に収束する。
+>
+> 収束するとき $\displaystyle\lim_{n\to\infty}z_n=w$ と書き、$w$ を列の**極限値**と呼ぶ。
+
+> **複素数の級数の収束（定義）.** 複素数の列 $z_0,z_1,z_2,\ldots$ について、部分和 $\displaystyle\sum_{k=0}^{n}z_k$ の列が $w$ に収束するとき、級数 $\displaystyle\sum_{n=0}^{\infty}z_n$ は $w$ に**収束する**という。$w$ を級数の**和**と呼ぶ。
+
+定義について、次の 2 点を押さえる。
+
+- **実数の場合との整合.** $z_n$ がすべて実数なら、虚部の数列は $0$ が並ぶ数列であり、$0$ に収束する。定義は、実数の数列の収束と同じことを述べる。
+- **図形的な意味.** 複素平面で、点 $z_n$ の横の座標と縦の座標が、点 $w$ の横の座標と縦の座標に近づく。すなわち、点 $z_n$ が点 $w$ に限りなく近づく[^complex-limit]。
+
+複素数の和は、実部どうし・虚部どうしの和である。よって部分和の実部は、各項の実部の和に等しい。級数 $\displaystyle\sum_{n=0}^{\infty}z_n$ が収束するのは、実部の級数と虚部の級数がともに収束するときである。
+
+### 虚数を指数とする累乗の定義
+
+[指数関数](../../functions/exponential-functions/)の章では、底 $a>0$ と実数 $x$ について $a^x$ を定めた。指数が虚数 $i\theta$ のとき、$e^{i\theta}$ はまだ意味を持たない。「$e$ を $i\theta$ 回掛ける」という読み方は成り立たない。
+
+[テイラーの定理とテイラー展開](../taylor-series/)の章の指数関数のマクローリン展開の定理より、実数 $x$ では、$e^x$ は級数 $\displaystyle\sum_{n=0}^{\infty}\frac{x^n}{n!}$ の和に等しい。級数の $x$ に $i\theta$ を代入した式で、$e^{i\theta}$ を新しく定める。
+
+> **虚数を指数とする累乗（定義）.** $\theta$ を実数とする。複素数の級数 $\displaystyle\sum_{n=0}^{\infty}\frac{(i\theta)^n}{n!}$ が収束するとき、和を $e^{i\theta}$ と書く。
+>
+> $$
+> e^{i\theta} = \sum_{n=0}^{\infty}\frac{(i\theta)^n}{n!} = 1+i\theta+\frac{(i\theta)^2}{2!}+\frac{(i\theta)^3}{3!}+\cdots
+> $$
+
+定義について、次の点を押さえる。
+
+- **記号.** $e^{i\theta}$ は「イー・アイ・シータ」または「$e$ の $i\theta$ 乗」と読む。正式な記法である。記号の意味は、上の定義だけで決まる。
+- **定義と定理の区別.** $e^{i\theta}$ は定義である。級数がすべての実数 $\theta$ で収束することと、和が $\cos\theta+i\sin\theta$ に等しいことは、後述の定理で証明する。
+- **0 乗と実数の指数との整合.** $(i\theta)^0=1$ とする。$\theta=0$ のときも、テイラーの定理とテイラー展開の章の 0 乗の約束により $1$ と読む。$\theta=0$ では級数は $1+0+0+\cdots$ であり、和は $1=e^0$ である。
+
+### 虚数単位の累乗の周期性
+
+級数の項 $(i\theta)^n$ を整理する。[複素数の定義と四則演算](../../complex-numbers/definition-and-arithmetic/)の章より、複素数の積は文字式と同じ規則で計算できるから、掛ける順序を入れ替えてよい。$n$ についての数学的帰納法で、$(i\theta)^n=i^n\theta^n$ が成り立つ。
+
+$i$ の累乗を順に計算する。$i^2=-1$ より、$i^3=i^2\cdot i=-i$、$i^4=(i^2)^2=1$ である。
+
+| $n$   | $0$ | $1$ | $2$  | $3$  | $4$ | $5$ | $6$  | $7$  |
+| ----- | --- | --- | ---- | ---- | --- | --- | ---- | ---- |
+| $i^n$ | $1$ | $i$ | $-1$ | $-i$ | $1$ | $i$ | $-1$ | $-i$ |
+
+$i^{n+4}=i^n\cdot i^4=i^n$ だから、値は 4 つごとにくり返す。$j$ を $0$ 以上の整数とすると、次の式が成り立つ。
+
+$$
+i^{2j} = (i^2)^j = (-1)^j, \qquad i^{2j+1} = i^{2j}\cdot i = (-1)^j\,i
+$$
+
+級数の項は、$n$ の偶奇で、実数と虚部だけを持つ数に分かれる。
+
+- **$n=2j$ の項.** $\dfrac{(i\theta)^{2j}}{(2j)!}=\dfrac{(-1)^j\theta^{2j}}{(2j)!}$ であり、実数である。
+- **$n=2j+1$ の項.** $\dfrac{(i\theta)^{2j+1}}{(2j+1)!}=\dfrac{(-1)^j\theta^{2j+1}}{(2j+1)!}\,i$ であり、虚部だけを持つ。
+
+## 級数の比較による導出
+
+### オイラーの公式の導出
+
+級数の実部と虚部は、余弦と正弦のマクローリン級数と同じ形をしている。
+
+$$
+\sum_{n=0}^{\infty}\frac{(i\theta)^n}{n!} = 1+i\theta-\frac{\theta^2}{2!}-i\frac{\theta^3}{3!}+\frac{\theta^4}{4!}+i\frac{\theta^5}{5!}-\cdots
+$$
+
+> **オイラーの公式（定理）.** すべての実数 $\theta$ で、級数 $\displaystyle\sum_{n=0}^{\infty}\frac{(i\theta)^n}{n!}$ は収束し、次の等式が成り立つ。
+>
+> $$
+> e^{i\theta} = \cos\theta+i\sin\theta
+> $$
+
+**証明.** 部分和を $Z_n=\displaystyle\sum_{k=0}^{n}\frac{(i\theta)^k}{k!}$ とおく。$Z_n$ は「ゼット・エヌ」と読み、部分和を表す本章の便宜的な文字である。
+
+1. **部分和を実部と虚部に分ける.** 虚数単位の累乗の周期性の節より、$k$ が偶数の項は実数、奇数の項は虚部だけを持つ。[複素数の定義と四則演算](../../complex-numbers/definition-and-arithmetic/)の章の記法で、$Z_n$ の実部を $\operatorname{Re}Z_n$、虚部を $\operatorname{Im}Z_n$ と書き、「$Z_n$ の実部」「$Z_n$ の虚部」と読む。$Z_n$ の実部と虚部は、次の和である。
+   - **実部 $\operatorname{Re}Z_n$.** $0\le k\le n$ を満たす偶数 $k=2j$ について、$\dfrac{(-1)^j\theta^{2j}}{(2j)!}$ をすべて足した和である。
+   - **虚部 $\operatorname{Im}Z_n$.** $0\le k\le n$ を満たす奇数 $k=2j+1$ について、$\dfrac{(-1)^j\theta^{2j+1}}{(2j+1)!}$ をすべて足した和である。
+
+   例えば $n=4$ では、実部と虚部は次の和である。
+
+   $$
+   \operatorname{Re}Z_4 = 1-\frac{\theta^2}{2!}+\frac{\theta^4}{4!}, \qquad \operatorname{Im}Z_4 = \theta-\frac{\theta^3}{3!}
+   $$
+
+2. **マクローリン多項式と比べる.** テイラーの定理とテイラー展開の章の正弦と余弦のマクローリン多項式の節では、$\cos x$ の $n$ 次のマクローリン多項式を $C_n(x)$、$\sin x$ の $n$ 次のマクローリン多項式を $S_n(x)$ と書いた。同じ節より、$\cos x$ の第 $k$ 次導関数の $x=0$ での値は、$k=2j$ で $(-1)^j$、奇数の $k$ で $0$ である。よって $C_n(\theta)$ は、$\operatorname{Re}Z_n$ と同じ和である。同じく $S_n(\theta)$ は、$\operatorname{Im}Z_n$ と同じ和である。$n=4$ の例は、$C_4(\theta)$ と $S_4(\theta)$ に一致する。
+
+   $$
+   Z_n = C_n(\theta)+i\,S_n(\theta)
+   $$
+
+3. **極限をとる.** テイラーの定理とテイラー展開の章の正弦と余弦のマクローリン展開の定理より、$n\to\infty$ のとき $C_n(\theta)\to\cos\theta$ と $S_n(\theta)\to\sin\theta$ が成り立つ。複素数の列の収束の定義より、$Z_n$ は $\cos\theta+i\sin\theta$ に収束する。
+
+級数は収束し、和は $\cos\theta+i\sin\theta$ である。$e^{i\theta}$ の定義より、定理の等式が成り立つ。証明を終わる。
+
+等式を、オイラー（L. Euler）の名にちなみ**オイラーの公式**と呼ぶ[^euler]。級数の項を実部と虚部に振り分けた形を、次に示す。式の下の波括弧は、括った級数の和が下に書いた値であることを表す。[総和記号](../../sequences-and-series/summation-notation/)の章の下の波括弧は項の個数を表したので、意味が違う。本章だけの便宜的な書き方である。
+
+$$
+e^{i\theta} = \underbrace{\left(1-\frac{\theta^2}{2!}+\frac{\theta^4}{4!}-\cdots\right)}_{\cos\theta}+i\underbrace{\left(\theta-\frac{\theta^3}{3!}+\frac{\theta^5}{5!}-\cdots\right)}_{\sin\theta}
+$$
+
+### 部分和が近づく様子
+
+$\theta=\pi$ で、部分和 $Z_n$ を調べる。オイラーの公式の証明より、$Z_n=C_n(\pi)+i\,S_n(\pi)$ である。図 2 に、部分和を複素平面の点として描く。
+
+{/* 図 2 の媒介変数曲線のうち x=-3.9348 の線分は、矢印 Z_2→Z_3 と同じ線分である。FunctionGraph はラベル配置でベクトルを障害物に数えないため、ラベル Z_3 を矢印から離す回避策として重ねる。 */}
+
+<figure>
+  <FunctionGraph
+    xMin={-4.6}
+    xMax={1.8}
+    yMin={-2.7}
+    yMax={3.7}
+    equalScale
+    xLabel={"\\mathrm{Re}"}
+    yLabel={"\\mathrm{Im}"}
+    xTicks={[]}
+    yTicks={[]}
+    parametrics={[
+      {
+        fn: (t) => ({ x: Math.cos(t), y: Math.sin(t) }),
+        tMin: 0,
+        tMax: 2 * Math.PI,
+        samples: 240,
+        color: "#94a3b8",
+        dashed: true,
+      },
+      {
+        fn: (t) => ({ x: -3.9348, y: t }),
+        tMin: -2.0261,
+        tMax: 3.1416,
+        samples: 60,
+        color: "#3b82f6",
+      },
+    ]}
+    vectors={[
+      { from: { x: 1, y: 0 }, to: { x: 1, y: 3.1416 } },
+      { from: { x: 1, y: 3.1416 }, to: { x: -3.9348, y: 3.1416 } },
+      { from: { x: -3.9348, y: 3.1416 }, to: { x: -3.9348, y: -2.0261 } },
+      { from: { x: -3.9348, y: -2.0261 }, to: { x: 0.1239, y: -2.0261 } },
+      { from: { x: 0.1239, y: -2.0261 }, to: { x: 0.1239, y: 0.524 } },
+      { from: { x: 0.1239, y: 0.524 }, to: { x: -1.2114, y: 0.524 } },
+      { from: { x: -1.2114, y: 0.524 }, to: { x: -1.2114, y: -0.0752 } },
+    ]}
+    points={[
+      { x: 1, y: 0, label: "Z_0" },
+      { x: 1, y: 3.1416, label: "Z_1" },
+      { x: -3.9348, y: 3.1416, label: "Z_2" },
+      { x: -3.9348, y: -2.0261, label: "Z_3" },
+      { x: 0.1239, y: -2.0261, label: "Z_4" },
+      { x: 0.1239, y: 0.524 },
+      { x: -1, y: 0, highlight: true },
+    ]}
+    ariaLabel="複素平面に、θ=π のときの部分和 Z_0 から Z_7 までを矢印でつないだ図。Z_0=1 から上へ Z_1、左へ Z_2、下へ Z_3、右へ Z_4、上へ Z_5 と、矢印は直角に左へ曲がる。4 本目の矢印から短くなり、渦を巻いて橙の点 -1 に近づく。灰色の破線は単位円である。"
+  />
+  <figcaption>
+    <em>
+      図 2. $\theta=\pi$ のときの部分和 $Z_n$ の動き。矢印 1 本が級数の 1 つの項を表す。$Z_0=1$ から始まり、矢印は直角に左へ曲がる。4 本目の矢印から短くなり、橙の点 $-1$ に近づく。灰色の破線は単位円である。
+    </em>
+  </figcaption>
+</figure>
+
+矢印の向きと長さの変わり方を述べる。$k\ge1$ について、番号 $k$ の項 $\dfrac{(i\pi)^k}{k!}$ は、番号 $k-1$ の項に $\dfrac{i\pi}{k}$ を掛けた数である。
+
+- **向き.** $i$ を掛ける操作は $90^\circ$ の回転だから、矢印は直角に左へ曲がる。
+- **長さ.** 正の数 $\dfrac{\pi}{k}$ を掛ける操作は、長さの $\dfrac{\pi}{k}$ 倍である。$k\le3$ では $\dfrac{\pi}{k}>1$ だから矢印は長くなり、$k\ge4$ では $\dfrac{\pi}{k}<1$ だから短くなる。
+
+$n=9$ では $Z_9=-0.9760\ldots+0.0069\ldots i$ であり、$-1$ に近い。
+
+## オイラーの公式の帰結
+
+### 単位円上の点
+
+オイラーの公式から、$e^{i\theta}$ の絶対値と偏角が分かる。相互関係 $\cos^2\theta+\sin^2\theta=1$ より、次の等式が成り立つ。
+
+$$
+\lvert e^{i\theta}\rvert = \sqrt{\cos^2\theta+\sin^2\theta} = 1
+$$
+
+$e^{i\theta}$ は、複素平面の単位円上の点 $(\cos\theta,\ \sin\theta)$ に対応する。$\theta$ は $e^{i\theta}$ の偏角の 1 つである。図 3 に示す。
+
+<figure>
+  <FunctionGraph
+    xMin={-1.5}
+    xMax={1.5}
+    yMin={-1.5}
+    yMax={1.5}
+    equalScale
+    xLabel={"\\mathrm{Re}"}
+    yLabel={"\\mathrm{Im}"}
+    xTicks={[]}
+    yTicks={[]}
+    parametrics={[
+      {
+        fn: (t) => ({ x: Math.cos(t), y: Math.sin(t) }),
+        tMin: 0,
+        tMax: 2 * Math.PI,
+        samples: 240,
+        color: "#94a3b8",
+      },
+      {
+        fn: (t) => ({ x: 0.3 * Math.cos(t), y: 0.3 * Math.sin(t) }),
+        tMin: 0,
+        tMax: 0.9,
+        samples: 48,
+        color: "#f59e0b",
+      },
+    ]}
+    vectors={[{ from: { x: 0, y: 0 }, to: { x: Math.cos(0.9), y: Math.sin(0.9) }, color: "#ef4444" }]}
+    segments={[{ from: { x: Math.cos(0.9), y: 0 }, to: { x: Math.cos(0.9), y: Math.sin(0.9) }, dashed: true }]}
+    points={[
+      { x: Math.cos(0.9), y: Math.sin(0.9), highlight: true, label: "e^{i\\theta}" },
+      { x: 1, y: 0, label: "1" },
+      { x: 0, y: 1, label: "i" },
+      { x: -1, y: 0, label: "-1" },
+      { x: 0, y: -1, label: "-i" },
+    ]}
+    ariaLabel="複素平面の単位円。原点から赤い矢印が単位円上の点 e^{iθ} へ伸び、原点の近くの橙の弧が偏角 θ を表す。点から実軸へ下ろした破線の足は実軸上の cos θ の位置にあり、破線の長さは sin θ である。単位円と軸の交点に 1、i、-1、-i の 4 点がある。"
+  />
+  <figcaption>
+    <em>
+      図 3. 単位円上の点 $e^{i\theta}=\cos\theta+i\sin\theta$（$\theta$ が第 1 象限の角の場合）。赤い矢印は長さ $1$、橙の弧は偏角 $\theta$ を表す。点から実軸へ下ろした破線の足は $\cos\theta$ の位置にあり、破線の長さは $\sin\theta$ である。軸との交点は、$e^{i0}=1$、$e^{i\frac{\pi}{2}}=i$、$e^{i\pi}=-1$、$e^{i\frac{3\pi}{2}}=-i$ である。
+    </em>
+  </figcaption>
+</figure>
+
+$\cos$ と $\sin$ は周期 $2\pi$ を持つから、すべての実数 $\theta$ で $e^{i(\theta+2\pi)}=e^{i\theta}$ である。よって $e^{i\theta}=1$ から $\theta=0$ とは結論できない。例えば $e^{i2\pi}=\cos2\pi+i\sin2\pi=1$ である。
+
+### 円周率を代入した等式
+
+$\theta=\pi$ とおくと、$\cos\pi=-1$・$\sin\pi=0$ より $e^{i\pi}=-1$ である。移項すると、次の等式を得る。
+
+$$
+e^{i\pi}+1 = 0
+$$
+
+等式は、自然対数の底 $e$、虚数単位 $i$、円周率 $\pi$、$1$、$0$ を 1 つの式に含む。等式は、$e^{i\pi}$ の定義とオイラーの公式から導かれる帰結である。図 2 の部分和の渦は、等式を数値で確かめたものにあたる。
+
+### 極形式の新しい書き方
+
+[複素数の極形式](../../complex-numbers/polar-form/)の章では、$z\neq0$ を絶対値 $r$・偏角 $\theta$ を使って $z=r(\cos\theta+i\sin\theta)$ の形で表した。オイラーの公式より、次のように書き直せる。
+
+$$
+z = r(\cos\theta+i\sin\theta) = re^{i\theta}
+$$
+
+$re^{i\theta}$ は、正の実数 $r$ と複素数 $e^{i\theta}$ の積である。例えば $-3$ は絶対値 $3$・偏角 $\pi$ の複素数だから、$-3=3e^{i\pi}$ である。
+
+### 積と指数法則
+
+実数の指数では、指数法則 $a^xa^y=a^{x+y}$ が成り立った。$e^{i\theta}$ は級数で新しく定めた記号だから、指数法則が成り立つかどうかは確かめる必要がある。
+
+> **積の指数法則（定理）.** すべての実数 $\alpha$・$\beta$ で、次の等式が成り立つ。
+>
+> $$
+> e^{i\alpha}e^{i\beta} = e^{i(\alpha+\beta)}
+> $$
+
+**証明.** オイラーの公式より、左辺は $(\cos\alpha+i\sin\alpha)(\cos\beta+i\sin\beta)$ である。複素数の極形式の章の積の計算（加法定理による）より、左辺は $\cos(\alpha+\beta)+i\sin(\alpha+\beta)$ に等しい。オイラーの公式より、右辺も同じ値である。証明を終わる。
+
+定理を極形式に当てはめると、積の規則を 1 行で書ける。
+
+$$
+r_1e^{i\theta_1}\cdot r_2e^{i\theta_2} = r_1r_2\,e^{i(\theta_1+\theta_2)}
+$$
+
+絶対値は積 $r_1r_2$、偏角は和 $\theta_1+\theta_2$ になる。極形式の章の積の規則と同じ内容を、指数法則の形で表している。
+
+### ド・モアブルの定理との整合
+
+[ド・モアブルの定理](../../complex-numbers/de-moivres-theorem/)は、オイラーの公式を使うと次の形になる。$n$ は整数とし、$e^{in\theta}$ は $e^{i(n\theta)}$ を表す。
+
+$$
+(e^{i\theta})^n = (\cos\theta+i\sin\theta)^n = \cos n\theta+i\sin n\theta = e^{in\theta}
+$$
+
+等式は、実数の指数法則 $(a^x)^n=a^{nx}$ と同じ形をしている。ド・モアブルの定理を使って示した等式であり、ド・モアブルの定理の新しい証明ではない。
+
+例えば $(1+\sqrt{3}i)^6$ は、$1+\sqrt{3}i=2e^{i\frac{\pi}{3}}$ を使って計算できる（例題 2）。
+
+## 例題
+
+### 例題 1
+
+$\theta=\dfrac{\pi}{2}$ のとき、部分和 $Z_0$ から $Z_5$ までを求めよ。さらに、$Z_5$ と $e^{i\frac{\pi}{2}}$ の差を、実部と虚部に分けて答えよ。
+
+**解答.** $k\ge1$ では、番号 $k$ の項 $\dfrac{(i\theta)^k}{k!}$ は、番号 $k-1$ の項に $\dfrac{i\theta}{k}$ を掛けた数である。$\theta=\dfrac{\pi}{2}$ では、掛ける数は $\dfrac{i\pi}{2k}$ である。項と部分和を順に求める。値は小数第 5 位を四捨五入した。
+
+| $k$ | 番号 $k$ の項 | 部分和 $Z_k$      |
+| --- | ------------- | ----------------- |
+| $0$ | $1$           | $1$               |
+| $1$ | $1.5708i$     | $1+1.5708i$       |
+| $2$ | $-1.2337$     | $-0.2337+1.5708i$ |
+| $3$ | $-0.6460i$    | $-0.2337+0.9248i$ |
+| $4$ | $0.2537$      | $0.0200+0.9248i$  |
+| $5$ | $0.0797i$     | $0.0200+1.0045i$  |
+
+オイラーの公式より、$e^{i\frac{\pi}{2}}=\cos\dfrac{\pi}{2}+i\sin\dfrac{\pi}{2}=i$ である。$Z_5$ との差は、実部が $0.01996\ldots$、虚部が $0.00452\ldots$ である。
+
+差の大きさを、[テイラーの定理とテイラー展開](../taylor-series/)の章の誤差の上限と比べる。オイラーの公式の証明より、$\operatorname{Re}Z_5=C_5\left(\dfrac{\pi}{2}\right)$ である。同じく、$\operatorname{Im}Z_5=S_5\left(\dfrac{\pi}{2}\right)$ である。差の上限は、テイラーの定理とテイラー展開の章の正弦と余弦のマクローリン多項式の節の不等式で求まる。
+
+| 部分 | 使う不等式                            | 差の上限                                                   | 実際の差        |
+| ---- | ------------------------------------- | ---------------------------------------------------------- | --------------- |
+| 実部 | $C_5$ の誤差、$n=5$                   | $\dfrac{1}{6!}\left(\dfrac{\pi}{2}\right)^6=0.02086\ldots$ | $0.01996\ldots$ |
+| 虚部 | $S_5=S_6$ だから、$S_6$ の誤差、$n=6$ | $\dfrac{1}{7!}\left(\dfrac{\pi}{2}\right)^7=0.00468\ldots$ | $0.00452\ldots$ |
+
+どちらの差も、上限より小さい。$n$ を上げると、部分和は $i$ に近づいていく。
+
+### 例題 2
+
+$1+\sqrt{3}i$ を $re^{i\theta}$ の形で表し、$(1+\sqrt{3}i)^6$ を求めよ。
+
+**解答.** 絶対値は $r=\sqrt{1^2+(\sqrt3)^2}=2$ である。$\cos\theta=\dfrac12$・$\sin\theta=\dfrac{\sqrt3}{2}$ を満たす偏角は $\theta=\dfrac{\pi}{3}$ である。よって $1+\sqrt{3}i=2e^{i\frac{\pi}{3}}$ である。
+
+複素数の積は文字式と同じ規則で計算できるから、$(2e^{i\frac{\pi}{3}})^6=2^6(e^{i\frac{\pi}{3}})^6$ である。ド・モアブルの定理との整合の式で $n=6$ とする。
+
+$$
+(1+\sqrt{3}i)^6 = 2^6\,e^{i\cdot6\cdot\frac{\pi}{3}} = 64\,e^{i2\pi} = 64(\cos2\pi+i\sin2\pi) = 64
+$$
+
+直接の計算でも確かめる。2 乗と 3 乗を順に計算する。
+
+$$
+(1+\sqrt{3}i)^2 = 1+2\sqrt{3}i+3i^2 = -2+2\sqrt{3}i
+$$
+
+$$
+(1+\sqrt{3}i)^3 = (-2+2\sqrt{3}i)(1+\sqrt{3}i) = -2-2\sqrt{3}i+2\sqrt{3}i+6i^2 = -8
+$$
+
+よって $(1+\sqrt{3}i)^6=(-8)^2=64$ であり、一致する。
+
+## 演習問題
+
+### 問題 1
+
+オイラーの公式を使って、次の問いに答えよ。
+
+**(1)** $e^{-i\theta}=\cos\theta-i\sin\theta$ を示せ。ここで $e^{-i\theta}$ は $e^{i(-\theta)}$ を表す。
+
+**(2)** 次の 2 つの等式を示せ。
+
+$$
+\cos\theta = \frac{e^{i\theta}+e^{-i\theta}}{2}, \qquad \sin\theta = \frac{e^{i\theta}-e^{-i\theta}}{2i}
+$$
+
+**(3)** 積の指数法則 $(e^{i\theta})^2=e^{i2\theta}$ の両辺を、実部と虚部に分けよ。分けた式から、2 倍角の公式 $\cos2\theta=\cos^2\theta-\sin^2\theta$・$\sin2\theta=2\sin\theta\cos\theta$ を導け。
+
+**(4)** $1+i$ を $re^{i\theta}$ の形で表し、$(1+i)^8$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+**(1)** オイラーの公式で $\theta$ を $-\theta$ に替えると、$e^{i(-\theta)}=\cos(-\theta)+i\sin(-\theta)$ である。偶奇性 $\cos(-\theta)=\cos\theta$・$\sin(-\theta)=-\sin\theta$ より、$e^{-i\theta}=\cos\theta-i\sin\theta$ である。$e^{-i\theta}$ は $e^{i\theta}$ の共役複素数である。
+
+**(2)** $e^{i\theta}=\cos\theta+i\sin\theta$ と (1) の式を足し引きする。
+
+$$
+e^{i\theta}+e^{-i\theta} = 2\cos\theta, \qquad e^{i\theta}-e^{-i\theta} = 2i\sin\theta
+$$
+
+左の式を $2$ で、右の式を $2i$ で割ると、示すべき等式を得る。
+
+**(3)** 左辺を計算する。
+
+$$
+(\cos\theta+i\sin\theta)^2 = \cos^2\theta+2i\sin\theta\cos\theta+i^2\sin^2\theta = (\cos^2\theta-\sin^2\theta)+i\cdot2\sin\theta\cos\theta
+$$
+
+右辺は $e^{i2\theta}=\cos2\theta+i\sin2\theta$ である。複素数の相等より、実部どうしと虚部どうしが等しい。
+
+| 部分 | 左辺                        | 右辺          |
+| ---- | --------------------------- | ------------- |
+| 実部 | $\cos^2\theta-\sin^2\theta$ | $\cos2\theta$ |
+| 虚部 | $2\sin\theta\cos\theta$     | $\sin2\theta$ |
+
+積の指数法則は、加法定理を使って証明した。よって導出は加法定理と独立な証明ではない。公式を思い出す手段として役に立つ。
+
+**(4)** 絶対値は $r=\sqrt{1^2+1^2}=\sqrt2$ である。$\cos\theta=\sin\theta=\dfrac{1}{\sqrt2}$ を満たす偏角は $\theta=\dfrac{\pi}{4}$ だから、$1+i=\sqrt2\,e^{i\frac{\pi}{4}}$ である。
+
+$$
+(1+i)^8 = (\sqrt2)^8\,e^{i\cdot8\cdot\frac{\pi}{4}} = 16\,e^{i2\pi} = 16
+$$
+
+直接の計算でも、$(1+i)^2=1+2i+i^2=2i$ より、$(1+i)^8=(2i)^4=16i^4=16$ であり、一致する。
+
+</details>
+
+### 問題 2
+
+オイラーの公式を使って、次の問いに答えよ。
+
+**(1)** $e^{i\frac{5\pi}{6}}$ を、実数 $a$・$b$ を使った $a+bi$ の形で表せ。
+
+**(2)** すべての実数 $\theta$ で $e^{i(\theta+\pi)}=-e^{i\theta}$ が成り立つことを、積の指数法則と $e^{i\pi}=-1$ から示せ。さらに、複素平面で 2 点 $e^{i\theta}$ と $e^{i(\theta+\pi)}$ を結ぶ線分の中点を求めよ。
+
+**(3)** $0\le\theta<2\pi$ の範囲で、$e^{i\theta}=-1$ を満たす $\theta$ を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+**(1)** オイラーの公式より、$e^{i\frac{5\pi}{6}}=\cos\dfrac{5\pi}{6}+i\sin\dfrac{5\pi}{6}$ である。$\cos\dfrac{5\pi}{6}=-\dfrac{\sqrt3}{2}$、$\sin\dfrac{5\pi}{6}=\dfrac12$ だから、次の値を得る。
+
+$$
+e^{i\frac{5\pi}{6}} = -\frac{\sqrt3}{2}+\frac12i
+$$
+
+**(2)** 積の指数法則で $\alpha=\theta$、$\beta=\pi$ とおく。$e^{i\pi}=-1$ より、次の等式が成り立つ。
+
+$$
+e^{i(\theta+\pi)} = e^{i\theta}e^{i\pi} = -e^{i\theta}
+$$
+
+$e^{i\theta}$ は点 $(\cos\theta,\ \sin\theta)$ に、$-e^{i\theta}$ は点 $(-\cos\theta,\ -\sin\theta)$ に対応する。中点の座標は、次のとおり原点である。
+
+$$
+\left(\frac{\cos\theta+(-\cos\theta)}{2},\ \frac{\sin\theta+(-\sin\theta)}{2}\right) = (0,\ 0)
+$$
+
+中点は単位円の中心であり、2 点はどちらも単位円上にあるので、2 点を結ぶ線分は単位円の直径である。
+
+**(3)** オイラーの公式より、等式 $e^{i\theta}=-1$ は $\cos\theta+i\sin\theta=-1+0i$ と同じである。複素数の相等より、$\cos\theta=-1$ かつ $\sin\theta=0$ である。単位円上で座標が $(-1,\ 0)$ の点に対応する角は、$0\le\theta<2\pi$ の範囲で $\theta=\pi$ だけである。
+
+</details>
+
+## まとめ
+
+本章は、$e^x$ の級数を手本に $e^{i\theta}$ を定め、オイラーの公式とその帰結を導いた。要点を振り返る。
+
+- **複素数の級数**：複素数の列の収束を実部と虚部の収束で定め、$e^{i\theta}=\displaystyle\sum_{n=0}^{\infty}\frac{(i\theta)^n}{n!}$ と定義した。
+- **オイラーの公式**：$i^n$ の周期性で部分和を実部と虚部に分け、$e^{i\theta}=\cos\theta+i\sin\theta$ を導いた。
+- **単位円と極形式**：帰結として、$e^{i\pi}+1=0$、$\lvert e^{i\theta}\rvert=1$、極形式 $z=re^{i\theta}$ を得た。
+- **指数法則**：$e^{i\alpha}e^{i\beta}=e^{i(\alpha+\beta)}$ と $(e^{i\theta})^n=e^{in\theta}$ は、実数の指数法則と同じ形である。
+
+## 参考文献
+
+オイラーの公式をさらに学ぶための一次資料を挙げる。
+
+- 杉浦光夫『解析入門 I』東京大学出版会、1980 年。級数展開と、指数関数の複素数への拡張を扱う。
+- M. Spivak, _Calculus_（4th ed.）Publish or Perish、2008 年。複素数の級数を、証明つきで丁寧に展開する。
+- L. Euler, _Introductio in analysin infinitorum_, Lausanne、1748 年。第 1 巻第 8 章（§138）で、$e^{iv}=\cos v+i\sin v$ にあたる式を公表した。
+
+[^complex-limit]: 本章の定義は、複素平面上の距離が $0$ に近づくこと、すなわち $\lvert z_n-w\rvert\to0$ と同値である。示すには、次の 3 つの不等式を使う。$\lvert a_n-p\rvert\le\lvert z_n-w\rvert$ と $\lvert b_n-q\rvert\le\lvert z_n-w\rvert$ は、実部・虚部の差が距離以下であることを表す。$\lvert z_n-w\rvert\le\lvert a_n-p\rvert+\lvert b_n-q\rvert$ は、距離が実部・虚部の差の和以下であることを表す。本章の議論は、実部と虚部による定義だけを使う。
+
+[^euler]: オイラー（L. Euler）は 1748 年の著作で、等式にあたる式を公表した。$e^{i\theta}=\cos\theta+i\sin\theta$ を、$e^{i\theta}$ の定義として採る書物もある。本章は級数で定義し、等式を定理として導いた。
