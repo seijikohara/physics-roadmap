@@ -2,7 +2,7 @@
 title: 逆正接関数
 description: 正接を開区間 (-π/2,π/2) に制限し、連続・狭義単調増加で、すべての実数を値に取ることを示す。逆関数として逆正接関数 arctan x を定義し、記法、値の表、奇関数であること、狭義単調増加、グラフと水平漸近線を扱う。逆関数の微分から (arctan x)'=1/(1+x²) を導く。
 sidebar:
-  order: 12
+  order: 14
 ---
 
 import FunctionGraph from "../../../../components/FunctionGraph";
@@ -11,7 +11,8 @@ import FunctionGraph from "../../../../components/FunctionGraph";
 
 本章の前提は次の章である。
 
-- [指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)
+- [三角関数の微分](../derivatives-of-trigonometric-functions/)
+- [逆関数の微分と有理数乗](../inverse-function-derivatives/)
 
 ## 学習目標
 
@@ -23,7 +24,7 @@ import FunctionGraph from "../../../../components/FunctionGraph";
 
 ## 正接を開区間に制限する
 
-本章は、正接 $\tan x$ の逆関数として逆正接関数を定め、性質・グラフ・導関数を調べる。[指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)の章の正接の導関数（定理）は、$(\tan x)'=1+\tan^2x$ であった。$\tan x$ の逆関数を作れば、$\dfrac{1}{1+x^2}$ が導関数として現れると見込める。
+本章は、正接 $\tan x$ の逆関数として逆正接関数を定め、性質・グラフ・導関数を調べる。[三角関数の微分](../derivatives-of-trigonometric-functions/)の章の正接の導関数（定理）は、$(\tan x)'=1+\tan^2x$ であった。$\tan x$ の逆関数を作れば、$\dfrac{1}{1+x^2}$ が導関数として現れると見込める。
 
 ただし、$\tan x$ は定義域の全体では 1 対 1 でない。[三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)の章のとおり周期が $\pi$ であり、$\tan(x+\pi)=\tan x$ となるからである。そこで、定義域を開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ に制限する。開区間の両端は、正接のグラフの漸近線の位置である。
 
@@ -164,7 +165,7 @@ import FunctionGraph from "../../../../components/FunctionGraph";
 
 水平漸近線を、[関数の極限](../function-limits/)の章の誤差の言葉で確かめる。$\displaystyle\lim_{x\to\infty}\arctan x=\frac\pi2$ を示す。
 
-1. **誤差を決める.** [自然対数の底 e と重要な極限](../euler-number-and-key-limits/)の章と同じく、決めた正の誤差を $\varepsilon$ で表す。小さい誤差で示せば大きい誤差でも成り立つから、$\varepsilon<\dfrac\pi2$ としてよい。
+1. **誤差を決める.** [自然対数の底 e](../euler-number-and-key-limits/)の章と同じく、決めた正の誤差を $\varepsilon$ で表す。小さい誤差で示せば大きい誤差でも成り立つから、$\varepsilon<\dfrac\pi2$ としてよい。
 2. **境目の値を選ぶ.** $\theta_0=\dfrac\pi2-\varepsilon$ とおくと、$0<\theta_0<\dfrac\pi2$ である。$x_0=\tan\theta_0$ とおく。
 3. **差を見積もる.** $x>x_0$ とする。逆正接関数の性質（補題）より狭義単調増加だから、$\arctan x>\arctan x_0=\theta_0$ である。値の範囲より $\arctan x<\dfrac\pi2$ である。2 つを合わせると、$0<\dfrac\pi2-\arctan x<\dfrac\pi2-\theta_0=\varepsilon$ である。
 

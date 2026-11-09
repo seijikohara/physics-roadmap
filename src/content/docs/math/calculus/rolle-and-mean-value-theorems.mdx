@@ -2,7 +2,7 @@
 title: ロルの定理と平均値の定理
 description: 開区間の内部で最大値・最小値を取る点で微分可能ならば、微分係数が 0 になることを示す。閉区間で連続な関数の最大値・最小値の定理から、ロルの定理と平均値の定理を証明する。条件が欠けると結論が崩れる例を調べ、開区間で導関数がつねに 0 である関数は定数関数であることを導く。
 sidebar:
-  order: 11
+  order: 13
 ---
 
 import FlowChart from "../../../../components/FlowChart";
@@ -12,7 +12,7 @@ import FunctionGraph from "../../../../components/FunctionGraph";
 
 本章の前提は次の章である。
 
-- [指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)
+- [指数関数と対数関数の微分](../derivatives-of-elementary-functions/)
 
 ## 学習目標
 
@@ -366,7 +366,7 @@ $3c^2=4$ を解くと $c^2=\dfrac43$ であり、$c=\pm\dfrac{2}{\sqrt3}=\pm\dfr
 
 **解答.** $g$ の導関数がつねに $0$ であることを示し、導関数が 0 の関数は定数関数である（系）を使う。
 
-**$g$ の導関数.** [指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)の章の連鎖律と組み合わせた公式で、内側の関数を $-x$ とする。$(-x)'=-1$ だから、$(e^{-x})'=e^{-x}\cdot(-1)=-e^{-x}$ である。[積の微分（定理）](../product-and-quotient-rules/)より、$g$ はすべての実数 $x$ で微分可能であり、次が成り立つ。
+**$g$ の導関数.** [指数関数と対数関数の微分](../derivatives-of-elementary-functions/)の章の連鎖律と組み合わせた公式で、内側の関数を $-x$ とする。$(-x)'=-1$ だから、$(e^{-x})'=e^{-x}\cdot(-1)=-e^{-x}$ である。[積の微分（定理）](../product-and-quotient-rules/)より、$g$ はすべての実数 $x$ で微分可能であり、次が成り立つ。
 
 $$
 g'(x) = f'(x)e^{-x}+f(x)\cdot\bigl(-e^{-x}\bigr) = \bigl(f'(x)-f(x)\bigr)e^{-x} = 0

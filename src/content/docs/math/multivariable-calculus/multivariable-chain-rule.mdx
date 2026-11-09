@@ -63,7 +63,8 @@ import SurfacePlot from "../../../../components/SurfacePlot";
 - [中間値の定理と最大値・最小値の定理](../../calculus/intermediate-and-extreme-value-theorems/)：用語「系」
 - [微分の基本公式](../../calculus/basic-differentiation-rules/)：定数倍・和・差の微分、自然数乗の微分、「x 以外の文字を変数とする微分」の節（記号 $\dfrac{d}{dt}$ と、変数の文字を替えても公式が成り立つこと）
 - [積・商の微分法](../../calculus/product-and-quotient-rules/)：積の微分（定理）、商の微分（定理）
-- [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$e^x$・$\ln x$・$\sin x$・$\cos x$ の導関数、「連鎖律と組み合わせた公式」の表、自然対数の記号 $\ln$
+- [指数関数と対数関数の微分](../../calculus/derivatives-of-elementary-functions/)：$e^x$・$\ln x$ の導関数、「連鎖律と組み合わせた公式」の表、自然対数の記号 $\ln$
+- [三角関数の微分](../../calculus/derivatives-of-trigonometric-functions/)：$\sin x$・$\cos x$ の導関数、「連鎖律と組み合わせた公式」の表
 - [三角比の拡張](../../functions/extension-of-trigonometric-ratios/)：始線と動径、座標による三角比の定義、弧度法と $180^\circ=\pi$ ラジアン、同じ動径を表す角
 - [加法定理](../../functions/addition-theorems/)：相互関係 $\cos^2\theta+\sin^2\theta=1$ と、記号 $\cos^2\theta=(\cos\theta)^2$、複号の記法 $\pm$
 - [円の方程式と軌跡](../../coordinate-geometry/circles-and-loci/)：原点を中心とする半径 $1$ の円の方程式 $x^2+y^2=1$、円の接線と「距離による方法」
@@ -1009,7 +1010,7 @@ $$
 - **原点を除く.** 原点では動径の向きが定まらないので、$r>0$ の点だけを考える。
 - **2 変数関数とみる.** $x$・$y$ を、$r>0$ と実数 $\theta$ の 2 変数関数 $x(r,\theta)=r\cos\theta$・$y(r,\theta)=r\sin\theta$ とみる。
 
-$x(r,\theta)$・$y(r,\theta)$ の偏導関数を求める。$r$ で偏微分するときは $\theta$ を、$\theta$ で偏微分するときは $r$ を定数とみなす。指数・対数・三角関数の微分の章の $(\cos\theta)'=-\sin\theta$・$(\sin\theta)'=\cos\theta$ を使う。
+$x(r,\theta)$・$y(r,\theta)$ の偏導関数を求める。$r$ で偏微分するときは $\theta$ を、$\theta$ で偏微分するときは $r$ を定数とみなす。三角関数の微分の章の $(\cos\theta)'=-\sin\theta$・$(\sin\theta)'=\cos\theta$ を使う。
 
 $$
 \frac{\partial x}{\partial r}=\cos\theta,\qquad \frac{\partial x}{\partial\theta}=-r\sin\theta,\qquad \frac{\partial y}{\partial r}=\sin\theta,\qquad \frac{\partial y}{\partial\theta}=r\cos\theta
@@ -1391,7 +1392,7 @@ $$
    \frac{dz}{dt}=\frac{2e^t\cdot e^t+2e^{-t}\cdot(-e^{-t})}{e^{2t}+e^{-2t}}=\frac{2e^{2t}-2e^{-2t}}{e^{2t}+e^{-2t}}
    $$
 
-   $z=\ln(e^{2t}+e^{-2t})$ を、指数・対数・三角関数の微分の章の「連鎖律と組み合わせた公式」の表で直接微分しても、同じ式になる。
+   $z=\ln(e^{2t}+e^{-2t})$ を、指数関数と対数関数の微分の章の「連鎖律と組み合わせた公式」の表で直接微分しても、同じ式になる。
 
 </details>
 

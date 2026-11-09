@@ -2,7 +2,7 @@
 title: 関数の連続性
 description: 関数がある点で連続であることを、極限値と関数の値の一致として定義し、不連続を分類する。四則演算での保存と多項式関数・有理関数の連続性を導き、区間の記法と区間で連続であることを定める。開区間に収まる範囲・連続な関数への代入・合成関数の連続性・指数関数の連続性を補題として示す。
 sidebar:
-  order: 3
+  order: 4
 ---
 
 import FlowChart from "../../../../components/FlowChart";
@@ -13,7 +13,8 @@ import NumberLine from "../../../../components/NumberLine";
 
 本章の前提は次の章である。
 
-- [自然対数の底 e と重要な極限](../euler-number-and-key-limits/)
+- [自然対数の底 e](../euler-number-and-key-limits/)
+- [合成関数と逆関数](../../functions/composite-and-inverse-functions/)
 - [多項式関数と有理関数](../../functions/polynomial-and-rational-functions/)
 
 ## 学習目標
@@ -509,7 +510,7 @@ $\varepsilon$ は任意の正の数だから、$\varphi(k(h))$ は $\varphi(c)$ 
 
 ### 指数関数の連続性
 
-指数関数 $e^x$ は多項式関数と有理関数のどちらでもないので、ここまでの結果からは連続性がわからない。[自然対数の底 e と重要な極限](../euler-number-and-key-limits/)の章のベルヌーイの不等式から、次の補題を導く。
+指数関数 $e^x$ は多項式関数と有理関数のどちらでもないので、ここまでの結果からは連続性がわからない。[自然対数の底 e](../euler-number-and-key-limits/)の章のベルヌーイの不等式から、次の補題を導く。
 
 > **指数関数の連続性（補題）.** 関数 $e^x$ は、すべての実数で連続である。
 
@@ -539,7 +540,7 @@ $\varepsilon$ は任意の正の数だから、$\varphi(k(h))$ は $\varphi(c)$ 
 
    どちらの場合も、$\lvert e^h-1\rvert<\dfrac{e-1}{n}$ が成り立つ。
 
-3. **$x=0$ での連続性.** 正の数 $\varepsilon$ を決める。自然対数の底 e と重要な極限の章の承認事項「自然数と実数の大小」の 1 つ目より、$\dfrac{e-1}{\varepsilon}<n$ を満たす自然数 $n$ がある。両辺に正の数 $\dfrac{\varepsilon}{n}$ を掛けると、$\dfrac{e-1}{n}<\varepsilon$ である。段階 2 より、$0<\lvert h\rvert<\dfrac1n$ を満たすすべての $h$ で $\lvert e^h-1\rvert<\varepsilon$ となる。よって $\displaystyle\lim_{h\to0}e^h=1=e^0$ であり、$e^x$ は $x=0$ で連続である。
+3. **$x=0$ での連続性.** 正の数 $\varepsilon$ を決める。自然対数の底 e の章の承認事項「自然数と実数の大小」の 1 つ目より、$\dfrac{e-1}{\varepsilon}<n$ を満たす自然数 $n$ がある。両辺に正の数 $\dfrac{\varepsilon}{n}$ を掛けると、$\dfrac{e-1}{n}<\varepsilon$ である。段階 2 より、$0<\lvert h\rvert<\dfrac1n$ を満たすすべての $h$ で $\lvert e^h-1\rvert<\varepsilon$ となる。よって $\displaystyle\lim_{h\to0}e^h=1=e^0$ であり、$e^x$ は $x=0$ で連続である。
 4. **任意の実数 $a$ へ広げる.** $a$ を実数とする。指数法則より $e^{a+h}=e^a\,e^h$ である。段階 3 と極限の定数倍の性質より、$\displaystyle\lim_{h\to0}e^{a+h}=e^a\cdot1=e^a$ である。文字の取り替えより $\displaystyle\lim_{x\to a}e^x=e^a$ であり、$e^x$ は $x=a$ で連続である。
 
 証明を終わる。

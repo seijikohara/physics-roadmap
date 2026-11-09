@@ -2,7 +2,7 @@
 title: 不定積分の定義
 description: 微分の逆向きの操作として、開区間における原始関数を定義する。同じ関数の原始関数どうしの差が定数であることを示し、不定積分 ∫f(x)dx と積分定数 C を導入する。累乗・逆数・指数関数・三角関数の導関数を逆向きに読んで基本の不定積分を求め、線形性を使って多項式関数などの不定積分を計算する。
 sidebar:
-  order: 19
+  order: 21
 ---
 
 import FlowChart from "../../../../components/FlowChart";
@@ -480,7 +480,7 @@ $e^x$ の原始関数の 1 つは、$e^x$ 自身である。微分しても、�
 > \int a^x\,dx = \frac{a^x}{\ln a}+C
 > $$
 
-**証明.** $a\neq1$ だから、[指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)の章の「単調性と 1 対 1」の節より、$\ln a\neq0$ である。一般の底の指数関数の導関数（定理）と定数倍の微分より、すべての実数 $x$ で次の式を得る。
+**証明.** $a\neq1$ だから、[指数関数と対数関数の微分](../derivatives-of-elementary-functions/)の章の「単調性と 1 対 1」の節より、$\ln a\neq0$ である。一般の底の指数関数の導関数（定理）と定数倍の微分より、すべての実数 $x$ で次の式を得る。
 
 $$
 \left(\frac{a^x}{\ln a}\right)' = \frac{a^x\ln a}{\ln a} = a^x
@@ -502,7 +502,7 @@ $$
 > \int\sin x\,dx = -\cos x+C,\qquad \int\cos x\,dx = \sin x+C
 > $$
 
-**証明.** [余弦の導関数（定理）](../derivatives-of-elementary-functions/)と定数倍の微分より、$(-\cos x)'=-(-\sin x)=\sin x$ である。[正弦の導関数（定理）](../derivatives-of-elementary-functions/)より、$(\sin x)'=\cos x$ である。どちらもすべての実数 $x$ で成り立つ。証明を終わる。
+**証明.** [余弦の導関数（定理）](../derivatives-of-trigonometric-functions/)と定数倍の微分より、$(-\cos x)'=-(-\sin x)=\sin x$ である。[正弦の導関数（定理）](../derivatives-of-trigonometric-functions/)より、$(\sin x)'=\cos x$ である。どちらもすべての実数 $x$ で成り立つ。証明を終わる。
 
 符号の付き方は、微分と積分の向きをそろえた表で確かめる。表の各行で、左の列の関数を微分すると中央の列になり、左の列の関数の原始関数の 1 つが右の列になる。
 
@@ -515,7 +515,7 @@ $$
 
 微分すると、表の次の行の関数に移り、4 回で元に戻る。原始関数を求める向きは、微分の逆の順になる。
 
-[正接の導関数（定理）](../derivatives-of-elementary-functions/)からは、次の不定積分が得られる。
+[正接の導関数（定理）](../derivatives-of-trigonometric-functions/)からは、次の不定積分が得られる。
 
 > **余弦の 2 乗の逆数の不定積分（定理）.** $k$ を整数とする。開区間 $\left(-\dfrac\pi2+k\pi,\ \dfrac\pi2+k\pi\right)$ で次が成り立つ。
 >

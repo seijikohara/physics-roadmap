@@ -2,7 +2,7 @@
 title: 部分積分法
 description: 積の微分を逆向きに読み、部分積分の公式 ∫f(x)g'(x)dx=f(x)g(x)-∫f'(x)g(x)dx を成立条件とともに導く。定積分の部分積分を基本定理 2 から証明し、面積による見方で確かめる。f と g' の選び方、置換積分法との比較、多項式と指数関数・三角関数の積、ln x を微分する側に選ぶ積分、部分積分の繰り返しと計算を整理する表、同じ積分が戻ってくる ∫e^x sin x dx、漸化式で求める定積分 ∫_0^1 x^m(1-x)^n dx を扱う。
 sidebar:
-  order: 23
+  order: 25
 ---
 
 import FlowChart from "../../../../components/FlowChart";
@@ -451,7 +451,7 @@ $$
    \int xe^x\,dx = xe^x-e^x+C = (x-1)e^x+C
    $$
 
-6. **検算する.** 積の微分と[指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)の章の指数関数の導関数より、$\{(x-1)e^x\}'=e^x+(x-1)e^x=xe^x$ となる。被積分関数に戻る。
+6. **検算する.** 積の微分と[指数関数と対数関数の微分](../derivatives-of-elementary-functions/)の章の指数関数の導関数より、$\{(x-1)e^x\}'=e^x+(x-1)e^x=xe^x$ となる。被積分関数に戻る。
 
 $\sin x$・$\cos x$ との積も、同じ手順で求まる。例題 2 の (1) で扱う。
 
