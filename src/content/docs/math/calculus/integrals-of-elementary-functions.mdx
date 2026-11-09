@@ -2,7 +2,7 @@
 title: 三角関数の積分
 description: 半角の公式と積和の公式で三角関数の積を和に直し、∫sin²x dx と整数倍の角の積の定積分の値を示す。値 0 で広げた半円の関数の連続性を示し、置換 x=sin θ で ∫_0^1√(1-x²)dx=π/4 と円の面積 πr² を求める。部分積分法で正弦の累乗の定積分の漸化式 I_n=(n-1)/n·I_{n-2} を導き、値を求める。
 sidebar:
-  order: 26
+  order: 28
 ---
 
 import FunctionGraph from "../../../../components/FunctionGraph";
@@ -58,7 +58,7 @@ $\cos^2x$ も、符号を替えて同様に得る。証明を終わる。
 
 $\sin x$・$\cos x$ の周期は $2\pi$ である。整数倍の角 $kx$ の三角関数を、$0$ から $2\pi$ まで積分する。
 
-記法を確かめる。$\sin kx$ は $\sin(kx)$ を、$\cos(m-n)x$ は $\cos((m-n)x)$ を、$\sin2k\pi$ は $\sin(2k\pi)$ を表す。[指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)の章の $\sin g(x)=\sin(g(x))$ と同じく、括弧を省いた便宜的な書き方である。
+記法を確かめる。$\sin kx$ は $\sin(kx)$ を、$\cos(m-n)x$ は $\cos((m-n)x)$ を、$\sin2k\pi$ は $\sin(2k\pi)$ を表す。[三角関数の微分](../derivatives-of-trigonometric-functions/)の章の $\sin g(x)=\sin(g(x))$ と同じく、括弧を省いた便宜的な書き方である。
 
 > **整数倍の角の定積分（定理）.** $k$ を $0$ でない整数とする。次の 2 つが成り立つ。
 >
@@ -495,7 +495,7 @@ $r=1$ とする。原点からの距離が $1$ 以下で、$x\ge0$ かつ $y\ge0
   </figcaption>
 </figure>
 
-本節の証明は、円の面積の公式の、論理的に独立した証明ではない。証明は、正弦の導関数（定理）$(\sin\theta)'=\cos\theta$ を使った。正弦の導関数は、重要な極限 $\displaystyle\lim_{x\to0}\frac{\sin x}{x}=1$ から導いた。[自然対数の底 e と重要な極限](../euler-number-and-key-limits/)の章は、極限の証明に、[前提とする知識](../../../prerequisites/knowledge/)の円の面積の公式と、扇形の面積が中心角に比例すること（承認事項）を使った。本節は、定積分で定めた面積が、前提とした公式 $\pi r^2$ と矛盾なく一致することの確認である。
+本節の証明は、円の面積の公式の、論理的に独立した証明ではない。証明は、正弦の導関数（定理）$(\sin\theta)'=\cos\theta$ を使った。正弦の導関数は、重要な極限 $\displaystyle\lim_{x\to0}\frac{\sin x}{x}=1$ から導いた。[正弦と角の比の極限](../trigonometric-limits/)の章は、極限の証明に、[前提とする知識](../../../prerequisites/knowledge/)の円の面積の公式と、扇形の面積が中心角に比例すること（承認事項）を使った。本節は、定積分で定めた面積が、前提とした公式 $\pi r^2$ と矛盾なく一致することの確認である。
 
 ## 正弦の累乗の定積分
 

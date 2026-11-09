@@ -601,21 +601,21 @@
       "kind": "日常語",
       "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
       "chapters": [
-        "math/set/methods-of-proof",
         "math/algebra/factorization",
         "math/algebra/linear-inequalities",
         "math/algebra/quadratic-equations",
-        "math/functions/function-and-graph",
-        "math/functions/quadratic-functions",
-        "math/functions/polynomial-and-rational-functions",
-        "math/functions/extension-of-trigonometric-ratios",
-        "math/functions/trigonometric-functions-and-unit-circle",
-        "math/functions/law-of-sines-and-cosines",
+        "math/calculus/trigonometric-limits",
         "math/complex-numbers/complex-plane-and-absolute-value",
-        "math/complex-numbers/polar-form",
         "math/complex-numbers/de-moivres-theorem",
+        "math/complex-numbers/polar-form",
+        "math/functions/extension-of-trigonometric-ratios",
+        "math/functions/function-and-graph",
+        "math/functions/law-of-sines-and-cosines",
+        "math/functions/polynomial-and-rational-functions",
+        "math/functions/quadratic-functions",
+        "math/functions/trigonometric-functions-and-unit-circle",
         "math/sequences-and-series/limits-of-sequences",
-        "math/calculus/euler-number-and-key-limits"
+        "math/set/methods-of-proof"
       ]
     },
     {
@@ -658,16 +658,16 @@
       "kind": "日常語",
       "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
       "chapters": [
-        "math/set/sets-and-elements",
-        "math/set/necessary-and-sufficient-conditions",
-        "math/set/methods-of-proof",
-        "math/algebra/real-number-system",
         "math/algebra/radicals-and-rational-exponents",
-        "math/functions/quadratic-functions",
+        "math/algebra/real-number-system",
+        "math/calculus/basic-differentiation-rules",
+        "math/calculus/trigonometric-limits",
         "math/coordinate-geometry/conic-sections",
+        "math/functions/quadratic-functions",
         "math/sequences-and-series/limits-of-sequences",
-        "math/calculus/euler-number-and-key-limits",
-        "math/calculus/basic-differentiation-rules"
+        "math/set/methods-of-proof",
+        "math/set/necessary-and-sufficient-conditions",
+        "math/set/sets-and-elements"
       ]
     },
     {
@@ -771,30 +771,30 @@
       "reason": "日常の意味で使う。ポテンシャルの基準点ではない。",
       "chapters": [
         "math/algebra/real-number-system",
-        "math/coordinate-geometry/lines-and-coordinate-geometry",
-        "math/calculus/euler-number-and-key-limits"
+        "math/calculus/trigonometric-limits",
+        "math/coordinate-geometry/lines-and-coordinate-geometry"
       ]
     },
     {
       "term": "境界",
       "kind": "日常語",
       "reason": "図形の境目の日常の意味で使う。",
-      "chapters": ["math/calculus/euler-number-and-key-limits"]
+      "chapters": ["math/calculus/trigonometric-limits"]
     },
     {
       "term": "外側",
       "kind": "日常語",
       "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
       "chapters": [
-        "math/set/sets-and-elements",
-        "math/set/necessary-and-sufficient-conditions",
-        "math/set/methods-of-proof",
-        "math/algebra/real-number-system",
         "math/algebra/linear-inequalities",
-        "math/functions/quadratic-inequalities-and-absolute-value",
-        "math/functions/law-of-sines-and-cosines",
+        "math/algebra/real-number-system",
+        "math/calculus/trigonometric-limits",
         "math/coordinate-geometry/conic-sections",
-        "math/calculus/euler-number-and-key-limits"
+        "math/functions/law-of-sines-and-cosines",
+        "math/functions/quadratic-inequalities-and-absolute-value",
+        "math/set/methods-of-proof",
+        "math/set/necessary-and-sufficient-conditions",
+        "math/set/sets-and-elements"
       ]
     },
     {
@@ -808,19 +808,19 @@
       "kind": "日常語",
       "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
       "chapters": [
-        "math/set/necessary-and-sufficient-conditions",
         "math/algebra/linear-equations-and-systems",
-        "math/functions/linear-functions",
-        "math/functions/exponential-functions",
-        "math/functions/trigonometric-ratios",
-        "math/functions/extension-of-trigonometric-ratios",
-        "math/functions/addition-theorems",
-        "math/functions/law-of-sines-and-cosines",
-        "math/sequences-and-series/arithmetic-sequences",
-        "math/sequences-and-series/recurrence-relations",
-        "math/sequences-and-series/limits-of-sequences",
         "math/calculus/function-limits",
-        "math/calculus/euler-number-and-key-limits",
+        "math/calculus/trigonometric-limits",
+        "math/functions/addition-theorems",
+        "math/functions/exponential-functions",
+        "math/functions/extension-of-trigonometric-ratios",
+        "math/functions/law-of-sines-and-cosines",
+        "math/functions/linear-functions",
+        "math/functions/trigonometric-ratios",
+        "math/sequences-and-series/arithmetic-sequences",
+        "math/sequences-and-series/limits-of-sequences",
+        "math/sequences-and-series/recurrence-relations",
+        "math/set/necessary-and-sufficient-conditions",
         "physics/classical-mechanics/quantities-units-and-dimensions"
       ]
     },
@@ -954,7 +954,7 @@
       "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
       "chapters": [
         "math/calculus/asymptotes-and-curve-sketching",
-        "math/calculus/derivatives-of-elementary-functions",
+        "math/calculus/derivatives-of-trigonometric-functions",
         "math/calculus/function-limits",
         "math/calculus/higher-derivatives-and-monotonicity",
         "math/calculus/integrals-of-elementary-functions",
@@ -1055,6 +1055,7 @@
         "math/calculus/function-limits",
         "math/calculus/fundamental-theorem-of-calculus",
         "math/calculus/integrals-of-elementary-functions",
+        "math/calculus/trigonometric-limits",
         "math/sequences-and-series/limits-of-sequences",
         "physics/classical-mechanics/position-velocity-and-acceleration",
         "physics/classical-mechanics/uniform-acceleration-and-projectile-motion"
@@ -1136,6 +1137,7 @@
         "math/calculus/euler-number-and-key-limits",
         "math/calculus/function-limits",
         "math/calculus/intermediate-and-extreme-value-theorems",
+        "math/calculus/trigonometric-limits",
         "math/functions/composition-of-trigonometric-functions",
         "math/functions/function-and-graph",
         "math/functions/linear-functions",
@@ -1460,12 +1462,6 @@
       "kind": "語の切れ目",
       "reason": "「仕事率」の一部を拾う。章の中で単位とともに説明する。",
       "chapters": ["physics/classical-mechanics/quantities-units-and-dimensions"]
-    },
-    {
-      "term": "対数",
-      "kind": "語の切れ目",
-      "reason": "「自然対数の底」の名前の一部を拾う。章の中で定数 e の名前として説明する。",
-      "chapters": ["math/calculus/euler-number-and-key-limits"]
     },
     {
       "term": "接する",

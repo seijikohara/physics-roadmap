@@ -2,7 +2,7 @@
 title: 微分の近似と微小変化
 description: 接線の式 f(a)+f'(a)(x-a) で関数の値を見積もる一次近似を定め、誤差が x-a より速く 0 に近づくことと、誤差を x-a より速く 0 に近づける直線が接線に限ることを示す。ロルの定理から誤差の式を導き、第 2 次導関数による誤差の評価と誤差の符号を証明する。0 の近くでよく使う近似式を整理し、微分 dy=f'(x)dx を定めて、変化量と相対変化の見積もりに応用する。
 sidebar:
-  order: 16
+  order: 18
 ---
 
 import AreaModel from "../../../../components/AreaModel";
@@ -498,9 +498,9 @@ $a=0$ での一次近似は、$f(x)\approx f(0)+f'(0)\,x$ である。$0$ の近
 - **$\ln(1+x)$.** 導関数は、誤差の符号の節で求めたとおりである。$f(0)=\ln1=0$ である。
 - **$\tan x$.** $\tan x$ の定義域のうち、$0$ を含む開区間 $-\dfrac{\pi}{2}<x<\dfrac{\pi}{2}$ で考える。
 
-$\sin x\approx x$ は、[自然対数の底 e と重要な極限](../euler-number-and-key-limits/)の章の極限 $\displaystyle\lim_{x\to0}\frac{\sin x}{x}=1$ とも合う。$x$ が $0$ に近いとき、比 $\dfrac{\sin x}{x}$ が $1$ に近いことは、$\sin x$ と $x$ がほぼ等しいことを表す。
+$\sin x\approx x$ は、[正弦と角の比の極限](../trigonometric-limits/)の章の極限 $\displaystyle\lim_{x\to0}\frac{\sin x}{x}=1$ とも合う。$x$ が $0$ に近いとき、比 $\dfrac{\sin x}{x}$ が $1$ に近いことは、$\sin x$ と $x$ がほぼ等しいことを表す。
 
-$x$ が $0$ に近いとき、3 つの関数 $\sin x$・$x$・$\tan x$ はほぼ等しい。図 6 に 3 つのグラフを描く。$0<x<\dfrac{\pi}{2}$ での並びは、自然対数の底 e と重要な極限の章の[面積による不等式](../euler-number-and-key-limits/) $\sin x\le x\le\tan x$ のとおりである。
+$x$ が $0$ に近いとき、3 つの関数 $\sin x$・$x$・$\tan x$ はほぼ等しい。図 6 に 3 つのグラフを描く。$0<x<\dfrac{\pi}{2}$ での並びは、正弦と角の比の極限の章の[面積による不等式](../trigonometric-limits/) $\sin x\le x\le\tan x$ のとおりである。
 
 <figure>
   <FunctionGraph
@@ -973,7 +973,7 @@ $a=0$ での一次近似は $1+\alpha x$ である。$t>-1$ では $1+t>0$ だ�
 
 **(2)** $0<\alpha<1$ なら $\alpha>0$ かつ $\alpha-1<0$ だから、$\alpha(\alpha-1)<0$ である。同じく $R(x)<0$、すなわち $(1+x)^\alpha<1+\alpha x$ である。
 
-(1) で $\alpha$ を自然数 $n\ge2$ とすると、$x>-1$、$x\neq0$ で $(1+x)^n>1+nx$ を得る。[自然対数の底 e と重要な極限](../euler-number-and-key-limits/)の章のベルヌーイの不等式 $(1+h)^n\ge1+nh$ と同じ形の不等式である。
+(1) で $\alpha$ を自然数 $n\ge2$ とすると、$x>-1$、$x\neq0$ で $(1+x)^n>1+nx$ を得る。[自然対数の底 e](../euler-number-and-key-limits/)の章のベルヌーイの不等式 $(1+h)^n\ge1+nh$ と同じ形の不等式である。
 
 </details>
 
