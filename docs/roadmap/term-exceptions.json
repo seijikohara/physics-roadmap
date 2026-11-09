@@ -954,13 +954,13 @@
       "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
       "chapters": [
         "math/calculus/asymptotes-and-curve-sketching",
-        "math/calculus/chain-rule",
-        "math/calculus/derivative-definition",
         "math/calculus/derivatives-of-elementary-functions",
         "math/calculus/function-limits",
         "math/calculus/higher-derivatives-and-monotonicity",
         "math/calculus/integrals-of-elementary-functions",
+        "math/calculus/inverse-function-derivatives",
         "math/calculus/product-and-quotient-rules",
+        "math/calculus/rolle-and-mean-value-theorems",
         "math/functions/linear-functions",
         "math/functions/polynomial-and-rational-functions",
         "math/multivariable-calculus/change-of-variables-and-jacobians",
@@ -1046,6 +1046,7 @@
       "kind": "日常語",
       "reason": "近い値とのずれの日常の意味で使う。一次近似の誤差の用語とは別のものである。",
       "chapters": [
+        "math/calculus/arctangent-function",
         "math/calculus/asymptotes-and-curve-sketching",
         "math/calculus/definite-integrals-and-riemann-sums",
         "math/calculus/derivative-definition",
@@ -1054,7 +1055,6 @@
         "math/calculus/function-limits",
         "math/calculus/fundamental-theorem-of-calculus",
         "math/calculus/integrals-of-elementary-functions",
-        "math/calculus/partial-fractions-and-rational-integrals",
         "math/sequences-and-series/limits-of-sequences",
         "physics/classical-mechanics/position-velocity-and-acceleration",
         "physics/classical-mechanics/uniform-acceleration-and-projectile-motion"
@@ -1132,16 +1132,17 @@
       "kind": "日常語",
       "reason": "日常の意味で使う。定義する章は、章の中の用途に合わせて意味を狭めている。",
       "chapters": [
+        "math/calculus/continuity-of-functions",
+        "math/calculus/euler-number-and-key-limits",
+        "math/calculus/function-limits",
+        "math/calculus/intermediate-and-extreme-value-theorems",
+        "math/functions/composition-of-trigonometric-functions",
         "math/functions/function-and-graph",
         "math/functions/linear-functions",
         "math/functions/quadratic-functions",
         "math/functions/trigonometric-functions-and-unit-circle",
-        "math/functions/composition-of-trigonometric-functions",
         "math/sequences-and-series/arithmetic-sequences",
         "math/sequences-and-series/infinite-series",
-        "math/calculus/function-limits",
-        "math/calculus/euler-number-and-key-limits",
-        "math/calculus/continuity-of-functions",
         "physics/classical-mechanics/quantities-units-and-dimensions"
       ]
     },

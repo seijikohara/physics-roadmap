@@ -2,7 +2,7 @@
 title: 三角関数の積分
 description: 半角の公式と積和の公式で三角関数の積を和に直し、∫sin²x dx と整数倍の角の積の定積分の値を示す。値 0 で広げた半円の関数の連続性を示し、置換 x=sin θ で ∫_0^1√(1-x²)dx=π/4 と円の面積 πr² を求める。部分積分法で正弦の累乗の定積分の漸化式 I_n=(n-1)/n·I_{n-2} を導き、値を求める。
 sidebar:
-  order: 21
+  order: 26
 ---
 
 import FunctionGraph from "../../../../components/FunctionGraph";
@@ -12,7 +12,7 @@ import RiemannSumGraph from "../../../../components/RiemannSumGraph";
 
 本章の前提は次の章である。
 
-- [部分分数分解と有理関数の積分](../partial-fractions-and-rational-integrals/)
+- [有理関数の積分](../partial-fractions-and-rational-integrals/)
 - [円錐曲線（楕円・放物線・双曲線）](../../coordinate-geometry/conic-sections/)
 
 ## 学習目標
@@ -279,7 +279,7 @@ $$
 
 **証明.** 性質ごとに示す。
 
-1. **狭義の大小.** $a<b$ ならば、[合成関数の微分（連鎖律）](../chain-rule/)の章の累乗の単調性（補題）を $n=2$ で使い、$a^2<b^2$ である。逆向きは背理法で示す。$a^2<b^2$ とし、仮に $a\ge b$ とする。$a=b$ ならば $a^2=b^2$ であり、$b<a$ ならば前半より $b^2<a^2$ である。どちらも $a^2<b^2$ に矛盾する。
+1. **狭義の大小.** $a<b$ ならば、[逆関数の微分と有理数乗](../inverse-function-derivatives/)の章の累乗の単調性（補題）を $n=2$ で使い、$a^2<b^2$ である。逆向きは背理法で示す。$a^2<b^2$ とし、仮に $a\ge b$ とする。$a=b$ ならば $a^2=b^2$ であり、$b<a$ ならば前半より $b^2<a^2$ である。どちらも $a^2<b^2$ に矛盾する。
 2. **等号を含む大小.** 性質 1 を $a$ と $b$ を入れ替えて使うと、$b<a$ と $b^2<a^2$ は同値である。両方を否定すると、$a\le b$ と $a^2\le b^2$ は同値である。
 
 証明を終わる。

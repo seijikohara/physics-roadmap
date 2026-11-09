@@ -2,7 +2,7 @@
 title: 漸近線とグラフの概形
 description: 垂直漸近線・水平漸近線・斜めの漸近線を極限で定め、斜めの漸近線 y=ax+b の傾きと切片を極限で求める定理を示す。x/e^x と (ln x)/x が 0 に近づくことを証明し、偶関数・奇関数の導関数の偶奇を調べる。増減と凹凸を 1 つの表にまとめ、多項式関数・指数関数・有理関数のグラフの概形を描く。
 sidebar:
-  order: 11
+  order: 15
 ---
 
 import FunctionGraph from "../../../../components/FunctionGraph";
@@ -12,7 +12,6 @@ import FunctionGraph from "../../../../components/FunctionGraph";
 本章の前提は次の章である。
 
 - [凹凸と変曲点](../concavity-and-curve-sketching/)
-- [高次導関数と関数の増減](../higher-derivatives-and-monotonicity/)
 
 ## 学習目標
 
@@ -147,7 +146,7 @@ $x>0$ では $g(x)-x=\dfrac1x>0$ だから、曲線は漸近線 $y=x$ より上�
 
 1 は、$x$ を大きくするとき、$e^x$ が $x$ よりはるかに速く大きくなることを表す。2 は、$\ln x$ が $x$ よりはるかにゆっくり大きくなることを表す。
 
-**1 の証明.** $x>0$ とする。高次導関数と関数の増減の章の不等式 $e^y\ge1+y$ に $y=\dfrac x2$ を代入すると、$e^{\frac x2}\ge1+\dfrac x2>\dfrac x2>0$ である。正の数どうしの不等式は 2 乗しても保たれる（[合成関数の微分（連鎖律）](../chain-rule/)の章の、累乗の単調性の補題）。指数法則 $\left(e^{\frac x2}\right)^2=e^x$ より、次を得る。
+**1 の証明.** $x>0$ とする。高次導関数と関数の増減の章の不等式 $e^y\ge1+y$ に $y=\dfrac x2$ を代入すると、$e^{\frac x2}\ge1+\dfrac x2>\dfrac x2>0$ である。正の数どうしの不等式は 2 乗しても保たれる（[逆関数の微分と有理数乗](../inverse-function-derivatives/)の章の、累乗の単調性の補題）。指数法則 $\left(e^{\frac x2}\right)^2=e^x$ より、次を得る。
 
 $$
 e^x > \frac{x^2}{4}, \qquad 0 < \frac{x}{e^x} < \frac{x}{x^2/4} = \frac{4}{x}
