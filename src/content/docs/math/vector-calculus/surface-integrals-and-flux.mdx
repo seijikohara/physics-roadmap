@@ -99,7 +99,8 @@ export const cylinderPts = [
 - [ベクトルの和・差・スカラー倍](../../vectors/vector-operations/)：スカラー倍の大きさ $\lvert k\vec{a}\rvert=\lvert k\rvert\:\lvert\vec{a}\rvert$、零ベクトル $\vec{0}$、逆ベクトル
 - [平面ベクトルの定義と成分表示](../../vectors/plane-vectors-and-components/)：単位ベクトル
 - [微分の近似と微小変化](../../calculus/linear-approximation/)：微小変化の見積もり（近似）と記号 $\approx$
-- [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律（定理）、有理数乗の微分（定理）
+- [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律（定理）
+- [逆関数の微分と有理数乗](../../calculus/inverse-function-derivatives/)：有理数乗の微分（定理）
 - [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$(\sin t)'=\cos t$・$(\cos t)'=-\sin t$
 - [定積分とリーマン和](../../calculus/definite-integrals-and-riemann-sums/)：リーマン和（定義）、定積分の線形性（定理）
 - [不定積分の定義](../../calculus/indefinite-integrals/)：累乗の不定積分、正弦・余弦の不定積分（定理）
@@ -1839,7 +1840,7 @@ $$
 \operatorname{area}(S)=\int_0^{2\pi}\left(\int_0^1\sqrt{1+4r^2}\;r\,dr\right)d\theta
 $$
 
-内側の積分を求める。$G(r)=\dfrac{1}{12}(1+4r^2)^{3/2}$ とおく。$G$ は本解答だけの便宜的な名前である。$1+4r^2>0$ だから、[合成関数の微分（連鎖律）](../../calculus/chain-rule/)の章の連鎖律と有理数乗の微分より、次が成り立つ。
+内側の積分を求める。$G(r)=\dfrac{1}{12}(1+4r^2)^{3/2}$ とおく。$G$ は本解答だけの便宜的な名前である。$1+4r^2>0$ だから、[合成関数の微分（連鎖律）](../../calculus/chain-rule/)の章の連鎖律と[逆関数の微分と有理数乗](../../calculus/inverse-function-derivatives/)の章の有理数乗の微分より、次が成り立つ。
 
 $$
 G'(r)=\frac{1}{12}\cdot\frac32(1+4r^2)^{1/2}\cdot8r=r\sqrt{1+4r^2}

@@ -76,8 +76,9 @@ export const rotInv = (x, y) => {
   - 開区間 $(a,b)$・閉区間 $[a,b]$ の記法、開区間の性質（補題）
   - 端点が無限の開区間の記法 $(0,\infty)$・$(-\infty,\infty)$
 - [微分係数と導関数の定義](../../calculus/derivative-definition/)：
-  - 微分可能、微分係数を差分商の極限で定めること、導関数が 0 の関数は定数関数である（系）
+  - 微分可能、微分係数を差分商の極限で定めること
   - 平方根の関数の連続性（補題）、「逆数の関数」の節の $\left(\dfrac1x\right)'=-\dfrac{1}{x^2}$
+- [ロルの定理と平均値の定理](../../calculus/rolle-and-mean-value-theorems/)：導関数が 0 の関数は定数関数である（系）
 - [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律（定理）
 - [微分の基本公式](../../calculus/basic-differentiation-rules/)：和・定数倍の微分、$x^n$ の微分
 - [指数・対数・三角関数の微分](../../calculus/derivatives-of-elementary-functions/)：$(e^x)'=e^x$・$(\sin x)'=\cos x$・$(\cos x)'=-\sin x$・$(\ln x)'=\dfrac1x$、実数乗の微分（定理）
@@ -87,7 +88,8 @@ export const rotInv = (x, y) => {
   - 開区間で連続な関数の定積分（補題）、微分積分学の基本定理 1・2
   - 導関数の定積分（系）、連続関数の原始関数の存在（系）、差を表す角括弧の記号
 - [置換積分法](../../calculus/integration-by-substitution/)：定積分の置換（定理）
-- [部分分数分解と有理関数の積分](../../calculus/partial-fractions-and-rational-integrals/)：逆正接関数（定義）、逆正接関数の導関数（定理）、逆正接が現れる不定積分（定理）
+- [逆正接関数](../../calculus/arctangent-function/)：逆正接関数（定義）、逆正接関数の導関数（定理）
+- [有理関数の積分](../../calculus/partial-fractions-and-rational-integrals/)：逆正接が現れる不定積分（定理）
 - [三角比の拡張](../../functions/extension-of-trigonometric-ratios/)：動径と一般角、各象限における $\cos\theta$ の符号
 - [三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)：$\cos$・$\sin$・$\tan$ の代表的な値、周期性
 - [加法定理](../../functions/addition-theorems/)：相互関係 $\cos^2\theta+\sin^2\theta=1$
@@ -1087,7 +1089,7 @@ $\Psi_1$ が定理の $\varphi$ である。平面の定理の段階 1 と同じ
 
 同じ場を、右半平面 $H=\{(x,y)\mid x>0\}$ に限って考える。$H$ は「エイチ」と読む、本節の便宜的な文字である。$H=(0,\infty)\times(-\infty,\infty)$ は開いた長方形である。$\vec{F}$ は $H$ で $C^1$ 級であり、回転は $0$ だから、開いた長方形の上の保存場の定理より、$\vec{F}$ は $H$ 上の保存場である。
 
-定理の式で、$(a,b)=(1,0)$ としてポテンシャルを求める。$P(t,0)=0$ だから、1 つ目の項は $0$ である。[部分分数分解と有理関数の積分](../../calculus/partial-fractions-and-rational-integrals/)の章の逆正接が現れる不定積分を、定数 $x>0$ について使う。
+定理の式で、$(a,b)=(1,0)$ としてポテンシャルを求める。$P(t,0)=0$ だから、1 つ目の項は $0$ である。[有理関数の積分](../../calculus/partial-fractions-and-rational-integrals/)の章の逆正接が現れる不定積分を、定数 $x>0$ について使う。
 
 $$
 \varphi(x,y)=\int_0^y\frac{x}{x^2+t^2}\,dt=x\cdot\frac1x\Bigl[\arctan\frac tx\Bigr]_0^y=\arctan\frac yx
@@ -1177,7 +1179,7 @@ $\arctan\dfrac yx$ は $x=0$ の点で定義されない。$y$ 軸と交わる�
 
 手順の理由を補う。
 
-- **手順 2 で $\varphi=\Phi+h(y)$ と書ける理由.** ポテンシャル $\varphi$ について、$y$ を固定すると、$x$ の関数 $\varphi-\Phi$ の導関数は $P-P=0$ である。$x$ の動く範囲は開区間 $I_1$ だから、微分係数と導関数の定義の章の導関数が 0 の関数は定数関数である（系）より、$\varphi-\Phi$ は $x$ によらない。$x$ によらない値を $h(y)$ と書く。
+- **手順 2 で $\varphi=\Phi+h(y)$ と書ける理由.** ポテンシャル $\varphi$ について、$y$ を固定すると、$x$ の関数 $\varphi-\Phi$ の導関数は $P-P=0$ である。$x$ の動く範囲は開区間 $I_1$ だから、ロルの定理と平均値の定理の章の導関数が 0 の関数は定数関数である（系）より、$\varphi-\Phi$ は $x$ によらない。$x$ によらない値を $h(y)$ と書く。
 - **手順 3 で右辺が $y$ だけの式になる理由.** $\varphi$ と $\Phi$ は $y$ について偏微分可能だから、$h(y)=\varphi-\Phi$ も微分可能であり、$h'(y)=\varphi_y-\Phi_y=Q-\Phi_y$ である。左辺は $x$ によらない。
 - **開いた長方形を前提とする理由.** $x$ の動く範囲が開区間にならない定義域では、手順 2 の推論が使えない。
 

@@ -77,7 +77,8 @@ export const spacePoints = [1, 2].flatMap((r) => [
 - [平面ベクトルの内積](../../vectors/dot-product/)：内積の定義、内積の成分公式、自分自身との内積
 - [空間ベクトルと成分](../../vectors/space-vectors/)：成分表示、内積の成分公式
 - [関数の極限](../../calculus/function-limits/)：収束の定義（誤差の言葉）、右極限と記号 $h\to0^+$
-- [微分係数と導関数の定義](../../calculus/derivative-definition/)：微分可能、差分商、導関数が 0 の関数は定数関数である（系）
+- [微分係数と導関数の定義](../../calculus/derivative-definition/)：微分可能、差分商
+- [ロルの定理と平均値の定理](../../calculus/rolle-and-mean-value-theorems/)：導関数が 0 の関数は定数関数である（系）
 - [微分の基本公式](../../calculus/basic-differentiation-rules/)：和・定数倍の微分、整数乗の微分 $(x^n)'=nx^{n-1}$（$x\neq0$）
 - [積・商の微分法](../../calculus/product-and-quotient-rules/)：積の微分、商の微分
 - [合成関数の微分（連鎖律）](../../calculus/chain-rule/)：連鎖律
@@ -1070,7 +1071,7 @@ $\lvert\vec{r}\rvert\ge0$ だから、距離の条件と 2 乗の条件は、多
   u'(t)=2t\,g(t)+t^2g'(t)=t\bigl(2g(t)+t\,g'(t)\bigr)=0
   $$
 
-  [微分係数と導関数の定義](../../calculus/derivative-definition/)の章の「導関数が 0 の関数は定数関数である（系）」を、開区間 $(0,\infty)$ で使う。$u$ は定数関数であり、定数を $c$ とおくと $t^2g(t)=c$ である。両辺を $t^2>0$ で割ると、$g(t)=\dfrac{c}{t^2}$ を得る。
+  [ロルの定理と平均値の定理](../../calculus/rolle-and-mean-value-theorems/)の章の「導関数が 0 の関数は定数関数である（系）」を、開区間 $(0,\infty)$ で使う。$u$ は定数関数であり、定数を $c$ とおくと $t^2g(t)=c$ である。両辺を $t^2>0$ で割ると、$g(t)=\dfrac{c}{t^2}$ を得る。
 
 - **2 ならば 1.** $g(t)=ct^{-2}$ とする。整数乗の微分より $g'(t)=-2ct^{-3}$ である。$2g(t)+t\:g'(t)=2ct^{-2}-2ct^{-2}=0$ である。原点と異なる点で $t=\lvert\vec{r}\rvert$ とおくと、発散の公式より発散は $0$ である。
 

@@ -1,0 +1,300 @@
+---
+title: 逆正接関数
+description: 正接を開区間 (-π/2,π/2) に制限し、連続・狭義単調増加で、すべての実数を値に取ることを示す。逆関数として逆正接関数 arctan x を定義し、記法、値の表、奇関数であること、狭義単調増加、グラフと水平漸近線を扱う。逆関数の微分から (arctan x)'=1/(1+x²) を導く。
+sidebar:
+  order: 12
+---
+
+import FunctionGraph from "../../../../components/FunctionGraph";
+
+## 前提
+
+本章の前提は次の章である。
+
+- [指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)
+
+## 学習目標
+
+本章を読むと、次の概念と数式を使えるようになる。
+
+- 開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ に制限した正接の性質と、逆正接関数 $\arctan x$ の定義・記法
+- 逆正接関数の値の表、奇関数であること、狭義単調増加、グラフ
+- 逆正接関数の導関数 $(\arctan x)'=\dfrac{1}{1+x^2}$
+
+## 正接を開区間に制限する
+
+本章は、正接 $\tan x$ の逆関数として逆正接関数を定め、性質・グラフ・導関数を調べる。[指数・対数・三角関数の微分](../derivatives-of-elementary-functions/)の章の正接の導関数（定理）は、$(\tan x)'=1+\tan^2x$ であった。$\tan x$ の逆関数を作れば、$\dfrac{1}{1+x^2}$ が導関数として現れると見込める。
+
+ただし、$\tan x$ は定義域の全体では 1 対 1 でない。[三角関数と単位円](../../functions/trigonometric-functions-and-unit-circle/)の章のとおり周期が $\pi$ であり、$\tan(x+\pi)=\tan x$ となるからである。そこで、定義域を開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ に制限する。開区間の両端は、正接のグラフの漸近線の位置である。
+
+本章では、角を表す文字として $\theta$（シータ）を使う。準備として、開区間の中の角について、単位円上の点の座標の符号を確かめる。[三角比の拡張](../../functions/extension-of-trigonometric-ratios/)の章の、象限と符号の表を使う。
+
+- **余弦は正.** $-\dfrac\pi2<\theta<\dfrac\pi2$ のとき、動径は第 4 象限・$x$ 軸の正の部分・第 1 象限のいずれかにある。どの場合も単位円上の点の $x$ 座標は正だから、$\cos\theta>0$ である。
+- **正弦は正.** $0<\theta<\pi$ のとき、動径は第 1 象限・$y$ 軸の正の部分・第 2 象限のいずれかにある。どの場合も $y$ 座標は正だから、$\sin\theta>0$ である。
+
+次の補題の狭義単調増加は、[中間値の定理と最大値・最小値の定理](../intermediate-and-extreme-value-theorems/)の章の用語である。
+
+> **制限した正接の性質（補題）.** 開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ で、関数 $\tan\theta$ は次の 3 つの性質を持つ。
+>
+> 1. 連続である。
+> 2. 狭義単調増加である。
+> 3. どの実数 $y$ についても、$\tan\theta=y$ を満たす $\theta$ が、開区間の中にただ 1 つ存在する。
+
+**証明.** 性質ごとに示す。
+
+1. **連続.** 開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ は、$\dfrac\pi2+n\pi$（$n$ は整数）の形の点を含まない。$n\ge0$ ならば $\dfrac\pi2+n\pi\ge\dfrac\pi2$、$n\le-1$ ならば $\dfrac\pi2+n\pi\le-\dfrac\pi2$ だからである。正接の導関数（定理）より、$\tan\theta$ は開区間の各点で微分可能である。[微分係数と導関数の定義](../derivative-definition/)の章の、微分可能ならば連続であるという定理より、各点で連続である。
+2. **狭義単調増加.** $-\dfrac\pi2<s<t<\dfrac\pi2$ とする。通分し、[加法定理](../../functions/addition-theorems/)の章の正弦の加法定理 $\sin(t-s)=\sin t\cos s-\cos t\sin s$ を使うと、次の式を得る。
+
+   $$
+   \tan t-\tan s = \frac{\sin t}{\cos t}-\frac{\sin s}{\cos s} = \frac{\sin t\cos s-\cos t\sin s}{\cos t\cos s} = \frac{\sin(t-s)}{\cos t\cos s}
+   $$
+
+   右辺の符号を調べる。
+   - **分子.** $0<t-s<\pi$ だから、準備より $\sin(t-s)>0$ である。
+   - **分母.** 準備より $\cos t>0$、$\cos s>0$ だから、$\cos t\cos s>0$ である。
+
+   よって $\tan t-\tan s>0$、すなわち $\tan s<\tan t$ である。
+
+3. **値の存在と一意性.** 実数 $y$ を 1 つ取り、$c=\dfrac{y}{\sqrt{1+y^2}}$ とおく。$c^2=\dfrac{y^2}{1+y^2}<1$ だから、$-1<c<1$ である（$c\ge1$ や $c\le-1$ ならば $c^2\ge1$ となるため）。
+   - **正弦の連続性.** 正弦の導関数（定理）より、$\sin\theta$ はすべての実数で微分可能だから連続である。閉区間の端点でも連続だから、片側からの連続も満たし、$\sin\theta$ は閉区間 $\left[-\dfrac\pi2,\dfrac\pi2\right]$ で連続である。
+   - **端点の値.** 単位円上の点 $(0,1)$ より $\sin\dfrac\pi2=1$ である。正弦は奇関数だから $\sin\left(-\dfrac\pi2\right)=-1$ である。
+   - **中間値の定理を使う.** $c$ は $-1$ と $1$ の間の値である。中間値の定理と最大値・最小値の定理の章の中間値の定理より、$-\dfrac\pi2<\theta<\dfrac\pi2$ と $\sin\theta=c$ を満たす $\theta$ が存在する。
+   - **余弦を求める.** 準備より $\cos\theta>0$ である。相互関係より $\cos^2\theta=1-c^2=\dfrac{1}{1+y^2}$ だから、$\cos\theta=\dfrac{1}{\sqrt{1+y^2}}$ である。
+   - **正接を求める.** $\tan\theta=\dfrac{\sin\theta}{\cos\theta}=\dfrac{y}{\sqrt{1+y^2}}\cdot\sqrt{1+y^2}=y$ である。
+   - **一意性.** 性質 2 より、$\tan\theta$ は開区間で 1 対 1 である。よって $\tan\theta=y$ を満たす $\theta$ は 1 つしかない。
+
+証明を終わる。
+
+## 逆正接関数の定義
+
+補題の性質 3 により、次の定義ができる。
+
+> **逆正接関数（定義）.** 実数 $x$ に対し、$-\dfrac\pi2<\theta<\dfrac\pi2$ と $\tan\theta=x$ を満たすただ 1 つの $\theta$ を、$\arctan x$ と書く。$x$ に $\arctan x$ を対応させる関数を、**逆正接関数**と呼ぶ[^arctan]。
+
+記号 $\arctan x$ について、次の 4 点を押さえる。
+
+- **読み方.**「アークタンジェント・エックス」と読む。
+- **意味.** 正接が $x$ になる角のうち、$-\dfrac\pi2$ より大きく $\dfrac\pi2$ より小さいものを表す。
+- **区別.** 正式な記法である。
+- **別の書き方.** 同じ関数を $\tan^{-1}x$ とも書く。広く使われる正式な記法の 1 つであり、[合成関数と逆関数](../../functions/composite-and-inverse-functions/)の章の逆関数の記号 $f^{-1}$ に合わせた書き方である。「タンジェント・インバース・エックス」と読む。
+
+右肩の数の意味は、記法によって異なる。
+
+| 記法            | 表すもの                    |
+| --------------- | --------------------------- |
+| $\tan^2x$       | $(\tan x)^2$（2 乗）        |
+| $\tan^{-1}x$    | 逆正接関数 $\arctan x$      |
+| $(\tan x)^{-1}$ | $\dfrac{1}{\tan x}$（逆数） |
+
+紛らわしさを避けるため、本章では $\arctan x$ と書く。
+
+逆正接関数は、定義域を $\left(-\dfrac\pi2,\dfrac\pi2\right)$ に制限した正接の逆関数である。逆関数の関係を表にまとめる。
+
+| 関係                         | 成り立つ範囲                                      |
+| ---------------------------- | ------------------------------------------------- |
+| $\tan(\arctan x)=x$          | すべての実数 $x$                                  |
+| $\arctan(\tan\theta)=\theta$ | $-\dfrac\pi2<\theta<\dfrac\pi2$ を満たす $\theta$ |
+
+2 つ目の関係は、範囲の外の $\theta$ では成り立たない。例えば、正接の周期は $\pi$ だから $\tan\pi=\tan0=0$ である。よって $\arctan(\tan\pi)=\arctan0=0$ となり、$\pi$ に戻らない。
+
+値の表とグラフの準備として、逆正接関数の基本的な性質を示す。
+
+> **逆正接関数の性質（補題）.** 逆正接関数は、次の 2 つの性質を持つ。
+>
+> 1. すべての実数 $x$ で $\arctan(-x)=-\arctan x$ である。すなわち、逆正接関数は奇関数である。
+> 2. 実数 $x_1$・$x_2$ について、$x_1<x_2$ ならば $\arctan x_1<\arctan x_2$ である。すなわち、逆正接関数は狭義単調増加である。
+
+**証明.** 性質ごとに示す。
+
+1. **奇関数.** $\theta=\arctan x$ とおくと、$-\theta$ も開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ に含まれる。正接は奇関数だから $\tan(-\theta)=-\tan\theta=-x$ であり、定義より $\arctan(-x)=-\theta$ となる。
+2. **狭義単調増加.** 背理法で示す。仮に $\arctan x_1\ge\arctan x_2$ とし、等しい場合と大きい場合に分ける。
+   - **等しい場合.** $\arctan x_1=\arctan x_2$ ならば、$x_1=\tan(\arctan x_1)=\tan(\arctan x_2)=x_2$ である。
+   - **大きい場合.** 制限した正接の性質（補題）の性質 2 より、正接は開区間で狭義単調増加である。よって $\arctan x_1>\arctan x_2$ ならば、$x_1=\tan(\arctan x_1)>\tan(\arctan x_2)=x_2$ である。
+
+   どちらの場合も $x_1\ge x_2$ となり、$x_1<x_2$ に矛盾する。
+
+証明を終わる。
+
+三角関数と単位円の章の代表的な値の表から、逆正接関数の値が読める。例えば $\tan\dfrac\pi4=1$ であり、$\dfrac\pi4$ は開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ に含まれるから、$\arctan1=\dfrac\pi4$ である。
+
+| $x$         | $-\sqrt3$     | $-1$          | $-\dfrac{1}{\sqrt3}$ | $0$ | $\dfrac{1}{\sqrt3}$ | $1$          | $\sqrt3$     |
+| ----------- | ------------- | ------------- | -------------------- | --- | ------------------- | ------------ | ------------ |
+| $\arctan x$ | $-\dfrac\pi3$ | $-\dfrac\pi4$ | $-\dfrac\pi6$        | $0$ | $\dfrac\pi6$        | $\dfrac\pi4$ | $\dfrac\pi3$ |
+
+表の負の $x$ の値は、逆正接関数の性質（補題）の性質 1 から読める。
+
+## 逆正接関数のグラフ
+
+合成関数と逆関数の章で確かめたとおり、逆関数のグラフは、もとの関数のグラフと直線 $y=x$ に関して対称である。$y=\arctan x$ のグラフは、開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ の上の $y=\tan x$ のグラフを、直線 $y=x$ に関して折り返したものである。図 1 に描く。
+
+<figure>
+  <FunctionGraph
+    xMin={-3.4}
+    xMax={3.4}
+    yMin={-3.4}
+    yMax={3.4}
+    equalScale
+    xTicks={[-3, -2, -1, 1, 2, 3]}
+    yTicks={[-3, -2, -1, 1, 2, 3]}
+    asymptotes={[
+      { x: -Math.PI / 2, color: "#94a3b8" },
+      { x: Math.PI / 2, color: "#94a3b8" },
+    ]}
+    curves={[
+      { fn: (x) => Math.tan(x), domain: [-1.28, 1.28], color: "#3b82f6", label: "y=\\tan x" },
+      { fn: (x) => Math.atan(x), domain: [-3.4, 3.4], color: "#10b981", label: "y=\\arctan x" },
+      { fn: (x) => x, domain: [-3.4, 3.4], color: "#94a3b8", dashed: true, label: "y=x" },
+      { fn: () => Math.PI / 2, color: "#f59e0b", dashed: true, label: "y=\\pm\\pi/2" },
+      { fn: () => -Math.PI / 2, color: "#f59e0b", dashed: true },
+    ]}
+    ariaLabel="青の曲線 y=tan x を、灰色の破線の縦の漸近線 x=-π/2 と x=π/2 の間で描く。緑の曲線 y=arctan x を、橙の破線の横の漸近線 y=-π/2 と y=π/2 の間で描く。2 本の曲線は、灰色の破線 y=x に関して対称である。緑の曲線は、x が大きくなると y=π/2 に下から近づき、x が小さくなると y=-π/2 に上から近づく。"
+  />
+  <figcaption>
+    <em>
+      図 1. 逆正接関数のグラフ。青い曲線が開区間 $(-\pi/2,\pi/2)$ の上の $y=\tan x$、緑の曲線が $y=\arctan x$、灰色の破線が直線 $y=x$ である。灰色の縦の破線 $x=\pm\pi/2$（$\pi/2=1.57\cdots$）は $y=\tan x$ の漸近線、橙の横の破線 $y=\pm\pi/2$ は $y=\arctan x$ の漸近線である。
+    </em>
+  </figcaption>
+</figure>
+
+グラフの特徴を整理する。
+
+- **値の範囲.** 定義より、すべての実数 $x$ で $-\dfrac\pi2<\arctan x<\dfrac\pi2$ である。グラフは 2 本の横線 $y=\pm\dfrac\pi2$ の間にある。
+- **原点を通る.** $\arctan0=0$ である。グラフは原点について対称であり、逆正接関数の性質（補題）の奇関数であることと整合する。
+- **水平漸近線.** $y=\tan x$ の縦の漸近線 $x=\pm\dfrac\pi2$ は、折り返すと横の直線 $y=\pm\dfrac\pi2$ になる。[多項式関数と有理関数](../../functions/polynomial-and-rational-functions/)の章の言葉では、$y=\arctan x$ の水平漸近線である。
+
+水平漸近線を、[関数の極限](../function-limits/)の章の誤差の言葉で確かめる。$\displaystyle\lim_{x\to\infty}\arctan x=\frac\pi2$ を示す。
+
+1. **誤差を決める.** [自然対数の底 e と重要な極限](../euler-number-and-key-limits/)の章と同じく、決めた正の誤差を $\varepsilon$ で表す。小さい誤差で示せば大きい誤差でも成り立つから、$\varepsilon<\dfrac\pi2$ としてよい。
+2. **境目の値を選ぶ.** $\theta_0=\dfrac\pi2-\varepsilon$ とおくと、$0<\theta_0<\dfrac\pi2$ である。$x_0=\tan\theta_0$ とおく。
+3. **差を見積もる.** $x>x_0$ とする。逆正接関数の性質（補題）より狭義単調増加だから、$\arctan x>\arctan x_0=\theta_0$ である。値の範囲より $\arctan x<\dfrac\pi2$ である。2 つを合わせると、$0<\dfrac\pi2-\arctan x<\dfrac\pi2-\theta_0=\varepsilon$ である。
+
+$x_0$ より大きいすべての $x$ で、$\arctan x$ と $\dfrac\pi2$ の差が誤差より小さい。よって $\displaystyle\lim_{x\to\infty}\arctan x=\frac\pi2$ である。
+
+$x\to-\infty$ の極限は、奇関数であることから導く。$x<-x_0$ とすると $-x>x_0$ である。$\arctan x-\left(-\dfrac\pi2\right)=\dfrac\pi2-\arctan(-x)$ であり、右辺は手順 3 より $0$ より大きく $\varepsilon$ より小さい。よって $\displaystyle\lim_{x\to-\infty}\arctan x=-\frac\pi2$ も成り立つ。
+
+## 逆正接関数の導関数
+
+> **逆正接関数の導関数（定理）.** $\arctan x$ はすべての実数 $x$ で微分可能であり、次が成り立つ。
+>
+> $$
+> (\arctan x)' = \frac{1}{1+x^2}
+> $$
+
+**証明.** 実数 $b$ を 1 つ取り、$a=\arctan b$ とおく。$-\dfrac\pi2<a<\dfrac\pi2$ であり、$\tan a=b$ である。$f(\theta)=\tan\theta$ を開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ で考え、[逆関数の微分と有理数乗](../inverse-function-derivatives/)の章の逆関数の微分（定理）の仮定を順に確かめる。
+
+- **連続かつ狭義単調.** 制限した正接の性質（補題）の性質 1・2 による。
+- **微分係数.** 正接の導関数（定理）より、$f'(a)=1+\tan^2a=1+b^2$ である。$1+b^2\ge1$ だから、$f'(a)\neq0$ である。
+
+逆関数の微分（定理）より、$f^{-1}$ は点 $b=f(a)$ で微分可能であり、次が成り立つ。
+
+$$
+(f^{-1})'(b) = \frac{1}{f'(a)} = \frac{1}{1+b^2}
+$$
+
+定義より、$f^{-1}$ は逆正接関数と一致する。$b$ は任意の実数だから、文字 $b$ を $x$ に替えて定理を得る。証明を終わる。
+
+定理を、接線の傾きで確かめる。$y=\arctan x$ の点 $(1,\,\pi/4)$ での傾きは $\dfrac{1}{1+1^2}=\dfrac12$ である。対応する $y=\tan x$ の点 $(\pi/4,\,1)$ での傾きは $1+\tan^2\dfrac\pi4=2$ であり、逆数の関係になる。2 つの点と接線を、図 2 に拡大して描く。
+
+<figure>
+  <FunctionGraph
+    xMin={-0.2}
+    xMax={1.9}
+    yMin={-0.2}
+    yMax={1.9}
+    equalScale
+    xTicks={[{ value: Math.PI / 4, label: "\\tfrac{\\pi}{4}" }, 1]}
+    yTicks={[{ value: Math.PI / 4, label: "\\tfrac{\\pi}{4}" }, 1]}
+    curves={[
+      { fn: (x) => Math.tan(x), domain: [0, 1.08], color: "#3b82f6", label: "y=\\tan x" },
+      { fn: (x) => Math.atan(x), domain: [0, 1.9], color: "#10b981", label: "y=\\arctan x" },
+      { fn: (x) => x, domain: [-0.2, 1.9], color: "#94a3b8", dashed: true, label: "y=x" },
+      { fn: (x) => 1 + 2 * (x - Math.PI / 4), domain: [0.66, 1.1], color: "#f59e0b", label: "接線" },
+      { fn: (x) => Math.PI / 4 + (x - 1) / 2, domain: [0.75, 1.63], color: "#f59e0b" },
+    ]}
+    points={[
+      { x: Math.PI / 4, y: 1, highlight: true },
+      { x: 1, y: Math.PI / 4, highlight: true },
+    ]}
+    ariaLabel="横軸と縦軸が 0 から 1.9 までの拡大図。青の曲線 y=tan x、緑の曲線 y=arctan x、灰色の破線 y=x を描く。青の曲線上の点 (π/4, 1) に傾き 2 の橙の接線を、緑の曲線上の点 (1, π/4) に傾き 1/2 の橙の接線を描く。2 つの点と 2 本の接線は、直線 y=x に関して対称である。"
+  />
+  <figcaption>
+    <em>
+      図 2. 逆正接関数の接線。青い曲線が $y=\tan x$、緑の曲線が $y=\arctan x$、灰色の破線が $y=x$ である。点 $(\pi/4, 1)$ での $y=\tan x$ の接線の傾きは $2$、点 $(1, \pi/4)$ での $y=\arctan x$ の接線の傾きは $\tfrac12$ である。直線 $y=x$ に関する折り返しで、傾きは逆数になる。
+    </em>
+  </figcaption>
+</figure>
+
+## 例題
+
+### 例題 1
+
+**(1)** $\arctan\sqrt3+\arctan(-1)$ の値を求めよ。
+
+**(2)** $f(x)=\arctan(2x)$ の導関数と、$x=\dfrac12$ での微分係数を求めよ。
+
+**解答.**
+
+**(1)** 値の表より、$\arctan\sqrt3=\dfrac\pi3$、$\arctan(-1)=-\dfrac\pi4$ である。よって、値は $\dfrac\pi3-\dfrac\pi4=\dfrac{\pi}{12}$ である。
+
+**(2)** 連鎖律と逆正接関数の導関数（定理）より、次の式を得る。
+
+$$
+f'(x) = \frac{1}{1+(2x)^2}\cdot2 = \frac{2}{1+4x^2}
+$$
+
+$x=\dfrac12$ を代入すると、$f'\left(\dfrac12\right)=\dfrac{2}{1+1}=1$ である。
+
+## 演習問題
+
+### 問題 1
+
+**(1)** $\arctan\left(-\dfrac{1}{\sqrt3}\right)$ と $\arctan\left(\tan\dfrac{5\pi}{6}\right)$ の値を求めよ。
+
+**(2)** $x\arctan x$ と $\arctan(x^2)$ の導関数を求めよ。
+
+<details>
+<summary>解答を表示</summary>
+
+**(1)** $\arctan$ は奇関数であり、$\arctan\dfrac{1}{\sqrt3}=\dfrac\pi6$ だから、$\arctan\left(-\dfrac{1}{\sqrt3}\right)=-\dfrac\pi6$ である。
+
+正接の周期は $\pi$ だから、次の式が成り立つ。
+
+$$
+\tan\frac{5\pi}{6} = \tan\left(\frac{5\pi}{6}-\pi\right) = \tan\left(-\frac\pi6\right) = -\frac{1}{\sqrt3}
+$$
+
+よって $\arctan\left(\tan\dfrac{5\pi}{6}\right)=-\dfrac\pi6$ である。$\dfrac{5\pi}{6}$ は開区間 $\left(-\dfrac\pi2,\dfrac\pi2\right)$ に含まれないから、値は $\dfrac{5\pi}{6}$ にならない。
+
+**(2)** 積の微分と逆正接関数の導関数（定理）より、次の式を得る。
+
+$$
+(x\arctan x)' = \arctan x+\frac{x}{1+x^2}
+$$
+
+連鎖律と逆正接関数の導関数（定理）より、次の式を得る。
+
+$$
+\{\arctan(x^2)\}' = \frac{1}{1+(x^2)^2}\cdot2x = \frac{2x}{1+x^4}
+$$
+
+</details>
+
+## まとめ
+
+本章は、正接を開区間に制限して逆正接関数を定義し、性質・グラフ・導関数を調べた。要点を振り返る。
+
+- **逆正接関数**：$\arctan x$ は、$-\dfrac\pi2<\theta<\dfrac\pi2$ と $\tan\theta=x$ を満たす $\theta$ である。
+  - 正接が開区間で連続・狭義単調増加であり、すべての実数を値に取ることを示して定義した。
+  - 逆正接関数は奇関数であり、狭義単調増加である。
+  - 水平漸近線は $y=\pm\dfrac\pi2$ である。
+- **導関数**：逆関数の微分（定理）から、$(\arctan x)'=\dfrac{1}{1+x^2}$ を導いた。
+
+## 参考文献
+
+逆三角関数をさらに学ぶための一次資料を挙げる。
+
+- 杉浦光夫『解析入門 I』東京大学出版会、1980 年。逆三角関数の定義と微分を扱う。
+- T. M. Apostol, _Calculus, Volume 1_（2nd ed.）Wiley、1967 年。逆正接関数を扱う。
+- M. Spivak, _Calculus_（4th ed.）Publish or Perish、2008 年。逆三角関数を扱う。
+
+[^arctan]: 記号の arc は、英語で「弧」を表す。弧度法では、単位円の上で角 $\theta$ に対する弧の長さが $\theta$ に等しい。$x>0$ のとき、$\arctan x$ は「正接が $x$ になる弧の長さ」と読める。
