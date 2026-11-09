@@ -967,7 +967,6 @@
         "math/multivariable-calculus/directional-derivatives",
         "math/multivariable-calculus/extrema-of-multivariable-functions",
         "math/multivariable-calculus/graphs-and-level-curves",
-        "math/multivariable-calculus/multivariable-chain-rule",
         "math/multivariable-calculus/partial-derivatives",
         "math/multivariable-calculus/total-differential-and-tangent-planes",
         "math/multivariable-calculus/triple-integrals",
@@ -1226,12 +1225,6 @@
       "chapters": ["math/functions/composition-of-trigonometric-functions"]
     },
     {
-      "term": "1 階の偏導関数",
-      "kind": "章内の説明",
-      "reason": "章の中で 1 階偏導関数を定義する。助詞の有無だけが違う。",
-      "chapters": ["math/multivariable-calculus/higher-order-partial-derivatives"]
-    },
-    {
       "term": "上端",
       "kind": "章内の説明",
       "reason": "章の表で記号の各部の名前として説明する。",
@@ -1320,12 +1313,6 @@
       "kind": "章内の説明",
       "reason": "章の中で記号の読み方と意味を説明する。",
       "chapters": ["math/functions/trigonometric-functions-and-unit-circle"]
-    },
-    {
-      "term": "相対誤差",
-      "kind": "章内の説明",
-      "reason": "章の中で太字の見出し語の形で定義する。",
-      "chapters": ["math/calculus/linear-approximation"]
     },
     {
       "term": "積の法則",
